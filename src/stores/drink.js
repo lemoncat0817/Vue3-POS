@@ -632,18 +632,22 @@ export const useDrinkStore = defineStore('drink', () => {
   const drinkSetSize = ref('L杯')
   // 存放當前所選品項的飲料數量
   const drinkCount = ref('0')
+  // 存放當前所選加料項目
+  const drinkAddList = ref([])
   // 當飲料系列改變清空已選茶類以及糖冰還有杯子大小的選項
   watch(() => drinkTypeMenu.value, () => {
     drinkItem.value = []
     drinkSetSugar.value = ''
     drinkSetIce.value = ''
     drinkSetSize.value = 'L杯'
+    drinkAddList.value = []
   })
   // 當茶類改變清空已選糖冰還有杯子大小的選項
   watch(() => drinkItem.value, () => {
     drinkSetSugar.value = ''
     drinkSetIce.value = ''
     drinkSetSize.value = 'L杯'
+    drinkAddList.value = []
   })
 
   return {
@@ -666,7 +670,8 @@ export const useDrinkStore = defineStore('drink', () => {
     drinkSetIce,
     drinkCount,
     drinkSize,
-    drinkSetSize
+    drinkSetSize,
+    drinkAddList
   }
 }, {
   persist: true,

@@ -36,8 +36,9 @@
     <!-- 如果選擇加料菜單則顯示 -->
     <div v-if="drinkStore.drinkMenu === 1" class="w-[95%] h-full ">
       <div class="w-full h-full flex flex-wrap  ">
-        <div v-for="item in drinkStore.drinkAdd" :key="item.id"
-          class="w-20 h-20 bg-red-400 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center">
+        <div @click="changeAdd(item)" v-for="item in drinkStore.drinkAdd" :key="item.id"
+          class="w-20 h-20 bg-red-400 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
+          :class="{ 'bg-yellow-400': drinkStore.drinkAddList.some(addItem => addItem.name === item.name) }">
           <p class="text-blue-800 text-xl font-bold ">{{ item.name }}</p>
         </div>
       </div>
@@ -100,12 +101,21 @@ const changeIce = (ice) => {
 const changeSize = (size) => {
   drinkStore.drinkSetSize = size
 }
+// 存入當前所選的加料項目，並判斷是否已存在於選項中，如果存在則刪除，反之則新增
+const changeAdd = (addItem) => {
+  if (drinkStore.drinkAddList.includes(addItem)) {
+    drinkStore.drinkAddList = drinkStore.drinkAddList.filter(item => item != addItem)
+  } else {
+    drinkStore.drinkAddList.push(addItem)
+  }
+}
 // 重置所有選項
 const resetAll = () => {
   drinkStore.drinkTypeMenu = 'drinkSeasonal'
   drinkStore.drinkSetSugar = ''
   drinkStore.drinkSetIce = ''
   drinkStore.drinkSetSize = 'L杯'
+  drinkStore.drinkAddList = []
 }
 </script>
 
