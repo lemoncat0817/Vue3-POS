@@ -62,13 +62,13 @@
           <button
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">載具</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">會員資料</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">加購袋子</button>
           <button
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">買五送一</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">環保杯折扣</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">環保折扣</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">瓶裝環保杯折扣</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">瓶裝折扣</button>
           <button
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">開收銀機</button>
           <button
@@ -76,9 +76,9 @@
           <button
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">八五折</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">折扣</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">員工八折</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">員工折扣</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">自訂折扣</button>
         </div>
         <div class="w-[30%] h-[95%] mt-2 bg-red-200 border-solid border-2 border-black rounded-xl  ">
           <div class="w-full h-1/5 flex items-center  ">
