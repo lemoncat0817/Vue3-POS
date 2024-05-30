@@ -1,0 +1,13 @@
+<template>
+  <div class="w-screen min-h-full overflow-auto">
+    <Header class="w-screen h-20"></Header>
+    <Main class="w-screen h-calc"></Main>
+  </div>
+</template>
+
+<script setup>
+import Header from "./header/index.vue"
+import Main from "./main/index.vue"
+</script>
+
+<style lang="scss" scoped></style>

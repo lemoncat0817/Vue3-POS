@@ -8,7 +8,17 @@ export const constantRoutes = [
     }
   }, {
     path: '/',
-    name: 'home',
-    redirect: '/login',
+    component: () => import('@/layout/index.vue'),
+    redirect: '/home',
+    children: [
+      {
+        path: 'home',
+        name: 'home',
+        component: () => import('@/views/home/index.vue'),
+        meta: {
+          title: '首頁'
+        }
+      }
+    ]
   }
 ]
