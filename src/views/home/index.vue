@@ -41,7 +41,7 @@
               <p class="text-red-400 font-bold">愛喝奶茶的貓咪</p>
             </div>
             <div class="w-1/2 h-full flex items-center justify-end">
-              <button
+              <button @click="clearSelectNotPay"
                 class="bg-red-300 text-blue-800 font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 active:bg-yellow-300">清空已選品項</button>
               <button @click="clearNotPay"
                 class="bg-red-300 text-blue-800 font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 active:bg-yellow-300">清空全部品項</button>
@@ -49,7 +49,9 @@
           </div>
         </div>
         <div class="w-full h-[90%]">
-          <el-table :data="drinkStore.drinkNotPay" border height="100%" style="width: 100%" empty-text="目前無待付款的飲品">
+          <el-table @selection-change="handleSelectionChange" :data="drinkStore.drinkNotPay" border height="100%"
+            style="width: 100%" empty-text="目前無待付款的飲品">
+            <el-table-column align="center" type="selection" min-width="20" />
             <el-table-column align="center" center label="序號" type="index" min-width="30" />
             <el-table-column align="center" label="商品" min-width="80" prop="name" />
             <el-table-column align="center" label="單價" min-width="60">
@@ -288,6 +290,28 @@ const clearNotPay = () => {
   }).catch(() => {
     ElMessage.error('取消操作')
   })
+}
+// 清除待付款的清單已選項目
+const clearSelectNotPay = () => {
+  ElMessageBox.confirm(
+    '確定要清除所有已選的待付款的飲品嗎?',
+    '警告',
+    {
+      confirmButtonText: '確定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(() => {
+    ElMessage.success('清除成功')
+    drinkStore.drinkNotPay = drinkStore.drinkNotPay.filter(item => !drinkSelectList.value.includes(item))
+  }).catch(() => {
+    ElMessage.error('取消操作')
+  })
+}
+const drinkSelectList = ref([])
+// 待付款項目勾選後將勾選的項目存入已選取清單
+const handleSelectionChange = (drinkSelect) => {
+  drinkSelectList.value = drinkSelect
 }
 // 存放當前時間
 const time = ref('')
