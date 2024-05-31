@@ -22,14 +22,19 @@
 import { computed, ref } from 'vue'
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
+// 獲取當前所選飲品相關功能
 // 存入當前所選的飲品選項
 const changeItem = (item) => {
   drinkStore.drinkItem = item
 }
+
+// 計算當前系列包含的飲品相關功能
 // 計算當前所選的飲品系列並且回傳該系列的飲品
 const currentDrinks = computed(() => {
   return drinkStore[drinkStore.drinkTypeMenu] || []
 })
+
+// 切換頁數相關功能
 // 頁數切換
 const handleCurrentChange = (page) => {
   currentPage.value = page

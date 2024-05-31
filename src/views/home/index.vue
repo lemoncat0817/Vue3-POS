@@ -198,6 +198,8 @@ import DrinkCustomized from './drinkCustomized/index.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
+
+// 杯數相關功能
 // 新增飲料杯數
 const addCount = (num) => {
   // 如果按刪除鍵刪除最右側的數字
@@ -233,6 +235,8 @@ const addCount = (num) => {
   // 新增選擇的數字在杯數上
   drinkStore.drinkCount += num
 }
+
+// 添加至待付款區相關功能
 // 添加飲料的資訊進入store
 const addNewDrink = () => {
   // 如果沒選擇品項不能送單
@@ -293,6 +297,8 @@ const addNewDrink = () => {
   drinkStore.drinkAddList = []
   drinkStore.drinkCount = '0'
 }
+
+// 刪除待付款的清單項目相關功能
 // 清除待付款的清單所有項目
 const clearNotPay = () => {
   ElMessageBox.confirm(
@@ -309,6 +315,12 @@ const clearNotPay = () => {
   }).catch(() => {
     ElMessage.error('取消操作')
   })
+}
+// 定義已勾選的待付款項目的清單
+const drinkSelectList = ref([])
+// 待付款項目勾選後將勾選的項目存入已選取清單
+const handleSelectionChange = (drinkSelect) => {
+  drinkSelectList.value = drinkSelect
 }
 // 清除待付款的清單已選項目
 const clearSelectNotPay = () => {
@@ -327,11 +339,8 @@ const clearSelectNotPay = () => {
     ElMessage.error('取消操作')
   })
 }
-const drinkSelectList = ref([])
-// 待付款項目勾選後將勾選的項目存入已選取清單
-const handleSelectionChange = (drinkSelect) => {
-  drinkSelectList.value = drinkSelect
-}
+
+// 控制袋子數量相關功能
 // 控制加購袋子視窗
 const dialogBag = ref(false)
 // 定義袋子數量
@@ -348,6 +357,8 @@ const changeBagCount = () => {
   currentBagCount.value = bagCount.value
   dialogBag.value = false
 }
+
+// 當前時間相關功能
 // 存放當前時間
 const time = ref('')
 // 頁面刷新時當前時間開始跑
@@ -360,7 +371,6 @@ onMounted(() => {
 onUnmounted(() => {
   clearInterval()
 })
-
 </script>
 
 <style lang="scss" scoped></style>

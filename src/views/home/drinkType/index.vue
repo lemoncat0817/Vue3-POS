@@ -23,10 +23,14 @@
 import { ref, computed } from 'vue'
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
+
+// 切換飲料系列相關功能
 // 存放當前所選的飲料系列
 const changeType = (type) => {
   drinkStore.drinkTypeMenu = type
 }
+
+// 切換頁數相關功能
 // 頁數切換
 const handleCurrentChange = (page) => {
   currentPage.value = page

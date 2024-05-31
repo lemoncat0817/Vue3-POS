@@ -68,6 +68,8 @@
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
 import { computed } from 'vue'
+
+// 判定當前飲品是否能做為熱飲或是是否可以使用瓶裝容器相關功能
 // 如果該品項不能做為熱飲，將熱飲選項篩選掉
 const filterIce = computed(() => {
   if (drinkStore.drinkItem.customized === 'cold') {
@@ -84,6 +86,8 @@ const filterSize = computed(() => {
     return drinkStore.drinkSize
   }
 })
+
+// 存入當前所選的糖度和冰塊以及杯子大小還有加料項目相關功能
 // 存入當前所選的糖度
 const changeSugar = (sugar) => {
   drinkStore.drinkSetSugar = sugar
@@ -104,6 +108,8 @@ const changeAdd = (addItem) => {
     drinkStore.drinkAddList.push(addItem)
   }
 }
+
+// 重置所有已選擇項目的相關功能
 // 重置所有選項
 const resetAll = () => {
   drinkStore.drinkTypeMenu = 'drinkSeasonal'
