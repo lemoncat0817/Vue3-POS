@@ -91,7 +91,7 @@
       </div>
       <div class="w-full h-[32%] flex border-solid border-t-2 border-gray-200">
         <div class="w-[60%] h-[95%] mt-2 flex justify-center flex-wrap">
-          <button
+          <button @click="scanCarrier"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">載具</button>
           <button @click="openBagDialog"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">加購袋子</button>
@@ -114,7 +114,7 @@
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">環保折扣</button>
           <button
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">瓶裝折扣</button>
-          <button
+          <button @click="openCashier"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">開收銀機</button>
           <button
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">九折</button>
@@ -358,6 +358,21 @@ const changeBagCount = () => {
   dialogBag.value = false
 }
 
+// 掃描載具已及開啟收銀機相關功能
+// 掃描載具
+const scanCarrier = () => {
+  ElMessageBox.alert('掃描載具條碼', '通知', {
+    confirmButtonText: '開始掃描',
+    type: 'info',
+  })
+}
+// 開啟收銀機
+const openCashier = () => {
+  ElMessageBox.alert('開啟收銀機', '通知', {
+    confirmButtonText: '確定',
+    type: 'info',
+  })
+}
 // 當前時間相關功能
 // 存放當前時間
 const time = ref('')
