@@ -28,32 +28,56 @@
         </div>
       </div>
       <div class="w-full h-[60%]">
-        <div class="w-full h-[20%] bg-gray-200 shadow-xl rounded-lg flex">
-          <div class="w-1/2 h-full">
+        <div class="w-full h-[10%] bg-gray-200 shadow-xl rounded-lg flex">
+          <div class="w-1/2 h-full flex items-center">
             <div class="flex h-1/2 items-center">
               <p class="mx-2 text-blue-500">單號:</p>
               <input :placeholder="Date.now()" class="border-2 border-black rounded-3xl text-center">
             </div>
-            <div class="flex h-1/2 items-center">
-              <p class="mx-2 text-blue-500">會員:</p>
-              <input placeholder="請輸入會員手機號碼" v-model="phoneNumber"
-                class="border-2 border-black rounded-3xl text-center" />
-            </div>
           </div>
           <div class="w-1/2 h-full flex items-center">
-            <p class="text-blue-500 mr-2">服務人員:</p>
-            <p class="text-red-400 font-bold">愛喝奶茶的貓咪</p>
+            <div class="w-1/2 h-full flex items-center">
+              <p class="text-blue-500 mr-2">服務人員:</p>
+              <p class="text-red-400 font-bold">愛喝奶茶的貓咪</p>
+            </div>
+            <div class="w-1/2 h-full flex items-center justify-end">
+              <button
+                class="bg-red-300 text-blue-800 font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 active:bg-yellow-300">清空已選品項</button>
+              <button @click="clearNotPay"
+                class="bg-red-300 text-blue-800 font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 active:bg-yellow-300">清空全部品項</button>
+            </div>
           </div>
         </div>
-        <div class="w-full h-[80%]">
-          <el-table border style="width: 100%">
-            <el-table-column label="序號" type="index" width="180" />
-            <el-table-column label="商品" width="180" />
-            <el-table-column label="單價" />
-            <el-table-column label="數量" />
-            <el-table-column label="折扣" />
-            <el-table-column label="加料" />
-            <el-table-column label="小計" />
+        <div class="w-full h-[90%]">
+          <el-table :data="drinkStore.drinkNotPay" border height="100%" style="width: 100%" empty-text="目前無待付款的飲品">
+            <el-table-column align="center" center label="序號" type="index" min-width="30" />
+            <el-table-column align="center" label="商品" min-width="80" prop="name" />
+            <el-table-column align="center" label="單價" min-width="60">
+              <template #default="{ row }">
+                <p>{{ row.price }} 元</p>
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="數量" prop="count" min-width="60">
+              <template #default="{ row }">
+                <p> {{ row.count }} 杯</p>
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="折扣" min-width="60">
+              <template #default="{ row }">
+                <p> {{ row.discount }} 元</p>
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="加料" prop="addList" min-width="80" />
+            <el-table-column align="center" label="配料金額" min-width="60">
+              <template #default="{ row }">
+                <p> {{ row.addListPrice }} 元</p>
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="小計" min-width="60">
+              <template #default="{ row }">
+                <p> {{ row.totalPrice }}元</p>
+              </template>
+            </el-table-column>
           </el-table>
         </div>
       </div>
@@ -82,7 +106,7 @@
         </div>
         <div class="w-[30%] h-[95%] mt-2 bg-red-200 border-solid border-2 border-black rounded-xl  ">
           <div class="w-full h-1/5 flex items-center  ">
-            <input maxlength="5" v-model="drinkStore.drinkCount"
+            <input v-model="drinkStore.drinkCount" oninput="value=value.replace(/[^\d]/g,'')" maxlength="5"
               class="w-[65%] h-4/5 ml-2 border-solid border-2 border-black text-right p-2 text-blue-800 font-bold text-3xl active:bg-yellow-300" />
             <button @click="addCount('delete')"
               class="w-16 h-[80%] ml-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-3xl active:bg-yellow-300">←</button>
@@ -94,7 +118,7 @@
               class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">8</button>
             <button @click="addCount('9')"
               class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">9</button>
-            <button
+            <button @click="addNewDrink"
               class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">Key</button>
           </div>
           <div class="w-full h-1/5 flex items-center ">
@@ -150,6 +174,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import DrinkType from './drinkType/index.vue'
 import DrinkMenu from './drinkMenu/index.vue'
 import DrinkCustomized from './drinkCustomized/index.vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
 // 新增飲料杯數
@@ -187,9 +212,83 @@ const addCount = (num) => {
   // 新增選擇的數字在杯數上
   drinkStore.drinkCount += num
 }
-
-// 存放客人的手機號碼
-const phoneNumber = ref('')
+// 添加飲料的資訊進入store
+const addNewDrink = () => {
+  // 如果沒選擇品項不能送單
+  if (drinkStore.drinkItem.length === 0) {
+    ElMessageBox.alert('飲品未選擇', '警告', {
+      confirmButtonText: '繼續選取',
+      type: 'warning',
+    })
+    return
+  }
+  // 如果需客製化但沒選擇糖度不能送單
+  if (drinkStore.drinkItem.customized != 'none') {
+    if (drinkStore.drinkSetSugar === '') {
+      ElMessageBox.alert('糖度未選擇', '警告', {
+        confirmButtonText: '繼續選取',
+        type: 'warning',
+      })
+      return
+    }
+  }
+  // 如果需客製化但沒選擇冰塊不能送單
+  if (drinkStore.drinkItem.customized != 'none') {
+    if (drinkStore.drinkSetIce === '') {
+      ElMessageBox.alert('冰塊未選擇', '警告', {
+        confirmButtonText: '繼續選取',
+        type: 'warning',
+      })
+      return
+    }
+  }
+  // 如果杯數小於一杯不能送單
+  if (drinkStore.drinkCount < 1) {
+    ElMessageBox.alert('飲料杯數不能小於一杯', '警告', {
+      confirmButtonText: '繼續設定',
+      type: 'warning',
+    })
+    return
+  }
+  // 送出訂單的格式
+  const newDrink = {
+    id: drinkStore.drinkNotPay.length + 1,
+    name: drinkStore.drinkItem.customized === 'none' ? drinkStore.drinkItem.name : `${drinkStore.drinkItem.name},${drinkStore.drinkSetSugar}/${drinkStore.drinkSetIce},${drinkStore.drinkSetSize}`,
+    price: drinkStore.drinkSetSize === 'L杯' ? drinkStore.drinkItem.priceL : drinkStore.drinkItem.priceBottle,
+    count: parseInt(drinkStore.drinkCount),
+    discount: 0,
+    addList: drinkStore.drinkAddList.map(item => item.name),
+    addListPrice: drinkStore.drinkAddList.reduce((acc, cur) => acc + cur.price, 0),
+    totalPrice: 0,
+  }
+  // 送出訂單至待付款區
+  drinkStore.drinkNotPay.push(newDrink)
+  // 成功送單後將菜單區重置
+  drinkStore.drinkTypeMenu = 'drinkSeasonal'
+  drinkStore.drinkItem = []
+  drinkStore.drinkSetSugar = ''
+  drinkStore.drinkSetIce = ''
+  drinkStore.drinkSetSize = 'L杯'
+  drinkStore.drinkAddList = []
+  drinkStore.drinkCount = '0'
+}
+// 清除待付款的清單所有項目
+const clearNotPay = () => {
+  ElMessageBox.confirm(
+    '確定要清除所有待付款的飲品嗎?',
+    '警告',
+    {
+      confirmButtonText: '確定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(() => {
+    ElMessage.success('清除成功')
+    drinkStore.drinkNotPay = []
+  }).catch(() => {
+    ElMessage.error('取消操作')
+  })
+}
 // 存放當前時間
 const time = ref('')
 // 頁面刷新時當前時間開始跑

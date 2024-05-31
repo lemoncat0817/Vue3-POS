@@ -271,7 +271,7 @@ export const useDrinkStore = defineStore('drink', () => {
   // 定義芝芝系列的選項資料
   const drinkCheese = ref([{
     "id": 1,
-    "name": "芝芝金萱/錫蘭紅茶",
+    "name": "芝芝金萱",
     "priceL": 50,
     "priceBottle": "none",
     "customized": "both"
@@ -306,20 +306,27 @@ export const useDrinkStore = defineStore('drink', () => {
   },
   {
     "id": 6,
+    "name": "芝芝錫蘭紅茶",
+    "priceL": 50,
+    "priceBottle": "none",
+    "customized": "both"
+  },
+  {
+    "id": 7,
     "name": "芝芝錫蘭奶茶",
     "priceL": 65,
     "priceBottle": "none",
     "customized": "both"
   },
   {
-    "id": 7,
+    "id": 8,
     "name": "芝芝阿華田",
     "priceL": 80,
     "priceBottle": "none",
     "customized": "both"
   },
   {
-    "id": 8,
+    "id": 9,
     "name": "芝芝可可",
     "priceL": 85,
     "priceBottle": "none",
@@ -370,27 +377,34 @@ export const useDrinkStore = defineStore('drink', () => {
   },
   {
     "id": 7,
-    "name": "檸檬綠茶/紅茶",
+    "name": "檸檬綠茶",
     "priceL": 45,
     "priceBottle": "none",
     "customized": "both"
   },
   {
     "id": 8,
+    "name": "檸檬紅茶",
+    "priceL": 45,
+    "priceBottle": "none",
+    "customized": "both"
+  },
+  {
+    "id": 9,
     "name": "蜂蜜檸檬",
     "priceL": 55,
     "priceBottle": "none",
     "customized": "cold"
   },
   {
-    "id": 9,
+    "id": 10,
     "name": "檸檬多多",
     "priceL": 60,
     "priceBottle": "none",
     "customized": "cold"
   },
   {
-    "id": 10,
+    "id": 11,
     "name": "檸檬梅子",
     "priceL": 50,
     "priceBottle": "none",
@@ -634,6 +648,8 @@ export const useDrinkStore = defineStore('drink', () => {
   const drinkCount = ref('0')
   // 存放當前所選加料項目
   const drinkAddList = ref([])
+  // 存放飲料待付款的飲料資料
+  const drinkNotPay = ref([])
   // 當飲料系列改變清空已選茶類以及糖冰還有杯子大小的選項
   watch(() => drinkTypeMenu.value, () => {
     drinkItem.value = []
@@ -671,7 +687,8 @@ export const useDrinkStore = defineStore('drink', () => {
     drinkCount,
     drinkSize,
     drinkSetSize,
-    drinkAddList
+    drinkAddList,
+    drinkNotPay
   }
 }, {
   persist: true,

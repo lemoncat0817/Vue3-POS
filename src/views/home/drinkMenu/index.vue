@@ -2,7 +2,7 @@
   <div class="w-full h-full flex flex-col items-center">
     <div class="w-[90%] h-full flex flex-wrap ">
       <div @click="changeItem(item)" v-for="item in currentDrinks" :key="item.id"
-        class="w-28 h-28 bg-red-400 border-solid border-2 border-black rounded-lg m-2 flex justify-center items-center cursor-pointer"
+        class="w-[95px] h-[95px] bg-red-400 border-solid border-2 border-black rounded-lg m-2 flex justify-center items-center cursor-pointer"
         :class="{ 'bg-yellow-300': item.name === drinkStore.drinkItem.name }">
         <p class="w-[85%] text-blue-800 text-xl font-bold flex justify-center">{{ item.name }}</p>
       </div>

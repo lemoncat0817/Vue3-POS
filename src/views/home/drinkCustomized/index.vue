@@ -112,6 +112,7 @@ const changeAdd = (addItem) => {
 // 重置所有選項
 const resetAll = () => {
   drinkStore.drinkTypeMenu = 'drinkSeasonal'
+  drinkStore.drinkItem = []
   drinkStore.drinkSetSugar = ''
   drinkStore.drinkSetIce = ''
   drinkStore.drinkSetSize = 'L杯'
