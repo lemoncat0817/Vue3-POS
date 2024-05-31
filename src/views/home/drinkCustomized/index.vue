@@ -44,10 +44,6 @@
       </div>
     </div>
     <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
-      <div>
-        <el-button type="danger" icon="CaretLeft" class="w-2" disabled></el-button>
-        <el-button type="danger" icon="CaretRight" class="w-2" disabled></el-button>
-      </div>
       <div class="h-full flex items-center">
         <div @click="drinkStore.drinkMenu = 0"
           class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1"
@@ -64,7 +60,6 @@
           <p class="w-full h-full text-xl font-bold ">重置</p>
         </div>
       </div>
-      <p class="text-blue-800">1/1頁</p>
     </div>
   </div>
 </template>

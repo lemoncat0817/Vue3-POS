@@ -1,5 +1,5 @@
 <template>
-  <div class=flex>
+  <div class="flex">
     <div class="w-3/5 h-calc">
       <div class="w-full h-[8%] flex bg-red-300 shadow-xl rounded-lg">
         <div class="w-1/2 h-full">
