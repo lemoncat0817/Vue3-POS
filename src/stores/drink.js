@@ -1,8 +1,9 @@
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 
 export const useDrinkStore = defineStore('drink', () => {
+  // 定義飲料品項資料
   // 定義各種系列的選項資料
   const drinkType = ref([
     {
@@ -510,6 +511,8 @@ export const useDrinkStore = defineStore('drink', () => {
     "priceBottle": 75,
     "customized": "both"
   }])
+
+  // 定義客製化內容的選項資料
   // 定義冰塊的選項資料
   const drinkIce = ref([{
     "id": 1,
@@ -631,6 +634,8 @@ export const useDrinkStore = defineStore('drink', () => {
     "id": 2,
     "name": "瓶裝",
   }])
+
+  // 存放當前所選的選項以及飲料相關資料
   // 存放當前所選的是糖度/冰塊還是加料選單
   // 預設為糖度/冰塊
   const drinkMenu = ref(0)
@@ -650,6 +655,18 @@ export const useDrinkStore = defineStore('drink', () => {
   const drinkAddList = ref([])
   // 存放飲料待付款的飲料資料
   const drinkNotPay = ref([])
+  // 存放折扣金額
+  const drinkCurrentDiscount = ref(0)
+  // 計算目前小計金額
+  const drinkCurrentTotal = computed(() => {
+    if (drinkSetSize.value === 'L杯') {
+      return drinkItem.value.priceL * drinkCount.value + drinkAddList.value.reduce((acc, cur) => acc + cur.price, 0) * drinkCount.value
+    } else {
+      return drinkItem.value.priceBottle * drinkCount.value + drinkAddList.value.reduce((acc, cur) => acc + cur.price, 0) * drinkCount.value
+    }
+  })
+
+  // 判定飲料選項菜單切換後重製其他客製化內容以及所選的品項
   // 當飲料系列改變清空已選茶類以及糖冰還有杯子大小的選項
   watch(() => drinkTypeMenu.value, () => {
     drinkItem.value = []
@@ -688,7 +705,9 @@ export const useDrinkStore = defineStore('drink', () => {
     drinkSize,
     drinkSetSize,
     drinkAddList,
-    drinkNotPay
+    drinkNotPay,
+    drinkCurrentTotal,
+    drinkCurrentDiscount
   }
 }, {
   persist: true,

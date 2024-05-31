@@ -65,6 +65,12 @@
                 <p>{{ row.price }} 元</p>
               </template>
             </el-table-column>
+            <el-table-column align="center" label="加料" prop="addList" min-width="80" />
+            <el-table-column align="center" label="配料金額" min-width="60">
+              <template #default="{ row }">
+                <p> {{ row.addListPrice }} 元</p>
+              </template>
+            </el-table-column>
             <el-table-column align="center" label="數量" prop="count" min-width="60">
               <template #default="{ row }">
                 <p> {{ row.count }} 杯</p>
@@ -73,12 +79,6 @@
             <el-table-column align="center" label="折扣" min-width="60">
               <template #default="{ row }">
                 <p> {{ row.discount }} 元</p>
-              </template>
-            </el-table-column>
-            <el-table-column align="center" label="加料" prop="addList" min-width="80" />
-            <el-table-column align="center" label="配料金額" min-width="60">
-              <template #default="{ row }">
-                <p> {{ row.addListPrice }} 元</p>
               </template>
             </el-table-column>
             <el-table-column align="center" label="小計" min-width="60">
@@ -281,10 +281,10 @@ const addNewDrink = () => {
     name: drinkStore.drinkItem.customized === 'none' ? drinkStore.drinkItem.name : `${drinkStore.drinkItem.name},${drinkStore.drinkSetSugar}/${drinkStore.drinkSetIce},${drinkStore.drinkSetSize}`,
     price: drinkStore.drinkSetSize === 'L杯' ? drinkStore.drinkItem.priceL : drinkStore.drinkItem.priceBottle,
     count: parseInt(drinkStore.drinkCount),
-    discount: 0,
+    discount: drinkStore.drinkCurrentDiscount,
     addList: drinkStore.drinkAddList.map(item => item.name),
     addListPrice: drinkStore.drinkAddList.reduce((acc, cur) => acc + cur.price, 0),
-    totalPrice: 0,
+    totalPrice: drinkStore.drinkCurrentTotal,
   }
   // 送出訂單至待付款區
   drinkStore.drinkNotPay.push(newDrink)
