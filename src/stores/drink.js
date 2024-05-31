@@ -655,8 +655,6 @@ export const useDrinkStore = defineStore('drink', () => {
   const drinkAddList = ref([])
   // 存放飲料待付款的飲料資料
   const drinkNotPay = ref([])
-  // 存放折扣金額
-  const drinkCurrentDiscount = ref(0)
   // 計算目前小計金額
   const drinkCurrentTotal = computed(() => {
     if (drinkSetSize.value === 'L杯') {
@@ -706,8 +704,7 @@ export const useDrinkStore = defineStore('drink', () => {
     drinkSetSize,
     drinkAddList,
     drinkNotPay,
-    drinkCurrentTotal,
-    drinkCurrentDiscount
+    drinkCurrentTotal    
   }
 }, {
   persist: true,

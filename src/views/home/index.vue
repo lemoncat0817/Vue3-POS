@@ -27,7 +27,7 @@
               <p class="w-16 flex justify-end">{{ currentBagCount }} 個</p>
             </div>
             <div class="flex justify-end">
-              <p class="text-blue-500">顧客應付價格 $</p>
+              <p class="text-blue-500">顧客應付價格</p>
               <p class="w-16 flex justify-end">1 元</p>
             </div>
           </div>
@@ -110,9 +110,9 @@
           </el-dialog>
           <button
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">買五送一</button>
-          <button
+          <button @click="ecoDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">環保折扣</button>
-          <button
+          <button @click="bottleDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">瓶裝折扣</button>
           <button @click="openCashier"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">開收銀機</button>
@@ -280,11 +280,17 @@ const addNewDrink = () => {
     id: drinkStore.drinkNotPay.length + 1,
     name: drinkStore.drinkItem.customized === 'none' ? drinkStore.drinkItem.name : `${drinkStore.drinkItem.name},${drinkStore.drinkSetSugar}/${drinkStore.drinkSetIce},${drinkStore.drinkSetSize}`,
     price: drinkStore.drinkSetSize === 'L杯' ? drinkStore.drinkItem.priceL : drinkStore.drinkItem.priceBottle,
+    size: drinkStore.drinkSetSize === 'L杯' ? 'L' : 'bottle',
     count: parseInt(drinkStore.drinkCount),
-    discount: drinkStore.drinkCurrentDiscount,
+    discount: 0,
     addList: drinkStore.drinkAddList.map(item => item.name),
     addListPrice: drinkStore.drinkAddList.reduce((acc, cur) => acc + cur.price, 0),
     totalPrice: drinkStore.drinkCurrentTotal,
+    ecoDiscount: false,
+    bottleDiscount: false,
+    tenOffDiscount: false,
+    fifteenOffDiscount: false,
+    twentyOffDiscount: false,
   }
   // 送出訂單至待付款區
   drinkStore.drinkNotPay.push(newDrink)
@@ -373,6 +379,61 @@ const openCashier = () => {
     type: 'info',
   })
 }
+
+// 折扣相關功能
+// 環保杯折扣
+const ecoDiscount = () => {
+  const notDiscount = drinkSelectList.value.filter(item => item.ecoDiscount === false)
+  const alreadyDiscount = drinkSelectList.value.filter(item => item.ecoDiscount === true)
+  if (notDiscount.length > 0) {
+    notDiscount.forEach(item => {
+      item.ecoDiscount = true
+      item.discount += 5
+      item.totalPrice = item.totalPrice - item.discount * item.count
+    })
+    drinkSelectList.value = [...notDiscount]
+    ElMessage.success('環保折扣修改成功')
+  }
+  if (alreadyDiscount.length > 0) {
+    alreadyDiscount.forEach(item => {
+      item.ecoDiscount = false
+      item.totalPrice = item.totalPrice + item.discount * item.count
+      item.discount -= 5
+    })
+    drinkSelectList.value = [...alreadyDiscount]
+    ElMessage.success('環保折扣修改成功')
+  }
+}
+// 瓶裝折扣
+const bottleDiscount = () => {
+  const notDiscount = drinkSelectList.value.filter(item => item.bottleDiscount === false && item.size === 'bottle')
+  const alreadyDiscount = drinkSelectList.value.filter(item => item.bottleDiscount === true && item.size === 'bottle')
+  if (notDiscount.length === 0 && alreadyDiscount.length === 0) {
+    ElMessageBox.alert('只有美口瓶的商品才可以享有美口瓶環保折扣', '警告', {
+      confirmButtonText: '確定',
+      type: 'warning',
+    })
+  }
+  if (notDiscount.length > 0) {
+    notDiscount.forEach(item => {
+      item.bottleDiscount = true
+      item.discount += 10
+      item.totalPrice = item.totalPrice - item.discount * item.count
+    })
+    drinkSelectList.value = [...notDiscount]
+    ElMessage.success('美口瓶環保折扣修改成功')
+  }
+  if (alreadyDiscount.length > 0) {
+    alreadyDiscount.forEach(item => {
+      item.bottleDiscount = false
+      item.totalPrice = item.totalPrice + item.discount * item.count
+      item.discount -= 10
+    })
+    drinkSelectList.value = [...alreadyDiscount]
+    ElMessage.success('美口瓶環保折扣修改成功')
+  }
+}
+
 // 當前時間相關功能
 // 存放當前時間
 const time = ref('')
