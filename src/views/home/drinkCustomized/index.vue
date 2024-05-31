@@ -47,16 +47,16 @@
       <div class="h-full flex items-center">
         <div @click="drinkStore.drinkMenu = 0"
           class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1"
-          :class="{ 'bg-yellow-300': drinkStore.drinkMenu === 0 }">
+          :class="{ 'bg-yellow-400': drinkStore.drinkMenu === 0 }">
           <p class="w-full h-full text-xl font-bold"> 糖度/冰塊/大小</p>
         </div>
         <div @click="drinkStore.drinkMenu = 1"
           class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 mx-2 "
-          :class="{ 'bg-yellow-300': drinkStore.drinkMenu === 1 }">
+          :class="{ 'bg-yellow-400': drinkStore.drinkMenu === 1 }">
           <p class="w-full h-full text-xl font-bold">加料</p>
         </div>
         <div @click="resetAll"
-          class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 active:bg-yellow-300">
+          class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 active:bg-yellow-400">
           <p class="w-full h-full text-xl font-bold ">重置</p>
         </div>
       </div>

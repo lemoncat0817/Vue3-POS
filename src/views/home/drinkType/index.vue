@@ -3,7 +3,7 @@
     <div class="w-[90%] h-full flex flex-wrap ml-10">
       <div @click="changeType(item.type)" v-for="item in sliceDrinkType" :key="item.id"
         class="w-28 h-28 bg-red-400 border-solid border-2 border-black rounded-lg m-2 flex justify-center items-center cursor-pointer"
-        :class="{ 'bg-yellow-300': item.type === drinkStore.drinkTypeMenu }">
+        :class="{ 'bg-yellow-400': item.type === drinkStore.drinkTypeMenu }">
         <p class="text-blue-800 text-xl font-bold ">{{ item.name }}
         </p>
       </div>

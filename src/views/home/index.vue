@@ -21,9 +21,15 @@
           </div>
         </div>
         <div class="w-1/2 h-full">
-          <div class="flex items-center float-right mr-2">
-            <p class="mr-6 text-blue-500">總價 $</p>
-            <p> 1000</p>
+          <div class="h-full flex flex-col justify-center float-right mr-2">
+            <div class="flex justify-end ">
+              <p class="text-blue-500">購買袋子數量</p>
+              <p class="w-16 flex justify-end">{{ currentBagCount }} 個</p>
+            </div>
+            <div class="flex justify-end">
+              <p class="text-blue-500">顧客應付價格 $</p>
+              <p class="w-16 flex justify-end">1 元</p>
+            </div>
           </div>
         </div>
       </div>
@@ -42,7 +48,7 @@
             </div>
             <div class="w-1/2 h-full flex items-center justify-end">
               <button @click="clearSelectNotPay"
-                class="bg-red-300 text-blue-800 font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 active:bg-yellow-300">清空已選品項</button>
+                class="bg-red-300 text-blue-800 font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 active:bg-yellow-300">刪除已勾選品項</button>
               <button @click="clearNotPay"
                 class="bg-red-300 text-blue-800 font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 active:bg-yellow-300">清空全部品項</button>
             </div>
@@ -86,25 +92,38 @@
       <div class="w-full h-[32%] flex border-solid border-t-2 border-gray-200">
         <div class="w-[60%] h-[95%] mt-2 flex justify-center flex-wrap">
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">載具</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">載具</button>
+          <button @click="openBagDialog"
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">加購袋子</button>
+          <el-dialog v-model="dialogBag" title="加購袋子數量" width="500">
+            <div class="w-[100%] mx-2">
+              <el-slider v-model="bagCount" show-input />
+            </div>
+            <template #footer>
+              <div class="dialog-footer">
+                <el-button @click="dialogBag = false">取消</el-button>
+                <el-button type="primary" @click="changeBagCount">
+                  確定
+                </el-button>
+              </div>
+            </template>
+          </el-dialog>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">加購袋子</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">買五送一</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">買五送一</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">環保折扣</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">環保折扣</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">瓶裝折扣</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">瓶裝折扣</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">開收銀機</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">開收銀機</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">九折</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">九折</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">八五折</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">八五折</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">員工八折</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">員工八折</button>
-          <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl">自訂折扣</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">自訂折扣</button>
         </div>
         <div class="w-[30%] h-[95%] mt-2 bg-red-200 border-solid border-2 border-black rounded-xl  ">
           <div class="w-full h-1/5 flex items-center  ">
@@ -312,6 +331,22 @@ const drinkSelectList = ref([])
 // 待付款項目勾選後將勾選的項目存入已選取清單
 const handleSelectionChange = (drinkSelect) => {
   drinkSelectList.value = drinkSelect
+}
+// 控制加購袋子視窗
+const dialogBag = ref(false)
+// 定義袋子數量
+const bagCount = ref(1)
+// 打開加購袋子選單
+const openBagDialog = () => {
+  bagCount.value = 1
+  dialogBag.value = true
+}
+// 定義目前加購的袋子數量
+const currentBagCount = ref(0)
+// 修改目前加購的袋子數量
+const changeBagCount = () => {
+  currentBagCount.value = bagCount.value
+  dialogBag.value = false
 }
 // 存放當前時間
 const time = ref('')
