@@ -137,8 +137,46 @@
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">八五折</button>
           <button @click="twentyOffDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">員工八折</button>
-          <button
+          <button @click="dialogDiscount = true"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">優惠券</button>
+          <el-dialog v-model="dialogDiscount" title="選擇優惠券" width="500" class="h-[60%] overflow-auto">
+            <div class="w-[100%] mx-2">
+              <div class="h-full flex justify-center items-center">
+                <div @click="changeMoneyDiscount"
+                  class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1"
+                  :class="{ 'bg-yellow-400': discountStore.discountMenu === 0 }">
+                  <p class="w-full h-full text-xl font-bold">現金折扣券</p>
+                </div>
+                <div @click="changePercentDiscount"
+                  class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 mx-2 "
+                  :class="{ 'bg-yellow-400': discountStore.discountMenu === 1 }">
+                  <p class="w-full h-full text-xl font-bold">折數折扣券</p>
+                </div>
+              </div>
+              <div v-if="discountStore.discountMenu === 0" class="mt-2">
+                <div @click="discountStore.moneyDiscountId = item.id" v-for="item in discountStore.moneyDiscount"
+                  :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-red-400 rounded-xl"
+                  :class="{ 'bg-yellow-400': discountStore.moneyDiscountId === item.id }">
+                  <p class="text-3xl text-blue-500 font-bold ">{{ item.name }}</p>
+                </div>
+              </div>
+              <div v-if="discountStore.discountMenu === 1" class="mt-2">
+                <div @click="discountStore.percentDiscountId = item.id" v-for="item in discountStore.percentDiscount"
+                  :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-red-400 rounded-xl"
+                  :class="{ 'bg-yellow-400': discountStore.percentDiscountId === item.id }">
+                  <p class="text-3xl text-blue-500 font-bold ">{{ item.name }}</p>
+                </div>
+              </div>
+            </div>
+            <template #footer>
+              <div class="dialog-footer">
+                <el-button @click="dialogDiscount = false">取消</el-button>
+                <el-button type="primary" @click="changeBagCount">
+                  確定
+                </el-button>
+              </div>
+            </template>
+          </el-dialog>
         </div>
         <div class="w-[30%] h-[95%] mt-2 bg-red-200 border-solid border-2 border-black rounded-xl">
           <div class="w-full h-1/5 flex items-center justify-around">
@@ -213,6 +251,8 @@ import DrinkCustomized from './drinkCustomized/index.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
+import { useDiscountStore } from '@/stores/discount'
+const discountStore = useDiscountStore()
 
 // 杯數相關功能
 // 新增飲料杯數
@@ -558,6 +598,20 @@ const twentyOffDiscount = () => {
       return item
     })
   }
+}
+
+// 優惠券相關功能
+// 控制優惠券視窗開關
+const dialogDiscount = ref(false)
+// 切換至現金折價券介面
+const changeMoneyDiscount = () => {
+  discountStore.discountMenu = 0
+  discountStore.percentDiscountId = 0
+}
+// 切換至現金折價券介面
+const changePercentDiscount = () => {
+  discountStore.discountMenu = 1
+  discountStore.moneyDiscountId = 0
 }
 
 // 當前時間相關功能
