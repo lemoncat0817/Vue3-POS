@@ -76,9 +76,24 @@
                 <p> {{ row.count }} 杯</p>
               </template>
             </el-table-column>
-            <el-table-column align="center" label="折扣" min-width="60">
+            <el-table-column align="center" label="折扣金額" min-width="60">
               <template #default="{ row }">
                 <p> {{ row.discount }} 元</p>
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="使用的折扣" min-width="70">
+              <template #default="{ row }">
+                <div v-if="row.useDiscountPercent === '' && row.useDiscountMoney === ''">
+                  <p>目前無使用折扣</p>
+                </div>
+                <div v-else class="w-full flex justify-center">
+                  <el-tag class="mx-0.5" type="danger" v-if="row.useDiscountPercent != ''">
+                    {{ row.useDiscountPercent }}
+                  </el-tag>
+                  <el-tag class="mx-0.5" type="warning" v-if="row.useDiscountMoney != ''">
+                    {{ row.useDiscountMoney }}
+                  </el-tag>
+                </div>
               </template>
             </el-table-column>
             <el-table-column align="center" label="小計" min-width="60">
@@ -116,11 +131,11 @@
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">瓶裝折扣</button>
           <button @click="openCashier"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">開收銀機</button>
-          <button
+          <button @click="tenOffDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">九折</button>
-          <button
+          <button @click="fifteenOffDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">八五折</button>
-          <button
+          <button @click="twentyOffDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">員工八折</button>
           <button
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">自訂折扣</button>
@@ -286,6 +301,10 @@ const addNewDrink = () => {
     addList: drinkStore.drinkAddList.map(item => item.name),
     addListPrice: drinkStore.drinkAddList.reduce((acc, cur) => acc + cur.price, 0),
     totalPrice: drinkStore.drinkCurrentTotal,
+    currentDiscountPercent: 1,
+    currentDiscountMoney: 0,
+    useDiscountPercent: '',
+    useDiscountMoney: '',
     ecoDiscount: false,
     bottleDiscount: false,
     tenOffDiscount: false,
@@ -381,57 +400,123 @@ const openCashier = () => {
 }
 
 // 折扣相關功能
-// 環保杯折扣
+// 環保折扣
 const ecoDiscount = () => {
-  const notDiscount = drinkSelectList.value.filter(item => item.ecoDiscount === false)
-  const alreadyDiscount = drinkSelectList.value.filter(item => item.ecoDiscount === true)
-  if (notDiscount.length > 0) {
-    notDiscount.forEach(item => {
-      item.ecoDiscount = true
-      item.discount += 5
-      item.totalPrice = item.totalPrice - item.discount * item.count
-    })
-    drinkSelectList.value = [...notDiscount]
-    ElMessage.success('環保折扣修改成功')
-  }
-  if (alreadyDiscount.length > 0) {
-    alreadyDiscount.forEach(item => {
-      item.ecoDiscount = false
-      item.totalPrice = item.totalPrice + item.discount * item.count
-      item.discount -= 5
-    })
-    drinkSelectList.value = [...alreadyDiscount]
-    ElMessage.success('環保折扣修改成功')
-  }
+  drinkSelectList.value.forEach(item => {
+    item.ecoDiscount = !item.ecoDiscount
+    item.bottleDiscount = false
+  })
+  drinkSelectList.value.map(item => {
+    if (item.ecoDiscount) {
+      item.currentDiscountMoney = 5
+      item.useDiscountMoney = '環保折扣'
+      item.totalPrice = (item.price * item.count - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = item.price * item.count - item.totalPrice
+    } else {
+      item.currentDiscountMoney = 0
+      item.useDiscountMoney = ''
+      item.totalPrice = item.price * item.count * item.currentDiscountPercent
+      item.discount = item.price * item.count - item.totalPrice
+    }
+    return item
+  })
 }
 // 瓶裝折扣
 const bottleDiscount = () => {
-  const notDiscount = drinkSelectList.value.filter(item => item.bottleDiscount === false && item.size === 'bottle')
-  const alreadyDiscount = drinkSelectList.value.filter(item => item.bottleDiscount === true && item.size === 'bottle')
-  if (notDiscount.length === 0 && alreadyDiscount.length === 0) {
-    ElMessageBox.alert('只有美口瓶的商品才可以享有美口瓶環保折扣', '警告', {
-      confirmButtonText: '確定',
-      type: 'warning',
+  if (drinkSelectList.value.every(item => item.size === 'bottle')) {
+    drinkSelectList.value.forEach(item => {
+      item.bottleDiscount = !item.bottleDiscount
+      item.ecoDiscount = false
     })
-  }
-  if (notDiscount.length > 0) {
-    notDiscount.forEach(item => {
-      item.bottleDiscount = true
-      item.discount += 10
-      item.totalPrice = item.totalPrice - item.discount * item.count
+  } else {
+    ElMessageBox.alert('選取的所有品項都要是瓶裝才可以使用此功能', '通知', {
+      confirmButtonText: '重新選取品項',
+      type: 'warning'
     })
-    drinkSelectList.value = [...notDiscount]
-    ElMessage.success('美口瓶環保折扣修改成功')
+    return
   }
-  if (alreadyDiscount.length > 0) {
-    alreadyDiscount.forEach(item => {
-      item.bottleDiscount = false
-      item.totalPrice = item.totalPrice + item.discount * item.count
-      item.discount -= 10
-    })
-    drinkSelectList.value = [...alreadyDiscount]
-    ElMessage.success('美口瓶環保折扣修改成功')
-  }
+
+  drinkSelectList.value.map(item => {
+    if (item.bottleDiscount) {
+      item.currentDiscountMoney = 10
+      item.useDiscountMoney = '瓶裝折扣'
+      item.totalPrice = (item.price * item.count - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = item.price * item.count - item.totalPrice
+    } else {
+      item.currentDiscountMoney = 0
+      item.useDiscountMoney = ''
+      item.totalPrice = item.price * item.count * item.currentDiscountPercent
+      item.discount = item.price * item.count - item.totalPrice
+    }
+    return item
+  })
+}
+// 九折
+const tenOffDiscount = () => {
+  drinkSelectList.value.forEach(item => {
+    item.tenOffDiscount = !item.tenOffDiscount
+    item.fifteenOffDiscount = false
+    item.twentyOffDiscount = false
+  })
+  drinkSelectList.value.map(item => {
+    if (item.tenOffDiscount) {
+      item.currentDiscountPercent = 0.9
+      item.useDiscountPercent = '九折'
+      item.totalPrice = (item.price * item.count - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = item.price * item.count - item.totalPrice
+    } else {
+      item.currentDiscountPercent = 1
+      item.useDiscountPercent = ''
+      item.totalPrice = item.price * item.count * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+      item.discount = item.price * item.count - item.totalPrice
+    }
+    return item
+  })
+}
+
+// 八五折
+const fifteenOffDiscount = () => {
+  drinkSelectList.value.forEach(item => {
+    item.fifteenOffDiscount = !item.fifteenOffDiscount
+    item.tenOffDiscount = false
+    item.twentyOffDiscount = false
+  })
+  drinkSelectList.value.map(item => {
+    if (item.fifteenOffDiscount) {
+      item.currentDiscountPercent = 0.85
+      item.useDiscountPercent = '八五折'
+      item.totalPrice = (item.price * item.count - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = item.price * item.count - item.totalPrice
+    } else {
+      item.currentDiscountPercent = 1
+      item.useDiscountPercent = ''
+      item.totalPrice = item.price * item.count * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+      item.discount = item.price * item.count - item.totalPrice
+    }
+    return item
+  })
+}
+// 員工八折
+const twentyOffDiscount = () => {
+  drinkSelectList.value.forEach(item => {
+    item.twentyOffDiscount = !item.twentyOffDiscount
+    item.fifteenOffDiscount = false
+    item.tenOffDiscount = false
+  })
+  drinkSelectList.value.map(item => {
+    if (item.twentyOffDiscount) {
+      item.currentDiscountPercent = 0.8
+      item.useDiscountPercent = '員工八折'
+      item.totalPrice = (item.price * item.count - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = item.price * item.count - item.totalPrice
+    } else {
+      item.currentDiscountPercent = 1
+      item.useDiscountPercent = ''
+      item.totalPrice = item.price * item.count * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+      item.discount = item.price * item.count - item.totalPrice
+    }
+    return item
+  })
 }
 
 // 當前時間相關功能
