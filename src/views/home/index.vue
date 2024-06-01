@@ -138,54 +138,54 @@
           <button @click="twentyOffDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">員工八折</button>
           <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">自訂折扣</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">優惠券</button>
         </div>
-        <div class="w-[30%] h-[95%] mt-2 bg-red-200 border-solid border-2 border-black rounded-xl  ">
-          <div class="w-full h-1/5 flex items-center  ">
+        <div class="w-[30%] h-[95%] mt-2 bg-red-200 border-solid border-2 border-black rounded-xl">
+          <div class="w-full h-1/5 flex items-center justify-around">
             <input v-model="drinkStore.drinkCount" oninput="value=value.replace(/[^\d]/g,'')" maxlength="5"
               class="w-[65%] h-4/5 ml-2 border-solid border-2 border-black text-right p-2 text-blue-800 font-bold text-3xl active:bg-yellow-300" />
             <button @click="addCount('delete')"
-              class="w-16 h-[80%] ml-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-3xl active:bg-yellow-300">←</button>
+              class="w-[20%] h-4/5 ml-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-3xl active:bg-yellow-300">←</button>
           </div>
-          <div class="w-full h-1/5 flex items-center ">
+          <div class="w-full h-1/5 flex items-center justify-around ">
             <button @click="addCount('7')"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">7</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">7</button>
             <button @click="addCount('8')"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">8</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">8</button>
             <button @click="addCount('9')"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">9</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">9</button>
             <button @click="addNewDrink"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">Key</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">Key</button>
           </div>
-          <div class="w-full h-1/5 flex items-center ">
+          <div class="w-full h-1/5 flex items-center justify-around ">
             <button @click="addCount('4')"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">4</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">4</button>
             <button @click="addCount('5')"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">5</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">5</button>
             <button @click="addCount('6')"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">6</button>
+              class="w-[20%] bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">6</button>
             <button @click="drinkStore.drinkCount = '10'"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">10</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">10</button>
           </div>
-          <div class="w-full h-1/5 flex items-center ">
+          <div class="w-full h-1/5 flex items-center justify-around ">
             <button @click="addCount('1')"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">1</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">1</button>
             <button @click="addCount('2')"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">2</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">2</button>
             <button @click="addCount('3')"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">3</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">3</button>
             <button @click="drinkStore.drinkCount = '50'"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">50</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">50</button>
           </div>
-          <div class="w-full h-1/5 flex items-center ">
+          <div class="w-full h-1/5 flex items-center justify-around ">
             <button @click="addCount('0')"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">0</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">0</button>
             <button @click="addCount('00')"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">00</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">00</button>
             <button @click="drinkStore.drinkCount = '0'"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">Reset</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">Reset</button>
             <button @click="drinkStore.drinkCount = '100'"
-              class="w-[20%] ms-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">100</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl active:bg-yellow-300">100</button>
           </div>
         </div>
       </div>
@@ -407,17 +407,17 @@ const ecoDiscount = () => {
     item.bottleDiscount = false
   })
   drinkSelectList.value.map(item => {
-    const originPrice = item.price * item.count + item.addListPrice * item.count
+    const originalPrice = item.price * item.count + item.addListPrice * item.count
     if (item.ecoDiscount) {
       item.currentDiscountMoney = 5
       item.useDiscountMoney = '環保折扣'
-      item.totalPrice = (originPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = originPrice - item.totalPrice
+      item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = originalPrice - item.totalPrice
     } else {
       item.currentDiscountMoney = 0
       item.useDiscountMoney = ''
-      item.totalPrice = originPrice * item.currentDiscountPercent
-      item.discount = originPrice - item.totalPrice
+      item.totalPrice = originalPrice * item.currentDiscountPercent
+      item.discount = originalPrice - item.totalPrice
     }
     return item
   })
@@ -438,17 +438,17 @@ const bottleDiscount = () => {
   }
 
   drinkSelectList.value.map(item => {
-    const originPrice = item.price * item.count + item.addListPrice * item.count
+    const originalPrice = item.price * item.count + item.addListPrice * item.count
     if (item.bottleDiscount) {
       item.currentDiscountMoney = 10
       item.useDiscountMoney = '瓶裝折扣'
-      item.totalPrice = (originPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = originPrice - item.totalPrice
+      item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = originalPrice - item.totalPrice
     } else {
       item.currentDiscountMoney = 0
       item.useDiscountMoney = ''
-      item.totalPrice = originPrice * item.currentDiscountPercent
-      item.discount = originPrice - item.totalPrice
+      item.totalPrice = originalPrice * item.currentDiscountPercent
+      item.discount = originalPrice - item.totalPrice
     }
     return item
   })
@@ -461,17 +461,17 @@ const tenOffDiscount = () => {
     item.twentyOffDiscount = false
   })
   drinkSelectList.value.map(item => {
-    const originPrice = item.price * item.count + item.addListPrice * item.count
+    const originalPrice = item.price * item.count + item.addListPrice * item.count
     if (item.tenOffDiscount) {
       item.currentDiscountPercent = 0.9
       item.useDiscountPercent = '九折'
-      item.totalPrice = (originPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = originPrice - item.totalPrice
+      item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = originalPrice - item.totalPrice
     } else {
       item.currentDiscountPercent = 1
       item.useDiscountPercent = ''
-      item.totalPrice = originPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
-      item.discount = originPrice - item.totalPrice
+      item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+      item.discount = originalPrice - item.totalPrice
     }
     return item
   })
@@ -485,17 +485,17 @@ const fifteenOffDiscount = () => {
     item.twentyOffDiscount = false
   })
   drinkSelectList.value.map(item => {
-    const originPrice = item.price * item.count + item.addListPrice * item.count
+    const originalPrice = item.price * item.count + item.addListPrice * item.count
     if (item.fifteenOffDiscount) {
       item.currentDiscountPercent = 0.85
       item.useDiscountPercent = '八五折'
-      item.totalPrice = (originPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = originPrice - item.totalPrice
+      item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = originalPrice - item.totalPrice
     } else {
       item.currentDiscountPercent = 1
       item.useDiscountPercent = ''
-      item.totalPrice = originPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
-      item.discount = originPrice - item.totalPrice
+      item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+      item.discount = originalPrice - item.totalPrice
     }
     return item
   })
@@ -508,17 +508,17 @@ const twentyOffDiscount = () => {
     item.tenOffDiscount = false
   })
   drinkSelectList.value.map(item => {
-    const originPrice = item.price * item.count + item.addListPrice * item.count
+    const originalPrice = item.price * item.count + item.addListPrice * item.count
     if (item.twentyOffDiscount) {
       item.currentDiscountPercent = 0.8
       item.useDiscountPercent = '員工八折'
-      item.totalPrice = (originPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = originPrice - item.totalPrice
+      item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = originalPrice - item.totalPrice
     } else {
       item.currentDiscountPercent = 1
       item.useDiscountPercent = ''
-      item.totalPrice = originPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
-      item.discount = originPrice - item.totalPrice
+      item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+      item.discount = originalPrice - item.totalPrice
     }
     return item
   })
