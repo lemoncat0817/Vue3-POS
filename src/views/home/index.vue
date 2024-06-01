@@ -402,126 +402,162 @@ const openCashier = () => {
 // 折扣相關功能
 // 環保折扣
 const ecoDiscount = () => {
-  drinkSelectList.value.forEach(item => {
-    item.ecoDiscount = !item.ecoDiscount
-    item.bottleDiscount = false
-  })
-  drinkSelectList.value.map(item => {
-    const originalPrice = item.price * item.count + item.addListPrice * item.count
-    if (item.ecoDiscount) {
-      item.currentDiscountMoney = 5
-      item.useDiscountMoney = '環保折扣'
-      item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = originalPrice - item.totalPrice
-    } else {
-      item.currentDiscountMoney = 0
-      item.useDiscountMoney = ''
-      item.totalPrice = originalPrice * item.currentDiscountPercent
-      item.discount = originalPrice - item.totalPrice
-    }
-    return item
-  })
+  if (drinkSelectList.value <= 0) {
+    ElMessageBox.alert('尚未選取品項', '通知', {
+      confirmButtonText: '繼續選取品項',
+      type: 'warning'
+    })
+  } else {
+    drinkSelectList.value.forEach(item => {
+      item.ecoDiscount = !item.ecoDiscount
+      item.bottleDiscount = false
+    })
+    drinkSelectList.value.map(item => {
+      const originalPrice = item.price * item.count + item.addListPrice * item.count
+      if (item.ecoDiscount) {
+        item.currentDiscountMoney = 5
+        item.useDiscountMoney = '環保折扣'
+        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.discount = originalPrice - item.totalPrice
+      } else {
+        item.currentDiscountMoney = 0
+        item.useDiscountMoney = ''
+        item.totalPrice = originalPrice * item.currentDiscountPercent
+        item.discount = originalPrice - item.totalPrice
+      }
+      return item
+    })
+  }
+
 }
 // 瓶裝折扣
 const bottleDiscount = () => {
-  if (drinkSelectList.value.every(item => item.size === 'bottle')) {
-    drinkSelectList.value.forEach(item => {
-      item.bottleDiscount = !item.bottleDiscount
-      item.ecoDiscount = false
-    })
-  } else {
-    ElMessageBox.alert('選取的所有品項都要是瓶裝才可以使用此功能', '通知', {
-      confirmButtonText: '重新選取品項',
+  if (drinkSelectList.value <= 0) {
+    ElMessageBox.alert('尚未選取品項', '通知', {
+      confirmButtonText: '繼續選取品項',
       type: 'warning'
     })
-    return
-  }
-
-  drinkSelectList.value.map(item => {
-    const originalPrice = item.price * item.count + item.addListPrice * item.count
-    if (item.bottleDiscount) {
-      item.currentDiscountMoney = 10
-      item.useDiscountMoney = '瓶裝折扣'
-      item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = originalPrice - item.totalPrice
+  } else {
+    if (drinkSelectList.value.every(item => item.size === 'bottle')) {
+      drinkSelectList.value.forEach(item => {
+        item.bottleDiscount = !item.bottleDiscount
+        item.ecoDiscount = false
+      })
     } else {
-      item.currentDiscountMoney = 0
-      item.useDiscountMoney = ''
-      item.totalPrice = originalPrice * item.currentDiscountPercent
-      item.discount = originalPrice - item.totalPrice
+      ElMessageBox.alert('選取的所有品項都要是瓶裝才可以使用此功能', '通知', {
+        confirmButtonText: '重新選取品項',
+        type: 'warning'
+      })
+      return
     }
-    return item
-  })
+
+    drinkSelectList.value.map(item => {
+      const originalPrice = item.price * item.count + item.addListPrice * item.count
+      if (item.bottleDiscount) {
+        item.currentDiscountMoney = 10
+        item.useDiscountMoney = '瓶裝折扣'
+        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.discount = originalPrice - item.totalPrice
+      } else {
+        item.currentDiscountMoney = 0
+        item.useDiscountMoney = ''
+        item.totalPrice = originalPrice * item.currentDiscountPercent
+        item.discount = originalPrice - item.totalPrice
+      }
+      return item
+    })
+  }
 }
 // 九折
 const tenOffDiscount = () => {
-  drinkSelectList.value.forEach(item => {
-    item.tenOffDiscount = !item.tenOffDiscount
-    item.fifteenOffDiscount = false
-    item.twentyOffDiscount = false
-  })
-  drinkSelectList.value.map(item => {
-    const originalPrice = item.price * item.count + item.addListPrice * item.count
-    if (item.tenOffDiscount) {
-      item.currentDiscountPercent = 0.9
-      item.useDiscountPercent = '九折'
-      item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = originalPrice - item.totalPrice
-    } else {
-      item.currentDiscountPercent = 1
-      item.useDiscountPercent = ''
-      item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
-      item.discount = originalPrice - item.totalPrice
-    }
-    return item
-  })
+  if (drinkSelectList.value <= 0) {
+    ElMessageBox.alert('尚未選取品項', '通知', {
+      confirmButtonText: '繼續選取品項',
+      type: 'warning'
+    })
+  } else {
+    drinkSelectList.value.forEach(item => {
+      item.tenOffDiscount = !item.tenOffDiscount
+      item.fifteenOffDiscount = false
+      item.twentyOffDiscount = false
+    })
+    drinkSelectList.value.map(item => {
+      const originalPrice = item.price * item.count + item.addListPrice * item.count
+      if (item.tenOffDiscount) {
+        item.currentDiscountPercent = 0.9
+        item.useDiscountPercent = '九折'
+        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.discount = originalPrice - item.totalPrice
+      } else {
+        item.currentDiscountPercent = 1
+        item.useDiscountPercent = ''
+        item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+        item.discount = originalPrice - item.totalPrice
+      }
+      return item
+    })
+  }
 }
 
 // 八五折
 const fifteenOffDiscount = () => {
-  drinkSelectList.value.forEach(item => {
-    item.fifteenOffDiscount = !item.fifteenOffDiscount
-    item.tenOffDiscount = false
-    item.twentyOffDiscount = false
-  })
-  drinkSelectList.value.map(item => {
-    const originalPrice = item.price * item.count + item.addListPrice * item.count
-    if (item.fifteenOffDiscount) {
-      item.currentDiscountPercent = 0.85
-      item.useDiscountPercent = '八五折'
-      item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = originalPrice - item.totalPrice
-    } else {
-      item.currentDiscountPercent = 1
-      item.useDiscountPercent = ''
-      item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
-      item.discount = originalPrice - item.totalPrice
-    }
-    return item
-  })
+  if (drinkSelectList.value <= 0) {
+    ElMessageBox.alert('尚未選取品項', '通知', {
+      confirmButtonText: '繼續選取品項',
+      type: 'warning'
+    })
+  } else {
+    drinkSelectList.value.forEach(item => {
+      item.fifteenOffDiscount = !item.fifteenOffDiscount
+      item.tenOffDiscount = false
+      item.twentyOffDiscount = false
+    })
+    drinkSelectList.value.map(item => {
+      const originalPrice = item.price * item.count + item.addListPrice * item.count
+      if (item.fifteenOffDiscount) {
+        item.currentDiscountPercent = 0.85
+        item.useDiscountPercent = '八五折'
+        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.discount = originalPrice - item.totalPrice
+      } else {
+        item.currentDiscountPercent = 1
+        item.useDiscountPercent = ''
+        item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+        item.discount = originalPrice - item.totalPrice
+      }
+      return item
+    })
+  }
 }
 // 員工八折
 const twentyOffDiscount = () => {
-  drinkSelectList.value.forEach(item => {
-    item.twentyOffDiscount = !item.twentyOffDiscount
-    item.fifteenOffDiscount = false
-    item.tenOffDiscount = false
-  })
-  drinkSelectList.value.map(item => {
-    const originalPrice = item.price * item.count + item.addListPrice * item.count
-    if (item.twentyOffDiscount) {
-      item.currentDiscountPercent = 0.8
-      item.useDiscountPercent = '員工八折'
-      item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = originalPrice - item.totalPrice
-    } else {
-      item.currentDiscountPercent = 1
-      item.useDiscountPercent = ''
-      item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
-      item.discount = originalPrice - item.totalPrice
-    }
-    return item
-  })
+  if (drinkSelectList.value <= 0) {
+    ElMessageBox.alert('尚未選取品項', '通知', {
+      confirmButtonText: '繼續選取品項',
+      type: 'warning'
+    })
+  } else {
+    drinkSelectList.value.forEach(item => {
+      item.twentyOffDiscount = !item.twentyOffDiscount
+      item.fifteenOffDiscount = false
+      item.tenOffDiscount = false
+    })
+    drinkSelectList.value.map(item => {
+      const originalPrice = item.price * item.count + item.addListPrice * item.count
+      if (item.twentyOffDiscount) {
+        item.currentDiscountPercent = 0.8
+        item.useDiscountPercent = '員工八折'
+        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.discount = originalPrice - item.totalPrice
+      } else {
+        item.currentDiscountPercent = 1
+        item.useDiscountPercent = ''
+        item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+        item.discount = originalPrice - item.totalPrice
+      }
+      return item
+    })
+  }
 }
 
 // 當前時間相關功能
