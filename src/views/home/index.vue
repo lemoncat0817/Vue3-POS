@@ -407,16 +407,17 @@ const ecoDiscount = () => {
     item.bottleDiscount = false
   })
   drinkSelectList.value.map(item => {
+    const originPrice = item.price * item.count + item.addListPrice * item.count
     if (item.ecoDiscount) {
       item.currentDiscountMoney = 5
       item.useDiscountMoney = '環保折扣'
-      item.totalPrice = (item.price * item.count - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = item.price * item.count - item.totalPrice
+      item.totalPrice = (originPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = originPrice - item.totalPrice
     } else {
       item.currentDiscountMoney = 0
       item.useDiscountMoney = ''
-      item.totalPrice = item.price * item.count * item.currentDiscountPercent
-      item.discount = item.price * item.count - item.totalPrice
+      item.totalPrice = originPrice * item.currentDiscountPercent
+      item.discount = originPrice - item.totalPrice
     }
     return item
   })
@@ -437,16 +438,17 @@ const bottleDiscount = () => {
   }
 
   drinkSelectList.value.map(item => {
+    const originPrice = item.price * item.count + item.addListPrice * item.count
     if (item.bottleDiscount) {
       item.currentDiscountMoney = 10
       item.useDiscountMoney = '瓶裝折扣'
-      item.totalPrice = (item.price * item.count - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = item.price * item.count - item.totalPrice
+      item.totalPrice = (originPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = originPrice - item.totalPrice
     } else {
       item.currentDiscountMoney = 0
       item.useDiscountMoney = ''
-      item.totalPrice = item.price * item.count * item.currentDiscountPercent
-      item.discount = item.price * item.count - item.totalPrice
+      item.totalPrice = originPrice * item.currentDiscountPercent
+      item.discount = originPrice - item.totalPrice
     }
     return item
   })
@@ -459,16 +461,17 @@ const tenOffDiscount = () => {
     item.twentyOffDiscount = false
   })
   drinkSelectList.value.map(item => {
+    const originPrice = item.price * item.count + item.addListPrice * item.count
     if (item.tenOffDiscount) {
       item.currentDiscountPercent = 0.9
       item.useDiscountPercent = '九折'
-      item.totalPrice = (item.price * item.count - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = item.price * item.count - item.totalPrice
+      item.totalPrice = (originPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = originPrice - item.totalPrice
     } else {
       item.currentDiscountPercent = 1
       item.useDiscountPercent = ''
-      item.totalPrice = item.price * item.count * item.currentDiscountPercent - item.currentDiscountMoney * item.count
-      item.discount = item.price * item.count - item.totalPrice
+      item.totalPrice = originPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+      item.discount = originPrice - item.totalPrice
     }
     return item
   })
@@ -482,16 +485,17 @@ const fifteenOffDiscount = () => {
     item.twentyOffDiscount = false
   })
   drinkSelectList.value.map(item => {
+    const originPrice = item.price * item.count + item.addListPrice * item.count
     if (item.fifteenOffDiscount) {
       item.currentDiscountPercent = 0.85
       item.useDiscountPercent = '八五折'
-      item.totalPrice = (item.price * item.count - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = item.price * item.count - item.totalPrice
+      item.totalPrice = (originPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = originPrice - item.totalPrice
     } else {
       item.currentDiscountPercent = 1
       item.useDiscountPercent = ''
-      item.totalPrice = item.price * item.count * item.currentDiscountPercent - item.currentDiscountMoney * item.count
-      item.discount = item.price * item.count - item.totalPrice
+      item.totalPrice = originPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+      item.discount = originPrice - item.totalPrice
     }
     return item
   })
@@ -504,16 +508,17 @@ const twentyOffDiscount = () => {
     item.tenOffDiscount = false
   })
   drinkSelectList.value.map(item => {
+    const originPrice = item.price * item.count + item.addListPrice * item.count
     if (item.twentyOffDiscount) {
       item.currentDiscountPercent = 0.8
       item.useDiscountPercent = '員工八折'
-      item.totalPrice = (item.price * item.count - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
-      item.discount = item.price * item.count - item.totalPrice
+      item.totalPrice = (originPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+      item.discount = originPrice - item.totalPrice
     } else {
       item.currentDiscountPercent = 1
       item.useDiscountPercent = ''
-      item.totalPrice = item.price * item.count * item.currentDiscountPercent - item.currentDiscountMoney * item.count
-      item.discount = item.price * item.count - item.totalPrice
+      item.totalPrice = originPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+      item.discount = originPrice - item.totalPrice
     }
     return item
   })
