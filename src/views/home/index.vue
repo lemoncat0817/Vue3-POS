@@ -81,7 +81,7 @@
                 <p> {{ row.discount }} 元</p>
               </template>
             </el-table-column>
-            <el-table-column align="center" label="使用的折扣" min-width="70">
+            <el-table-column align="center" label="使用的折扣" min-width="80">
               <template #default="{ row }">
                 <div v-if="row.useDiscountPercent === '' && row.useDiscountMoney === ''">
                   <p>目前無使用折扣</p>
@@ -298,7 +298,7 @@ const addNewDrink = () => {
     size: drinkStore.drinkSetSize === 'L杯' ? 'L' : 'bottle',
     count: parseInt(drinkStore.drinkCount),
     discount: 0,
-    addList: drinkStore.drinkAddList.map(item => item.name),
+    addList: drinkStore.drinkAddList.map(item => item.name) == '' ? '無添加配料' : drinkStore.drinkAddList.map(item => item.name),
     addListPrice: drinkStore.drinkAddList.reduce((acc, cur) => acc + cur.price, 0),
     totalPrice: drinkStore.drinkCurrentTotal,
     currentDiscountPercent: 1,
