@@ -1,5 +1,6 @@
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { defineStore } from 'pinia'
+import { ElMessageBox } from 'element-plus'
 import { useDiscountStore } from '@/stores/discount'
 const discountStore = useDiscountStore()
 
@@ -683,15 +684,50 @@ export const useDrinkStore = defineStore('drink', () => {
     drinkSetSize.value = 'L杯'
     drinkAddList.value = []
   })
+  // 初始化標誌
+  const initialized = ref(false)
+  // 組件掛載完成後設置為 true
+  onMounted(() => {
+    initialized.value = true
+  })
+  // 判定待付款清單是否清空
+  watch(() => drinkNotPay.value, () => {
+    // 如果未初始化，直接返回
+    if (!initialized.value) return
+    // 如果清單是空的清楚已添加的袋子以及重置套用的優惠券
+    if (drinkNotPay.value.length === 0) {
+      currentBagCount.value = 0
+      discountStore.moneySelectingDiscountId = 0
+      discountStore.moneyDiscountId = 0
+      discountStore.currentMoneyDiscount = 0
+      discountStore.percentDiscountId = 0
+      discountStore.currentPercentDiscount = 0
+      discountStore.percentSelectingDiscountId = 0
+      ElMessageBox.alert('待付款清單已無品項，套用優惠券以及加購的袋子數量已重置', '通知', {
+        confirmButtonText: '繼續選取品項',
+        type: 'info',
+      })
+    }
+  })
 
   // 購物袋相關功能
   // 定義目前加購的袋子數量
   const currentBagCount = ref(0)
-
   // 送出訂單前顧客應付總額結算
   // 顧客應付款金額
   const drinkPayPrice = computed(() => {
-    return drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0) + currentBagCount.value
+    // 如果有套用優惠券
+    if (discountStore.moneyDiscountId != 0) {
+      return Math.round(Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value - discountStore.currentMoneyDiscount)
+    } else if (discountStore.percentDiscountId != 0) {
+      return Math.round((Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value) * discountStore.currentPercentDiscount)
+    } else {
+      return Math.round(Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value)
+    }
+  })
+  // 優惠券折抵額度
+  const useDiscountPrice = computed(() => {
+    return Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value - drinkPayPrice.value
   })
 
   return {
@@ -719,7 +755,8 @@ export const useDrinkStore = defineStore('drink', () => {
     drinkNotPay,
     drinkCurrentTotal,
     drinkPayPrice,
-    currentBagCount
+    currentBagCount,
+    useDiscountPrice
   }
 }, {
   persist: true,

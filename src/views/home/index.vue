@@ -21,14 +21,24 @@
           </div>
         </div>
         <div class="w-1/2 h-full">
-          <div class="h-full flex flex-col justify-center float-right mr-2">
-            <div class="flex justify-end ">
+          <div class="h-full flex justify-center float-right mr-2">
+            <div class="flex mr-2">
               <p class="text-blue-500 mr-2">購買袋子數量</p>
               <p class=" flex justify-end">{{ drinkStore.currentBagCount }} 個</p>
             </div>
+            <div class="flex-col">
+              <div class="flex justify-end">
+              <p class="text-blue-500 mr-2">目前累積金額</p>
+              <p class=" flex justify-end">$ {{ (Math.round(drinkStore.drinkNotPay.reduce((acc, cur) => acc + cur.totalPrice, 0)) + drinkStore.currentBagCount) }} 元</p>
+            </div>
+              <div class="flex justify-end">
+              <p class="text-blue-500 mr-2">優惠券已折抵</p>
+              <p class=" flex justify-end">{{ drinkStore.useDiscountPrice }} 元</p>
+            </div>
             <div class="flex justify-end">
               <p class="text-blue-500 mr-2">顧客應付價格</p>
-              <p class=" flex justify-end">{{ drinkStore.drinkPayPrice }} 元</p>
+              <p class=" flex justify-end">$ {{ drinkStore.drinkPayPrice }} 元</p>
+            </div>
             </div>
           </div>
         </div>
@@ -78,7 +88,7 @@
             </el-table-column>
             <el-table-column align="center" label="折扣金額" min-width="60">
               <template #default="{ row }">
-                <p> {{ row.discount }} 元</p>
+                <p> {{row.discount }} 元</p>
               </template>
             </el-table-column>
             <el-table-column align="center" label="使用的折扣" min-width="80">
@@ -472,12 +482,12 @@ const freeDiscount = () => {
         item.useDiscountFree = '招待'
         item.useDiscountMoney = ''
         item.useDiscountPercent = ''
-        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       } else {
         item.currentDiscountPercent = 1
         item.useDiscountFree = ''
-        item.totalPrice = originalPrice * item.currentDiscountPercent
+        item.totalPrice = Math.round(originalPrice * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       }
       return item
@@ -507,12 +517,12 @@ const ecoDiscount = () => {
       if (item.ecoDiscount) {
         item.currentDiscountMoney = 5
         item.useDiscountMoney = '環保折扣'
-        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       } else {
         item.currentDiscountMoney = 0
         item.useDiscountMoney = ''
-        item.totalPrice = originalPrice * item.currentDiscountPercent
+        item.totalPrice = Math.round(originalPrice * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       }
       return item
@@ -551,12 +561,12 @@ const bottleDiscount = () => {
       if (item.bottleDiscount) {
         item.currentDiscountMoney = 10
         item.useDiscountMoney = '瓶裝折扣'
-        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       } else {
         item.currentDiscountMoney = 0
         item.useDiscountMoney = ''
-        item.totalPrice = originalPrice * item.currentDiscountPercent
+        item.totalPrice = Math.round(originalPrice * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       }
       return item
@@ -586,12 +596,12 @@ const tenOffDiscount = () => {
       if (item.tenOffDiscount) {
         item.currentDiscountPercent = 0.9
         item.useDiscountPercent = '九折'
-        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       } else {
         item.currentDiscountPercent = 1
         item.useDiscountPercent = ''
-        item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+        item.totalPrice = Math.round(originalPrice * item.currentDiscountPercent) - item.currentDiscountMoney * item.count
         item.discount = originalPrice - item.totalPrice
       }
       return item
@@ -622,12 +632,12 @@ const fifteenOffDiscount = () => {
       if (item.fifteenOffDiscount) {
         item.currentDiscountPercent = 0.85
         item.useDiscountPercent = '八五折'
-        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.totalPrice = Math.round(Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent))
         item.discount = originalPrice - item.totalPrice
       } else {
         item.currentDiscountPercent = 1
         item.useDiscountPercent = ''
-        item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+        item.totalPrice = Math.round(Math.round(originalPrice * item.currentDiscountPercent) - item.currentDiscountMoney * item.count)
         item.discount = originalPrice - item.totalPrice
       }
       return item
@@ -657,12 +667,12 @@ const twentyOffDiscount = () => {
       if (item.twentyOffDiscount) {
         item.currentDiscountPercent = 0.8
         item.useDiscountPercent = '員工八折'
-        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       } else {
         item.currentDiscountPercent = 1
         item.useDiscountPercent = ''
-        item.totalPrice = originalPrice * item.currentDiscountPercent - item.currentDiscountMoney * item.count
+        item.totalPrice = Math.round(originalPrice * item.currentDiscountPercent) - item.currentDiscountMoney * item.count
         item.discount = originalPrice - item.totalPrice
       }
       return item
@@ -675,9 +685,16 @@ const twentyOffDiscount = () => {
 const dialogDiscount = ref(false)
 // 打開折價券菜單
 const openDiscountMenu = () => {
-  discountStore.moneySelectingDiscountId = discountStore.moneyDiscountId
+  if(drinkStore.drinkNotPay.length <=0){
+    ElMessageBox.alert('待付款清單是空的無法使用優惠券', '警告', {
+      confirmButtonText: '繼續選取',
+      type: 'warning',
+    })
+  }else{
+    discountStore.moneySelectingDiscountId = discountStore.moneyDiscountId
   discountStore.percentSelectingDiscountId = discountStore.percentDiscountId
   dialogDiscount.value = true
+  }
 }
 // 切換至現金折價券介面
 const changeMoneyDiscount = () => {
@@ -739,7 +756,6 @@ const useDiscount = () => {
     ElMessage.success('成功取消已套用的優惠券')
   }
 }
-
 
 // 當前時間相關功能
 // 存放當前時間
