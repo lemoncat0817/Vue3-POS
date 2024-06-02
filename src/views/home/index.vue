@@ -4,9 +4,9 @@
     <div class="w-3/5 h-calc">
       <!-- 資訊顯示欄 -->
       <div class="w-full h-[8%] flex bg-red-300 shadow-xl rounded-lg">
-        <!-- 資訊顯示欄左半部 -->        
+        <!-- 資訊顯示欄左半部 -->
         <div class="w-1/2 h-full">
-          <!-- 當前時間 -->      
+          <!-- 當前時間 -->
           <div class="w-full h-1/2 flex items-center">
             <div class="ml-2 text-lg flex">
               <p class="mr-2 font-bold text-lg">{{ getDate() }}</p>
@@ -31,24 +31,26 @@
             <!-- 購買袋子數量 -->
             <div class="flex mr-2">
               <p class="text-blue-500 mr-2 font-bold ">購買袋子數量</p>
-              <p class=" flex justify-end">{{ drinkStore.currentBagCount }} 個</p>
+              <p class=" flex justify-end font-bold">{{ drinkStore.currentBagCount }} 個</p>
             </div>
             <div class="flex-col">
               <!-- 目前累積金額 -->
               <div class="flex justify-end">
-              <p class="text-blue-500 mr-2 font-bold ">目前累積金額</p>
-              <p class=" flex justify-end">$ {{ (Math.round(drinkStore.drinkNotPay.reduce((acc, cur) => acc + cur.totalPrice, 0)) + drinkStore.currentBagCount) }} 元</p>
-            </div>
+                <p class="text-blue-500 mr-2 font-bold ">目前累積金額</p>
+                <p class=" flex justify-end font-bold">$ {{ (Math.round(drinkStore.drinkNotPay.reduce((acc, cur) => acc
+                  +
+                  cur.totalPrice, 0)) + drinkStore.currentBagCount) }} 元</p>
+              </div>
               <!-- 優惠券已折抵金額 -->
               <div class="flex justify-end">
-              <p class="text-blue-500 mr-2 font-bold ">優惠券已折抵</p>
-              <p class=" flex justify-end">{{ drinkStore.useDiscountPrice }} 元</p>
-            </div>
-            <!-- 顧客應付價格 -->
-            <div class="flex justify-end">
-              <p class="text-blue-500 mr-2 font-bold">顧客應付價格</p>
-              <p class=" flex justify-end">$ {{ drinkStore.drinkPayPrice }} 元</p>
-            </div>
+                <p class="text-blue-500 mr-2 font-bold ">優惠券已折抵</p>
+                <p class=" flex justify-end font-bold">{{ drinkStore.useDiscountPrice }} 元</p>
+              </div>
+              <!-- 顧客應付價格 -->
+              <div class="flex justify-end">
+                <p class="text-blue-500 mr-2 font-bold">顧客應付價格</p>
+                <p class=" flex justify-end font-bold">$ {{ drinkStore.drinkPayPrice }} 元</p>
+              </div>
             </div>
           </div>
         </div>
@@ -58,26 +60,28 @@
         <!--  -->
         <div class="w-full h-[10%] bg-gray-200 shadow-xl rounded-lg flex">
           <!-- 單號、服務人員、功能按鈕左半部 -->
-          <div class="w-1/2 h-full flex items-center">
+          <div class="w-1/2 h-full flex justify-around items-center">
             <!-- 單號 -->
             <div class="flex h-1/2 items-center">
-              <p class="mx-2 text-blue-500 font-bold text-lg">單號:</p>
-              <p class="text-red-500 font-bold text-lg"> {{orderStore.currentOrderNumber}}</p>
+              <p class="mr-2 text-blue-500 font-bold text-lg">單號:</p>
+              <p class="text-red-500 font-bold text-lg"> {{ orderStore.currentOrderNumber }}</p>
             </div>
-          </div>
-          <!-- 單號、服務人員、功能按鈕右半部 -->
-          <div class="w-1/2 h-full flex items-center">
             <!-- 服務人員 -->
             <div class="w-1/2 h-full flex items-center">
               <p class="text-blue-500 mr-2 font-bold text-lg">服務人員:</p>
               <p class="text-red-400 font-bold text-lg ">愛喝奶茶的貓咪</p>
             </div>
+          </div>
+          <!-- 單號、服務人員、功能按鈕右半部 -->
+          <div class="w-1/2 h-full flex items-center">
             <!-- 功能按鈕 -->
-            <div class="w-1/2 h-full flex items-center justify-end">
+            <div class="w-full h-full flex items-center justify-end">
               <button @click="clearSelectNotPay"
-                class="bg-red-300 text-blue-800 font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">刪除已勾選品項</button>
+                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">刪除已勾選品項</button>
               <button @click="clearNotPay"
-                class="bg-red-300 text-blue-800 font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">清空全部品項</button>
+                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">清空全部品項</button>
+              <button @click="sendOrder"
+                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">送出訂單</button>
             </div>
           </div>
         </div>
@@ -106,7 +110,7 @@
             </el-table-column>
             <el-table-column align="center" label="折扣金額" min-width="60">
               <template #default="{ row }">
-                <p> {{row.discount }} 元</p>
+                <p> {{ row.discount }} 元</p>
               </template>
             </el-table-column>
             <el-table-column align="center" label="使用的折扣" min-width="80">
@@ -724,15 +728,15 @@ const twentyOffDiscount = () => {
 const dialogDiscount = ref(false)
 // 打開折價券菜單
 const openDiscountMenu = () => {
-  if(drinkStore.drinkNotPay.length <=0){
+  if (drinkStore.drinkNotPay.length <= 0) {
     ElMessageBox.alert('待付款清單是空的無法使用優惠券', '警告', {
       confirmButtonText: '繼續選取',
       type: 'warning',
     })
-  }else{
+  } else {
     discountStore.moneySelectingDiscountId = discountStore.moneyDiscountId
-  discountStore.percentSelectingDiscountId = discountStore.percentDiscountId
-  dialogDiscount.value = true
+    discountStore.percentSelectingDiscountId = discountStore.percentDiscountId
+    dialogDiscount.value = true
   }
 }
 // 切換至現金折價券介面
@@ -776,8 +780,8 @@ const useDiscount = () => {
     discountStore.percentDiscountId = 0
     dialogDiscount.value = false
     ElMessage.success(`使用${currentMoneyDiscountName}成功`)
-  } 
-    // 使用折數折價券
+  }
+  // 使用折數折價券
   if (discountStore.percentSelectingDiscountId != 0) {
     discountStore.percentDiscountId = discountStore.percentSelectingDiscountId
     discountStore.currentPercentDiscount = discountStore.percentDiscount.find(item => item.id === discountStore.percentDiscountId).discountMoney
@@ -785,9 +789,9 @@ const useDiscount = () => {
     discountStore.moneyDiscountId = 0
     dialogDiscount.value = false
     ElMessage.success(`使用${currentPercentDiscountName}成功`)
-  } 
-    // 取消套用任何折價券
-  if(discountStore.moneySelectingDiscountId === 0 && discountStore.percentSelectingDiscountId  ===0) {
+  }
+  // 取消套用任何折價券
+  if (discountStore.moneySelectingDiscountId === 0 && discountStore.percentSelectingDiscountId === 0) {
     discountStore.currentMoneyDiscount = 0
     discountStore.moneyDiscountId = 0
     discountStore.percentDiscountId = 0
@@ -795,6 +799,19 @@ const useDiscount = () => {
     ElMessage.success('成功取消已套用的優惠券')
   }
 }
+
+// 送出訂單相關功能
+// 送出訂單
+const sendOrder = () => {
+  if (drinkStore.drinkNotPay.length <= 0 && drinkStore.currentBagCount <= 0) {
+    ElMessageBox.alert('訂單內沒有品項無法送單', '警告', {
+      confirmButtonText: '添加品項',
+      type: 'warning',
+    })
+    return
+  }
+}
+
 
 // 當前時間相關功能
 // 存放當前時間

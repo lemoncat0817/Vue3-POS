@@ -12,11 +12,19 @@ export const constantRoutes = [
     redirect: '/home',
     children: [
       {
-        path: 'home',
+        path: '/home',
         name: 'home',
         component: () => import('@/views/home/index.vue'),
         meta: {
-          title: '首頁'
+          title: '點餐'
+        }
+      },
+      {
+        path: '/order',
+        name: 'order',
+        component: () => import('@/views/order/index.vue'),
+        meta: {
+          title: '查看訂單'
         }
       }
     ]
