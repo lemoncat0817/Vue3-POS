@@ -1,6 +1,8 @@
 <template>
-  <div class="flex justify-center items-center h-screen bg-gray-100">
-    order
+  <div class="w-full flex justify-center h-calc overflow-y-auto">
+    <div class="w-4/5">
+
+    </div>
   </div>
 </template>
 

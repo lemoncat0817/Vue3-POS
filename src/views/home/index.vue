@@ -1,7 +1,7 @@
 <template>
-  <div class="flex">
+  <div class="flex overflow-y-scroll">
     <!-- 左半部 -->
-    <div class="w-3/5 h-calc">
+    <div class="w-3/5">
       <!-- 資訊顯示欄 -->
       <div class="w-full h-[70px] flex bg-red-300 shadow-xl rounded-lg">
         <!-- 資訊顯示欄左半部 -->
@@ -279,7 +279,7 @@
       </div>
     </div>
     <!-- 右半部 -->
-    <div class="w-2/5 h-calc border-solid border-l-2 border-gray-200 ">
+    <div class="w-2/5  border-solid border-l-2 border-gray-200 ">
       <!-- 飲料類型 -->
       <div class="w-full h-[308px] ">
         <DrinkType />
@@ -424,20 +424,27 @@ const addNewDrink = () => {
 // 刪除待付款的清單項目相關功能
 // 清除待付款的清單所有項目
 const clearNotPay = () => {
-  ElMessageBox.confirm(
-    '確定要清除所有待付款的飲品嗎?',
-    '警告',
-    {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  ).then(() => {
-    ElMessage.success('清除成功')
-    drinkStore.drinkNotPay = []
-  }).catch(() => {
-    ElMessage.error('取消操作')
-  })
+  if (drinkSelectList.value.length === 0) {
+    ElMessageBox.alert('待付款清單為空，無法清空項目', '通知', {
+      confirmButtonText: '繼續選取品項',
+      type: 'info',
+    })
+  } else {
+    ElMessageBox.confirm(
+      '確定要清除所有待付款的飲品嗎?',
+      '警告',
+      {
+        confirmButtonText: '確定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    ).then(() => {
+      ElMessage.success('清除成功')
+      drinkStore.drinkNotPay = []
+    }).catch(() => {
+      ElMessage.error('取消操作')
+    })
+  }
 }
 // 定義已勾選的待付款項目的清單
 const drinkSelectList = ref([])
@@ -447,20 +454,27 @@ const handleSelectionChange = (drinkSelect) => {
 }
 // 清除待付款的清單已選項目
 const clearSelectNotPay = () => {
-  ElMessageBox.confirm(
-    '確定要清除所有已選的待付款的飲品嗎?',
-    '警告',
-    {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  ).then(() => {
-    ElMessage.success('清除成功')
-    drinkStore.drinkNotPay = drinkStore.drinkNotPay.filter(item => !drinkSelectList.value.includes(item))
-  }).catch(() => {
-    ElMessage.error('取消操作')
-  })
+  if (drinkSelectList.value.length === 0) {
+    ElMessageBox.alert('尚未選取品項', '通知', {
+      confirmButtonText: '繼續選取品項',
+      type: 'info',
+    })
+  } else {
+    ElMessageBox.confirm(
+      '確定要清除所有已選的待付款的飲品嗎?',
+      '警告',
+      {
+        confirmButtonText: '確定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    ).then(() => {
+      ElMessage.success('清除成功')
+      drinkStore.drinkNotPay = drinkStore.drinkNotPay.filter(item => !drinkSelectList.value.includes(item))
+    }).catch(() => {
+      ElMessage.error('取消操作')
+    })
+  }
 }
 
 // 控制袋子數量相關功能
@@ -482,6 +496,7 @@ const closeBagCount = () => {
 const changeBagCount = () => {
   drinkStore.currentBagCount = bagCount.value
   dialogBag.value = false
+  ElMessage.success('修改加購袋子數量成功')
 }
 
 // 掃描載具已及開啟收銀機相關功能
@@ -506,7 +521,7 @@ const freeDiscount = () => {
   if (drinkSelectList.value <= 0) {
     ElMessageBox.alert('尚未選取品項', '通知', {
       confirmButtonText: '繼續選取品項',
-      type: 'warning'
+      type: 'info'
     })
   } else {
     drinkSelectList.value.forEach(item => {
@@ -542,13 +557,13 @@ const ecoDiscount = () => {
   if (drinkSelectList.value <= 0) {
     ElMessageBox.alert('尚未選取品項', '通知', {
       confirmButtonText: '繼續選取品項',
-      type: 'warning'
+      type: 'info'
     })
   }
   else if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '警告', {
+    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '通知', {
       confirmButtonText: '重新選取',
-      type: 'warning'
+      type: 'info'
     })
   } else {
     drinkSelectList.value.forEach(item => {
@@ -577,13 +592,13 @@ const bottleDiscount = () => {
   if (drinkSelectList.value <= 0) {
     ElMessageBox.alert('尚未選取品項', '通知', {
       confirmButtonText: '繼續選取品項',
-      type: 'warning'
+      type: 'info'
     })
   } else {
     if (drinkSelectList.value.every(item => item.freeDiscount)) {
-      ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '警告', {
+      ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '通知', {
         confirmButtonText: '重新選取',
-        type: 'warning'
+        type: 'info'
       })
     }
     else if (drinkSelectList.value.every(item => item.size === 'bottle')) {
@@ -594,7 +609,7 @@ const bottleDiscount = () => {
     } else {
       ElMessageBox.alert('選取的所有品項都要是瓶裝才可以使用此功能', '通知', {
         confirmButtonText: '重新選取品項',
-        type: 'warning'
+        type: 'info'
       })
       return
     }
@@ -621,12 +636,12 @@ const tenOffDiscount = () => {
   if (drinkSelectList.value <= 0) {
     ElMessageBox.alert('尚未選取品項', '通知', {
       confirmButtonText: '繼續選取品項',
-      type: 'warning'
+      type: 'info'
     })
   } else if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '警告', {
+    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '通知', {
       confirmButtonText: '重新選取',
-      type: 'warning'
+      type: 'info'
     })
   } else {
     drinkSelectList.value.forEach(item => {
@@ -657,12 +672,12 @@ const fifteenOffDiscount = () => {
   if (drinkSelectList.value <= 0) {
     ElMessageBox.alert('尚未選取品項', '通知', {
       confirmButtonText: '繼續選取品項',
-      type: 'warning'
+      type: 'info'
     })
   } else if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '警告', {
+    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '通知', {
       confirmButtonText: '重新選取',
-      type: 'warning'
+      type: 'info'
     })
   } else {
     drinkSelectList.value.forEach(item => {
@@ -692,12 +707,12 @@ const twentyOffDiscount = () => {
   if (drinkSelectList.value <= 0) {
     ElMessageBox.alert('尚未選取品項', '通知', {
       confirmButtonText: '繼續選取品項',
-      type: 'warning'
+      type: 'info'
     })
   } else if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '警告', {
+    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '通知', {
       confirmButtonText: '重新選取',
-      type: 'warning'
+      type: 'info'
     })
   } else {
     drinkSelectList.value.forEach(item => {
@@ -729,9 +744,9 @@ const dialogDiscount = ref(false)
 // 打開折價券菜單
 const openDiscountMenu = () => {
   if (drinkStore.drinkNotPay.length <= 0) {
-    ElMessageBox.alert('待付款清單是空的無法使用優惠券', '警告', {
+    ElMessageBox.alert('待付款清單是空的無法使用優惠券', '通知', {
       confirmButtonText: '繼續選取',
-      type: 'warning',
+      type: 'info',
     })
   } else {
     discountStore.moneySelectingDiscountId = discountStore.moneyDiscountId
@@ -804,9 +819,9 @@ const useDiscount = () => {
 // 送出訂單
 const sendOrder = () => {
   if (drinkStore.drinkNotPay.length <= 0 && drinkStore.currentBagCount <= 0) {
-    ElMessageBox.alert('訂單內沒有品項無法送單', '警告', {
-      confirmButtonText: '添加品項',
-      type: 'warning',
+    ElMessageBox.alert('訂單內沒有品項無法送單', '通知', {
+      confirmButtonText: '繼續添加品項',
+      type: 'info',
     })
     return
   }
