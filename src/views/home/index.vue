@@ -83,10 +83,13 @@
             </el-table-column>
             <el-table-column align="center" label="使用的折扣" min-width="80">
               <template #default="{ row }">
-                <div v-if="row.useDiscountPercent === '' && row.useDiscountMoney === ''">
+                <div v-if="row.useDiscountPercent === '' && row.useDiscountMoney === '' && row.useDiscountFree === ''">
                   <p>目前無使用折扣</p>
                 </div>
                 <div v-else class="w-full flex justify-center">
+                  <el-tag class="mx-0.5" type="primary" v-if="row.useDiscountFree != ''">
+                    {{ row.useDiscountFree }}
+                  </el-tag>
                   <el-tag class="mx-0.5" type="danger" v-if="row.useDiscountPercent != ''">
                     {{ row.useDiscountPercent }}
                   </el-tag>
@@ -123,8 +126,8 @@
               </div>
             </template>
           </el-dialog>
-          <button
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">買五送一</button>
+          <button @click="freeDiscount"
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">免費招待</button>
           <button @click="ecoDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl active:bg-yellow-300">環保折扣</button>
           <button @click="bottleDiscount"
@@ -171,7 +174,7 @@
             <template #footer>
               <div class="dialog-footer">
                 <el-button @click="dialogDiscount = false">取消</el-button>
-                <el-button type="primary" @click="changeBagCount">
+                <el-button type="primary">
                   確定
                 </el-button>
               </div>
@@ -345,6 +348,8 @@ const addNewDrink = () => {
     currentDiscountMoney: 0,
     useDiscountPercent: '',
     useDiscountMoney: '',
+    useDiscountFree: '',
+    freeDiscount: false,
     ecoDiscount: false,
     bottleDiscount: false,
     tenOffDiscount: false,
@@ -440,11 +445,53 @@ const openCashier = () => {
 }
 
 // 折扣相關功能
+// 免費招待
+const freeDiscount = () => {
+  if (drinkSelectList.value <= 0) {
+    ElMessageBox.alert('尚未選取品項', '通知', {
+      confirmButtonText: '繼續選取品項',
+      type: 'warning'
+    })
+  } else {
+    drinkSelectList.value.forEach(item => {
+      item.freeDiscount = !item.freeDiscount
+      item.ecoDiscount = false
+      item.bottleDiscount = false
+      item.tenOffDiscountDiscount = false
+      item.fifteenOffDiscountDiscount = false
+      item.twentyOffDiscountDiscount = false
+    })
+    drinkSelectList.value.map(item => {
+      const originalPrice = item.price * item.count + item.addListPrice * item.count
+      if (item.freeDiscount) {
+        item.currentDiscountMoney = 0
+        item.currentDiscountPercent = 0
+        item.useDiscountFree = '招待'
+        item.useDiscountMoney = ''
+        item.useDiscountPercent = ''
+        item.totalPrice = (originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent
+        item.discount = originalPrice - item.totalPrice
+      } else {
+        item.currentDiscountPercent = 1
+        item.useDiscountFree = ''
+        item.totalPrice = originalPrice * item.currentDiscountPercent
+        item.discount = originalPrice - item.totalPrice
+      }
+      return item
+    })
+  }
+}
 // 環保折扣
 const ecoDiscount = () => {
   if (drinkSelectList.value <= 0) {
     ElMessageBox.alert('尚未選取品項', '通知', {
       confirmButtonText: '繼續選取品項',
+      type: 'warning'
+    })
+  }
+  else if (drinkSelectList.value.every(item => item.freeDiscount)) {
+    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '警告', {
+      confirmButtonText: '重新選取',
       type: 'warning'
     })
   } else {
@@ -468,7 +515,6 @@ const ecoDiscount = () => {
       return item
     })
   }
-
 }
 // 瓶裝折扣
 const bottleDiscount = () => {
@@ -478,7 +524,13 @@ const bottleDiscount = () => {
       type: 'warning'
     })
   } else {
-    if (drinkSelectList.value.every(item => item.size === 'bottle')) {
+    if (drinkSelectList.value.every(item => item.freeDiscount)) {
+      ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '警告', {
+        confirmButtonText: '重新選取',
+        type: 'warning'
+      })
+    }
+    else if (drinkSelectList.value.every(item => item.size === 'bottle')) {
       drinkSelectList.value.forEach(item => {
         item.bottleDiscount = !item.bottleDiscount
         item.ecoDiscount = false
@@ -515,6 +567,11 @@ const tenOffDiscount = () => {
       confirmButtonText: '繼續選取品項',
       type: 'warning'
     })
+  } else if (drinkSelectList.value.every(item => item.freeDiscount)) {
+    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '警告', {
+      confirmButtonText: '重新選取',
+      type: 'warning'
+    })
   } else {
     drinkSelectList.value.forEach(item => {
       item.tenOffDiscount = !item.tenOffDiscount
@@ -546,6 +603,11 @@ const fifteenOffDiscount = () => {
       confirmButtonText: '繼續選取品項',
       type: 'warning'
     })
+  } else if (drinkSelectList.value.every(item => item.freeDiscount)) {
+    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '警告', {
+      confirmButtonText: '重新選取',
+      type: 'warning'
+    })
   } else {
     drinkSelectList.value.forEach(item => {
       item.fifteenOffDiscount = !item.fifteenOffDiscount
@@ -574,6 +636,11 @@ const twentyOffDiscount = () => {
   if (drinkSelectList.value <= 0) {
     ElMessageBox.alert('尚未選取品項', '通知', {
       confirmButtonText: '繼續選取品項',
+      type: 'warning'
+    })
+  } else if (drinkSelectList.value.every(item => item.freeDiscount)) {
+    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '警告', {
+      confirmButtonText: '重新選取',
       type: 'warning'
     })
   } else {
