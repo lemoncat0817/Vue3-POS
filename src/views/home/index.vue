@@ -9,19 +9,19 @@
           <!-- 當前時間 -->      
           <div class="w-full h-1/2 flex items-center">
             <div class="ml-2 text-lg flex">
-              <p class="mr-2">{{ getDate() }}</p>
-              <p>{{ time }}</p>
+              <p class="mr-2 font-bold text-lg">{{ getDate() }}</p>
+              <p class="font-bold text-lg">{{ time }}</p>
             </div>
           </div>
           <!-- 機台編號和班別 -->
           <div class="flex w-full h-1/2 items-center">
             <div class="mx-2 flex ">
-              <p class="text-blue-500 mr-2">機台編號</p>
-              <p>A</p>
+              <p class="text-blue-500 mr-2 font-bold text-lg">機台編號</p>
+              <p class="font-bold text-lg">A</p>
             </div>
             <div class=" flex">
-              <p class="text-blue-500 mr-2">班別</p>
-              <p>{{ getMoment() }}</p>
+              <p class="text-blue-500 mr-2 font-bold text-lg">班別</p>
+              <p class="font-bold text-lg">{{ getMoment() }}</p>
             </div>
           </div>
         </div>
@@ -30,23 +30,23 @@
           <div class="h-full flex justify-center float-right mr-2">
             <!-- 購買袋子數量 -->
             <div class="flex mr-2">
-              <p class="text-blue-500 mr-2">購買袋子數量</p>
+              <p class="text-blue-500 mr-2 font-bold ">購買袋子數量</p>
               <p class=" flex justify-end">{{ drinkStore.currentBagCount }} 個</p>
             </div>
             <div class="flex-col">
               <!-- 目前累積金額 -->
               <div class="flex justify-end">
-              <p class="text-blue-500 mr-2">目前累積金額</p>
+              <p class="text-blue-500 mr-2 font-bold ">目前累積金額</p>
               <p class=" flex justify-end">$ {{ (Math.round(drinkStore.drinkNotPay.reduce((acc, cur) => acc + cur.totalPrice, 0)) + drinkStore.currentBagCount) }} 元</p>
             </div>
               <!-- 優惠券已折抵金額 -->
               <div class="flex justify-end">
-              <p class="text-blue-500 mr-2">優惠券已折抵</p>
+              <p class="text-blue-500 mr-2 font-bold ">優惠券已折抵</p>
               <p class=" flex justify-end">{{ drinkStore.useDiscountPrice }} 元</p>
             </div>
             <!-- 顧客應付價格 -->
             <div class="flex justify-end">
-              <p class="text-blue-500 mr-2">顧客應付價格</p>
+              <p class="text-blue-500 mr-2 font-bold">顧客應付價格</p>
               <p class=" flex justify-end">$ {{ drinkStore.drinkPayPrice }} 元</p>
             </div>
             </div>
@@ -59,17 +59,18 @@
         <div class="w-full h-[10%] bg-gray-200 shadow-xl rounded-lg flex">
           <!-- 單號、服務人員、功能按鈕左半部 -->
           <div class="w-1/2 h-full flex items-center">
+            <!-- 單號 -->
             <div class="flex h-1/2 items-center">
-              <p class="mx-2 text-blue-500">單號:</p>
-              <input :placeholder="Date.now()" class="border-2 border-black rounded-3xl text-center">
+              <p class="mx-2 text-blue-500 font-bold text-lg">單號:</p>
+              <p class="text-red-500 font-bold text-lg"> {{orderStore.currentOrderNumber}}</p>
             </div>
           </div>
           <!-- 單號、服務人員、功能按鈕右半部 -->
           <div class="w-1/2 h-full flex items-center">
             <!-- 服務人員 -->
             <div class="w-1/2 h-full flex items-center">
-              <p class="text-blue-500 mr-2">服務人員:</p>
-              <p class="text-red-400 font-bold">愛喝奶茶的貓咪</p>
+              <p class="text-blue-500 mr-2 font-bold text-lg">服務人員:</p>
+              <p class="text-red-400 font-bold text-lg ">愛喝奶茶的貓咪</p>
             </div>
             <!-- 功能按鈕 -->
             <div class="w-1/2 h-full flex items-center justify-end">
@@ -302,6 +303,8 @@ import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
 import { useDiscountStore } from '@/stores/discount'
 const discountStore = useDiscountStore()
+import { useOrderStore } from '@/stores/order'
+const orderStore = useOrderStore()
 
 // 杯數相關功能
 // 新增飲料杯數

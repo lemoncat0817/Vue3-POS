@@ -3,7 +3,8 @@ export const getDate = () => {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const day = now.getDate();
-  return `${year}/${month}/${day}`;
+  const format = (num) => num < 10 ? `0${num}` : num;
+  return `${year}/${format(month)}/${format(day)}`;
 }
 
 export const getMoment = () => {
