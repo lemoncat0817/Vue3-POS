@@ -4,7 +4,7 @@
       <div @click="changeItem(item)" v-for="item in sliceDrinkMenu" :key="item.id"
         class="w-28 h-28 bg-red-400 border-solid border-2 border-black rounded-lg m-2 flex justify-center items-center cursor-pointer"
         :class="{ 'bg-yellow-400': item.name === drinkStore.drinkItem.name }">
-        <p class="w-[85%] text-blue-800 text-xl font-bold flex justify-center">{{ item.name }}</p>
+        <p class="w-[85%] text-blue-800 text-xl font-bold flex justify-center select-none	">{{ item.name }}</p>
       </div>
     </div>
     <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">

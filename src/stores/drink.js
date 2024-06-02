@@ -1,5 +1,8 @@
 import { ref, watch, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { useDiscountStore } from '@/stores/discount'
+const discountStore = useDiscountStore()
+
 
 
 export const useDrinkStore = defineStore('drink', () => {
@@ -681,6 +684,16 @@ export const useDrinkStore = defineStore('drink', () => {
     drinkAddList.value = []
   })
 
+  // 購物袋相關功能
+  // 定義目前加購的袋子數量
+  const currentBagCount = ref(0)
+
+  // 送出訂單前顧客應付總額結算
+  // 顧客應付款金額
+  const drinkPayPrice = computed(() => {
+    return drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0) + currentBagCount.value
+  })
+
   return {
     drinkSeasonal,
     drinkFreshFruit,
@@ -704,7 +717,9 @@ export const useDrinkStore = defineStore('drink', () => {
     drinkSetSize,
     drinkAddList,
     drinkNotPay,
-    drinkCurrentTotal    
+    drinkCurrentTotal,
+    drinkPayPrice,
+    currentBagCount
   }
 }, {
   persist: true,

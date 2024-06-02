@@ -8,7 +8,7 @@
           <div @click="changeSugar(item.name)" v-for="item in drinkStore.drinkSugar" :key="item.id"
             class="w-20 h-20 bg-red-300 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center "
             :class="{ 'bg-yellow-400': item.name === drinkStore.drinkSetSugar }">
-            <p class="text-blue-800 text-xl font-bold ">{{ item.name }}</p>
+            <p class="text-blue-800 text-xl font-bold select-none	">{{ item.name }}</p>
           </div>
         </div>
         <div class="w-full h-full flex ">
@@ -16,14 +16,14 @@
             <div @click="changeIce(item.name)" v-for="item in filterIce" :key="item.id"
               class="w-20 h-20 bg-green-300 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
               :class="{ 'bg-yellow-400': item.name === drinkStore.drinkSetIce }">
-              <p class="text-blue-800 text-xl font-bold ">{{ item.name }}</p>
+              <p class="text-blue-800 text-xl font-bold select-none	">{{ item.name }}</p>
             </div>
           </div>
           <div class="w-[30%] h-full flex flex-wrap ">
             <div @click="changeSize(item.name)" v-for="item in filterSize" :key="item.id"
               class="w-20 h-20 bg-blue-300 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
               :class="{ 'bg-yellow-400': item.name === drinkStore.drinkSetSize }">
-              <p class="text-blue-800 text-xl font-bold ">{{ item.name }}</p>
+              <p class="text-blue-800 text-xl font-bold select-none	">{{ item.name }}</p>
             </div>
           </div>
         </div>
@@ -39,7 +39,7 @@
         <div @click="changeAdd(item)" v-for="item in drinkStore.drinkAdd" :key="item.id"
           class="w-20 h-20 bg-red-400 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
           :class="{ 'bg-yellow-400': drinkStore.drinkAddList.some(addItem => addItem.name === item.name) }">
-          <p class="text-blue-800 text-xl font-bold ">{{ item.name }}</p>
+          <p class="text-blue-800 text-xl font-bold select-none	">{{ item.name }}</p>
         </div>
       </div>
     </div>
@@ -48,16 +48,16 @@
         <div @click="drinkStore.drinkMenu = 0"
           class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1"
           :class="{ 'bg-yellow-400': drinkStore.drinkMenu === 0 }">
-          <p class="w-full h-full text-xl font-bold"> 糖度/冰塊/大小</p>
+          <p class="w-full h-full text-xl font-bold select-none	"> 糖度/冰塊/大小</p>
         </div>
         <div @click="drinkStore.drinkMenu = 1"
           class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 mx-2 "
           :class="{ 'bg-yellow-400': drinkStore.drinkMenu === 1 }">
-          <p class="w-full h-full text-xl font-bold">加料</p>
+          <p class="w-full h-full text-xl font-bold select-none	">加料</p>
         </div>
         <div @click="resetAll"
           class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 active:bg-yellow-400">
-          <p class="w-full h-full text-xl font-bold ">重置</p>
+          <p class="w-full h-full text-xl font-bold select-none	">重置</p>
         </div>
       </div>
     </div>

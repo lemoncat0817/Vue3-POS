@@ -5,8 +5,12 @@ import { defineStore } from 'pinia'
 export const useDiscountStore = defineStore('discount', () => {
   // 當前折價券選單
   const discountMenu = ref(0)
+  // 當前正在選的現金折價券id
+  const moneySelectingDiscountId = ref(0)
   // 當前已選的現金折價券id
   const moneyDiscountId = ref(0)
+  // 當前已選的現金折價券折價金額
+  const currentMoneyDiscount = ref(0)
   // 定義現金折價券的資料
   const moneyDiscount = ref([{
     "id": 1,
@@ -28,8 +32,12 @@ export const useDiscountStore = defineStore('discount', () => {
     "name": "$200折價券",
     "discountMoney": 200,
   }])
+  // 當前正在選的折數折價券id
+  const percentSelectingDiscountId = ref(0)
   // 當前已選的折數折價券id
   const percentDiscountId = ref(0)
+    // 當前已選的現金折價券折價金額
+    const currentPercentDiscount = ref(0)
   // 定義折數折價券的資料
   const percentDiscount = ref([{
     "id": 1,
@@ -52,7 +60,7 @@ export const useDiscountStore = defineStore('discount', () => {
     "discountMoney": 0.5,
   }])
 
-  return { discountMenu, moneyDiscount, moneyDiscountId, percentDiscountId, percentDiscount }
+  return { discountMenu, moneyDiscount, moneyDiscountId, percentDiscountId, percentDiscount, currentMoneyDiscount, moneySelectingDiscountId, percentSelectingDiscountId,currentPercentDiscount }
 }, {
   persist: true,
 })
