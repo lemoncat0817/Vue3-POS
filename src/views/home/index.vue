@@ -3,7 +3,7 @@
     <!-- 左半部 -->
     <div class="w-3/5 h-calc">
       <!-- 資訊顯示欄 -->
-      <div class="w-full h-[8%] flex bg-red-300 shadow-xl rounded-lg">
+      <div class="w-full h-[70px] flex bg-red-300 shadow-xl rounded-lg">
         <!-- 資訊顯示欄左半部 -->
         <div class="w-1/2 h-full">
           <!-- 當前時間 -->
@@ -56,7 +56,7 @@
         </div>
       </div>
       <!-- 單號、服務人員、功能按鈕以及待付款清單 -->
-      <div class="w-full h-[60%]">
+      <div class="w-full h-[527px]">
         <!--  -->
         <div class="w-full h-[10%] bg-gray-200 shadow-xl rounded-lg flex">
           <!-- 單號、服務人員、功能按鈕左半部 -->
@@ -140,9 +140,9 @@
         </div>
       </div>
       <!-- 主要功能區、數量設置鍵盤 -->
-      <div class="w-full h-[32%] flex border-solid border-t-2 border-gray-200">
+      <div class="w-full h-[281px] flex border-solid border-t-2 border-gray-200">
         <!-- 主要功能區 -->
-        <div class="w-[60%] h-[95%] mt-2 flex justify-center flex-wrap">
+        <div class="w-[60%] h-[95%] mt-2 flex justify-center items-center flex-wrap">
           <!-- 載具 -->
           <button @click="scanCarrier"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">載具</button>
@@ -281,15 +281,15 @@
     <!-- 右半部 -->
     <div class="w-2/5 h-calc border-solid border-l-2 border-gray-200 ">
       <!-- 飲料類型 -->
-      <div class="w-full h-[35%] ">
+      <div class="w-full h-[308px] ">
         <DrinkType />
       </div>
       <!-- 飲料品項 -->
-      <div class="w-full h-[35%]">
+      <div class="w-full h-[308px]">
         <DrinkMenu />
       </div>
       <!-- 飲料客製化 -->
-      <div class="w-full h-[30%]">
+      <div class="w-full h-[263px]">
         <DrinkCustomized />
       </div>
     </div>
