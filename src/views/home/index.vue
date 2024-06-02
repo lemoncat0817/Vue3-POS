@@ -1,14 +1,19 @@
 <template>
   <div class="flex">
+    <!-- 左半部 -->
     <div class="w-3/5 h-calc">
+      <!-- 資訊顯示欄 -->
       <div class="w-full h-[8%] flex bg-red-300 shadow-xl rounded-lg">
+        <!-- 資訊顯示欄左半部 -->        
         <div class="w-1/2 h-full">
+          <!-- 當前時間 -->      
           <div class="w-full h-1/2 flex items-center">
             <div class="ml-2 text-lg flex">
               <p class="mr-2">{{ getDate() }}</p>
               <p>{{ time }}</p>
             </div>
           </div>
+          <!-- 機台編號和班別 -->
           <div class="flex w-full h-1/2 items-center">
             <div class="mx-2 flex ">
               <p class="text-blue-500 mr-2">機台編號</p>
@@ -20,21 +25,26 @@
             </div>
           </div>
         </div>
+        <!-- 資訊顯示欄右半部 -->
         <div class="w-1/2 h-full">
           <div class="h-full flex justify-center float-right mr-2">
+            <!-- 購買袋子數量 -->
             <div class="flex mr-2">
               <p class="text-blue-500 mr-2">購買袋子數量</p>
               <p class=" flex justify-end">{{ drinkStore.currentBagCount }} 個</p>
             </div>
             <div class="flex-col">
+              <!-- 目前累積金額 -->
               <div class="flex justify-end">
               <p class="text-blue-500 mr-2">目前累積金額</p>
               <p class=" flex justify-end">$ {{ (Math.round(drinkStore.drinkNotPay.reduce((acc, cur) => acc + cur.totalPrice, 0)) + drinkStore.currentBagCount) }} 元</p>
             </div>
+              <!-- 優惠券已折抵金額 -->
               <div class="flex justify-end">
               <p class="text-blue-500 mr-2">優惠券已折抵</p>
               <p class=" flex justify-end">{{ drinkStore.useDiscountPrice }} 元</p>
             </div>
+            <!-- 顧客應付價格 -->
             <div class="flex justify-end">
               <p class="text-blue-500 mr-2">顧客應付價格</p>
               <p class=" flex justify-end">$ {{ drinkStore.drinkPayPrice }} 元</p>
@@ -43,19 +53,25 @@
           </div>
         </div>
       </div>
+      <!-- 單號、服務人員、功能按鈕以及待付款清單 -->
       <div class="w-full h-[60%]">
+        <!--  -->
         <div class="w-full h-[10%] bg-gray-200 shadow-xl rounded-lg flex">
+          <!-- 單號、服務人員、功能按鈕左半部 -->
           <div class="w-1/2 h-full flex items-center">
             <div class="flex h-1/2 items-center">
               <p class="mx-2 text-blue-500">單號:</p>
               <input :placeholder="Date.now()" class="border-2 border-black rounded-3xl text-center">
             </div>
           </div>
+          <!-- 單號、服務人員、功能按鈕右半部 -->
           <div class="w-1/2 h-full flex items-center">
+            <!-- 服務人員 -->
             <div class="w-1/2 h-full flex items-center">
               <p class="text-blue-500 mr-2">服務人員:</p>
               <p class="text-red-400 font-bold">愛喝奶茶的貓咪</p>
             </div>
+            <!-- 功能按鈕 -->
             <div class="w-1/2 h-full flex items-center justify-end">
               <button @click="clearSelectNotPay"
                 class="bg-red-300 text-blue-800 font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">刪除已勾選品項</button>
@@ -64,6 +80,7 @@
             </div>
           </div>
         </div>
+        <!-- 待付款清單 -->
         <div class="w-full h-[90%]">
           <el-table @selection-change="handleSelectionChange" :data="drinkStore.drinkNotPay" border height="100%"
             style="width: 100%" empty-text="目前無待付款的飲品">
@@ -117,12 +134,17 @@
           </el-table>
         </div>
       </div>
+      <!-- 主要功能區、數量設置鍵盤 -->
       <div class="w-full h-[32%] flex border-solid border-t-2 border-gray-200">
+        <!-- 主要功能區 -->
         <div class="w-[60%] h-[95%] mt-2 flex justify-center flex-wrap">
+          <!-- 載具 -->
           <button @click="scanCarrier"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">載具</button>
+          <!-- 加購袋子 -->
           <button @click="openBagDialog"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">加購袋子</button>
+          <!-- 加購袋子選單 -->
           <el-dialog v-model="dialogBag" title="加購袋子數量" width="500">
             <div class="w-[100%] mx-2">
               <el-slider v-model="bagCount" show-input />
@@ -136,22 +158,31 @@
               </div>
             </template>
           </el-dialog>
+          <!-- 免費招待 -->
           <button @click="freeDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">免費招待</button>
+          <!-- 環保折扣 -->
           <button @click="ecoDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">環保折扣</button>
+          <!-- 瓶裝折扣 -->
           <button @click="bottleDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">瓶裝折扣</button>
+          <!-- 開收銀機 -->
           <button @click="openCashier"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">開收銀機</button>
+          <!-- 九折 -->
           <button @click="tenOffDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">九折</button>
+          <!-- 八五折 -->
           <button @click="fifteenOffDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">八五折</button>
+          <!-- 員工八折 -->
           <button @click="twentyOffDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">員工八折</button>
+          <!-- 優惠券 -->
           <button @click="openDiscountMenu"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">優惠券</button>
+          <!-- 優惠券選單 -->
           <el-dialog v-model="dialogDiscount" title="選擇優惠券" width="500" class="h-[60%] overflow-auto">
             <div class="w-[100%] mx-2">
               <div class="h-full flex justify-center items-center">
@@ -191,6 +222,7 @@
             </template>
           </el-dialog>
         </div>
+        <!-- 數量設置鍵盤 -->
         <div class="w-[30%] h-[95%] mt-2 bg-red-200 border-solid border-2 border-black rounded-xl">
           <div class="w-full h-1/5 flex items-center justify-around">
             <input v-model="drinkStore.drinkCount" oninput="value=value.replace(/[^\d]/g,'')" maxlength="5" disabled
@@ -241,13 +273,17 @@
         </div>
       </div>
     </div>
+    <!-- 右半部 -->
     <div class="w-2/5 h-calc border-solid border-l-2 border-gray-200 ">
+      <!-- 飲料類型 -->
       <div class="w-full h-[35%] ">
         <DrinkType />
       </div>
+      <!-- 飲料品項 -->
       <div class="w-full h-[35%]">
         <DrinkMenu />
       </div>
+      <!-- 飲料客製化 -->
       <div class="w-full h-[30%]">
         <DrinkCustomized />
       </div>

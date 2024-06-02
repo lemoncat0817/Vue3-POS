@@ -1,5 +1,6 @@
 <template>
   <div class="w-full h-full flex flex-col items-center">
+    <!-- 飲料客製化上半部 -->
     <!-- 如果選擇糖度/冰塊菜單則顯示 -->
     <div v-if="drinkStore.drinkMenu === 0" class="w-[95%] h-full ">
       <!-- 如果飲品可以客製化則顯示 -->
@@ -43,6 +44,7 @@
         </div>
       </div>
     </div>
+    <!-- 飲料客製化下半部 -->
     <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
       <div class="h-full flex items-center">
         <div @click="drinkStore.drinkMenu = 0"

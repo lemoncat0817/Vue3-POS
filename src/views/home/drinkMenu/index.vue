@@ -1,5 +1,6 @@
 <template>
   <div class="w-full h-full flex flex-col items-center">
+    <!-- 飲料品項上半部 -->
     <div class="w-[90%] h-full flex flex-wrap ">
       <div @click="changeItem(item)" v-for="item in sliceDrinkMenu" :key="item.id"
         class="w-28 h-28 bg-red-400 border-solid border-2 border-black rounded-lg m-2 flex justify-center items-center cursor-pointer"
@@ -7,6 +8,7 @@
         <p class="w-[85%] text-blue-800 text-xl font-bold flex justify-center select-none	">{{ item.name }}</p>
       </div>
     </div>
+    <!-- 飲料品項下半部 -->
     <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
       <p class="text-blue-800">{{ `共${currentDrinks.length}樣` }}</p>
       <div class="h-full flex items-center">
