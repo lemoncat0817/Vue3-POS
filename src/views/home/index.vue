@@ -69,7 +69,8 @@
             <!-- 單號 -->
             <div class="flex h-1/2 items-center">
               <p class="mr-2 text-blue-500 font-bold text-lg">單號:</p>
-              <p class="text-red-500 font-bold text-lg"> {{ orderStore.currentOrderNumber }}</p>
+              <p class="text-red-500 font-bold text-lg"> {{ `${getDateForOrder()}${orderStore.currentOrderNumber}` }}
+              </p>
             </div>
             <!-- 服務人員 -->
             <div class="w-1/2 h-full flex items-center">
@@ -327,7 +328,7 @@
 </template>
 
 <script setup>
-import { getDate, getMoment, getTime } from '@/utils/time'
+import { getDate, getMoment, getTime, getDateForOrder } from '@/utils/time'
 import { ref, onMounted, onUnmounted } from 'vue'
 import DrinkType from './drinkType/index.vue'
 import DrinkMenu from './drinkMenu/index.vue'
@@ -880,7 +881,7 @@ const changePayMethod = () => {
 }
 // 送出訂單的格式
 const toPayOrder = {
-  orderId: orderStore.currentOrderNumber,
+  orderId: `${getDateForOrder()}${orderStore.currentOrderNumber}`,
   orderTime: `${getDate()} ${time.value}`,
   orderStatus: '已完成',
   staff: '愛喝奶茶的貓咪',
