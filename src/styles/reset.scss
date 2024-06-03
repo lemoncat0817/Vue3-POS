@@ -123,3 +123,7 @@ table {
   border-collapse: collapse;
   border-spacing: 0;
 }
+
+::-webkit-scrollbar {
+  width: 0px; /* 滾動條寬度 */
+}

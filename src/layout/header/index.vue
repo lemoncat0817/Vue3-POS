@@ -1,5 +1,5 @@
 <template>
-  <div class="w-screen h-20 bg-red-500 flex justify-center items-center">
+  <div class="w-screen h-20 bg-red-500 flex justify-center items-center ">
     <div @click="changePage(0)"
       class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer"
       :class="{ 'bg-yellow-500 scale-[1.2]': pageStore.currentPage === 0 }">

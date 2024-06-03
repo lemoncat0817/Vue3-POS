@@ -1,7 +1,7 @@
 <template>
   <div class="w-screen min-h-full">
-    <Header class="w-screen h-20"></Header>
-    <Main class="w-screen h-calc"></Main>
+    <Header class="w-screen h-20 "></Header>
+    <Main class="w-screen h-full "></Main>
   </div>
 </template>
 

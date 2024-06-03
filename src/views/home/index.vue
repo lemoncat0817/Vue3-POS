@@ -1,7 +1,7 @@
 <template>
-  <div class="flex overflow-y-scroll">
+  <div class="flex overflow-auto ">
     <!-- 左半部 -->
-    <div class="w-3/5">
+    <div class="w-3/5 ">
       <!-- 資訊顯示欄 -->
       <div class="w-full h-[70px] flex bg-red-300 shadow-xl rounded-lg">
         <!-- 資訊顯示欄左半部 -->
@@ -27,24 +27,29 @@
         </div>
         <!-- 資訊顯示欄右半部 -->
         <div class="w-1/2 h-full">
-          <div class="h-full flex justify-center float-right mr-2">
-            <!-- 購買袋子數量 -->
-            <div class="flex mr-2">
-              <p class="text-blue-500 mr-2 font-bold ">購買袋子數量</p>
-              <p class=" flex justify-end font-bold">{{ drinkStore.currentBagCount }} 個</p>
+          <div class="h-full flex justify-between  mr-2">
+            <div class="flex-col">
+              <!-- 購買袋子數量 -->
+              <div class="flex mr-2">
+                <p class="text-blue-500 mr-2 font-bold ">購買袋子數量</p>
+                <p class=" flex justify-end font-bold">{{ drinkStore.currentBagCount }} 個</p>
+              </div>
+              <!-- 當前付款方式 -->
+              <div class="flex mr-2">
+                <p class="text-blue-500 mr-2 font-bold ">當前付款方式</p>
+                <p class=" flex justify-end font-bold">{{ orderStore.payment }}</p>
+              </div>
             </div>
             <div class="flex-col">
               <!-- 目前累積金額 -->
               <div class="flex justify-end">
                 <p class="text-blue-500 mr-2 font-bold ">目前累積金額</p>
-                <p class=" flex justify-end font-bold">$ {{ (Math.round(drinkStore.drinkNotPay.reduce((acc, cur) => acc
-                  +
-                  cur.totalPrice, 0)) + drinkStore.currentBagCount) }} 元</p>
+                <p class=" flex justify-end font-bold">$ {{ drinkStore.drinkTotalMoney }} 元</p>
               </div>
               <!-- 優惠券已折抵金額 -->
               <div class="flex justify-end">
                 <p class="text-blue-500 mr-2 font-bold ">優惠券已折抵</p>
-                <p class=" flex justify-end font-bold">{{ drinkStore.useDiscountPrice }} 元</p>
+                <p class=" flex justify-end font-bold">$ {{ drinkStore.useDiscountPrice }} 元</p>
               </div>
               <!-- 顧客應付價格 -->
               <div class="flex justify-end">
@@ -76,10 +81,35 @@
           <div class="w-1/2 h-full flex items-center">
             <!-- 功能按鈕 -->
             <div class="w-full h-full flex items-center justify-end">
+              <!-- 刪除已勾選商品 -->
               <button @click="clearSelectNotPay"
                 class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">刪除已勾選品項</button>
+              <!-- 清空全部品項 -->
               <button @click="clearNotPay"
                 class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">清空全部品項</button>
+              <!-- 修改付款方式 -->
+              <button @click="openPayMethodMenu"
+                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">修改付款方式</button>
+              <!-- 付款方式選單 -->
+              <el-dialog v-model="dialogPayMethod" title="選擇付款方式" width="500">
+                <div class="w-full h-full flex grid grid-cols-4 grid-rows-3 gap-2">
+                  <div @click="orderStore.currentSelectingPayment = item" v-for="item in orderStore.paymentList"
+                    :key="item"
+                    class="w-28 h-8 border-2 border-solid border-black rounded-lg text-center px-2 bg-red-300 cursor-pointer"
+                    :class="{ 'bg-yellow-400': orderStore.currentSelectingPayment === item }">
+                    <p class="text-blue-800 font-bold text-xl">{{ item }}</p>
+                  </div>
+                </div>
+                <template #footer>
+                  <div>
+                    <el-button @click="closePayMethod">取消</el-button>
+                    <el-button type="primary" @click="changePayMethod">
+                      確定
+                    </el-button>
+                  </div>
+                </template>
+              </el-dialog>
+              <!-- 送出訂單 -->
               <button @click="sendOrder"
                 class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">送出訂單</button>
             </div>
@@ -310,6 +340,20 @@ const discountStore = useDiscountStore()
 import { useOrderStore } from '@/stores/order'
 const orderStore = useOrderStore()
 
+// 當前時間相關功能
+// 存放當前時間
+const time = ref('')
+// 頁面刷新時當前時間開始跑
+onMounted(() => {
+  setInterval(() => {
+    time.value = getTime()
+  }, 1000);
+})
+// 離開頁面時當前時間清除
+onUnmounted(() => {
+  clearInterval()
+})
+
 // 杯數相關功能
 // 新增飲料杯數
 const addCount = (num) => {
@@ -424,7 +468,7 @@ const addNewDrink = () => {
 // 刪除待付款的清單項目相關功能
 // 清除待付款的清單所有項目
 const clearNotPay = () => {
-  if (drinkSelectList.value.length === 0) {
+  if (drinkStore.drinkNotPay.length === 0) {
     ElMessageBox.alert('待付款清單為空，無法清空項目', '通知', {
       confirmButtonText: '繼續選取品項',
       type: 'info',
@@ -502,8 +546,8 @@ const changeBagCount = () => {
 // 掃描載具已及開啟收銀機相關功能
 // 掃描載具
 const scanCarrier = () => {
-  ElMessageBox.alert('掃描載具條碼', '通知', {
-    confirmButtonText: '開始掃描',
+  ElMessageBox.alert('請掃描載具條碼', '通知', {
+    confirmButtonText: '掃描完成',
     type: 'info',
   })
 }
@@ -816,6 +860,37 @@ const useDiscount = () => {
 }
 
 // 送出訂單相關功能
+// 控制付款方式視窗開關
+const dialogPayMethod = ref(false)
+// 打開付款方式菜單
+const openPayMethodMenu = () => {
+  dialogPayMethod.value = true
+  orderStore.currentSelectingPayment = orderStore.payment
+}
+// 取消編輯付款方式
+const closePayMethod = () => {
+  dialogPayMethod.value = false
+  ElMessage.error('操作取消')
+}
+// 更改付款方式
+const changePayMethod = () => {
+  orderStore.payment = orderStore.currentSelectingPayment
+  dialogPayMethod.value = false
+  ElMessage.success('付款方式更改成功')
+}
+// 送出訂單的格式
+const toPayOrder = {
+  orderId: orderStore.currentOrderNumber,
+  orderTime: `${getDate()} ${time.value}`,
+  orderStatus: '已完成',
+  staff: '愛喝奶茶的貓咪',
+  orderData: drinkStore.drinkNotPay,
+  orderBagCount: drinkStore.currentBagCount,
+  orderTotalPrice: drinkStore.drinkTotalMoney,
+  orderPayment: orderStore.payment,
+  orderDiscount: drinkStore.useDiscountPrice,
+  orderPaymentPrice: drinkStore.drinkPayPrice,
+}
 // 送出訂單
 const sendOrder = () => {
   if (drinkStore.drinkNotPay.length <= 0 && drinkStore.currentBagCount <= 0) {
@@ -824,23 +899,53 @@ const sendOrder = () => {
       type: 'info',
     })
     return
+  } else {
+    ElMessageBox.confirm(
+      '確定要送出訂單嗎?',
+      '警告',
+      {
+        confirmButtonText: '確定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    ).then(() => {
+      if (orderStore.payment === '信用卡' || orderStore.payment === 'ApplePay') {
+        ElMessageBox.alert(`應支付$${drinkStore.drinkPayPrice}元,請感${orderStore.payment}`, '通知', {
+          confirmButtonText: '感應完成',
+          type: 'info',
+        }).then(() => {
+          resetOrder()
+        })
+      } else if (orderStore.payment === '現金') {
+        ElMessageBox.alert(`應收取現金$${drinkStore.drinkPayPrice}元`, '通知', {
+          confirmButtonText: '收取現金',
+          type: 'info',
+        }).then(() => {
+          resetOrder()
+        })
+      } else {
+        ElMessageBox.alert(`應支付$${drinkStore.drinkPayPrice}元,請掃描${orderStore.payment}條碼`, '通知', {
+          confirmButtonText: '掃描完成',
+          type: 'info',
+        }).then(() => {
+          resetOrder()
+        })
+      }
+      const resetOrder = () => {
+        orderStore.order.push(toPayOrder)
+        ElMessage.success('訂單送出成功')
+        drinkStore.drinkNotPay = []
+        orderStore.payment = '現金'
+        orderStore.currentOrderNumber++
+      }
+    }).catch(() => {
+      ElMessage.error('取消操作')
+    })
+
   }
 }
 
 
-// 當前時間相關功能
-// 存放當前時間
-const time = ref('')
-// 頁面刷新時當前時間開始跑
-onMounted(() => {
-  setInterval(() => {
-    time.value = getTime()
-  }, 1000);
-})
-// 離開頁面時當前時間清除
-onUnmounted(() => {
-  clearInterval()
-})
 </script>
 
 <style lang="scss" scoped></style>
