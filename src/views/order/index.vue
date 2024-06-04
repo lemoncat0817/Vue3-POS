@@ -67,7 +67,7 @@
     </div>
     <div class="w-4/5 mt-10 ">
       <!-- 訂單資料表格 -->
-      <el-table :data="sliceOrder" style="width: 100%; height: 550px;" empty-text="目前無訂單">
+      <el-table :data="sliceOrder" style="width: 100%; height: 530px;" empty-text="目前無訂單">
         <el-table-column width="30" type="expand">
           <template #default="{ row }">
             <div class="flex w-full justify-center mb-2">
@@ -160,11 +160,12 @@
         </el-table-column>
       </el-table>
       <!-- 分頁器 -->
-      <div class="w-full flex justify-center mt-5">
+      <div class="w-full flex justify-between mt-5">
         <el-pagination v-model:current-page="currentPage" :background="true" layout=" prev, pager, next"
           :total="orderStore.order.length" @current-change="handleCurrentChange" />
-        <div class="ml-5 text-xl text-blue-500 font-bold flex items-center">共<p class="mx-2 text-red-600">{{
-          sliceOrder.length }}</p>筆訂單</div>
+        <div class="ml-5 text-xl text-blue-500 font-bold flex items-center">總共有<p class="mx-2 text-red-600">
+            {{ filterOrder.length }}</p>筆訂單，當前頁面有<p class="mx-2 text-red-600">{{ sliceOrder.length }}</p>筆訂單
+        </div>
       </div>
     </div>
   </div>
