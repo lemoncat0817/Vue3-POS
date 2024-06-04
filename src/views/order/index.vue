@@ -1,12 +1,73 @@
 <template>
   <div class="w-full flex items-center flex-col overflow-y-auto ">
-    <div class="w-4/5 mt-10 flex justify-center">
+    <div class="w-4/5 mt-10 flex flex-col items-center">
       <h1
-        class="w-20  text-3xl text-black font-bold text-center border-2 border-solid border-black rounded-lg bg-red-500">
+        class="w-20  text-3xl text-white font-bold text-center border-2 border-solid border-black rounded-lg bg-red-500">
         訂單</h1>
+      <!-- 篩選功能 -->
+      <div class="flex mt-5">
+        <el-popover placement="bottom" title="輸入要查詢的訂單編號" :width="200" trigger="click">
+          <div class="flex">
+            <input v-model="filterOrderId"
+              class="w-[180px] h-[30px] text-center border-2 border-solid border-black rounded-lg bg-red-300 text-black font-bold placeholder:italic placeholder:text-black"
+              placeholder="請輸入訂單編號" />
+          </div>
+          <template #reference>
+            <button
+              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold text-2xl select-none active:bg-yellow-300">篩選訂單編號</button>
+          </template>
+        </el-popover>
+        <el-popover placement="bottom" title="輸入要查詢的訂單時間" :width="200" trigger="click">
+          <div class="flex">
+            <input v-model="filterOrderTime"
+              class="w-[180px] h-[30px] text-center border-2 border-solid border-black rounded-lg bg-red-300 text-black font-bold placeholder:italic placeholder:text-black"
+              placeholder="請輸入訂單時間" />
+          </div>
+          <template #reference>
+            <button
+              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold text-2xl select-none active:bg-yellow-300">篩選訂單時間</button>
+          </template>
+        </el-popover>
+        <el-popover placement="bottom" title="輸入要查詢的服務人員" :width="200" trigger="click">
+          <div class="flex">
+            <input v-model="filterOrderStaff"
+              class="w-[180px] h-[30px] text-center border-2 border-solid border-black rounded-lg bg-red-300 text-black font-bold placeholder:italic placeholder:text-black"
+              placeholder="請輸入服務人員" />
+          </div>
+          <template #reference>
+            <button
+              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold text-2xl select-none active:bg-yellow-300">篩選服務人員</button>
+          </template>
+        </el-popover>
+        <el-popover placement="bottom" title="輸入要查詢的訂單狀態" :width="200" trigger="click">
+          <div class="flex">
+            <input v-model="filterOrderStatus"
+              class="w-[180px] h-[30px] text-center border-2 border-solid border-black rounded-lg bg-red-300 text-black font-bold placeholder:italic placeholder:text-black"
+              placeholder="請輸入訂單狀態" />
+          </div>
+          <template #reference>
+            <button
+              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold text-2xl select-none active:bg-yellow-300">篩選訂單狀態</button>
+          </template>
+        </el-popover>
+        <el-popover placement="bottom" title="輸入要查詢的付款方式" :width="200" trigger="click">
+          <div class="flex">
+            <input v-model="filterOrderPayMethod"
+              class="w-[180px] h-[30px] text-center border-2 border-solid border-black rounded-lg bg-red-300 text-black font-bold placeholder:italic placeholder:text-black"
+              placeholder="請輸入付款方式" />
+          </div>
+          <template #reference>
+            <button
+              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold text-2xl select-none active:bg-yellow-300">篩選付款方式</button>
+          </template>
+        </el-popover>
+        <button @click="resetFilter"
+          class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold text-2xl select-none active:bg-yellow-300">重置篩選</button>
+      </div>
     </div>
-    <div class="w-4/5 mt-10 bg-red-300">
-      <el-table :data="orderStore.order" style="width: 100%" height="100%" empty-text="目前無訂單">
+    <div class="w-4/5 mt-10 ">
+      <!-- 訂單資料表格 -->
+      <el-table :data="sliceOrder" style="width: 100%; min-height: 530px;" empty-text="目前無訂單">
         <el-table-column width="30" type="expand">
           <template #default="{ row }">
             <div class="flex w-full justify-center mb-2">
@@ -98,14 +159,60 @@
           </template>
         </el-table-column>
       </el-table>
+      <!-- 分頁器 -->
+      <div class="w-full flex justify-center mt-5">
+        <el-pagination v-model:current-page="currentPage" :small="small" :disabled="disabled" :background="true"
+          layout=" prev, pager, next" :total="orderStore.order.length" @current-change="handleCurrentChange" />
+        <div class="ml-5 text-xl text-blue-500 font-bold flex items-center">共<p class="mx-2 text-red-600">{{ sliceOrder.length }}</p>筆訂單</div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref, computed } from 'vue'
 import { useOrderStore } from "@/stores/order"
 const orderStore = useOrderStore()
 import { ElMessageBox, ElMessage } from 'element-plus'
+
+// 分頁相關功能
+// 當前頁數
+const currentPage = ref(1)
+// 頁數切換
+const handleCurrentChange = (page) => {
+  currentPage.value = page
+}
+// 計算並切換當前頁面內容
+const sliceOrder = computed(() => {
+  return filterOrder.value.slice((currentPage.value - 1) * 10, currentPage.value * 10)
+})
+
+// 訂單資料處理相關功能
+
+// 篩選的訂單編號
+const filterOrderId = ref('')
+const filterOrderTime = ref('')
+const filterOrderStaff = ref('')
+const filterOrderStatus = ref('')
+const filterOrderPayMethod = ref('')
+// 篩選訂單清單
+const filterOrder = computed(() => {
+  return orderStore.order.filter(item => {
+    return item.orderId.match(filterOrderId.value) &&
+      item.orderTime.match(filterOrderTime.value) &&
+      item.staff.match(filterOrderStaff.value) &&
+      item.orderStatus.match(filterOrderStatus.value) &&
+      item.orderPayment.match(filterOrderPayMethod.value)
+  })
+})
+// 重置篩選功能
+const resetFilter = () => {
+  filterOrderId.value = ''
+  filterOrderTime.value = ''
+  filterOrderStaff.value = ''
+  filterOrderStatus.value = ''
+  filterOrderPayMethod.value = ''
+}
 
 // 訂單操作相關功能
 // 編輯訂單狀態
