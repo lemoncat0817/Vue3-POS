@@ -20,12 +20,13 @@
         <div class="flex justify-between mt-2">
           <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">飲品類型</div>
           <div class="flex mr-2">
+            <!-- 新增功能 -->
             <button @click="openAddTypeDialog"
               class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
             <!-- 新增飲品類型 -->
             <el-dialog v-model="addTypeDialog" title="新增飲品類型" width="500">
               <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
-                飲品類型的Id:<input v-model="currentInputId"
+                飲品類型的Id:<input v-model="currentInputId" type="number" min="1" step="1"
                   class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
                   placeholder="純數字,例如:1,2,3..." />
               </div>
@@ -48,8 +49,38 @@
                 </div>
               </template>
             </el-dialog>
+            <!-- 刪除功能 -->
             <button @click="deleteDrinkType"
               class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
+            <!-- 編輯功能 -->
+            <button @click="openEditTypeDialog"
+              class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
+            <!-- 編輯飲品類型 -->
+            <el-dialog v-model="editTypeDialog" title="編輯飲品類型" width="500">
+              <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+                飲品類型的Id:<input v-model="currentEditInputId" type="number" min="1" step="1"
+                  class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+                  placeholder="純數字,例如:1,2,3..." />
+              </div>
+              <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+                飲品類型:<input v-model="currentEditInputName"
+                  class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+                  placeholder="例如: 原味茶,芝芝系列..." />
+              </div>
+              <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+                飲品類型的代號:<input v-model="currentEditInputType"
+                  class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+                  placeholder="例如: drinkMilk..." />
+              </div>
+              <template #footer>
+                <div class="dialog-footer">
+                  <el-button @click="closeEditTypeDialog">取消</el-button>
+                  <el-button type="primary" @click="editDrinkType">
+                    保存
+                  </el-button>
+                </div>
+              </template>
+            </el-dialog>
           </div>
         </div>
         <div>
@@ -70,7 +101,6 @@
           </div>
         </div>
       </div>
-
       <div class="flex-[1] bg-red-300"></div>
       <div class="flex-[1] bg-yellow-300"></div>
     </div>
@@ -94,7 +124,7 @@ const handleCurrentChange = (row) => {
   currentType.value = row
 }
 // 存放當前輸入的Id
-const currentInputId = ref('')
+const currentInputId = ref()
 // 存放當前輸入的類型名稱
 const currentInputName = ref('')
 // 存放當前輸入的類型代號
@@ -117,6 +147,18 @@ const closeAddTypeDialog = () => {
 const addDrinkType = () => {
   if (currentInputId.value === '' || currentInputName.value === '' || currentInputType.value === '') {
     ElMessage.error('請輸入完整資訊')
+    return
+  }
+  if (drinkStore.drinkType.find((item) => item.id == currentInputId.value)) {
+    ElMessage.error('此Id已存在,請重新輸入')
+    return
+  }
+  if (drinkStore.drinkType.find((item) => item.name == currentInputName.value)) {
+    ElMessage.error('此類型已存在,請重新輸入')
+    return
+  }
+  if (drinkStore.drinkType.find((item) => item.type == currentInputType.value)) {
+    ElMessage.error('此類型代碼已存在,請重新輸入')
     return
   }
   const newDrinkType = {
@@ -142,7 +184,7 @@ const sliceDrinkType = computed(() => {
 const deleteDrinkType = () => {
   if (currentType.value.name) {
     ElMessageBox.confirm(
-      `請問是否刪除 ${currentType.value.name} 類型?`,
+      `是否刪除 ${currentType.value.name} 類型?`,
       '警告',
       {
         confirmButtonText: '確定',
@@ -163,6 +205,69 @@ const deleteDrinkType = () => {
       type: 'info',
     })
   }
+}
+// 控制編輯dialog視窗開關
+const editTypeDialog = ref(false)
+// 存放當前編輯輸入的Id
+const currentEditInputId = ref()
+// 存放當前編輯輸入的類型名稱
+const currentEditInputName = ref('')
+// 存放當前編輯輸入的類型代號
+const currentEditInputType = ref('')
+// 開啟編輯dialog視窗
+const openEditTypeDialog = () => {
+  if (currentType.value.name) {
+    currentEditInputId.value = currentType.value.id
+    currentEditInputName.value = currentType.value.name
+    currentEditInputType.value = currentType.value.type
+    editTypeDialog.value = true
+  } else {
+    ElMessageBox.alert('請先選擇要編輯的類型', '通知', {
+      confirmButtonText: '繼續選擇',
+      type: 'info',
+    })
+  }
+}
+// 關閉編輯dialog視窗
+const closeEditTypeDialog = () => {
+  editTypeDialog.value = false
+  ElMessage.error('取消操作')
+}
+// 編輯茶品類型
+const editDrinkType = () => {
+  if (currentEditInputId.value === '' || currentEditInputName.value === '' || currentEditInputType.value === '') {
+    ElMessage.error('請輸入完整資訊')
+    return
+  }
+  if (currentEditInputId.value == currentType.value.id && currentEditInputName.value == currentType.value.name && currentEditInputType.value == currentType.value.type) {
+    editTypeDialog.value = false
+    ElMessage.success('保存成功')
+    return
+  } else {
+    const anotherId = ref([])
+    anotherId.value = (drinkStore.drinkType.filter(item => item.id != currentType.value.id))
+    if (anotherId.value.some(item => item.id == currentEditInputId.value)) {
+      ElMessage.error('此Id已存在,請重新輸入')
+      return
+    }
+    const anotherName = ref([])
+    anotherName.value = (drinkStore.drinkType.filter(item => item.name != currentType.value.name))
+    if (anotherName.value.some(item => item.name == currentEditInputName.value)) {
+      ElMessage.error('此類型已存在,請重新輸入')
+      return
+    }
+    const anotherType = ref([])
+    anotherType.value = (drinkStore.drinkType.filter(item => item.type != currentType.value.type))
+    if (anotherType.value.some(item => item.type == currentEditInputType.value)) {
+      ElMessage.error('此類型代號已存在,請重新輸入')
+      return
+    }
+  }
+  currentType.value.id = currentEditInputId.value
+  currentType.value.name = currentEditInputName.value
+  currentType.value.type = currentEditInputType.value
+  editTypeDialog.value = false
+  ElMessage.success('保存成功')
 }
 </script>
 
