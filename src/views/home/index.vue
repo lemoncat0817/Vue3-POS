@@ -53,7 +53,7 @@
               </div>
               <!-- 顧客應付價格 -->
               <div class="flex justify-end">
-                <p class="text-blue-500 mr-2 font-bold">顧客應付價格</p>
+                <p class="text-blue-500 mr-2 font-bold">顧客應付金額</p>
                 <p class=" flex justify-end font-bold">$ {{ drinkStore.drinkPayPrice }} 元</p>
               </div>
             </div>
@@ -837,6 +837,7 @@ const useDiscount = () => {
     discountStore.moneyDiscountId = discountStore.moneySelectingDiscountId
     discountStore.currentMoneyDiscount = discountStore.moneyDiscount.find(item => item.id === discountStore.moneyDiscountId).discountMoney
     const currentMoneyDiscountName = discountStore.moneyDiscount.find(item => item.id === discountStore.moneyDiscountId).name
+    discountStore.currentDiscountName = currentMoneyDiscountName
     discountStore.percentDiscountId = 0
     dialogDiscount.value = false
     ElMessage.success(`使用${currentMoneyDiscountName}成功`)
@@ -846,6 +847,7 @@ const useDiscount = () => {
     discountStore.percentDiscountId = discountStore.percentSelectingDiscountId
     discountStore.currentPercentDiscount = discountStore.percentDiscount.find(item => item.id === discountStore.percentDiscountId).discountMoney
     const currentPercentDiscountName = discountStore.percentDiscount.find(item => item.id === discountStore.percentDiscountId).name
+    discountStore.currentDiscountName = currentPercentDiscountName
     discountStore.moneyDiscountId = 0
     dialogDiscount.value = false
     ElMessage.success(`使用${currentPercentDiscountName}成功`)
@@ -855,12 +857,14 @@ const useDiscount = () => {
     discountStore.currentMoneyDiscount = 0
     discountStore.moneyDiscountId = 0
     discountStore.percentDiscountId = 0
+    discountStore.currentDiscountName = ''
     dialogDiscount.value = false
     ElMessage.success('成功取消已套用的優惠券')
   }
 }
 
 // 送出訂單相關功能
+// 初始化送單資料格式
 // 控制付款方式視窗開關
 const dialogPayMethod = ref(false)
 // 打開付款方式菜單
@@ -878,19 +882,6 @@ const changePayMethod = () => {
   orderStore.payment = orderStore.currentSelectingPayment
   dialogPayMethod.value = false
   ElMessage.success('付款方式更改成功')
-}
-// 送出訂單的格式
-const toPayOrder = {
-  orderId: `${getDateForOrder()}${orderStore.currentOrderNumber}`,
-  orderTime: `${getDate()} ${time.value}`,
-  orderStatus: '已完成',
-  staff: '愛喝奶茶的貓咪',
-  orderData: drinkStore.drinkNotPay,
-  orderBagCount: drinkStore.currentBagCount,
-  orderTotalPrice: drinkStore.drinkTotalMoney,
-  orderPayment: orderStore.payment,
-  orderDiscount: drinkStore.useDiscountPrice,
-  orderPaymentPrice: drinkStore.drinkPayPrice,
 }
 // 送出訂單
 const sendOrder = () => {
@@ -933,6 +924,20 @@ const sendOrder = () => {
         })
       }
       const resetOrder = () => {
+        // 送出訂單的格式
+        const toPayOrder = {
+          orderId: `${getDateForOrder()}${orderStore.currentOrderNumber}`,
+          orderTime: `${getDate()} ${getTime()}`,
+          orderStatus: '已完成',
+          staff: '愛喝奶茶的貓咪',
+          orderData: drinkStore.drinkNotPay,
+          orderBagCount: drinkStore.currentBagCount,
+          orderTotalPrice: drinkStore.drinkTotalMoney,
+          orderPayment: orderStore.payment,
+          orderDiscount: drinkStore.useDiscountPrice,
+          orderPaymentPrice: drinkStore.drinkPayPrice,
+          discountName: discountStore.currentDiscountName === '' ? '無' : discountStore.currentDiscountName,
+        }
         orderStore.order.push(toPayOrder)
         ElMessage.success('訂單送出成功')
         drinkStore.drinkNotPay = []

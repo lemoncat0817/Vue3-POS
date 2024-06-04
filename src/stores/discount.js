@@ -9,6 +9,8 @@ export const useDiscountStore = defineStore('discount', () => {
   const moneySelectingDiscountId = ref(0)
   // 當前已選的現金折價券id
   const moneyDiscountId = ref(0)
+  // 當前已選的折價券名稱
+  const currentDiscountName = ref('')
   // 當前已選的現金折價券折價金額
   const currentMoneyDiscount = ref(0)
   // 定義現金折價券的資料
@@ -60,7 +62,7 @@ export const useDiscountStore = defineStore('discount', () => {
     "discountMoney": 0.5,
   }])
 
-  return { discountMenu, moneyDiscount, moneyDiscountId, percentDiscountId, percentDiscount, currentMoneyDiscount, moneySelectingDiscountId, percentSelectingDiscountId, currentPercentDiscount }
+  return { discountMenu, moneyDiscount, moneyDiscountId, percentDiscountId, percentDiscount, currentMoneyDiscount, moneySelectingDiscountId, percentSelectingDiscountId, currentPercentDiscount, currentDiscountName }
 }, {
   persist: true,
 })

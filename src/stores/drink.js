@@ -708,6 +708,7 @@ export const useDrinkStore = defineStore('drink', () => {
       discountStore.percentDiscountId = 0
       discountStore.currentPercentDiscount = 0
       discountStore.percentSelectingDiscountId = 0
+      discountStore.currentDiscountName = ''
       ElMessageBox.alert('待付款清單已無品項，套用優惠券以及加購的袋子數量已重置', '通知', {
         confirmButtonText: '繼續選取品項',
         type: 'info',
