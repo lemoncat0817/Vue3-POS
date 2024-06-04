@@ -67,27 +67,27 @@
     </div>
     <div class="w-4/5 mt-10 ">
       <!-- 訂單資料表格 -->
-      <el-table :data="sliceOrder" style="width: 100%; min-height: 530px;" empty-text="目前無訂單">
+      <el-table :data="sliceOrder" style="width: 100%; height: 550px;" empty-text="目前無訂單">
         <el-table-column width="30" type="expand">
           <template #default="{ row }">
             <div class="flex w-full justify-center mb-2">
-              <div class="text-blue-800 font-bold text-lg mx-2 flex">已買袋子數量:
+              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1">已買袋子數量:
                 <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderBagCount }}</p>個
               </div>
-              <div class="text-blue-800 font-bold text-lg mx-2 flex"> 訂單原始金額: $
+              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1"> 訂單原始金額: $
                 <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderTotalPrice }}</p>元
               </div>
-              <div class="text-blue-800 font-bold text-lg mx-2 flex">已使用的優惠券:
+              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1">已使用的優惠券:
                 <p class="text-red-500 font-bold text-lg mx-1">{{ row.discountName }}</p>
               </div>
-              <div class="text-blue-800 font-bold text-lg mx-2 flex">優惠券折扣金額: $
+              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1">優惠券折扣金額: $
                 <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderDiscount }}</p>元
               </div>
-              <div class="text-blue-800 font-bold text-lg mx-2 flex">顧客應付金額: $
+              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1">顧客應付金額: $
                 <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderPaymentPrice }}</p>元
               </div>
             </div>
-            <el-table :data="row.orderData" border style="width: 100%" empty-text="目前無待付款的飲品">
+            <el-table :data="row.orderData" border style="width: 100%">
               <el-table-column align="center" center label="序號" type="index" min-width="30" />
               <el-table-column align="center" label="商品" min-width="80" prop="name" />
               <el-table-column align="center" label="單價" min-width="60">
@@ -161,9 +161,10 @@
       </el-table>
       <!-- 分頁器 -->
       <div class="w-full flex justify-center mt-5">
-        <el-pagination v-model:current-page="currentPage" :small="small" :disabled="disabled" :background="true"
-          layout=" prev, pager, next" :total="orderStore.order.length" @current-change="handleCurrentChange" />
-        <div class="ml-5 text-xl text-blue-500 font-bold flex items-center">共<p class="mx-2 text-red-600">{{ sliceOrder.length }}</p>筆訂單</div>
+        <el-pagination v-model:current-page="currentPage" :background="true" layout=" prev, pager, next"
+          :total="orderStore.order.length" @current-change="handleCurrentChange" />
+        <div class="ml-5 text-xl text-blue-500 font-bold flex items-center">共<p class="mx-2 text-red-600">{{
+          sliceOrder.length }}</p>筆訂單</div>
       </div>
     </div>
   </div>
@@ -188,7 +189,6 @@ const sliceOrder = computed(() => {
 })
 
 // 訂單資料處理相關功能
-
 // 篩選的訂單編號
 const filterOrderId = ref('')
 const filterOrderTime = ref('')
