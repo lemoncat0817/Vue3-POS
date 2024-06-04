@@ -13,7 +13,7 @@
           </div>
         </div>
         <div class="w-full h-full flex ">
-          <div class="w-[70%] h-full flex flex-wrap ">
+          <div class="w-[75%] h-full flex flex-wrap ">
             <div @click="changeIce(item.name)" v-for="item in filterIce" :key="item.id"
               class="w-20 h-20 bg-green-300 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
               :class="{ 'bg-yellow-400': item.name === drinkStore.drinkSetIce }">

@@ -10,6 +10,11 @@
       :class="{ 'bg-yellow-500 scale-[1.2]': pageStore.currentPage === 1 }">
       <p class=" text-white font-bold text-2xl">查看訂單</p>
     </div>
+    <div @click="changePage(2)"
+      class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
+      :class="{ 'bg-yellow-500 scale-[1.2]': pageStore.currentPage === 2 }">
+      <p class=" text-white font-bold text-2xl">後臺設定</p>
+    </div>
   </div>
 </template>
 
@@ -26,6 +31,9 @@ const changePage = (page) => {
   }
   if (page === 1) {
     router.push('/order')
+  }
+  if (page === 2) {
+    router.push('/backgroundSetting')
   }
 }
 </script>

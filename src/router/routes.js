@@ -26,6 +26,14 @@ export const constantRoutes = [
         meta: {
           title: '查看訂單'
         }
+      },
+      {
+        path: '/backgroundSetting',
+        name: 'backgroundSetting',
+        component: () => import('@/views/backgroundSetting/index.vue'),
+        meta: {
+          title: '後臺設定'
+        }
       }
     ]
   }

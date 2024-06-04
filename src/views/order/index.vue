@@ -2,7 +2,7 @@
   <div class="w-full flex items-center flex-col overflow-y-auto ">
     <div class="w-4/5 mt-10 flex flex-col items-center">
       <h1
-        class="w-20  text-3xl text-white font-bold text-center border-2 border-solid border-black rounded-lg bg-red-500">
+        class="px-2 text-3xl text-white font-bold text-center border-2 border-solid border-black rounded-lg bg-red-500">
         訂單</h1>
       <!-- 篩選功能 -->
       <div class="flex mt-5">
@@ -138,19 +138,19 @@
             </el-table>
           </template>
         </el-table-column>
-        <el-table-column align="center" prop="orderId" label="訂單編號" width="180" />
-        <el-table-column align="center" prop="orderTime" label="訂單時間" width="180" />
-        <el-table-column align="center" prop="staff" label="服務人員" width="180" />
-        <el-table-column align="center" prop="orderStatus" label="訂單狀態" width="180" />
+        <el-table-column align="center" prop="orderId" label="訂單編號" width="100" />
+        <el-table-column align="center" prop="orderTime" label="訂單時間" width="160" />
+        <el-table-column align="center" prop="staff" label="服務人員" min-width="130" />
+        <el-table-column align="center" prop="orderStatus" label="訂單狀態" width="80" />
         <el-table-column align="center" label="訂單金額" width="180">
           <template #default="{ row }">
             <p>{{ row.orderPaymentPrice }} 元</p>
           </template>
         </el-table-column>
-        <el-table-column align="center" prop="orderPayment" label="付款方式" width="180" />
-        <el-table-column fixed="right" align="center" label="操作" min-width="340">
+        <el-table-column align="center" prop="orderPayment" label="付款方式" width="80" />
+        <el-table-column fixed="right" align="right" label="操作" min-width="250">
           <template #default="{ row }">
-            <div class="flex justify-center">
+            <div class="flex justify-end">
               <button @click="editOrderStatus(row.orderId)"
                 class="border-2 border-solid border-black rounded-lg text-blue-800 font-bold bg-red-400 text-lg mx-1 px-1 select-none active:bg-yellow-300">編輯訂單狀態</button>
               <button @click="deleteOrder(row.orderId)"
