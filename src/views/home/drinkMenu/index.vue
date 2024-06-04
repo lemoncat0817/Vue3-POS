@@ -33,7 +33,7 @@ const changeItem = (item) => {
 // 計算當前系列包含的飲品相關功能
 // 計算當前所選的飲品系列並且回傳該系列的飲品
 const currentDrinks = computed(() => {
-  return drinkStore[drinkStore.drinkTypeMenu] || []
+  return drinkStore.drinkType.find(item => item.type === drinkStore.drinkTypeMenu).drinkList
 })
 
 // 切換頁數相關功能
