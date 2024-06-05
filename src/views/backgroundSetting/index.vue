@@ -539,7 +539,7 @@ const addDrink = () => {
     return
   }
   if (currentDrinkInputPriceL.value === 'none' && currentDrinkInputPriceBottle.value === 'none') {
-    ElMessage.error('容器必需要有其中一項，請重新輸入')
+    ElMessage.error('請至少選擇一種飲料容器，請重新輸入')
     return
   }
   const newDrink = {
@@ -652,6 +652,10 @@ const editDrink = () => {
     anotherName.value = (currentType.value.drinkList.filter(item => item.name != currentDrink.value.name))
     if (anotherName.value.some(item => item.name == currentEditDrinkInputName.value)) {
       ElMessage.error('此飲料名稱已存在,請重新輸入')
+      return
+    }
+    if (currentEditDrinkInputPriceL.value == 'none' && currentEditDrinkInputPriceBottle.value == 'none') {
+      ElMessage.error('請至少選擇一種飲料容器,請重新輸入')
       return
     }
   }
