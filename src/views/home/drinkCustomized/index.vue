@@ -80,14 +80,21 @@ const filterIce = computed(() => {
     return drinkStore.drinkIce
   }
 })
-// 如果該品項不能做成瓶裝，將瓶裝選項篩選掉
+
 const filterSize = computed(() => {
+  // 如果該品項不能做成瓶裝，將瓶裝選項篩選掉
   if (drinkStore.drinkItem.priceBottle === 'none') {
     return drinkStore.drinkSize.filter(item => item.name != '瓶裝')
+  } // 如果該品項不能做成L杯，將L杯選項篩選掉
+  else if (drinkStore.drinkItem.priceL === 'none') {
+    return drinkStore.drinkSize.filter(item => item.name != 'L杯')
   } else {
     return drinkStore.drinkSize
   }
 })
+
+
+
 
 // 存入當前所選的糖度和冰塊以及杯子大小還有加料項目相關功能
 // 存入當前所選的糖度
@@ -118,7 +125,7 @@ const resetAll = () => {
   drinkStore.drinkItem = []
   drinkStore.drinkSetSugar = ''
   drinkStore.drinkSetIce = ''
-  drinkStore.drinkSetSize = 'L杯'
+  drinkStore.drinkSetSize = ''
   drinkStore.drinkAddList = []
 }
 </script>

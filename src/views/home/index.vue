@@ -397,18 +397,18 @@ const addCount = (num) => {
 const addNewDrink = () => {
   // 如果沒選擇品項不能送單
   if (drinkStore.drinkItem.length === 0) {
-    ElMessageBox.alert('飲品未選擇', '警告', {
+    ElMessageBox.alert('飲品未選擇', '通知', {
       confirmButtonText: '繼續選取',
-      type: 'warning',
+      type: 'info',
     })
     return
   }
   // 如果需客製化但沒選擇糖度不能送單
   if (drinkStore.drinkItem.customized != 'none') {
     if (drinkStore.drinkSetSugar === '') {
-      ElMessageBox.alert('糖度未選擇', '警告', {
+      ElMessageBox.alert('糖度未選擇', '通知', {
         confirmButtonText: '繼續選取',
-        type: 'warning',
+        type: 'info',
       })
       return
     }
@@ -416,18 +416,28 @@ const addNewDrink = () => {
   // 如果需客製化但沒選擇冰塊不能送單
   if (drinkStore.drinkItem.customized != 'none') {
     if (drinkStore.drinkSetIce === '') {
-      ElMessageBox.alert('冰塊未選擇', '警告', {
+      ElMessageBox.alert('冰塊未選擇', '通知', {
         confirmButtonText: '繼續選取',
-        type: 'warning',
+        type: 'info',
+      })
+      return
+    }
+  }
+  // 如果需客製化但沒選擇容器大小不能送單
+  if (drinkStore.drinkItem.customized != 'none') {
+    if (drinkStore.drinkSetSize === '') {
+      ElMessageBox.alert('容器大小未選擇', '通知', {
+        confirmButtonText: '繼續選取',
+        type: 'info',
       })
       return
     }
   }
   // 如果杯數小於一杯不能送單
   if (drinkStore.drinkCount < 1) {
-    ElMessageBox.alert('飲料杯數不能小於一杯', '警告', {
+    ElMessageBox.alert('飲料杯數不能小於一杯', '通知', {
       confirmButtonText: '繼續設定',
-      type: 'warning',
+      type: 'info',
     })
     return
   }
