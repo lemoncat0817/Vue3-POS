@@ -432,6 +432,9 @@ const addNewDrink = () => {
       })
       return
     }
+  } // 如果不需客製化則容器大小固定為L杯
+  else {
+    drinkStore.drinkSetSize = 'L杯'
   }
   // 如果杯數小於一杯不能送單
   if (drinkStore.drinkCount < 1) {
@@ -471,7 +474,7 @@ const addNewDrink = () => {
   drinkStore.drinkItem = []
   drinkStore.drinkSetSugar = ''
   drinkStore.drinkSetIce = ''
-  drinkStore.drinkSetSize = 'L杯'
+  drinkStore.drinkSetSize = ''
   drinkStore.drinkAddList = []
   drinkStore.drinkCount = '0'
 }

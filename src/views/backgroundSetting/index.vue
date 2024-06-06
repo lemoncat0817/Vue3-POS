@@ -3,7 +3,7 @@
     <div class="w-4/5 mt-10 flex flex-col items-center">
       <h1
         class="text-3xl text-white font-bold text-center border-2 border-solid border-black rounded-lg bg-red-500 px-2">
-        後臺設定</h1>
+        後台設定</h1>
       <div class="mt-5 flex">
         <div @click="settingStore.currentSettingPage = 0"
           class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold text-2xl cursor-pointer select-none"
@@ -158,7 +158,8 @@
               <!-- 客製化 -->
               <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
                 客製化:
-                <el-select v-model="currentDrinkSelectCustomized" placeholder="請選擇飲料的客製化設定" style="width: 235px">
+                <el-select v-model="currentDrinkSelectCustomized" placeholder="請選擇飲料的客製化設定" style="width: 235px"
+                  @change="checkAddDrinkSelectCustomized">
                   <el-option v-for="item in customized" :key="item.value" :label="item.label" :value="item.value">
                     <span style="float: left">{{ item.label }}</span>
                     <span style="
@@ -231,7 +232,8 @@
               <!-- 客製化 -->
               <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
                 客製化:
-                <el-select v-model="currentEditDrinkSelectCustomized" placeholder="請選擇飲料的客製化設定" style="width: 235px">
+                <el-select v-model="currentEditDrinkSelectCustomized" placeholder="請選擇飲料的客製化設定" style="width: 235px"
+                  @change="checkEditDrinkSelectCustomized">
                   <el-option v-for="item in customized" :key="item.value" :label="item.label" :value="item.value">
                     <span style="float: left">{{ item.label }}</span>
                     <span style="
@@ -492,7 +494,7 @@ const currentDrinkSelectCustomized = ref('')
 const customized = [
   {
     value: 'none',
-    label: '不能客製化',
+    label: '無客製化，容器限大杯',
   },
   {
     value: 'cold',
@@ -503,6 +505,16 @@ const customized = [
     label: '冷熱飲皆可',
   },
 ]
+// 判定當前客製化選項是否為none
+const checkAddDrinkSelectCustomized = () => {
+  if (currentDrinkSelectCustomized.value === 'none') {
+    setPriceL.value = true
+    setPriceBottle.value = false
+    currentDrinkInputPriceBottle.value = 'none'
+    ElMessage.error('容器僅限大杯,已關閉瓶裝價格輸入')
+    return
+  }
+}
 // 關閉新增飲料品項dialog視窗
 const closeAddDrinkDialog = () => {
   addDrinkDialog.value = false
@@ -523,6 +535,13 @@ const checkPriceBottleSwitch = () => {
   if (setPriceBottle.value == false) {
     currentDrinkInputPriceBottle.value = 'none'
   }
+  if (currentDrinkSelectCustomized.value === 'none') {
+    setPriceL.value = true
+    setPriceBottle.value = false
+    currentDrinkInputPriceBottle.value = 'none'
+    ElMessage.error('因為無客製化，容器僅限大杯,請調整客製化設定')
+    return
+  }
 }
 // 新增飲料品項
 const addDrink = () => {
@@ -541,6 +560,23 @@ const addDrink = () => {
   if (currentDrinkInputPriceL.value === 'none' && currentDrinkInputPriceBottle.value === 'none') {
     ElMessage.error('請至少選擇一種飲料容器，請重新輸入')
     return
+  }
+  if (setPriceL.value == true && currentDrinkInputPriceL.value === 'none') {
+    ElMessage.error('大杯價格不可為空，請重新輸入')
+    return
+  }
+  if (setPriceBottle.value == true && currentDrinkInputPriceBottle.value === 'none') {
+    ElMessage.error('瓶裝價格不可為空，請重新輸入')
+    return
+  }
+  if (currentDrinkSelectCustomized.value === 'none') {
+    if (currentDrinkInputPriceBottle.value !== 'none' && setPriceBottle.value !== false) {
+      setPriceL.value = true
+      setPriceBottle.value = false
+      currentDrinkInputPriceBottle.value = 'none'
+      ElMessage.error('因為無客製化，容器僅限大杯,已關閉瓶裝價格輸入')
+      return
+    }
   }
   const newDrink = {
     id: currentDrinkInputId.value,
@@ -604,6 +640,23 @@ const checkEditPriceBottleSwitch = () => {
   if (setEditPriceBottle.value == false) {
     currentEditDrinkInputPriceBottle.value = 'none'
   }
+  if (currentEditDrinkSelectCustomized.value === 'none') {
+    setEditPriceL.value = true
+    setEditPriceBottle.value = false
+    currentEditDrinkInputPriceBottle.value = 'none'
+    ElMessage.error('因為無客製化，容器僅限大杯,請調整客製化設定')
+    return
+  }
+}
+// 判定當前客製化選項是否為none
+const checkEditDrinkSelectCustomized = () => {
+  if (currentEditDrinkSelectCustomized.value === 'none') {
+    setEditPriceL.value = true
+    setEditPriceBottle.value = false
+    currentEditDrinkInputPriceBottle.value = 'none'
+    ElMessage.error('容器僅限大杯,已關閉瓶裝價格輸入')
+    return
+  }
 }
 // 控制編輯dialog視窗開關
 const editDrinkDialog = ref(false)
@@ -637,6 +690,14 @@ const editDrink = () => {
     ElMessage.error('請輸入完整資訊')
     return
   }
+  if (setEditPriceL.value == true && currentEditDrinkInputPriceL.value === 'none') {
+    ElMessage.error('大杯價格不可為空，請重新輸入')
+    return
+  }
+  if (setEditPriceBottle.value == true && currentEditDrinkInputPriceBottle.value === 'none') {
+    ElMessage.error('瓶裝價格不可為空，請重新輸入')
+    return
+  }
   if (currentEditDrinkInputId.value == currentDrink.value.id && currentEditDrinkInputName.value == currentDrink.value.name && currentEditDrinkInputPriceL.value == currentDrink.value.priceL && currentEditDrinkInputPriceBottle.value == currentDrink.value.priceBottle && currentEditDrinkSelectCustomized.value == currentDrink.value.customized) {
     editDrinkDialog.value = false
     ElMessage.success('保存成功')
@@ -657,6 +718,15 @@ const editDrink = () => {
     if (currentEditDrinkInputPriceL.value == 'none' && currentEditDrinkInputPriceBottle.value == 'none') {
       ElMessage.error('請至少選擇一種飲料容器,請重新輸入')
       return
+    }
+    if (currentEditDrinkSelectCustomized.value === 'none') {
+      if (currentEditDrinkInputPriceBottle.value !== 'none' && setPriceBottle.value !== false) {
+        setEditPriceL.value = true
+        setEditPriceBottle.value = false
+        currentEditDrinkInputPriceBottle.value = 'none'
+        ElMessage.error('因為無客製化，容器僅限大杯,已關閉瓶裝價格輸入')
+        return
+      }
     }
   }
   currentDrink.value.id = currentEditDrinkInputId.value
