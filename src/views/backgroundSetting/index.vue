@@ -283,7 +283,97 @@
           </div>
         </div>
       </div>
-      <div class="flex-[1] bg-yellow-300"></div>
+      <!-- 配料 -->
+      <div class="flex-[1]">
+        <div class="flex justify-between mt-2">
+          <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">配料</div>
+          <div class="flex mr-2">
+            <!-- 新增功能 -->
+            <button @click="openAddIngredientsDialog"
+              class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
+            <!-- 新增配料 -->
+            <el-dialog v-model="addIngredientsDialog" title="新增配料" width="500">
+              <!-- 配料的Id -->
+              <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+                配料的Id:<input v-model="currentIngredientsInputId" type="number" min="1" step="1"
+                  class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+                  placeholder="純數字,例如:1,2,3..." />
+              </div>
+              <!-- 配料名稱 -->
+              <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+                配料名稱:<input v-model="currentIngredientsInputName"
+                  class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+                  placeholder="例如: 波霸,雙Q果..." />
+              </div>
+              <!-- 配料的價錢 -->
+              <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+                配料的價錢:<input v-model="currentIngredientsInputPrice" type="number" min="1" step="1"
+                  class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+                  placeholder="純數字,例如:1,2,3..." />
+              </div>
+              <template #footer>
+                <div class="dialog-footer">
+                  <el-button @click="closeAddIngredientsDialog">取消</el-button>
+                  <el-button type="primary" @click="addDrinkIngredients">
+                    新增
+                  </el-button>
+                </div>
+              </template>
+            </el-dialog>
+            <!-- 刪除功能 -->
+            <button @click="deleteDrinkIngredients"
+              class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
+            <!-- 編輯功能 -->
+            <button @click="openEditIngredientsDialog"
+              class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
+            <!-- 編輯配料 -->
+            <el-dialog v-model="editIngredientsDialog" title="編輯配料" width="500">
+              <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+                配料的Id:<input v-model="currentEditIngredientsInputId" type="number" min="1" step="1"
+                  class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+                  placeholder="純數字,例如:1,2,3..." />
+              </div>
+              <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+                配料名稱:<input v-model="currentEditIngredientsInputName"
+                  class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+                  placeholder="例如: 波霸,雙Q果..." />
+              </div>
+              <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+                配料的價錢:<input v-model="currentEditIngredientsInputPrice" type="number" min="1" step="1"
+                  class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+                  placeholder="純數字,例如:1,2,3..." />
+              </div>
+              <template #footer>
+                <div class="dialog-footer">
+                  <el-button @click="closeEditIngredientsDialog">取消</el-button>
+                  <el-button type="primary" @click="editDrinkIngredients">
+                    保存
+                  </el-button>
+                </div>
+              </template>
+            </el-dialog>
+          </div>
+        </div>
+        <div>
+          <el-table class="cursor-pointer mt-2" :data="sliceIngredients" highlight-current-row height="440"
+            empty-text="無配料" @current-change="handleCurrentIngredientsChange">
+            <el-table-column align="center" type="index" label="序號" min-width="55" />
+            <el-table-column align="center" label="Id" prop="id" min-width="55" />
+            <el-table-column align="center" label="配料名稱" prop="name" min-width="90" />
+            <el-table-column align="center" label="價錢" prop="price" min-width="65" />
+          </el-table>
+          <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center mt-10">
+            <p class="text-blue-800">{{ `共 ${drinkStore.drinkAdd.length} 樣` }}</p>
+            <div class="h-full flex items-center">
+              <el-pagination v-model:current-page="drinkIngredientsCurrentPage" small background layout="prev, next"
+                :total="drinkStore.drinkAdd.length" @current-change="handleIngredientsCurrentChange" />
+            </div>
+            <p class="text-blue-800">{{ `${drinkStore.drinkAdd.length > 0
+              ? ingredientsCurrentPage : 0}/${Math.ceil(drinkStore.drinkAdd.length / 10)}頁` }}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -747,6 +837,154 @@ const handleDrinkCurrentChange = (page) => {
 const sliceDrink = computed(() => {
   if (currentType.value.drinkList) {
     return currentType.value.drinkList.slice((drinkCurrentPage.value - 1) * 10, drinkCurrentPage.value * 10)
+  } else {
+    return []
+  }
+})
+
+// 配料的相關功能
+// 存放當前所選的配料選項
+const currentIngredientsDrink = ref({})
+// 接收當前回傳的已選的飲料品項
+const handleCurrentIngredientsChange = (row) => {
+  currentIngredientsDrink.value = row
+}
+// 控制新增配料dialog視窗開關
+const addIngredientsDialog = ref(false)
+// 打開新增配料dialog視窗
+const openAddIngredientsDialog = () => {
+  currentIngredientsInputId.value = ''
+  currentIngredientsInputName.value = ''
+  currentIngredientsInputPrice.value = ''
+  addIngredientsDialog.value = true
+}
+// 關閉新增配料dialog視窗
+const closeAddIngredientsDialog = () => {
+  addIngredientsDialog.value = false
+  ElMessage.error('取消操作')
+}
+// 存放當前輸入的配料Id
+const currentIngredientsInputId = ref('')
+// 存放當前輸入的配料名稱
+const currentIngredientsInputName = ref('')
+// 存放當前輸入的配料價格
+const currentIngredientsInputPrice = ref('')
+// 新增配料
+const addDrinkIngredients = () => {
+  if (currentIngredientsInputId.value === '' || currentIngredientsInputName.value === '' || currentIngredientsInputPrice.value === '') {
+    ElMessage.error('請輸入完整資訊')
+    return
+  }
+  if (drinkStore.drinkAdd.find((item) => item.id == currentIngredientsInputId.value)) {
+    ElMessage.error('此Id已存在,請重新輸入')
+    return
+  }
+  if (drinkStore.drinkAdd.find((item) => item.name == currentIngredientsInputName.value)) {
+    ElMessage.error('此配料名稱已存在,請重新輸入')
+    return
+  }
+  const newIngredients = {
+    id: currentIngredientsInputId.value,
+    name: currentIngredientsInputName.value,
+    price: currentIngredientsInputPrice.value
+  }
+  drinkStore.drinkAdd.push(newIngredients)
+  addIngredientsDialog.value = false
+  ElMessage.success('新增成功')
+}
+// 刪除配料
+const deleteDrinkIngredients = () => {
+  if (currentIngredientsDrink.value.name) {
+    ElMessageBox.confirm(
+      `是否刪除配料 ${currentIngredientsDrink.value.name} ?`,
+      '警告',
+      {
+        confirmButtonText: '確定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+      .then(() => {
+        drinkStore.drinkAdd = drinkStore.drinkAdd.filter((item) => item.id !== currentIngredientsDrink.value.id)
+        ElMessage.success('刪除成功')
+      })
+      .catch(() => {
+        ElMessage.error('取消操作');
+      })
+  } else {
+    ElMessageBox.alert('請先選擇要刪除的配料', '通知', {
+      confirmButtonText: '繼續選擇',
+      type: 'info',
+    })
+  }
+}
+// 控制編輯dialog視窗開關
+const editIngredientsDialog = ref(false)
+// 關閉編輯dialog視窗
+const closeEditIngredientsDialog = () => {
+  editIngredientsDialog.value = false
+  ElMessage.error('取消操作')
+}
+// 存放當前編輯輸入的配料Id
+const currentEditIngredientsInputId = ref('')
+// 存放當前編輯輸入的配料名稱
+const currentEditIngredientsInputName = ref('')
+// 存放當前編輯輸入的配料價格
+const currentEditIngredientsInputPrice = ref('')
+// 開啟編輯dialog視窗
+const openEditIngredientsDialog = () => {
+  if (currentIngredientsDrink.value.name) {
+    currentEditIngredientsInputId.value = currentIngredientsDrink.value.id
+    currentEditIngredientsInputName.value = currentIngredientsDrink.value.name
+    currentEditIngredientsInputPrice.value = currentIngredientsDrink.value.price
+    editIngredientsDialog.value = true
+  } else {
+    ElMessageBox.alert('請先選擇要編輯的配料', '通知', {
+      confirmButtonText: '繼續選擇',
+      type: 'info',
+    })
+  }
+}
+// 編輯配料
+const editDrinkIngredients = () => {
+  if (currentEditIngredientsInputId.value === '' || currentEditIngredientsInputName.value === '' || currentEditIngredientsInputPrice.value === '') {
+    ElMessage.error('請輸入完整資訊')
+    return
+  }
+  if (currentEditIngredientsInputId.value == currentIngredientsDrink.value.id && currentEditIngredientsInputName.value == currentIngredientsDrink.value.name && currentEditIngredientsInputPrice.value == currentIngredientsDrink.value.price) {
+    editIngredientsDialog.value = false
+    ElMessage.success('保存成功')
+    return
+  } else {
+    const anotherId = ref([])
+    anotherId.value = (drinkStore.drinkAdd.filter(item => item.id != currentIngredientsDrink.value.id))
+    if (anotherId.value.some(item => item.id == currentEditIngredientsInputId.value)) {
+      ElMessage.error('此Id已存在,請重新輸入')
+      return
+    }
+    const anotherName = ref([])
+    anotherName.value = (drinkStore.drinkAdd.filter(item => item.name != currentIngredientsDrink.value.name))
+    if (anotherName.value.some(item => item.name == currentEditIngredientsInputName.value)) {
+      ElMessage.error('此配料名稱已存在,請重新輸入')
+      return
+    }
+  }
+  currentIngredientsDrink.value.id = currentEditIngredientsInputId.value
+  currentIngredientsDrink.value.name = currentEditIngredientsInputName.value
+  currentIngredientsDrink.value.price = currentEditIngredientsInputPrice.value
+  editIngredientsDialog.value = false
+  ElMessage.success('保存成功')
+}
+// 存放當前茶品類型當前的頁數
+const ingredientsCurrentPage = ref(1)
+// 控制茶品類型當前頁數
+const handleIngredientsCurrentChange = (page) => {
+  ingredientsCurrentPage.value = page
+}
+// 計算並切換當前頁面內容
+const sliceIngredients = computed(() => {
+  if (drinkStore.drinkAdd) {
+    return drinkStore.drinkAdd.slice((ingredientsCurrentPage.value - 1) * 10, ingredientsCurrentPage.value * 10)
   } else {
     return []
   }
