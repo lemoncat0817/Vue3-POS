@@ -37,8 +37,8 @@
     <!-- 如果選擇加料菜單則顯示 -->
     <div v-if="drinkStore.drinkMenu === 1" class="w-[95%] h-full ">
       <div class="w-full h-full flex flex-wrap  ">
-        <div @click="changeAdd(item)" v-for="item in drinkStore.drinkAdd" :key="item.id"
-          class="w-20 h-20 bg-red-400 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
+        <div @click="changeAdd(item)" v-for="item in sliceAddMenu" :key="item.id"
+          class="w-24 h-24 bg-red-400 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
           :class="{ 'bg-yellow-400': drinkStore.drinkAddList.some(addItem => addItem.name === item.name) }">
           <p class="text-blue-800 text-xl font-bold select-none	">{{ item.name }}</p>
         </div>
@@ -46,6 +46,14 @@
     </div>
     <!-- 飲料客製化下半部 -->
     <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
+      <div v-if="drinkStore.drinkMenu === 1" class="w-1/2 flex justify-around items-center">
+        <p class="text-blue-800">{{ `共 ${drinkStore.drinkAdd.length} 樣` }}</p>
+        <div class="h-full flex items-center">
+          <el-pagination v-model:current-page="currentPage" small background layout="prev, next"
+            :total="drinkStore.drinkAdd.length" @current-change="handleCurrentChange" />
+        </div>
+        <p class="text-blue-800">{{ `${currentPage}/${Math.ceil(drinkStore.drinkAdd.length / 12)}頁` }}</p>
+      </div>
       <div class="h-full flex items-center">
         <div @click="drinkStore.drinkMenu = 0"
           class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1"
@@ -69,7 +77,8 @@
 <script setup>
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+import { ElMessageBox, ElMessage } from 'element-plus';
 
 // 判定當前飲品是否能做為熱飲或是是否可以使用瓶裝容器相關功能
 // 如果該品項不能做為熱飲，將熱飲選項篩選掉
@@ -93,9 +102,6 @@ const filterSize = computed(() => {
   }
 })
 
-
-
-
 // 存入當前所選的糖度和冰塊以及杯子大小還有加料項目相關功能
 // 存入當前所選的糖度
 const changeSugar = (sugar) => {
@@ -118,15 +124,45 @@ const changeAdd = (addItem) => {
   }
 }
 
+// 切換頁數相關功能
+// 頁數切換
+const handleCurrentChange = (page) => {
+  currentPage.value = page
+}
+// 定義當前頁數
+const currentPage = ref(1)
+// 計算並切換當前頁面內容
+const sliceAddMenu = computed(() => {
+  return drinkStore.drinkAdd.slice((currentPage.value - 1) * 12, currentPage.value * 12)
+})
+
 // 重置所有已選擇項目的相關功能
 // 重置所有選項
 const resetAll = () => {
-  drinkStore.drinkTypeMenu = 'drinkSeasonal'
-  drinkStore.drinkItem = []
-  drinkStore.drinkSetSugar = ''
-  drinkStore.drinkSetIce = ''
-  drinkStore.drinkSetSize = ''
-  drinkStore.drinkAddList = []
+  ElMessageBox.confirm(
+    '是否要重置上面所有選項?',
+    '警告',
+    {
+      confirmButtonText: '確定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
+    .then(() => {
+      reset()
+      ElMessage.success('重置成功')
+    })
+    .catch(() => {
+      ElMessage.error('取消操作')
+    })
+  const reset = () => {
+    drinkStore.drinkTypeMenu = 'drinkSeasonal'
+    drinkStore.drinkItem = []
+    drinkStore.drinkSetSugar = ''
+    drinkStore.drinkSetIce = ''
+    drinkStore.drinkSetSize = ''
+    drinkStore.drinkAddList = []
+  }
 }
 </script>
 
