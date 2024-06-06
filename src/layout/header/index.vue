@@ -28,21 +28,23 @@ const router = useRouter()
 import { ElMessageBox, ElMessage } from 'element-plus';
 
 const changePage = (page) => {
-  pageStore.currentPage = page
   if (page === 0) {
+    pageStore.currentPage = page
     router.push('/home')
   }
   if (page === 1) {
+    pageStore.currentPage = page
     router.push('/order')
   }
   if (page === 2) {
-    if (router.currentRoute.value.name === 'home') {
-      ElMessageBox.confirm('是否要前往後台設定頁面?, 前往後台設定頁面後將清空點餐頁面!', '警告', {
+    if (drinkStore.drinkNotPay.length != 0) {
+      ElMessageBox.confirm('前往後台設定頁面後將清空點餐頁面,是否要前往後台設定頁面?, ', '警告', {
         confirmButtonText: '確定前往',
         cancelButtonText: '取消前往',
         type: 'warning',
       })
         .then(() => {
+          pageStore.currentPage = page
           drinkStore.drinkNotPay = []
           router.push('/backgroundSetting')
         })
@@ -52,6 +54,7 @@ const changePage = (page) => {
         })
     } else {
       router.push('/backgroundSetting')
+      pageStore.currentPage = page
     }
   }
 }
