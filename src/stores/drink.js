@@ -713,9 +713,14 @@ export const useDrinkStore = defineStore('drink', () => {
   // 送出訂單前顧客應付總額結算
   // 顧客應付款金額
   const drinkPayPrice = computed(() => {
+
     // 如果有套用優惠券
     if (discountStore.moneyDiscountId != 0) {
-      return Math.round(Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value - discountStore.currentMoneyDiscount)
+      if (Math.round(Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value - discountStore.currentMoneyDiscount) < 0) {
+        return 0
+      } else {
+        return Math.round(Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value - discountStore.currentMoneyDiscount)
+      }
     } else if (discountStore.percentDiscountId != 0) {
       return Math.round((Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value) * discountStore.currentPercentDiscount)
     } else {
