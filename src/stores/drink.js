@@ -635,7 +635,7 @@ export const useDrinkStore = defineStore('drink', () => {
   // 預設為糖度/冰塊
   const drinkMenu = ref(0)
   // 存放當前所選的飲料系列
-  const drinkTypeMenu = ref('drinkSeasonal')
+  const drinkTypeMenu = ref('')
   // 存放當前所選的茶類
   const drinkItem = ref([])
   // 存放當前所選的糖度

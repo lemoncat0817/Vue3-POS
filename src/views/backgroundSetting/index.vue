@@ -88,7 +88,7 @@
           </div>
         </div>
         <div>
-          <el-table class="cursor-pointer mt-2" :data="sliceDrinkType" highlight-current-row height="440"
+          <el-table class="cursor-pointer mt-2" :data="sliceDrinkType" highlight-current-row height="440" empty-text="無飲品類型"
             @current-change="handleCurrentChange">
             <el-table-column align="center" type="index" label="序號" min-width="55" />
             <el-table-column align="center" label="Id" prop="id" min-width="55" />
@@ -101,7 +101,7 @@
               <el-pagination v-model:current-page="drinkTypeCurrentPage" small background layout="prev, next"
                 :total="drinkStore.drinkType.length" @current-change="handleDrinkTypeCurrentChange" />
             </div>
-            <p class="text-blue-800">{{ `${drinkTypeCurrentPage}/${Math.ceil(drinkStore.drinkType.length / 10)}頁` }}</p>
+            <p class="text-blue-800">{{ `${drinkStore.drinkType.length >0  ? drinkTypeCurrentPage : 0 }/${Math.ceil(drinkStore.drinkType.length / 10)}頁` }}</p>
           </div>
         </div>
       </div>
@@ -369,7 +369,7 @@
                 :total="drinkStore.drinkAdd.length" @current-change="handleIngredientsCurrentChange" />
             </div>
             <p class="text-blue-800">{{ `${drinkStore.drinkAdd.length > 0
-              ? ingredientsCurrentPage : 0}/${Math.ceil(drinkStore.drinkAdd.length / 10)}頁` }}
+              ? drinkIngredientsCurrentPage : 0}/${Math.ceil(drinkStore.drinkAdd.length / 10)}頁` }}
             </p>
           </div>
         </div>
@@ -454,7 +454,11 @@ const sliceDrinkType = computed(() => {
 })
 // 刪除當前選擇的飲料類型
 const deleteDrinkType = () => {
-  if (currentType.value.name) {
+  if(drinkStore.drinkType.length == 1){
+    ElMessage.error('至少要留有一個飲料類型，需修改請善用編輯功能')
+    return
+  }
+  if (currentType.value.name ) {
     ElMessageBox.confirm(
       `是否刪除 ${currentType.value.name} 類型?`,
       '警告',
@@ -465,8 +469,9 @@ const deleteDrinkType = () => {
       }
     )
       .then(() => {
-        drinkStore.drinkType = drinkStore.drinkType.filter((item) => item.id !== currentType.value.id)
-        ElMessage.success('刪除成功')
+        drinkStore.drinkTypeMenu = ''
+        drinkStore.drinkType = drinkStore.drinkType.filter((item) => item.id !== currentType.value.id);
+          window.location.reload() 
       })
       .catch(() => {
         ElMessage.error('取消操作');
@@ -976,15 +981,15 @@ const editDrinkIngredients = () => {
   ElMessage.success('保存成功')
 }
 // 存放當前茶品類型當前的頁數
-const ingredientsCurrentPage = ref(1)
+const drinkIngredientsCurrentPage = ref(1)
 // 控制茶品類型當前頁數
 const handleIngredientsCurrentChange = (page) => {
-  ingredientsCurrentPage.value = page
+  drinkIngredientsCurrentPage.value = page
 }
 // 計算並切換當前頁面內容
 const sliceIngredients = computed(() => {
   if (drinkStore.drinkAdd) {
-    return drinkStore.drinkAdd.slice((ingredientsCurrentPage.value - 1) * 10, ingredientsCurrentPage.value * 10)
+    return drinkStore.drinkAdd.slice((drinkIngredientsCurrentPage.value - 1) * 10, drinkIngredientsCurrentPage.value * 10)
   } else {
     return []
   }

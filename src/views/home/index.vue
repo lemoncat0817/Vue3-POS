@@ -470,7 +470,7 @@ const addNewDrink = () => {
   // 送出訂單至待付款區
   drinkStore.drinkNotPay.push(newDrink)
   // 成功送單後將菜單區重置
-  drinkStore.drinkTypeMenu = 'drinkSeasonal'
+  drinkStore.drinkTypeMenu = ''
   drinkStore.drinkItem = []
   drinkStore.drinkSetSugar = ''
   drinkStore.drinkSetIce = ''

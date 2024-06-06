@@ -156,7 +156,7 @@ const resetAll = () => {
       ElMessage.error('取消操作')
     })
   const reset = () => {
-    drinkStore.drinkTypeMenu = 'drinkSeasonal'
+    drinkStore.drinkTypeMenu = ''
     drinkStore.drinkItem = []
     drinkStore.drinkSetSugar = ''
     drinkStore.drinkSetIce = ''
