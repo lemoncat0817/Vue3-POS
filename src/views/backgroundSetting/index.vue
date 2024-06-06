@@ -14,16 +14,19 @@
           :class="{ 'bg-yellow-400': settingStore.currentSettingPage === 1 }">
           優惠設定</div>
       </div>
-      <div v-if="settingStore.currentSettingPage === 0" class="w-full h-[600px] mt-6 border-2 border-solid border-black rounded-lg flex ">
-      <ProductManagement/>
-      </div>
     </div>
-
+    <div v-if="settingStore.currentSettingPage === 0" class="w-4/5 h-[600px] mt-6 border-2 border-solid border-black rounded-lg flex ">
+      <ProductManagement/>
+    </div>
+    <div v-if="settingStore.currentSettingPage === 1" class="w-4/5 h-[600px] mt-6 border-2 border-solid border-black rounded-lg flex ">
+      <OfferSetting/>
+    </div>
   </div>
 </template>
 
 <script setup>
 import ProductManagement from './productManagement/index.vue'
+import OfferSetting from './offerSetting/index.vue'
 import { useSettingStore } from '@/stores/setting'
 const settingStore = useSettingStore()
 </script>

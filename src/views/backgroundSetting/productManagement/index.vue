@@ -361,8 +361,6 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
-
-
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
 
