@@ -147,7 +147,7 @@
             <el-table-column align="center" label="使用的折扣" min-width="80">
               <template #default="{ row }">
                 <div v-if="row.useDiscountPercent === '' && row.useDiscountMoney === '' && row.useDiscountFree === ''">
-                  <p>目前無使用折扣</p>
+                  <p>無使用折扣</p>
                 </div>
                 <div v-else class="w-full flex justify-center">
                   <el-tag class="mx-0.5" type="primary" v-if="row.useDiscountFree != ''">

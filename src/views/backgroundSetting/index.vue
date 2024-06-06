@@ -591,7 +591,7 @@ const addDrink = () => {
 }
 // 刪除當前選擇的飲料品項
 const deleteDrink = () => {
-  if (currentDrink.value.name) {
+  if (currentDrink.value != null && currentDrink.value.name) {
     ElMessageBox.confirm(
       `是否刪除飲料品項 ${currentDrink.value.name} ?`,
       '警告',
