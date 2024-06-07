@@ -74,7 +74,7 @@
         <el-table-column align="center" type="index" label="序號" min-width="55" />
         <el-table-column align="center" label="Id" prop="id" min-width="55" />
         <el-table-column align="center" label="折價券名稱" prop="name" min-width="90" />
-        <el-table-column align="center" label="折價金額" prop="discountMoney" min-width="100" />
+        <el-table-column align="center" label="折價金額" prop="discountMoney" min-width="80" />
       </el-table>
       <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center mt-10">
         <p class="text-blue-800">{{ `共 ${discountStore.moneyDiscount.length} 樣` }}</p>
@@ -161,7 +161,7 @@
         <el-table-column align="center" type="index" label="序號" min-width="55" />
         <el-table-column align="center" label="Id" prop="id" min-width="55" />
         <el-table-column align="center" label="折價券名稱" prop="name" min-width="90" />
-        <el-table-column align="center" label="折價金額" prop="discountMoney" min-width="100" />
+        <el-table-column align="center" label="折價折數" prop="discountMoney" min-width="80" />
       </el-table>
       <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center mt-10">
         <p class="text-blue-800">{{ `共 ${discountStore.percentDiscount.length} 樣` }}</p>
@@ -174,7 +174,59 @@
       </div>
     </div>
   </div>
-  <div class="flex-[1]"></div>
+  <!-- 常用優惠 -->
+  <div class="flex-[1]">
+    <div class="flex justify-between mt-2">
+      <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">常用優惠</div>
+      <div class="flex mr-2">
+        <!-- 編輯功能 -->
+        <button @click="openEditOftenUseDiscountDialog"
+          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
+        <!-- 編輯常用優惠 -->
+        <el-dialog v-model="editOftenUseDiscountDialog" title="編輯常用優惠" width="500">
+          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+            優惠名稱:<input v-model="currentEditOftenUseDiscountInputName" :disabled="isEditName"
+              class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+              placeholder="例如: 九折,員工八折..." />
+          </div>
+          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+            折扣的金額:<input v-model="currentEditInputEditOftenUseMoneyDiscount" type="number" min="1" step="1"
+              class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+              :disabled="isEditMoneyDiscount" placeholder="純數字,例如:1,2,3..." />
+          </div>
+          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+            折扣的折數:<input v-model="currentEditInputOftenUsePercentDiscount" type="number" min="0" step="0.01"
+              class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+              :disabled="isEditPercentDiscount" placeholder="純數字,例如:0.95,0.85..." />
+          </div>
+          <template #footer>
+            <div class="dialog-footer">
+              <el-button @click="closeEditOftenUseDiscountDialog">取消</el-button>
+              <el-button type="primary" @click="editDrinkOftenUseDiscount">
+                保存
+              </el-button>
+            </div>
+          </template>
+        </el-dialog>
+      </div>
+    </div>
+    <div>
+      <el-table class="cursor-pointer mt-2" :data="discountStore.oftenUseDiscount" highlight-current-row height="440"
+        @current-change="handleCurrentOftenUseDiscountChange">
+        <el-table-column align="center" type="index" label="序號" min-width="55" />
+        <el-table-column align="center" label="優惠名稱" prop="name" min-width="90" />
+        <el-table-column align="center" label="折價金額" prop="discountMoney" min-width="80" />
+        <el-table-column align="center" label="折價折數" prop="discountPercent" min-width="80" />
+      </el-table>
+      <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center mt-10">
+        <p class="text-blue-800">共 5 樣</p>
+        <div class="h-full flex items-center">
+          <el-pagination small background layout="prev, next" :total="5" />
+        </div>
+        <p class="text-blue-800">1/1頁</p>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -467,7 +519,7 @@ const closeEditPercentDiscountDialog = () => {
   editPercentDiscountDialog.value = false
   ElMessage.error('取消操作')
 }
-// 編輯茶品類型
+// 編輯折數折扣券
 const editDrinkPercentDiscount = () => {
   if (currentEditPercentDiscountInputId.value === '' || currentEditPercentDiscountInputName.value === '' || currentEditInputPercentDiscount.value === '') {
     ElMessage.error('請輸入完整資訊')
@@ -506,6 +558,94 @@ const editDrinkPercentDiscount = () => {
   currentPercentDiscount.value.name = currentEditPercentDiscountInputName.value
   currentPercentDiscount.value.discountMoney = currentEditInputPercentDiscount.value
   editPercentDiscountDialog.value = false
+  ElMessage.success('保存成功')
+}
+
+// 常用優惠相關功能
+// 存放當前所選的常用功能
+const currentOftenUseDiscount = ref({})
+// 將當前所選的常用功能存入
+const handleCurrentOftenUseDiscountChange = (row) => {
+  currentOftenUseDiscount.value = row
+}
+// 控制編輯dialog視窗開關
+const editOftenUseDiscountDialog = ref(false)
+// 存放當前編輯輸入的優惠名稱
+const currentEditOftenUseDiscountInputName = ref('')
+// 存放當前編輯輸入的折扣金額
+const currentEditInputEditOftenUseMoneyDiscount = ref()
+// 存放當前編輯輸入的折扣折數
+const currentEditInputOftenUsePercentDiscount = ref()
+// 是否可以編輯優惠名稱
+const isEditName = ref(false)
+// 是否可以編輯折扣金額
+const isEditMoneyDiscount = ref(false)
+// 是否可以編輯折扣折數
+const isEditPercentDiscount = ref(false)
+// 開啟編輯dialog視窗
+const openEditOftenUseDiscountDialog = () => {
+  if (currentOftenUseDiscount.value.name) {
+    currentEditOftenUseDiscountInputName.value = currentOftenUseDiscount.value.name
+    currentEditInputEditOftenUseMoneyDiscount.value = currentOftenUseDiscount.value.discountMoney
+    currentEditInputOftenUsePercentDiscount.value = currentOftenUseDiscount.value.discountPercent
+    if (currentOftenUseDiscount.value.id <= 2) {
+      isEditName.value = true
+      isEditPercentDiscount.value = true
+    } else {
+      isEditName.value = false
+      isEditPercentDiscount.value = false
+    }
+    if (currentOftenUseDiscount.value.id >= 3) {
+      isEditMoneyDiscount.value = true
+    } else {
+      isEditMoneyDiscount.value = false
+    }
+    editOftenUseDiscountDialog.value = true
+  } else {
+    ElMessageBox.alert('請先選擇要編輯的優惠', '通知', {
+      confirmButtonText: '繼續選擇',
+      type: 'info',
+    })
+  }
+}
+// 關閉編輯dialog視窗
+const closeEditOftenUseDiscountDialog = () => {
+  editOftenUseDiscountDialog.value = false
+  ElMessage.error('取消操作')
+}
+// 編輯常用優惠
+const editDrinkOftenUseDiscount = () => {
+  if (currentEditOftenUseDiscountInputName.value === '' || currentEditInputEditOftenUseMoneyDiscount.value === '' || currentEditInputOftenUsePercentDiscount.value === '') {
+    ElMessage.error('請輸入完整資訊')
+    return
+  }
+  if (currentEditOftenUseDiscountInputName.value == currentOftenUseDiscount.value.name && currentEditInputEditOftenUseMoneyDiscount.value == currentOftenUseDiscount.value.discountMoney && currentEditInputOftenUsePercentDiscount.value == currentOftenUseDiscount.value.discountPercent) {
+    editOftenUseDiscountDialog.value = false
+    ElMessage.success('保存成功')
+    return
+  } else {
+    const anotherName = ref([])
+    anotherName.value = (discountStore.oftenUseDiscount.filter(item => item.name != currentOftenUseDiscount.value.name))
+    if (anotherName.value.some(item => item.name == currentEditOftenUseDiscountInputName.value)) {
+      ElMessage.error('此優惠名稱已存在,請重新輸入')
+      return
+    }
+    if (currentEditInputEditOftenUseMoneyDiscount.value <= 0 && !isEditMoneyDiscount.value) {
+      ElMessage.error('折抵金額不可為負數且需大於0,請重新輸入')
+      return
+    }
+    if (currentEditInputOftenUsePercentDiscount.value < 0 && !isEditPercentDiscount.value) {
+      ElMessage.error('折抵折數不可為負數,請重新輸入')
+      return
+    } else if (currentEditInputOftenUsePercentDiscount.value >= 1 && !isEditPercentDiscount.value) {
+      ElMessage.error('折抵折數不可大於等於1,請重新輸入')
+      return
+    }
+  }
+  currentOftenUseDiscount.value.name = currentEditOftenUseDiscountInputName.value
+  currentOftenUseDiscount.value.discountMoney = currentEditInputEditOftenUseMoneyDiscount.value
+  currentOftenUseDiscount.value.discountPercent = currentEditInputOftenUsePercentDiscount.value
+  editOftenUseDiscountDialog.value = false
   ElMessage.success('保存成功')
 }
 </script>

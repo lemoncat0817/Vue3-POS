@@ -199,22 +199,15 @@
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">免費招待</button>
           <!-- 環保折扣 -->
           <button @click="ecoDiscount"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">環保折扣</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">{{
+              discountStore.oftenUseDiscount[0].name }}</button>
           <!-- 瓶裝折扣 -->
           <button @click="bottleDiscount"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">瓶裝折扣</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">{{
+              discountStore.oftenUseDiscount[1].name }}</button>
           <!-- 開收銀機 -->
           <button @click="openCashier"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">開收銀機</button>
-          <!-- 九折 -->
-          <button @click="tenOffDiscount"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">九折</button>
-          <!-- 八五折 -->
-          <button @click="fifteenOffDiscount"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">八五折</button>
-          <!-- 員工八折 -->
-          <button @click="twentyOffDiscount"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">員工八折</button>
           <!-- 優惠券 -->
           <button @click="openDiscountMenu"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">優惠券</button>
@@ -283,6 +276,18 @@
               </div>
             </template>
           </el-dialog>
+          <!-- 九折 -->
+          <button @click="oftenUseDiscount1"
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">{{
+              discountStore.oftenUseDiscount[2].name }}</button>
+          <!-- 八五折 -->
+          <button @click="oftenUseDiscount2"
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">{{
+              discountStore.oftenUseDiscount[3].name }}</button>
+          <!-- 員工八折 -->
+          <button @click="oftenUseDiscount3"
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">{{
+              discountStore.oftenUseDiscount[4].name }}</button>
         </div>
         <!-- 數量設置鍵盤 -->
         <div class="w-[30%] h-[95%] mt-2 bg-red-200 border-solid border-2 border-black rounded-xl">
@@ -489,9 +494,9 @@ const addNewDrink = () => {
     freeDiscount: false,
     ecoDiscount: false,
     bottleDiscount: false,
-    tenOffDiscount: false,
-    fifteenOffDiscount: false,
-    twentyOffDiscount: false,
+    oftenUseDiscount1: false,
+    oftenUseDiscount2: false,
+    oftenUseDiscount3: false,
   }
   // 送出訂單至待付款區
   drinkStore.drinkNotPay.push(newDrink)
@@ -612,9 +617,9 @@ const freeDiscount = () => {
       item.freeDiscount = !item.freeDiscount
       item.ecoDiscount = false
       item.bottleDiscount = false
-      item.tenOffDiscountDiscount = false
-      item.fifteenOffDiscountDiscount = false
-      item.twentyOffDiscountDiscount = false
+      item.oftenUseDiscount1Discount = false
+      item.oftenUseDiscount2Discount = false
+      item.oftenUseDiscount3Discount = false
     })
     drinkSelectList.value.map(item => {
       const originalPrice = item.price * item.count + item.addListPrice * item.count
@@ -657,8 +662,8 @@ const ecoDiscount = () => {
     drinkSelectList.value.map(item => {
       const originalPrice = item.price * item.count + item.addListPrice * item.count
       if (item.ecoDiscount) {
-        item.currentDiscountMoney = 5
-        item.useDiscountMoney = '環保折扣'
+        item.currentDiscountMoney = discountStore.oftenUseDiscount[0].discountMoney
+        item.useDiscountMoney = discountStore.oftenUseDiscount[0].name
         item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       } else {
@@ -701,8 +706,8 @@ const bottleDiscount = () => {
     drinkSelectList.value.map(item => {
       const originalPrice = item.price * item.count + item.addListPrice * item.count
       if (item.bottleDiscount) {
-        item.currentDiscountMoney = 10
-        item.useDiscountMoney = '瓶裝折扣'
+        item.currentDiscountMoney = discountStore.oftenUseDiscount[1].discountMoney
+        item.useDiscountMoney = discountStore.oftenUseDiscount[1].name
         item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       } else {
@@ -715,8 +720,8 @@ const bottleDiscount = () => {
     })
   }
 }
-// 九折
-const tenOffDiscount = () => {
+// 常用折數折扣1
+const oftenUseDiscount1 = () => {
   if (drinkSelectList.value <= 0) {
     ElMessageBox.alert('尚未選取品項', '通知', {
       confirmButtonText: '繼續選取品項',
@@ -729,15 +734,15 @@ const tenOffDiscount = () => {
     })
   } else {
     drinkSelectList.value.forEach(item => {
-      item.tenOffDiscount = !item.tenOffDiscount
-      item.fifteenOffDiscount = false
-      item.twentyOffDiscount = false
+      item.oftenUseDiscount1 = !item.oftenUseDiscount1
+      item.oftenUseDiscount2 = false
+      item.oftenUseDiscount3 = false
     })
     drinkSelectList.value.map(item => {
       const originalPrice = item.price * item.count + item.addListPrice * item.count
-      if (item.tenOffDiscount) {
-        item.currentDiscountPercent = 0.9
-        item.useDiscountPercent = '九折'
+      if (item.oftenUseDiscount1) {
+        item.currentDiscountPercent = discountStore.oftenUseDiscount[2].discountPercent
+        item.useDiscountPercent = discountStore.oftenUseDiscount[2].name
         item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       } else {
@@ -751,8 +756,8 @@ const tenOffDiscount = () => {
   }
 }
 
-// 八五折
-const fifteenOffDiscount = () => {
+// 常用折數折扣2
+const oftenUseDiscount2 = () => {
   if (drinkSelectList.value <= 0) {
     ElMessageBox.alert('尚未選取品項', '通知', {
       confirmButtonText: '繼續選取品項',
@@ -765,15 +770,15 @@ const fifteenOffDiscount = () => {
     })
   } else {
     drinkSelectList.value.forEach(item => {
-      item.fifteenOffDiscount = !item.fifteenOffDiscount
-      item.tenOffDiscount = false
-      item.twentyOffDiscount = false
+      item.oftenUseDiscount2 = !item.oftenUseDiscount2
+      item.oftenUseDiscount1 = false
+      item.oftenUseDiscount3 = false
     })
     drinkSelectList.value.map(item => {
       const originalPrice = item.price * item.count + item.addListPrice * item.count
-      if (item.fifteenOffDiscount) {
-        item.currentDiscountPercent = 0.85
-        item.useDiscountPercent = '八五折'
+      if (item.oftenUseDiscount2) {
+        item.currentDiscountPercent = discountStore.oftenUseDiscount[3].discountPercent
+        item.useDiscountPercent = discountStore.oftenUseDiscount[3].name
         item.totalPrice = Math.round(Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent))
         item.discount = originalPrice - item.totalPrice
       } else {
@@ -786,8 +791,8 @@ const fifteenOffDiscount = () => {
     })
   }
 }
-// 員工八折
-const twentyOffDiscount = () => {
+// 常用折數折扣3
+const oftenUseDiscount3 = () => {
   if (drinkSelectList.value <= 0) {
     ElMessageBox.alert('尚未選取品項', '通知', {
       confirmButtonText: '繼續選取品項',
@@ -800,15 +805,15 @@ const twentyOffDiscount = () => {
     })
   } else {
     drinkSelectList.value.forEach(item => {
-      item.twentyOffDiscount = !item.twentyOffDiscount
-      item.fifteenOffDiscount = false
-      item.tenOffDiscount = false
+      item.oftenUseDiscount3 = !item.oftenUseDiscount3
+      item.oftenUseDiscount2 = false
+      item.oftenUseDiscount1 = false
     })
     drinkSelectList.value.map(item => {
       const originalPrice = item.price * item.count + item.addListPrice * item.count
-      if (item.twentyOffDiscount) {
-        item.currentDiscountPercent = 0.8
-        item.useDiscountPercent = '員工八折'
+      if (item.oftenUseDiscount3) {
+        item.currentDiscountPercent = discountStore.oftenUseDiscount[4].discountPercent
+        item.useDiscountPercent = discountStore.oftenUseDiscount[4].name
         item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
         item.discount = originalPrice - item.totalPrice
       } else {

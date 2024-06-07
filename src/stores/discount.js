@@ -61,8 +61,40 @@ export const useDiscountStore = defineStore('discount', () => {
     "name": "整單5折",
     "discountMoney": 0.5,
   }])
+  // 常用的折價清單
+  const oftenUseDiscount = ref([{
+    "id": 1,
+    "name": "環保折扣",
+    "discountMoney": 5,
+    "discountPercent": 1
+  },
+  {
+    "id": 2,
+    "name": "瓶裝折扣",
+    "discountMoney": 10,
+    "discountPercent": 1
+  },
+  {
+    "id": 3,
+    "name": "九折",
+    "discountMoney": 0,
+    "discountPercent": 0.9,
+  },
+  {
+    "id": 4,
+    "name": "八五折",
+    "discountMoney": 0,
+    "discountPercent": 0.85,
+  },
+  {
+    "id": 5,
+    "name": "員工八折",
+    "discountMoney": 0,
+    "discountPercent": 0.8,
+  }
+  ])
 
-  return { discountMenu, moneyDiscount, moneyDiscountId, percentDiscountId, percentDiscount, currentMoneyDiscount, moneySelectingDiscountId, percentSelectingDiscountId, currentPercentDiscount, currentDiscountName }
+  return { discountMenu, moneyDiscount, moneyDiscountId, percentDiscountId, percentDiscount, currentMoneyDiscount, moneySelectingDiscountId, percentSelectingDiscountId, currentPercentDiscount, currentDiscountName, oftenUseDiscount }
 }, {
   persist: true,
 })
