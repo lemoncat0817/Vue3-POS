@@ -233,11 +233,24 @@
                   <p class="w-full h-full text-xl font-bold">折數折扣券</p>
                 </div>
               </div>
-              <div v-if="discountStore.discountMenu === 0" class="mt-2">
-                <div @click="selectMoneyDiscount(item.id)" v-for="item in discountStore.moneyDiscount" :key="item.id"
-                  class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-red-400 rounded-xl"
-                  :class="{ 'bg-yellow-400': discountStore.moneySelectingDiscountId === item.id }">
-                  <p class="text-3xl text-blue-500 font-bold select-none	">{{ item.name }}</p>
+              <div v-if="discountStore.discountMenu === 0" class="h-[384px] my-2">
+                <div class="h-[340px] mb-2">
+                  <div @click="selectMoneyDiscount(item.id)" v-for="item in sliceMoneyDiscount" :key="item.id"
+                    class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-red-400 rounded-xl"
+                    :class="{ 'bg-yellow-400': discountStore.moneySelectingDiscountId === item.id }">
+                    <p class="text-3xl text-blue-500 font-bold select-none	">{{ item.name }}</p>
+                  </div>
+                </div>
+                <!-- 現金折扣券分頁器 -->
+                <div class="w-[468px] h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
+                  <p class="text-blue-800">{{ `共 ${discountStore.moneyDiscount.length} 樣` }}</p>
+                  <div class="h-full flex items-center">
+                    <el-pagination v-model:current-page="moneyDiscountCurrentPage" small background layout="prev, next"
+                      :total="discountStore.moneyDiscount.length" :page-size="5"
+                      @current-change="handleMoneyDiscountCurrentChange" />
+                  </div>
+                  <p class="text-blue-800">{{ `${discountStore.moneyDiscount.length > 0 ? moneyDiscountCurrentPage : 0
+                    }/${Math.ceil(discountStore.moneyDiscount.length / 5)}頁` }}</p>
                 </div>
               </div>
               <div v-if="discountStore.discountMenu === 1" class="mt-2">
@@ -329,7 +342,7 @@
 
 <script setup>
 import { getDate, getMoment, getTime, getDateForOrder } from '@/utils/time'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import DrinkType from './drinkType/index.vue'
 import DrinkMenu from './drinkMenu/index.vue'
 import DrinkCustomized from './drinkCustomized/index.vue'
@@ -830,6 +843,17 @@ const selectMoneyDiscount = (id) => {
     discountStore.moneySelectingDiscountId = id
   }
 }
+// 現金折扣券分頁器
+// 當前現金折扣券所選的頁數
+const moneyDiscountCurrentPage = ref(1)
+// 控制當前所選的頁數
+const handleMoneyDiscountCurrentChange = (page) => {
+  moneyDiscountCurrentPage.value = page
+}
+// 計算並切換當前現金折扣券頁面內容
+const sliceMoneyDiscount = computed(() => {
+  return discountStore.moneyDiscount.slice((moneyDiscountCurrentPage.value - 1) * 5, moneyDiscountCurrentPage.value * 5)
+})
 // 選取打折折價券
 const selectPercentDiscount = (id) => {
   if (discountStore.percentSelectingDiscountId === id) {

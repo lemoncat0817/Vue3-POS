@@ -50,9 +50,10 @@
         <p class="text-blue-800">{{ `共 ${drinkStore.drinkAdd.length} 樣` }}</p>
         <div class="h-full flex items-center">
           <el-pagination v-model:current-page="currentPage" small background layout="prev, next"
-            :total="drinkStore.drinkAdd.length" @current-change="handleCurrentChange" />
+            :total="drinkStore.drinkAdd.length" :page-size="12" @current-change="handleCurrentChange" />
         </div>
-        <p class="text-blue-800">{{ `${drinkStore.drinkAdd.length >0 ?currentPage:0}/${Math.ceil(drinkStore.drinkAdd.length / 12)}頁` }}</p>
+        <p class="text-blue-800">{{ `${drinkStore.drinkAdd.length > 0
+          ? currentPage : 0}/${Math.ceil(drinkStore.drinkAdd.length / 12)}頁` }}</p>
       </div>
       <div class="h-full flex items-center">
         <div @click="drinkStore.drinkMenu = 0"

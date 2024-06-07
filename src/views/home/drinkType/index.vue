@@ -11,12 +11,13 @@
     </div>
     <!-- 飲料類型下半部 -->
     <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
-      <p class="text-blue-800">{{ `共${drinkStore.drinkType.length}樣` }}</p>
+      <p class="text-blue-800">{{ `共 ${drinkStore.drinkType.length} 樣` }}</p>
       <div class="h-full flex items-center">
         <el-pagination v-model:current-page="currentPage" small background layout="prev, next"
           :total="drinkStore.drinkType.length" @current-change="handleCurrentChange" />
       </div>
-      <p class="text-blue-800">{{ `${drinkStore.drinkType.length >0 ?currentPage:0}/${Math.ceil(drinkStore.drinkType.length / 10)}頁` }}</p>
+      <p class="text-blue-800">{{ `${drinkStore.drinkType.length > 0
+        ? currentPage : 0}/${Math.ceil(drinkStore.drinkType.length / 10) }頁` }}</p>
     </div>
   </div>
 </template>

@@ -10,7 +10,7 @@
     </div>
     <!-- 飲料品項下半部 -->
     <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
-      <p class="text-blue-800">{{ `共${currentDrinks.length}樣` }}</p>
+      <p class="text-blue-800">{{ `共 ${currentDrinks.length} 樣` }}</p>
       <div class="h-full flex items-center">
         <el-pagination v-model:current-page="currentPage" small background layout="prev, next"
           :total="currentDrinks.length" @current-change="handleCurrentChange" />
