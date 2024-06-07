@@ -253,11 +253,24 @@
                     }/${Math.ceil(discountStore.moneyDiscount.length / 5)}頁` }}</p>
                 </div>
               </div>
-              <div v-if="discountStore.discountMenu === 1" class="mt-2">
-                <div @click="selectPercentDiscount(item.id)" v-for="item in discountStore.percentDiscount"
-                  :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-red-400 rounded-xl"
-                  :class="{ 'bg-yellow-400': discountStore.percentSelectingDiscountId === item.id }">
-                  <p class="text-3xl text-blue-500 font-bold select-none	">{{ item.name }}</p>
+              <div v-if="discountStore.discountMenu === 1" class="h-[384px] my-2">
+                <div class="h-[340px] mb-2">
+                  <div @click="selectPercentDiscount(item.id)" v-for="item in slicePercentDiscount" :key="item.id"
+                    class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-red-400 rounded-xl"
+                    :class="{ 'bg-yellow-400': discountStore.percentSelectingDiscountId === item.id }">
+                    <p class="text-3xl text-blue-500 font-bold select-none	">{{ item.name }}</p>
+                  </div>
+                </div>
+                <!-- 折數折扣券分頁器 -->
+                <div class="w-[468px] h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
+                  <p class="text-blue-800">{{ `共 ${discountStore.percentDiscount.length} 樣` }}</p>
+                  <div class="h-full flex items-center">
+                    <el-pagination v-model:current-page="percentDiscountCurrentPage" small background
+                      layout="prev, next" :total="discountStore.percentDiscount.length" :page-size="5"
+                      @current-change="handlePercentDiscountCurrentChange" />
+                  </div>
+                  <p class="text-blue-800">{{ `${discountStore.percentDiscount.length > 0 ? percentDiscountCurrentPage :
+                    0}/${Math.ceil(discountStore.percentDiscount.length / 5)}頁` }}</p>
                 </div>
               </div>
             </div>
@@ -862,6 +875,17 @@ const selectPercentDiscount = (id) => {
     discountStore.percentSelectingDiscountId = id
   }
 }
+// 折數折扣券分頁器
+// 當前折數折扣券所選的頁數
+const percentDiscountCurrentPage = ref(1)
+// 控制當前所選的頁數
+const handlePercentDiscountCurrentChange = (page) => {
+  percentDiscountCurrentPage.value = page
+}
+// 計算並切換當前折數折扣券頁面內容
+const slicePercentDiscount = computed(() => {
+  return discountStore.percentDiscount.slice((percentDiscountCurrentPage.value - 1) * 5, percentDiscountCurrentPage.value * 5)
+})
 // 關閉優惠券選單
 const closeDiscount = () => {
   dialogDiscount.value = false
