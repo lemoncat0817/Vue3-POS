@@ -98,13 +98,24 @@
                 class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">修改付款方式</button>
               <!-- 付款方式選單 -->
               <el-dialog v-model="dialogPayMethod" title="選擇付款方式" width="500">
-                <div class="w-full h-full flex grid grid-cols-4 grid-rows-3 gap-2">
-                  <div @click="orderStore.currentSelectingPayment = item" v-for="item in orderStore.paymentList"
-                    :key="item"
+                <div class="w-full h-[112px] flex grid grid-cols-4 grid-rows-3 gap-2">
+                  <div @click="orderStore.currentSelectingPayment = item.name" v-for="item in slicePayMethod"
+                    :key="item.id"
                     class="w-28 h-8 border-2 border-solid border-black rounded-lg text-center px-2 bg-red-300 cursor-pointer"
-                    :class="{ 'bg-yellow-400': orderStore.currentSelectingPayment === item }">
-                    <p class="text-blue-800 font-bold text-xl">{{ item }}</p>
+                    :class="{ 'bg-yellow-400': orderStore.currentSelectingPayment === item.name }">
+                    <p class="text-blue-800 font-bold text-xl">{{ item.name }}</p>
                   </div>
+                </div>
+                <!-- 付款方式分頁器 -->
+                <div class="w-[468px] h-10 mt-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
+                  <p class="text-blue-800">{{ `共 ${orderStore.paymentList.length} 樣` }}</p>
+                  <div class="h-full flex items-center">
+                    <el-pagination v-model:current-page="payMethodCurrentPage" small background layout="prev, next"
+                      :total="orderStore.paymentList.length" :page-size="12"
+                      @current-change="handlePayMethodCurrentChange" />
+                  </div>
+                  <p class="text-blue-800">{{ `${orderStore.paymentList.length > 0 ? payMethodCurrentPage : 0
+                    }/${Math.ceil(orderStore.paymentList.length / 12)}頁` }}</p>
                 </div>
                 <template #footer>
                   <div>
@@ -948,6 +959,17 @@ const closePayMethod = () => {
   dialogPayMethod.value = false
   ElMessage.error('操作取消')
 }
+// 付款方式分頁器
+// 定義付款方式頁面當前頁數
+const payMethodCurrentPage = ref(1)
+// 控制當前所選的頁數
+const handlePayMethodCurrentChange = (page) => {
+  payMethodCurrentPage.value = page
+}
+// 計算並切換當前付款方式頁面內容
+const slicePayMethod = computed(() => {
+  return orderStore.paymentList.slice((payMethodCurrentPage.value - 1) * 12, payMethodCurrentPage.value * 12)
+})
 // 更改付款方式
 const changePayMethod = () => {
   orderStore.payment = orderStore.currentSelectingPayment

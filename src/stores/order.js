@@ -10,7 +10,54 @@ export const useOrderStore = defineStore('order', () => {
   // 付款方式
   const payment = ref('現金')
   // 定義全部付款方式清單
-  const paymentList = ref(['現金', '信用卡', 'LinePay', '街口支付', '台灣Pay', 'ApplePay', 'Pi錢包', '全支付', '悠遊付'])
+  const paymentList = ref([{
+    "id": 1,
+    "name": "現金",
+    "disabled": false
+  },
+  {
+    "id": 2,
+    "name": '信用卡',
+    "disabled": false
+  },
+
+  {
+    "id": 3,
+    "name": 'LinePay',
+    "disabled": false
+
+  },
+  {
+    "id": 4,
+    "name": '街口支付',
+    "disabled": false
+  },
+  {
+    "id": 5,
+    "name": '台灣Pay',
+    "disabled": false
+  },
+  {
+    "id": 6,
+    "name": 'ApplePay',
+    "disabled": false
+  },
+  {
+    "id": 7,
+    "name": 'Pi錢包',
+    "disabled": false
+  },
+  {
+    "id": 8,
+    "name": '全支付',
+    "disabled": false
+  },
+  {
+    "id": 9,
+    "name": '悠遊付',
+    "disabled": false
+  }
+  ])
   // 訂單資訊
   const order = ref([])
   // 監聽當前日期是否改變
