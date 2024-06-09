@@ -7,20 +7,32 @@ export const useAuthorityManagementStore = defineStore('authorityManagement', ()
   // 當前的查看的資料類型
   const currentAuthorityManagementPage = ref(0)
   // 人員名單
-  const StaffList = ref([{
+  const staffList = ref([{
     id: 1,
     name: 'Lemon',
     jobTitle: '店長',
     account: 'lemon',
     password: 'lemon123',
-    authorityCheckList: ['canOrder', 'canOpenCashier', 'canCheckOrder', 'canEditProduct', 'canEditDiscount', 'canCheckDataAnalysis', 'canEditAuthority'],
+    authorityCheckList: ['canOrder', 'canFreeDrink', 'canOpenCashier', 'canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder',
+      'canCheckBackgroundSetting', 'canSetDrinkType', 'canSetDrink', 'canSetIngredients', 'canSetMoneyDiscount', 'canSetPercentDiscount',
+      'canSetOftenUseDiscount', 'canCheckDataAnalysis', 'canCheckAuthority', 'canSetAuthority', 'canSetPayMethod'],
     canOrder: 'O',
+    canFreeDrink: 'O',
     canOpenCashier: 'O',
     canCheckOrder: 'O',
-    canEditProduct: 'O',
-    canEditDiscount: 'O',
+    canEditOrderStatus: 'O',
+    canDeleteOrder: 'O',
+    canCheckBackgroundSetting: 'O',
+    canSetDrinkType: 'O',
+    canSetDrink: 'O',
+    canSetIngredients: 'O',
+    canSetMoneyDiscount: 'O',
+    canSetPercentDiscount: 'O',
+    canSetOftenUseDiscount: 'O',
     canCheckDataAnalysis: 'O',
-    canEditAuthority: 'O',
+    canCheckAuthority: 'O',
+    canSetAuthority: 'O',
+    canSetPayMethod: 'O',
   },
   {
     id: 2,
@@ -28,17 +40,28 @@ export const useAuthorityManagementStore = defineStore('authorityManagement', ()
     jobTitle: '工讀生',
     account: 'emily',
     password: 'emily123',
-    authorityCheckList: ['canOrder', 'canOpenCashier', 'canCheckOrder'],
+    authorityCheckList: ['canOrder', 'canFreeDrink', 'canCheckOrder', 'canEditOrderStatus', 'canCheckBackgroundSetting',
+      'canCheckDataAnalysis'],
     canOrder: 'O',
-    canOpenCashier: 'O',
+    canFreeDrink: 'O',
+    canOpenCashier: 'X',
     canCheckOrder: 'O',
-    canEditProduct: 'X',
-    canEditDiscount: 'X',
-    canCheckDataAnalysis: 'X',
-    canEditAuthority: 'X',
+    canEditOrderStatus: 'O',
+    canDeleteOrder: 'X',
+    canCheckBackgroundSetting: 'O',
+    canSetDrinkType: 'X',
+    canSetDrink: 'X',
+    canSetIngredients: 'X',
+    canSetMoneyDiscount: 'X',
+    canSetPercentDiscount: 'X',
+    canSetOftenUseDiscount: 'X',
+    canCheckDataAnalysis: 'O',
+    canCheckAuthority: 'X',
+    canSetAuthority: 'X',
+    canSetPayMethod: 'X',
   }])
 
-  return { currentAuthorityManagementPage, StaffList }
+  return { currentAuthorityManagementPage, staffList }
 }, {
   persist: true,
 })

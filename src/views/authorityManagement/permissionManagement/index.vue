@@ -38,16 +38,36 @@
           </div>
           <!-- 權限管理 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
-            權限管理: <el-checkbox-group
-              class="w-[235px] border-2 border-solid border-black rounded-lg ml-2 text-center px-2 grid grid-cols-2 gap-0.5"
+            權限管理: <el-checkbox-group @change="handleAuthorityCheckListChange"
+              class="w-[265px] border-2 border-solid border-black rounded-lg ml-2 text-center px-2 grid grid-cols-2 gap-0.5"
               v-model="authorityCheckList">
               <el-checkbox label="點餐" value="canOrder" />
-              <el-checkbox label="開收銀機" value="canOpenCashier" />
+              <el-checkbox label="免費招待" value="canFreeDrink" :disabled="!authorityCheckList.includes('canOrder')" />
+              <el-checkbox label="開收銀機" value="canOpenCashier" :disabled="!authorityCheckList.includes('canOrder')" />
               <el-checkbox label="查看訂單" value="canCheckOrder" />
-              <el-checkbox label="商品管理" value="canEditProduct" />
-              <el-checkbox label="優惠管理" value="canEditDiscount" />
-              <el-checkbox label="查看數據" value="canCheckDataAnalysis" />
-              <el-checkbox label="編輯權限" value="canEditAuthority" />
+              <el-checkbox label="編輯訂單狀態" value="canEditOrderStatus"
+                :disabled="!authorityCheckList.includes('canCheckOrder')" />
+              <el-checkbox label="刪除訂單" value="canDeleteOrder"
+                :disabled="!authorityCheckList.includes('canCheckOrder')" />
+              <el-checkbox label="查看後台設定" value="canCheckBackgroundSetting" />
+              <el-checkbox label="設定飲品類型" value="canSetDrinkType"
+                :disabled="!authorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="設定飲料品項" value="canSetDrink"
+                :disabled="!authorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="設定配料" value="canSetIngredients"
+                :disabled="!authorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="設定現金折扣券" value="canSetMoneyDiscount"
+                :disabled="!authorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="設定折數折扣券" value="canSetPercentDiscount"
+                :disabled="!authorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="設定常用優惠" value="canSetOftenUseDiscount"
+                :disabled="!authorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="查看數據分析" value="canCheckDataAnalysis" />
+              <el-checkbox label="查看權限管理" value="canCheckAuthority" />
+              <el-checkbox label="設定人員名單" value="canSetAuthority"
+                :disabled="!authorityCheckList.includes('canCheckAuthority')" />
+              <el-checkbox label="設定付款方式" value="canSetPayMethod"
+                :disabled="!authorityCheckList.includes('canCheckAuthority')" />
             </el-checkbox-group>
           </div>
           <template #footer>
@@ -97,15 +117,36 @@
           <!-- 權限管理 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             權限管理: <el-checkbox-group
-              class="w-[235px] border-2 border-solid border-black rounded-lg ml-2 text-center px-2 grid grid-cols-2 gap-0.5"
-              v-model="editAuthorityCheckList">
+              class="w-[265px] border-2 border-solid border-black rounded-lg ml-2 text-center px-2 grid grid-cols-2 gap-0.5"
+              v-model="editAuthorityCheckList" @change="handleEditAuthorityCheckListChange">
               <el-checkbox label="點餐" value="canOrder" />
-              <el-checkbox label="開收銀機" value="canOpenCashier" />
+              <el-checkbox label="免費招待" value="canFreeDrink" :disabled="!editAuthorityCheckList.includes('canOrder')" />
+              <el-checkbox label="開收銀機" value="canOpenCashier"
+                :disabled="!editAuthorityCheckList.includes('canOrder')" />
               <el-checkbox label="查看訂單" value="canCheckOrder" />
-              <el-checkbox label="商品管理" value="canEditProduct" />
-              <el-checkbox label="優惠管理" value="canEditDiscount" />
-              <el-checkbox label="查看數據" value="canCheckDataAnalysis" />
-              <el-checkbox label="編輯權限" value="canEditAuthority" />
+              <el-checkbox label="編輯訂單狀態" value="canEditOrderStatus"
+                :disabled="!editAuthorityCheckList.includes('canCheckOrder')" />
+              <el-checkbox label="刪除訂單" value="canDeleteOrder"
+                :disabled="!editAuthorityCheckList.includes('canCheckOrder')" />
+              <el-checkbox label="查看後台設定" value="canCheckBackgroundSetting" />
+              <el-checkbox label="設定飲品類型" value="canSetDrinkType"
+                :disabled="!editAuthorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="設定飲料品項" value="canSetDrink"
+                :disabled="!editAuthorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="設定配料" value="canSetIngredients"
+                :disabled="!editAuthorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="設定現金折扣券" value="canSetMoneyDiscount"
+                :disabled="!editAuthorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="設定折數折扣券" value="canSetPercentDiscount"
+                :disabled="!editAuthorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="設定常用優惠" value="canSetOftenUseDiscount"
+                :disabled="!editAuthorityCheckList.includes('canCheckBackgroundSetting')" />
+              <el-checkbox label="查看數據分析" value="canCheckDataAnalysis" />
+              <el-checkbox label="查看權限管理" value="canCheckAuthority" />
+              <el-checkbox label="設定人員名單" value="canSetAuthority"
+                :disabled="!editAuthorityCheckList.includes('canCheckAuthority')" />
+              <el-checkbox label="設定付款方式" value="canSetPayMethod"
+                :disabled="!editAuthorityCheckList.includes('canCheckAuthority')" />
             </el-checkbox-group>
           </div>
           <template #footer>
@@ -119,18 +160,22 @@
         </el-dialog>
       </div>
     </div>
-    <div>
+    <div class="overflow-x-auto w-[987px]">
       <el-table class="cursor-pointer mt-2" :data="sliceStaffList" highlight-current-row height="440"
-        empty-text="人員名單是空的" @current-change="handleCurrentStaffChange">
-        <el-table-column align="center" type="index" label="序號" min-width="55" />
+        style="width: 100%; overflow-x:auto;" empty-text="人員名單是空的" @current-change="handleCurrentStaffChange">
+        <el-table-column fixed align="center" label="人員名稱" prop="name" min-width="80" />
         <el-table-column align="center" label="Id" prop="id" min-width="55" />
-        <el-table-column align="center" label="人員名稱" prop="name" min-width="80" />
         <el-table-column align="center" label="職稱" prop="jobTitle" min-width="80" />
         <el-table-column align="center" label="帳號" prop="account" min-width="80" />
         <el-table-column align="center" label="密碼" prop="password" min-width="95" />
         <el-table-column align="center" label="點餐" min-width="80">
           <template #default="{ row }">
             <p class="text-green-500" :class="{ 'text-red-700': row.canOrder != 'O' }">{{ row.canOrder }}</p>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="免費招待" min-width="80">
+          <template #default="{ row }">
+            <p class="text-green-500" :class="{ 'text-red-700': row.canFreeDrink != 'O' }">{{ row.canFreeDrink }}</p>
           </template>
         </el-table-column>
         <el-table-column align="center" label="開收銀機" min-width="80">
@@ -144,40 +189,106 @@
             <p class="text-green-500" :class="{ 'text-red-700': row.canCheckOrder != 'O' }">{{ row.canCheckOrder }}</p>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="商品管理" min-width="80">
+        <el-table-column align="center" label="編輯訂單狀態" min-width="110">
           <template #default="{ row }">
-            <p class="text-green-500" :class="{ 'text-red-700': row.canEditProduct != 'O' }">{{ row.canEditProduct }}
+            <p class="text-green-500" :class="{ 'text-red-700': row.canEditOrderStatus != 'O' }">{{
+              row.canEditOrderStatus
+            }}
             </p>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="優惠管理" min-width="80">
+        <el-table-column align="center" label="刪除訂單" min-width="80">
           <template #default="{ row }">
-            <p class="text-green-500" :class="{ 'text-red-700': row.canEditDiscount != 'O' }">{{ row.canEditDiscount }}
+            <p class="text-green-500" :class="{ 'text-red-700': row.canDeleteOrder != 'O' }">{{ row.canDeleteOrder }}
             </p>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="查看數據" min-width="80">
+        <el-table-column align="center" label="查看後台設定" min-width="110">
           <template #default="{ row }">
-            <p class="text-green-500" :class="{ 'text-red-700': row.canCheckDataAnalysis != 'O' }">{{
-              row.canCheckDataAnalysis }}
+            <p class="text-green-500" :class="{ 'text-red-700': row.canCheckBackgroundSetting != 'O' }">{{
+              row.canCheckBackgroundSetting }}
             </p>
           </template>
         </el-table-column>
-        <el-table-column align="center" label="編輯權限" min-width="80">
+        <el-table-column align="center" label="設定飲品類型" min-width="110">
           <template #default="{ row }">
-            <p class="text-green-500" :class="{ 'text-red-700': row.canEditAuthority != 'O' }">{{ row.canEditAuthority
-              }}</p>
+            <p class="text-green-500" :class="{ 'text-red-700': row.canSetDrinkType != 'O' }">
+              {{ row.canSetDrinkType }}
+            </p>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="設定飲料品項" min-width="110">
+          <template #default="{ row }">
+            <p class="text-green-500" :class="{ 'text-red-700': row.canSetDrink != 'O' }">
+              {{ row.canSetDrink }}
+            </p>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="設定配料" min-width="80">
+          <template #default="{ row }">
+            <p class="text-green-500" :class="{ 'text-red-700': row.canSetIngredients != 'O' }">
+              {{ row.canSetIngredients }}
+            </p>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="設定現金折扣券" min-width="125">
+          <template #default="{ row }">
+            <p class="text-green-500" :class="{ 'text-red-700': row.canSetMoneyDiscount != 'O' }">
+              {{ row.canSetMoneyDiscount }}
+            </p>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="設定折數折扣券" min-width="125">
+          <template #default="{ row }">
+            <p class="text-green-500" :class="{ 'text-red-700': row.canSetPercentDiscount != 'O' }">
+              {{ row.canSetPercentDiscount }}
+            </p>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="設定常用優惠" min-width="110">
+          <template #default="{ row }">
+            <p class="text-green-500" :class="{ 'text-red-700': row.canSetOftenUseDiscount != 'O' }">
+              {{ row.canSetOftenUseDiscount }}
+            </p>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="查看數據分析" min-width="110">
+          <template #default="{ row }">
+            <p class="text-green-500" :class="{ 'text-red-700': row.canCheckDataAnalysis != 'O' }">
+              {{ row.canCheckDataAnalysis }}
+            </p>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="查看權限管理" min-width="110">
+          <template #default="{ row }">
+            <p class="text-green-500" :class="{ 'text-red-700': row.canCheckAuthority != 'O' }">
+              {{ row.canCheckAuthority }}
+            </p>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="設定人員名單" min-width="110">
+          <template #default="{ row }">
+            <p class="text-green-500" :class="{ 'text-red-700': row.canSetAuthority != 'O' }">
+              {{ row.canSetAuthority }}
+            </p>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="設定付款方式" min-width="110">
+          <template #default="{ row }">
+            <p class="text-green-500" :class="{ 'text-red-700': row.canSetPayMethod != 'O' }">
+              {{ row.canSetPayMethod }}
+            </p>
           </template>
         </el-table-column>
       </el-table>
       <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center mt-10">
-        <p class="text-blue-800">{{ `共 ${authorityManagementStore.StaffList.length} 樣` }}</p>
+        <p class="text-blue-800">{{ `共 ${authorityManagementStore.staffList.length} 樣` }}</p>
         <div class="h-full flex items-center">
           <el-pagination v-model:current-page="staffCurrentPage" small background layout="prev, next"
-            :total="authorityManagementStore.StaffList.length" @current-change="handleStaffCurrentChange" />
+            :total="authorityManagementStore.staffList.length" @current-change="handleStaffCurrentChange" />
         </div>
-        <p class="text-blue-800">{{ `${authorityManagementStore.StaffList.length > 0 ? staffCurrentPage : 0
-          }/${Math.ceil(authorityManagementStore.StaffList.length / 10)}頁` }}</p>
+        <p class="text-blue-800">{{ `${authorityManagementStore.staffList.length > 0 ? staffCurrentPage : 0
+          }/${Math.ceil(authorityManagementStore.staffList.length / 10)}頁` }}</p>
       </div>
     </div>
   </div>
@@ -338,17 +449,32 @@ const currentInputStaffAccount = ref('')
 const currentInputStaffPassword = ref('')
 // 定義權限管理清單
 const authorityCheckList = ref([])
+// 勾選的項目改變把已勾選被禁用的選項取消勾選
+const handleAuthorityCheckListChange = (value) => {
+  if (!value.includes('canOrder')) {
+    authorityCheckList.value = authorityCheckList.value.filter(item => item != 'canFreeDrink' && item != 'canOpenCashier')
+  }
+  if (!value.includes('canCheckOrder')) {
+    authorityCheckList.value = authorityCheckList.value.filter(item => item != 'canEditOrderStatus' && item != 'canDeleteOrder')
+  }
+  if (!value.includes('canCheckBackgroundSetting')) {
+    authorityCheckList.value = authorityCheckList.value.filter(item => item != 'canSetDrinkType' && item != 'canSetDrink' && item != 'canSetIngredients' && item != 'canSetMoneyDiscount' && item != 'canSetPercentDiscount' && item != 'canSetOftenUseDiscount')
+  }
+  if (!value.includes('canCheckAuthority')) {
+    authorityCheckList.value = authorityCheckList.value.filter(item => item != 'canSetAuthority' && item != 'canSetPayMethod')
+  }
+}
 // 新增人員
 const addStaff = () => {
   if (currentInputStaffId.value == '' || currentInputStaffName.value == '' || currentInputStaffJobTitle.value == '' || currentInputStaffAccount.value == '' || currentInputStaffPassword.value == '') {
     ElMessage.error('請輸入完整資訊')
     return
   }
-  if (authorityManagementStore.StaffList.find((item) => item.id == currentInputStaffId.value)) {
+  if (authorityManagementStore.staffList.find((item) => item.id == currentInputStaffId.value)) {
     ElMessage.error('此Id已存在,請重新輸入')
     return
   }
-  if (authorityManagementStore.StaffList.find((item) => item.account == currentInputStaffAccount.value)) {
+  if (authorityManagementStore.staffList.find((item) => item.account == currentInputStaffAccount.value)) {
     ElMessage.error('此帳號已存在,請重新輸入')
     return
   }
@@ -365,14 +491,24 @@ const addStaff = () => {
     password: currentInputStaffPassword.value,
     authorityCheckList: authorityCheckList.value,
     canOrder: authorityCheckList.value.some(item => item.includes('canOrder')) ? 'O' : 'X',
+    canFreeDrink: authorityCheckList.value.some(item => item.includes('canFreeDrink')) ? 'O' : 'X',
     canOpenCashier: authorityCheckList.value.some(item => item.includes('canOpenCashier')) ? 'O' : 'X',
     canCheckOrder: authorityCheckList.value.some(item => item.includes('canCheckOrder')) ? 'O' : 'X',
-    canEditProduct: authorityCheckList.value.some(item => item.includes('canEditProduct')) ? 'O' : 'X',
-    canEditDiscount: authorityCheckList.value.some(item => item.includes('canEditDiscount')) ? 'O' : 'X',
+    canEditOrderStatus: authorityCheckList.value.some(item => item.includes('canEditOrderStatus')) ? 'O' : 'X',
+    canDeleteOrder: authorityCheckList.value.some(item => item.includes('canDeleteOrder')) ? 'O' : 'X',
+    canCheckBackgroundSetting: authorityCheckList.value.some(item => item.includes('canCheckBackgroundSetting')) ? 'O' : 'X',
+    canSetDrinkType: authorityCheckList.value.some(item => item.includes('canSetDrinkType')) ? 'O' : 'X',
+    canSetDrink: authorityCheckList.value.some(item => item.includes('canSetDrink')) ? 'O' : 'X',
+    canSetIngredients: authorityCheckList.value.some(item => item.includes('canSetIngredients')) ? 'O' : 'X',
+    canSetMoneyDiscount: authorityCheckList.value.some(item => item.includes('canSetMoneyDiscount')) ? 'O' : 'X',
+    canSetPercentDiscount: authorityCheckList.value.some(item => item.includes('canSetPercentDiscount')) ? 'O' : 'X',
+    canSetOftenUseDiscount: authorityCheckList.value.some(item => item.includes('canSetOftenUseDiscount')) ? 'O' : 'X',
     canCheckDataAnalysis: authorityCheckList.value.some(item => item.includes('canCheckDataAnalysis')) ? 'O' : 'X',
-    canEditAuthority: authorityCheckList.value.some(item => item.includes('canEditAuthority')) ? 'O' : 'X',
+    canCheckAuthority: authorityCheckList.value.some(item => item.includes('canCheckAuthority')) ? 'O' : 'X',
+    canSetAuthority: authorityCheckList.value.some(item => item.includes('canSetAuthority')) ? 'O' : 'X',
+    canSetPayMethod: authorityCheckList.value.some(item => item.includes('canSetPayMethod')) ? 'O' : 'X',
   }
-  authorityManagementStore.StaffList.push(addStaffForm)
+  authorityManagementStore.staffList.push(addStaffForm)
   ElMessage.success('新增人員成功')
   addStaffDialog.value = false
 }
@@ -393,7 +529,7 @@ const deleteStaff = () => {
       }
     )
       .then(() => {
-        authorityManagementStore.StaffList = authorityManagementStore.StaffList.filter((item) => item.id !== currentStaff.value.id);
+        authorityManagementStore.staffList = authorityManagementStore.staffList.filter((item) => item.id !== currentStaff.value.id);
         ElMessage.success('刪除成功')
       })
       .catch(() => {
@@ -420,6 +556,21 @@ const currentEditInputStaffAccount = ref('')
 const currentEditInputStaffPassword = ref('')
 // 定義權限管理清單
 const editAuthorityCheckList = ref([])
+// 勾選的項目改變把已勾選被禁用的選項取消勾選
+const handleEditAuthorityCheckListChange = (value) => {
+  if (!value.includes('canOrder')) {
+    editAuthorityCheckList.value = editAuthorityCheckList.value.filter(item => item != 'canFreeDrink' && item != 'canOpenCashier')
+  }
+  if (!value.includes('canCheckOrder')) {
+    editAuthorityCheckList.value = editAuthorityCheckList.value.filter(item => item != 'canEditOrderStatus' && item != 'canDeleteOrder')
+  }
+  if (!value.includes('canCheckBackgroundSetting')) {
+    editAuthorityCheckList.value = editAuthorityCheckList.value.filter(item => item != 'canSetDrinkType' && item != 'canSetDrink' && item != 'canSetIngredients' && item != 'canSetMoneyDiscount' && item != 'canSetPercentDiscount' && item != 'canSetOftenUseDiscount')
+  }
+  if (!value.includes('canCheckAuthority')) {
+    editAuthorityCheckList.value = editAuthorityCheckList.value.filter(item => item != 'canSetAuthority' && item != 'canSetPayMethod')
+  }
+}
 // 開啟控制編輯人員Dialog人員Dialog
 const openEditStaffDialog = () => {
   if (currentStaff.value.id === 1) {
@@ -459,13 +610,13 @@ const editStaff = () => {
     return
   } else {
     const anotherId = ref([])
-    anotherId.value = (authorityManagementStore.StaffList.filter(item => item.id != currentStaff.value.id))
+    anotherId.value = (authorityManagementStore.staffList.filter(item => item.id != currentStaff.value.id))
     if (anotherId.value.some(item => item.id == currentEditInputStaffId.value)) {
       ElMessage.error('此Id已存在,請重新輸入')
       return
     }
     const anotherAccount = ref([])
-    anotherAccount.value = (authorityManagementStore.StaffList.filter(item => item.account != currentStaff.value.account))
+    anotherAccount.value = (authorityManagementStore.staffList.filter(item => item.account != currentStaff.value.account))
     if (anotherAccount.value.some(item => item.account == currentEditInputStaffAccount.value)) {
       ElMessage.error('此帳號已存在,請重新輸入')
       return
@@ -482,12 +633,22 @@ const editStaff = () => {
   currentStaff.value.password = currentEditInputStaffPassword.value
   currentStaff.value.authorityCheckList = editAuthorityCheckList.value
   currentStaff.value.canOrder = editAuthorityCheckList.value.some(item => item.includes('canOrder')) ? 'O' : 'X'
+  currentStaff.value.canFreeDrink = editAuthorityCheckList.value.some(item => item.includes('canFreeDrink')) ? 'O' : 'X'
   currentStaff.value.canOpenCashier = editAuthorityCheckList.value.some(item => item.includes('canOpenCashier')) ? 'O' : 'X'
   currentStaff.value.canCheckOrder = editAuthorityCheckList.value.some(item => item.includes('canCheckOrder')) ? 'O' : 'X'
-  currentStaff.value.canEditProduct = editAuthorityCheckList.value.some(item => item.includes('canEditProduct')) ? 'O' : 'X'
-  currentStaff.value.canEditDiscount = editAuthorityCheckList.value.some(item => item.includes('canEditDiscount')) ? 'O' : 'X'
+  currentStaff.value.canEditOrderStatus = editAuthorityCheckList.value.some(item => item.includes('canEditOrderStatus')) ? 'O' : 'X'
+  currentStaff.value.canDeleteOrder = editAuthorityCheckList.value.some(item => item.includes('canDeleteOrder')) ? 'O' : 'X'
+  currentStaff.value.canCheckBackgroundSetting = editAuthorityCheckList.value.some(item => item.includes('canCheckBackgroundSetting')) ? 'O' : 'X'
+  currentStaff.value.canSetDrinkType = editAuthorityCheckList.value.some(item => item.includes('canSetDrinkType')) ? 'O' : 'X'
+  currentStaff.value.canSetDrink = editAuthorityCheckList.value.some(item => item.includes('canSetDrink')) ? 'O' : 'X'
+  currentStaff.value.canSetIngredients = editAuthorityCheckList.value.some(item => item.includes('canSetIngredients')) ? 'O' : 'X'
+  currentStaff.value.canSetMoneyDiscount = editAuthorityCheckList.value.some(item => item.includes('canSetMoneyDiscount')) ? 'O' : 'X'
+  currentStaff.value.canSetPercentDiscount = editAuthorityCheckList.value.some(item => item.includes('canSetPercentDiscount')) ? 'O' : 'X'
+  currentStaff.value.canSetOftenUseDiscount = editAuthorityCheckList.value.some(item => item.includes('canSetOftenUseDiscount')) ? 'O' : 'X'
   currentStaff.value.canCheckDataAnalysis = editAuthorityCheckList.value.some(item => item.includes('canCheckDataAnalysis')) ? 'O' : 'X'
-  currentStaff.value.canEditAuthority = editAuthorityCheckList.value.some(item => item.includes('canEditAuthority')) ? 'O' : 'X'
+  currentStaff.value.canCheckAuthority = editAuthorityCheckList.value.some(item => item.includes('canCheckAuthority')) ? 'O' : 'X'
+  currentStaff.value.canSetAuthority = editAuthorityCheckList.value.some(item => item.includes('canSetAuthority')) ? 'O' : 'X'
+  currentStaff.value.canSetPayMethod = editAuthorityCheckList.value.some(item => item.includes('canSetPayMethod')) ? 'O' : 'X'
   editStaffDialog.value = false
   ElMessage.success('保存成功')
 }
@@ -500,7 +661,7 @@ const handleStaffCurrentChange = (page) => {
 }
 // 計算當前頁數並切換顯示內容
 const sliceStaffList = computed(() => {
-  return authorityManagementStore.StaffList.slice((staffCurrentPage.value - 1) * 10, staffCurrentPage.value * 10)
+  return authorityManagementStore.staffList.slice((staffCurrentPage.value - 1) * 10, staffCurrentPage.value * 10)
 })
 
 // 付款方式相關的功能

@@ -80,7 +80,8 @@
             <!-- 服務人員 -->
             <div class="w-1/2 h-full flex items-center">
               <p class="text-blue-500 mr-2 font-bold text-lg">服務人員:</p>
-              <p class="text-red-400 font-bold text-lg ">愛喝奶茶的貓咪</p>
+              <p class="text-red-400 font-bold text-lg ">{{ `${loginStore.userInfo.jobTitle} -
+                ${loginStore.userInfo.name} ` }}</p>
             </div>
           </div>
           <!-- 單號、服務人員、功能按鈕右半部 -->
@@ -386,6 +387,8 @@ import { useDiscountStore } from '@/stores/discount'
 const discountStore = useDiscountStore()
 import { useOrderStore } from '@/stores/order'
 const orderStore = useOrderStore()
+import { useLoginStore } from '@/stores/login'
+const loginStore = useLoginStore()
 
 // 當前時間相關功能
 // 存放當前時間
@@ -1027,7 +1030,7 @@ const sendOrder = () => {
           orderId: `${getDateForOrder()}${orderStore.currentOrderNumber}`,
           orderTime: `${getDate()} ${getTime()}`,
           orderStatus: '已完成',
-          staff: '愛喝奶茶的貓咪',
+          staff: `${loginStore.userInfo.jobTitle} - ${loginStore.userInfo.name} `,
           orderData: drinkStore.drinkNotPay,
           orderBagCount: drinkStore.currentBagCount,
           orderCupCount: drinkStore.currentDrinkCount,

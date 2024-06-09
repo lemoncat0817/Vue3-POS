@@ -25,6 +25,10 @@
       :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/authorityManagement' }">
       <p class=" text-white font-bold text-2xl">權限管理</p>
     </div>
+    <div @click="logout"
+      class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none active:bg-yellow-400">
+      <p class=" text-white font-bold text-2xl">登出</p>
+    </div>
   </div>
 </template>
 
@@ -33,10 +37,13 @@ import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
 import { usePageStore } from '@/stores/page'
 const pageStore = usePageStore()
+import { useLoginStore } from '@/stores/login'
+const loginStore = useLoginStore()
 import { useRouter } from "vue-router"
 const router = useRouter()
 import { ElMessageBox, ElMessage } from 'element-plus';
 
+// 切換頁面
 const changePage = (page) => {
   if (page === 0) {
     pageStore.currentPage = page
@@ -75,6 +82,30 @@ const changePage = (page) => {
     pageStore.currentPage = page
     router.push('/authorityManagement')
   }
+}
+
+// 登出
+const logout = () => {
+  ElMessageBox.confirm('是否要登出? ', '警告', {
+    confirmButtonText: '登出',
+    cancelButtonText: '取消登出',
+    type: 'warning',
+  })
+    .then(() => {
+      router.push('/login')
+      loginStore.isLogin = true
+      loginStore.userInfo = []
+      ElMessage({
+        type: 'success',
+        message: '登出成功',
+      })
+    })
+    .catch(() => {
+      ElMessage({
+        type: 'error',
+        message: '操作取消',
+      })
+    })
 }
 </script>
 

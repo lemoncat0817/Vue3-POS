@@ -1,28 +1,20 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { useRouter } from 'vue-router'
+
 
 
 export const useLoginStore = defineStore('login', () => {
-  const router = useRouter()
   // 帳號
-  const account = ref('admin')
+  const account = ref('lemon')
   // 密碼
-  const password = ref('000000')
+  const password = ref('lemon123')
   // 登入是否成立
   const isLogin = ref(false)
-  // 判定帳號密碼是否正確
-  const login = () => {
-    if (account.value === 'admin' && password.value === '000000') {
-      isLogin.value = true
-      router.push('/home')
-    } else {
-      isLogin.value = false
-      alert('帳號或是密碼錯誤')
-    }
-  }
+  // 登入者的資訊
+  const userInfo = ref([])
 
-  return { account, password, login }
+
+  return { account, password, isLogin, userInfo }
 }, {
   persist: true,
 })
