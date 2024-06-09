@@ -7,6 +7,10 @@ export const useOrderStore = defineStore('order', () => {
   const currentOrderNumber = ref(1)
   // 當前選擇的付款方式
   const currentSelectingPayment = ref('現金')
+  // 當前選擇的付款方式的支付方法
+  const currentSelectingUseMethod = ref('紙鈔')
+  // 付款方式的支付方法
+  const useMethod = ref('紙鈔')
   // 付款方式
   const payment = ref('現金')
   // 定義全部付款方式清單
@@ -88,7 +92,7 @@ export const useOrderStore = defineStore('order', () => {
     }
   })
 
-  return { currentOrderNumber, order, payment, paymentList, currentSelectingPayment }
+  return { currentOrderNumber, order, payment, paymentList, currentSelectingPayment, currentSelectingUseMethod , useMethod}
 }, {
   persist: true,
 })

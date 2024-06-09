@@ -99,10 +99,9 @@
               <!-- 付款方式選單 -->
               <el-dialog v-model="dialogPayMethod" title="選擇付款方式" width="500">
                 <div class="w-full h-[112px] flex grid grid-cols-4 grid-rows-3 gap-2">
-                  <div @click="orderStore.currentSelectingPayment = item.name" v-for="item in slicePayMethod"
-                    :key="item.id"
+                  <div @click="selectPayMethod(item)" v-for="item in slicePayMethod" :key="item.id"
                     class="w-28 h-8 border-2 border-solid border-black rounded-lg text-center px-2 bg-red-300 cursor-pointer"
-                    :class="{ 'bg-yellow-400': orderStore.currentSelectingPayment === item.name }">
+                    :class="{ 'bg-yellow-400': orderStore.currentSelectingPayment === item.name, 'pointer-events-none': item.disabled, 'opacity-50': item.disabled }">
                     <p class="text-blue-800 font-bold text-xl">{{ item.name }}</p>
                   </div>
                 </div>
@@ -970,9 +969,15 @@ const handlePayMethodCurrentChange = (page) => {
 const slicePayMethod = computed(() => {
   return orderStore.paymentList.slice((payMethodCurrentPage.value - 1) * 12, payMethodCurrentPage.value * 12)
 })
+// 選擇付款方式
+const selectPayMethod = (item) => {
+  orderStore.currentSelectingPayment = item.name
+  orderStore.currentSelectingUseMethod = item.useMethod
+}
 // 更改付款方式
 const changePayMethod = () => {
   orderStore.payment = orderStore.currentSelectingPayment
+  orderStore.useMethod = orderStore.currentSelectingUseMethod
   dialogPayMethod.value = false
   ElMessage.success('付款方式更改成功')
 }
@@ -994,14 +999,14 @@ const sendOrder = () => {
         type: 'warning',
       }
     ).then(() => {
-      if (orderStore.payment === '信用卡' || orderStore.payment === 'ApplePay') {
-        ElMessageBox.alert(`應支付$${drinkStore.drinkPayPrice}元,請感${orderStore.payment}`, '通知', {
+      if (orderStore.useMethod === '感應') {
+        ElMessageBox.alert(`應支付$${drinkStore.drinkPayPrice}元,請感應${orderStore.payment}`, '通知', {
           confirmButtonText: '感應完成',
           type: 'info',
         }).then(() => {
           resetOrder()
         })
-      } else if (orderStore.payment === '現金') {
+      } else if (orderStore.useMethod === '紙鈔') {
         ElMessageBox.alert(`應收取現金$${drinkStore.drinkPayPrice}元`, '通知', {
           confirmButtonText: '收取現金',
           type: 'info',
