@@ -34,6 +34,14 @@ export const constantRoutes = [
         meta: {
           title: '後臺設定'
         }
+      },
+      {
+        path: '/dataAnalysis',
+        name: 'dataAnalysis',
+        component: () => import('@/views/dataAnalysis/index.vue'),
+        meta: {
+          title: '數據分析'
+        }
       }
     ]
   }

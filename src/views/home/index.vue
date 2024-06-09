@@ -34,6 +34,11 @@
                 <p class="text-blue-500 mr-2 font-bold ">購買袋子數量</p>
                 <p class=" flex justify-end font-bold">{{ drinkStore.currentBagCount }} 個</p>
               </div>
+              <!-- 當前飲料杯數 -->
+              <div class="flex mr-2">
+                <p class="text-blue-500 mr-2 font-bold ">當前飲料杯數</p>
+                <p class=" flex justify-end font-bold">{{ drinkStore.currentDrinkCount }} 杯</p>
+              </div>
               <!-- 當前付款方式 -->
               <div class="flex mr-2">
                 <p class="text-blue-500 mr-2 font-bold ">當前付款方式</p>
@@ -998,6 +1003,7 @@ const sendOrder = () => {
           staff: '愛喝奶茶的貓咪',
           orderData: drinkStore.drinkNotPay,
           orderBagCount: drinkStore.currentBagCount,
+          orderCupCount: drinkStore.currentDrinkCount,
           orderTotalPrice: drinkStore.drinkTotalMoney,
           orderPayment: orderStore.payment,
           orderDiscount: drinkStore.useDiscountPrice,
@@ -1013,11 +1019,8 @@ const sendOrder = () => {
     }).catch(() => {
       ElMessage.error('取消操作')
     })
-
   }
 }
-
-
 </script>
 
 <style lang="scss" scoped></style>

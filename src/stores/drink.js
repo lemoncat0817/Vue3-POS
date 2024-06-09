@@ -663,6 +663,10 @@ export const useDrinkStore = defineStore('drink', () => {
     return (Math.round(drinkNotPay.value.reduce((acc, cur) => acc
       + cur.totalPrice, 0)) + currentBagCount.value)
   })
+  // 計算當前飲料杯數
+  const currentDrinkCount = computed(() => {
+    return drinkNotPay.value.length > 0 ? drinkNotPay.value.reduce((acc, cur) => acc + cur.count, 0) : 0
+  })
 
   // 判定飲料選項菜單切換後重製其他客製化內容以及所選的品項
   // 當飲料系列改變清空已選茶類以及糖冰還有杯子大小的選項
@@ -751,7 +755,8 @@ export const useDrinkStore = defineStore('drink', () => {
     drinkPayPrice,
     currentBagCount,
     useDiscountPrice,
-    drinkTotalMoney
+    drinkTotalMoney,
+    currentDrinkCount,
   }
 }, {
   persist: true,

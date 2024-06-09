@@ -74,6 +74,9 @@
               <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1">已買袋子數量:
                 <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderBagCount }}</p>個
               </div>
+              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1">飲料杯數:
+                <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderCupCount }}</p>杯
+              </div>
               <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1"> 訂單原始金額: $
                 <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderTotalPrice }}</p>元
               </div>
@@ -138,16 +141,16 @@
             </el-table>
           </template>
         </el-table-column>
-        <el-table-column align="center" prop="orderId" label="訂單編號" width="100" />
-        <el-table-column align="center" prop="orderTime" label="訂單時間" width="160" />
+        <el-table-column align="center" prop="orderId" label="訂單編號" min-width="100" />
+        <el-table-column align="center" prop="orderTime" label="訂單時間" min-width="160" />
         <el-table-column align="center" prop="staff" label="服務人員" min-width="130" />
-        <el-table-column align="center" prop="orderStatus" label="訂單狀態" width="80" />
+        <el-table-column align="center" prop="orderStatus" label="訂單狀態" min-width="80" />
         <el-table-column align="center" label="訂單金額" width="180">
           <template #default="{ row }">
             <p>{{ row.orderPaymentPrice }} 元</p>
           </template>
         </el-table-column>
-        <el-table-column align="center" prop="orderPayment" label="付款方式" width="80" />
+        <el-table-column align="center" prop="orderPayment" label="付款方式" min-width="80" />
         <el-table-column fixed="right" align="right" label="操作" min-width="250">
           <template #default="{ row }">
             <div class="flex justify-end">

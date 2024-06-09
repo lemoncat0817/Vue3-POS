@@ -15,6 +15,11 @@
       :class="{ 'bg-yellow-500 scale-[1.2]': pageStore.currentPage === 2 }">
       <p class=" text-white font-bold text-2xl">後台設定</p>
     </div>
+    <div @click="changePage(3)"
+      class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
+      :class="{ 'bg-yellow-500 scale-[1.2]': pageStore.currentPage === 3 }">
+      <p class=" text-white font-bold text-2xl">數據分析</p>
+    </div>
   </div>
 </template>
 
@@ -56,6 +61,10 @@ const changePage = (page) => {
       router.push('/backgroundSetting')
       pageStore.currentPage = page
     }
+  }
+  if (page === 3) {
+    pageStore.currentPage = page
+    router.push('/dataAnalysis')
   }
 }
 </script>
