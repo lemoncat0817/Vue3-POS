@@ -42,6 +42,14 @@ export const constantRoutes = [
         meta: {
           title: '數據分析'
         }
+      },
+      {
+        path: '/authorityManagement',
+        name: 'authorityManagement',
+        component: () => import('@/views/authorityManagement/index.vue'),
+        meta: {
+          title: '權限管理'
+        }
       }
     ]
   }

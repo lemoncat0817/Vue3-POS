@@ -20,6 +20,11 @@
       :class="{ 'bg-yellow-500 scale-[1.2]': pageStore.currentPage === 3 }">
       <p class=" text-white font-bold text-2xl">數據分析</p>
     </div>
+    <div @click="changePage(4)"
+      class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
+      :class="{ 'bg-yellow-500 scale-[1.2]': pageStore.currentPage === 4 }">
+      <p class=" text-white font-bold text-2xl">權限管理</p>
+    </div>
   </div>
 </template>
 
@@ -65,6 +70,10 @@ const changePage = (page) => {
   if (page === 3) {
     pageStore.currentPage = page
     router.push('/dataAnalysis')
+  }
+  if (page === 4) {
+    pageStore.currentPage = page
+    router.push('/authorityManagement')
   }
 }
 </script>

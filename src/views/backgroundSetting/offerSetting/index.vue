@@ -273,7 +273,7 @@ const addDrinkMoneyDiscount = () => {
     return
   }
   if (discountStore.moneyDiscount.find((item) => item.name == currentInputName.value)) {
-    ElMessage.error('此折扣券名稱,請重新輸入')
+    ElMessage.error('此折扣券名稱已存在,請重新輸入')
     return
   }
   if (currentInputId.value <= 0) {
@@ -433,7 +433,7 @@ const addDrinkPercentDiscount = () => {
     return
   }
   if (discountStore.percentDiscount.find((item) => item.name == currentPercentDiscountInputName.value)) {
-    ElMessage.error('此折扣券名稱,請重新輸入')
+    ElMessage.error('此折扣券名稱已存在,請重新輸入')
     return
   }
   if (currentPercentDiscountInputId.value <= 0) {

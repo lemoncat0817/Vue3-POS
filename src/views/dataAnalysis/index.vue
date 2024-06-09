@@ -4,25 +4,26 @@
       <h1
         class="text-3xl text-white font-bold text-center border-2 border-solid border-black rounded-lg bg-red-500 px-2">
         數據分析</h1>
-      <div class="mt-5 flex">
+      <div class="mt-5 flex justify-center items-center">
         <div @click="dataAnalysisStore.currentDataAnalysis = 0"
-          class="border-2 border-black border-solid rounded-lg bg-red-500 text-center text-blue-800 font-bold px-2 text-lg cursor-pointer"
+          class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold text-2xl cursor-pointer select-none"
           :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 0 }">
           營業額</div>
         <div @click="dataAnalysisStore.currentDataAnalysis = 1"
-          class="border-2 border-black border-solid rounded-lg bg-red-500 text-center text-blue-800 font-bold px-2 text-lg  cursor-pointer mx-2"
+          class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold text-2xl cursor-pointer select-none"
           :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 1 }">
           熱門飲料</div>
         <div @click="dataAnalysisStore.currentDataAnalysis = 2"
-          class="border-2 border-black border-solid rounded-lg bg-red-500 text-center text-blue-800 font-bold px-2 text-lg  cursor-pointer mx-2"
+          class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold text-2xl cursor-pointer select-none"
           :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 2 }">
           熱門配料</div>
         <div @click="dataAnalysisStore.currentDataAnalysis = 3"
-          class="border-2 border-black border-solid rounded-lg bg-red-500 text-center text-blue-800 font-bold px-2 text-lg  cursor-pointer mx-2"
+          class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold text-2xl cursor-pointer select-none"
           :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 3 }">
           常用付款方式</div>
-        <el-date-picker v-model="selectTime" type="daterange" range-separator="到" start-placeholder="開始時間"
-          end-placeholder="結束時間" format="YYYY/MM/DD" value-format="YYYY/MM/DD" />
+        <el-date-picker class="border-2 border-solid border-black  mx-3 font-bold text-2xl select-none"
+          v-model="selectTime" type="daterange" range-separator="到" start-placeholder="開始時間" end-placeholder="結束時間"
+          format="YYYY/MM/DD" value-format="YYYY/MM/DD" />
       </div>
       <div class="w-4/5 mt-10 ">
         <div v-if="selectTime[0] === selectTime[1] && dataAnalysisStore.currentDataAnalysis === 0" class="h-[530px]"
