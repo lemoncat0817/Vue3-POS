@@ -12,50 +12,59 @@ export const useOrderStore = defineStore('order', () => {
   // 定義全部付款方式清單
   const paymentList = ref([{
     "id": 1,
-    "name": "現金",
-    "disabled": false
+    "name": '現金',
+    "disabled": false,
+    "useMethod": '紙鈔'
   },
   {
     "id": 2,
     "name": '信用卡',
-    "disabled": false
+    "disabled": false,
+    "useMethod": '感應'
   },
 
   {
     "id": 3,
     "name": 'LinePay',
-    "disabled": false
+    "disabled": false,
+    "useMethod": '掃描'
 
   },
   {
     "id": 4,
     "name": '街口支付',
-    "disabled": false
+    "disabled": false,
+    "useMethod": '掃描'
   },
   {
     "id": 5,
     "name": '台灣Pay',
-    "disabled": false
+    "disabled": false,
+    "useMethod": '掃描'
   },
   {
     "id": 6,
     "name": 'ApplePay',
-    "disabled": false
+    "disabled": false,
+    "useMethod": '感應'
   },
   {
     "id": 7,
     "name": 'Pi錢包',
-    "disabled": false
+    "disabled": false,
+    "useMethod": '掃描'
   },
   {
     "id": 8,
     "name": '全支付',
-    "disabled": false
+    "disabled": false,
+    "useMethod": '掃描'
   },
   {
     "id": 9,
     "name": '悠遊付',
-    "disabled": false
+    "disabled": false,
+    "useMethod": '掃描'
   }
   ])
   // 訂單資訊

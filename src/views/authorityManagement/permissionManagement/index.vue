@@ -181,9 +181,115 @@
       </div>
     </div>
   </div>
-  <!-- 常用優惠 -->
+  <!-- 付款方式 -->
   <div class="flex-[1]">
+    <div class="flex justify-between mt-2">
+      <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">付款方式</div>
+      <div class="flex mr-2">
+        <!-- 新增功能 -->
+        <button @click="openAddPayMethodDialog"
+          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
+        <!-- 新增付款方式 -->
+        <el-dialog v-model="addPayMethodDialog" title="新增付款方式" width="500">
+          <!-- 付款方式的Id -->
+          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+            付款方式的Id:<input v-model="currentInputPayMethodId" type="number" min="1" step="1"
+              class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+              placeholder="純數字,例如:1,2,3..." />
+          </div>
+          <!-- 付款方式的名稱 -->
+          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+            付款方式的名稱:<input v-model="currentInputPayMethodName"
+              class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+              placeholder="例如: 現金、LinePay..." />
+          </div>
+          <!-- 支付方式 -->
+          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+            支付方式:<el-select v-model="currentSelectPayMethod" placeholder="選擇支付方式" size="default" style="width: 235px">
+              <el-option class="text-center" v-for="item in payMethodOptions" :key="item.value" :label="item.label"
+                :value="item.value" />
+            </el-select>
+          </div>
+          <!-- 付款方式是否使用 -->
+          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+            是否啟用: <el-switch class="w-[235px]" size="large" v-model="isUsePayMethod" inline-prompt active-text="是"
+              inactive-text="否" />
+          </div>
+          <template #footer>
+            <div class="dialog-footer">
+              <el-button @click="closeAddPayMethodDialog">取消</el-button>
+              <el-button type="primary" @click="addPayMethod">
+                新增
+              </el-button>
+            </div>
+          </template>
+        </el-dialog>
+        <!-- 刪除功能 -->
+        <button @click="deletePayMethod"
+          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
+        <!-- 編輯功能 -->
+        <button @click="openEditPayMethodDialog"
+          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
+        <!-- 編輯付款方式 -->
+        <el-dialog v-model="editPayMethodDialog" title="編輯付款方式" width="500">
+          <!-- 付款方式的Id -->
+          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+            付款方式的Id:<input v-model="currentEditInputPayMethodId" type="number" min="1" step="1"
+              class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+              placeholder="純數字,例如:1,2,3..." />
+          </div>
+          <!-- 付款方式的名稱 -->
+          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+            付款方式的名稱:<input v-model="currentEditInputPayMethodName"
+              class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
+              placeholder="例如: 現金、LinePay..." />
+          </div>
+          <!-- 支付方式 -->
+          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+            支付方式:<el-select v-model="currentSelectEditPayMethod" placeholder="選擇支付方式" size="default"
+              style="width: 235px">
+              <el-option class="text-center" v-for="item in payMethodOptions" :key="item.value" :label="item.label"
+                :value="item.value" />
+            </el-select>
+          </div>
+          <!-- 付款方式是否使用 -->
+          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
+            是否啟用: <el-switch class="w-[235px]" size="large" v-model="isUseEditPayMethod" inline-prompt active-text="是"
+              inactive-text="否" />
+          </div>
+          <template #footer>
+            <div class="dialog-footer">
+              <el-button @click="closeEditPayMethodDialog">取消</el-button>
+              <el-button type="primary" @click="editPayMethod">
+                保存
+              </el-button>
+            </div>
+          </template>
+        </el-dialog>
+      </div>
+    </div>
     <div>
+      <el-table class="cursor-pointer mt-2" :data="slicePayMethodList" highlight-current-row height="440"
+        empty-text="沒有付款方式" @current-change="handleCurrentPayMethodChange">
+        <el-table-column align="center" type="index" label="序號" min-width="55" />
+        <el-table-column align="center" label="Id" prop="id" min-width="55" />
+        <el-table-column align="center" label="付款方式" prop="name" min-width="80" />
+        <el-table-column align="center" label="支付方式" prop="useMethod" min-width="80" />
+        <el-table-column align="center" label="使用" min-width="55">
+          <template #default="{ row }">
+            <p>{{ row.disabled == false ? '是' : '否' }}</p>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center mt-10">
+        <p class="text-blue-800">{{ `共 ${orderStore.paymentList.length} 樣` }}</p>
+        <div class="h-full flex items-center">
+          <el-pagination v-model:current-page="payMethodCurrentPage" small background layout="prev, next"
+            :total="orderStore.paymentList.length" @current-change="handlePayMethodCurrentChange" />
+        </div>
+        <p class="text-blue-800">{{ `${orderStore.paymentList.length > 0 ? payMethodCurrentPage : 0
+          }/${Math.ceil(orderStore.paymentList.length / 10)}頁` }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -193,6 +299,8 @@ import { ref, computed } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 const authorityManagementStore = useAuthorityManagementStore()
+import { useOrderStore } from '@/stores/order'
+const orderStore = useOrderStore()
 
 // 人員名單相關的功能
 // 存放當前選擇的人員
@@ -314,13 +422,25 @@ const currentEditInputStaffPassword = ref('')
 const editAuthorityCheckList = ref([])
 // 開啟控制編輯人員Dialog人員Dialog
 const openEditStaffDialog = () => {
-  currentEditInputStaffId.value = currentStaff.value.id
-  currentEditInputStaffName.value = currentStaff.value.name
-  currentEditInputStaffJobTitle.value = currentStaff.value.jobTitle
-  currentEditInputStaffAccount.value = currentStaff.value.account
-  currentEditInputStaffPassword.value = currentStaff.value.password
-  editAuthorityCheckList.value = currentStaff.value.authorityCheckList
-  editStaffDialog.value = true
+  if (currentStaff.value.id === 1) {
+    ElMessage.error('不可編輯店長')
+    return
+  }
+  if (currentStaff.value.name) {
+    currentEditInputStaffId.value = currentStaff.value.id
+    currentEditInputStaffName.value = currentStaff.value.name
+    currentEditInputStaffJobTitle.value = currentStaff.value.jobTitle
+    currentEditInputStaffAccount.value = currentStaff.value.account
+    currentEditInputStaffPassword.value = currentStaff.value.password
+    editAuthorityCheckList.value = currentStaff.value.authorityCheckList
+    editStaffDialog.value = true
+  } else {
+    ElMessageBox.alert('請先選擇要編輯的人員', '通知', {
+      confirmButtonText: '繼續選擇',
+      type: 'info',
+    })
+  }
+
 }
 // 關閉編輯人員Dialog
 const closeEditStaffDialog = () => {
@@ -381,6 +501,192 @@ const handleStaffCurrentChange = (page) => {
 // 計算當前頁數並切換顯示內容
 const sliceStaffList = computed(() => {
   return authorityManagementStore.StaffList.slice((staffCurrentPage.value - 1) * 10, staffCurrentPage.value * 10)
+})
+
+// 付款方式相關的功能
+// 存放當前選擇的付款方式
+const currentPayMethod = ref({})
+// 將選擇的付款方式存入
+const handleCurrentPayMethodChange = (row) => {
+  currentPayMethod.value = row
+}
+// 控制新增付款方式Dialog
+const addPayMethodDialog = ref(false)
+// 開啟新增付款方式Dialog
+const openAddPayMethodDialog = () => {
+  currentInputPayMethodId.value = ''
+  currentInputPayMethodName.value = ''
+  currentSelectPayMethod.value = ''
+  isUsePayMethod.value = true
+  addPayMethodDialog.value = true
+}
+// 關閉新增付款方式Dialog
+const closeAddPayMethodDialog = () => {
+  addPayMethodDialog.value = false
+  ElMessage.error('操作取消')
+}
+// 定義當前新增付款方式的Id
+const currentInputPayMethodId = ref()
+// 定義當前新增付款方式的名稱
+const currentInputPayMethodName = ref('')
+// 定義當前選擇付款方式
+const currentSelectPayMethod = ref('')
+// 定義付款方式
+const payMethodOptions = ref([{
+  value: '紙鈔',
+  label: '紙鈔',
+},
+{
+  value: '感應',
+  label: '感應',
+},
+{
+  value: '掃描',
+  label: '掃描',
+}])
+// 定義當前是否啟用付款方式
+const isUsePayMethod = ref(true)
+// 新增付款方式
+const addPayMethod = () => {
+  if (currentInputPayMethodId.value == '' || currentInputPayMethodName.value == '' || currentSelectPayMethod.value == '') {
+    ElMessage.error('請輸入完整資訊')
+    return
+  }
+  if (orderStore.paymentList.find((item) => item.id == currentInputPayMethodId.value)) {
+    ElMessage.error('此Id已存在,請重新輸入')
+    return
+  }
+  if (orderStore.paymentList.find((item) => item.name == currentInputPayMethodName.value)) {
+    ElMessage.error('此付款方式已存在,請重新輸入')
+    return
+  }
+  if (currentInputPayMethodId.value <= 0) {
+    ElMessage.error('Id不可為負數且需大於0,請重新輸入')
+    return
+  }
+  // 送出新增付款方式的表單格式
+  const addPayMethodForm = {
+    id: currentInputPayMethodId.value,
+    name: currentInputPayMethodName.value,
+    disabled: !isUsePayMethod.value,
+    useMethod: currentSelectPayMethod.value,
+  }
+  orderStore.paymentList.push(addPayMethodForm)
+  ElMessage.success('新增付款方式成功')
+  addPayMethodDialog.value = false
+}
+// 刪除付款方式
+const deletePayMethod = () => {
+  if (currentPayMethod.value.id == 1) {
+    ElMessage.error('不可刪除現金支付')
+    return
+  }
+  if (currentPayMethod.value.name) {
+    ElMessageBox.confirm(
+      `是否刪除付款方式 ${currentPayMethod.value.name} ?`,
+      '警告',
+      {
+        confirmButtonText: '確定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+      .then(() => {
+        orderStore.paymentList = orderStore.paymentList.filter((item) => item.id !== currentPayMethod.value.id);
+        ElMessage.success('刪除成功')
+      })
+      .catch(() => {
+        ElMessage.error('取消操作');
+      })
+  } else {
+    ElMessageBox.alert('請先選擇要刪除的付款方式', '通知', {
+      confirmButtonText: '繼續選擇',
+      type: 'info',
+    })
+  }
+}
+// 控制編輯付款方式Dialog
+const editPayMethodDialog = ref(false)
+// 定義當前編輯付款方式的Id
+const currentEditInputPayMethodId = ref()
+// 定義當前編輯付款方式的名稱
+const currentEditInputPayMethodName = ref('')
+// 定義當前選擇付款方式
+const currentSelectEditPayMethod = ref('')
+// 定義當前是否啟用付款方式
+const isUseEditPayMethod = ref(true)
+// 定義付款方式
+// 開啟控制編輯付款方式Dialog
+const openEditPayMethodDialog = () => {
+  if (currentPayMethod.value.id === 1) {
+    ElMessage.error('不可編輯現金支付')
+    return
+  }
+  if (currentPayMethod.value.name) {
+    currentEditInputPayMethodId.value = currentPayMethod.value.id
+    currentEditInputPayMethodName.value = currentPayMethod.value.name
+    currentSelectEditPayMethod.value = currentPayMethod.value.useMethod
+    isUseEditPayMethod.value = !currentPayMethod.value.disabled
+    editPayMethodDialog.value = true
+  } else {
+    ElMessageBox.alert('請先選擇要編輯的付款方式', '通知', {
+      confirmButtonText: '繼續選擇',
+      type: 'info',
+    })
+    return
+  }
+
+}
+// 關閉編輯付款方式Dialog
+const closeEditPayMethodDialog = () => {
+  editPayMethodDialog.value = false
+  ElMessage.error('操作取消')
+}
+// 儲存編輯
+const editPayMethod = () => {
+  if (currentEditInputPayMethodId.value == '' || currentEditInputPayMethodName.value == '' || currentSelectEditPayMethod.value == '') {
+    ElMessage.error('請輸入完整資訊')
+    return
+  }
+  if (currentEditInputPayMethodId.value == currentPayMethod.value.id && currentEditInputPayMethodName.value == currentPayMethod.value.name && currentSelectEditPayMethod.value == currentPayMethod.value.useMethod && isUseEditPayMethod.value == !currentPayMethod.value.disabled) {
+    editPayMethodDialog.value = false
+    ElMessage.success('保存成功')
+    return
+  } else {
+    const anotherId = ref([])
+    anotherId.value = (orderStore.paymentList.filter(item => item.id != currentPayMethod.value.id))
+    if (anotherId.value.some(item => item.id == currentEditInputPayMethodId.value)) {
+      ElMessage.error('此Id已存在,請重新輸入')
+      return
+    }
+    const anotherName = ref([])
+    anotherName.value = (orderStore.paymentList.filter(item => item.name != currentPayMethod.value.name))
+    if (anotherName.value.some(item => item.name == currentEditInputPayMethodName.value)) {
+      ElMessage.error('此支付方式已存在,請重新輸入')
+      return
+    }
+    if (currentEditInputPayMethodId.value <= 0) {
+      ElMessage.error('Id不可為負數且需大於0,請重新輸入')
+      return
+    }
+  }
+  currentPayMethod.value.id = currentEditInputPayMethodId.value
+  currentPayMethod.value.name = currentEditInputPayMethodName.value
+  currentPayMethod.value.useMethod = currentSelectEditPayMethod.value
+  currentPayMethod.value.disabled = !isUseEditPayMethod.value
+  editPayMethodDialog.value = false
+  ElMessage.success('保存成功')
+}
+// 分頁器
+// 定義當前的頁數
+const payMethodCurrentPage = ref(1)
+// 切換頁數
+const handlePayMethodCurrentChange = (page) => {
+  payMethodCurrentPage.value = page
+}
+// 計算當前頁數並切換顯示內容
+const slicePayMethodList = computed(() => {
+  return orderStore.paymentList.slice((payMethodCurrentPage.value - 1) * 10, payMethodCurrentPage.value * 10)
 })
 
 </script>
