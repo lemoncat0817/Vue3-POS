@@ -22,8 +22,11 @@
         <input placeholder="請輸入密碼" type="password" v-model="loginStore.password"
           class="w-[200px] rounded-[20px] p-2 bg-[#f8f8dc] text-[#560710] font-bold text-lg text-center lg:w-[180px] focus:w-[300px] transition-width duration-500">
       </div>
-      <button @click="login"
-        class="w-[100px] rounded-[20px] p-2 bg-[#cc191f] text-center cursor-pointer font-bold lg:w-[80px] hover:scale-[1.3] hover:w-[150px] transition-all duration-500 hover:bg-[#ff4500] hover:text-blue-800">登入</button>
+      <div>
+        <input type="checkbox" v-model="loginStore.isRememberPassword"> 記住密碼
+        <button @click="login"
+          class="w-[100px] rounded-[20px] p-2 bg-[#cc191f] text-center cursor-pointer font-bold lg:w-[80px] hover:scale-[1.3] hover:w-[150px] transition-all duration-500 ml-5 hover:bg-[#ff4500] hover:text-blue-800">登入</button>
+      </div>
       <p class="text-lg font-bold text-red-300">快速登入(測試時使用,實際使用會移除): </p>
       <div class="flex justify-between w-[300px]">
         <button
@@ -49,6 +52,7 @@ import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 const authorityManagementStore = useAuthorityManagementStore()
 import { ElMessage, ElNotification } from 'element-plus'
 
+// 快速登入相關功能
 const quicklyLogin = (num) => {
   if (num === 1) {
     loginStore.account = 'lemon'

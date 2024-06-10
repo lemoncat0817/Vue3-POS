@@ -97,6 +97,9 @@ const logout = () => {
       router.push('/login')
       loginStore.isLogin = false
       loginStore.userInfo = []
+      if (loginStore.isRememberPassword === false) {
+        loginStore.password = ''
+      }
       ElMessage({
         type: 'success',
         message: '登出成功',
