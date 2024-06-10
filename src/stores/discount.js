@@ -21,12 +21,12 @@ export const useDiscountStore = defineStore('discount', () => {
   },
   {
     "id": 2,
-    "name": "$100折價券",
+    "name": "滿$300折$100元",
     "discountMoney": 100,
   },
   {
     "id": 3,
-    "name": "$150折價券",
+    "name": "滿$500折$150元",
     "discountMoney": 150,
   },
   {
@@ -48,17 +48,17 @@ export const useDiscountStore = defineStore('discount', () => {
   },
   {
     "id": 2,
-    "name": "整單75折",
-    "discountMoney": 0.75,
+    "name": "週年慶整單88折",
+    "discountMoney": 0.88,
   },
   {
     "id": 3,
-    "name": "整單7折",
+    "name": "滿千打7折",
     "discountMoney": 0.7,
   },
   {
     "id": 4,
-    "name": "整單5折",
+    "name": "滿萬打5折",
     "discountMoney": 0.5,
   }])
   // 常用的折價清單

@@ -786,6 +786,8 @@ const openEditPayMethodDialog = () => {
   }
   if (currentPayMethod.value.name) {
     orderStore.payment = '現金'
+    orderStore.currentSelectingUseMethod = '紙鈔'
+    orderStore.useMethod = '紙鈔'
     currentEditInputPayMethodId.value = currentPayMethod.value.id
     currentEditInputPayMethodName.value = currentPayMethod.value.name
     currentSelectEditPayMethod.value = currentPayMethod.value.useMethod

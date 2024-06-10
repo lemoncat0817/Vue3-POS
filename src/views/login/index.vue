@@ -2,17 +2,37 @@
   <div
     class="w-screen h-[959px] bg-[url('@/assets/login-Bg.png')] bg-no-repeat bg-[length:100%_100%] text-white relative">
     <div
-      class="absolute top-[40%] left-[50%] translate-x-[-50%] translate-y-[-50%] flex flex-col items-center gap-[50px]">
-      <h1 class="text-[50px] font-bold bg-gradient-to-r from-red-500 to-pink-300 bg-clip-text text-transparent">MAJI Tea
-      </h1>
-      <input placeholder="請輸入帳號" v-model="loginStore.account"
-        class="w-[200px] rounded-[20px] p-2 bg-[#f8f8dc] text-[#560710] text-center focus:w-[300px] transition-width duration-500">
+      class="absolute top-[40%] left-[50%] translate-x-[-50%] translate-y-[-50%] flex flex-col items-center gap-[30px]">
+      <div class="flex items-center gap-[10px]">
+        <h1 class="text-[50px] font-bold bg-gradient-to-r from-red-500 to-pink-300 bg-clip-text text-transparent">MAJI
+          Tea
+        </h1>
+        <img src="@/assets/logo.png" alt="logo" class="w-16 h-4/5 rounded-lg ml-2 border-2 border-black border-solid hover:scale-[1.1] hover:animate-bounce ">
+      </div>
+      <div class="flex items-center gap-[10px]">
+        <p class="text-[30px] font-bold text-red-400">帳號</p>
+        <input placeholder="請輸入帳號" v-model="loginStore.account"
+          class="w-[200px] rounded-[20px] p-2 bg-[#f8f8dc] text-[#560710] font-bold text-lg text-center focus:w-[300px] transition-width duration-500">
+      </div>
+      <div class="flex items-center gap-[10px]">
+        <p class="text-[30px] font-bold text-red-400">密碼</p>
       <input placeholder="請輸入密碼" type="password" v-model="loginStore.password"
-        class="w-[200px] rounded-[20px] p-2 bg-[#f8f8dc] text-[#560710] text-center focus:w-[300px] transition-width duration-500">
-      <button @click="login"
-        class="w-[100px] rounded-[20px] p-2 bg-[#cc191f] text-center cursor-pointer font-bold hover:w-[200px] transition-width duration-500 hover:bg-[#ff4500]">登入</button>
-      <button @click="quicklyLogin(1)">快速登入(admin)</button>
-      <button @click="quicklyLogin(2)">快速登入</button>
+        class="w-[200px] rounded-[20px] p-2 bg-[#f8f8dc] text-[#560710] font-bold text-lg text-center focus:w-[300px] transition-width duration-500">
+      </div>
+        <button @click="login"
+        class="w-[100px] rounded-[20px] p-2 bg-[#cc191f] text-center cursor-pointer font-bold hover:scale-[1.3] hover:w-[150px] transition-all duration-500 hover:bg-[#ff4500] hover:text-blue-800">登入</button>
+      <p class="text-lg font-bold text-red-300">快速登入(測試時使用,實際使用會移除): </p>
+      <div class="flex justify-between w-[300px]">
+        <button
+          class="border-2 border-black border-solid rounded-lg px-2 bg-blue-500 text-center font-bold text-red-200 text-lg hover:bg-blue-800 hover:scale-[1.1] active:bg-yellow-700"
+          @click="quicklyLogin(1)">店長(管理員)</button>
+        <button
+          class="border-2 border-black border-solid rounded-lg px-2 bg-blue-500 text-center font-bold text-red-200 text-lg hover:bg-blue-800 hover:scale-[1.1] active:bg-yellow-700"
+          @click="quicklyLogin(2)">值班經理</button>
+        <button
+          class="border-2 border-black border-solid rounded-lg px-2 bg-blue-500 text-center font-bold text-red-200 text-lg hover:bg-blue-800 hover:scale-[1.1] active:bg-yellow-700"
+          @click="quicklyLogin(3)">工讀生</button>
+      </div>
     </div>
   </div>
 </template>
@@ -31,7 +51,13 @@ const quicklyLogin = (num) => {
     loginStore.account = 'lemon'
     loginStore.password = 'lemon123'
     login()
-  } else {
+  }
+  if (num === 2) {
+    loginStore.account = 'james'
+    loginStore.password = 'james123'
+    login()
+  }
+  if (num === 3) {
     loginStore.account = 'emily'
     loginStore.password = 'emily123'
     login()

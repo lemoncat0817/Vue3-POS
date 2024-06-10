@@ -323,7 +323,7 @@
             <button @click="addCount('9')"
               class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">9</button>
             <button @click="addNewDrink"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">Key</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">加入</button>
           </div>
           <div class="w-full h-1/5 flex items-center justify-around ">
             <button @click="addCount('4')"
@@ -351,7 +351,7 @@
             <button @click="addCount('00')"
               class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">00</button>
             <button @click="drinkStore.drinkCount = '0'"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">Reset</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">重設</button>
             <button @click="drinkStore.drinkCount = '100'"
               class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">100</button>
           </div>
@@ -1044,6 +1044,8 @@ const sendOrder = () => {
         }
         orderStore.order.push(toPayOrder)
         ElMessage.success('訂單送出成功')
+        orderStore.currentSelectingUseMethod = '紙鈔'
+        orderStore.useMethod = '紙鈔'
         drinkStore.drinkNotPay = []
         orderStore.payment = '現金'
         orderStore.currentOrderNumber++

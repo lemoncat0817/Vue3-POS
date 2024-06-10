@@ -1,5 +1,7 @@
 <template>
   <div class="w-screen h-20 bg-red-500 flex justify-center items-center ">
+    <img src="@/assets/logo.png" alt="logo"
+      class="w-16 h-4/5 rounded-lg mr-5 border-2 border-black border-solid hover:animate-spin">
     <div @click="changePage(0)"
       class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
       :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/home' }">
