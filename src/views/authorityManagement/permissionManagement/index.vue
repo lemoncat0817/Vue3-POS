@@ -6,6 +6,7 @@
       <div class="flex mr-2">
         <!-- 新增功能 -->
         <button @click="openAddStaffDialog"
+          :class="{ 'opacity-50': loginStore.userInfo.canSetAuthority === 'X', 'pointer-events-none': loginStore.userInfo.canSetAuthority === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
         <!-- 新增人員 -->
         <el-dialog v-model="addStaffDialog" title="新增人員" width="500">
@@ -41,9 +42,8 @@
             權限管理: <el-checkbox-group @change="handleAuthorityCheckListChange"
               class="w-[265px] border-2 border-solid border-black rounded-lg ml-2 text-center px-2 grid grid-cols-2 gap-0.5"
               v-model="authorityCheckList">
-              <el-checkbox label="點餐" value="canOrder" />
-              <el-checkbox label="免費招待" value="canFreeDrink" :disabled="!authorityCheckList.includes('canOrder')" />
-              <el-checkbox label="開收銀機" value="canOpenCashier" :disabled="!authorityCheckList.includes('canOrder')" />
+              <el-checkbox label="免費招待" value="canFreeDrink" />
+              <el-checkbox label="開收銀機" value="canOpenCashier" />
               <el-checkbox label="查看訂單" value="canCheckOrder" />
               <el-checkbox label="編輯訂單狀態" value="canEditOrderStatus"
                 :disabled="!authorityCheckList.includes('canCheckOrder')" />
@@ -81,9 +81,11 @@
         </el-dialog>
         <!-- 刪除功能 -->
         <button @click="deleteStaff"
+          :class="{ 'opacity-50': loginStore.userInfo.canSetAuthority === 'X', 'pointer-events-none': loginStore.userInfo.canSetAuthority === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
         <!-- 編輯功能 -->
         <button @click="openEditStaffDialog"
+          :class="{ 'opacity-50': loginStore.userInfo.canSetAuthority === 'X', 'pointer-events-none': loginStore.userInfo.canSetAuthority === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
         <!-- 編輯人員 -->
         <el-dialog v-model="editStaffDialog" title="編輯人員" width="500">
@@ -119,10 +121,8 @@
             權限管理: <el-checkbox-group
               class="w-[265px] border-2 border-solid border-black rounded-lg ml-2 text-center px-2 grid grid-cols-2 gap-0.5"
               v-model="editAuthorityCheckList" @change="handleEditAuthorityCheckListChange">
-              <el-checkbox label="點餐" value="canOrder" />
-              <el-checkbox label="免費招待" value="canFreeDrink" :disabled="!editAuthorityCheckList.includes('canOrder')" />
-              <el-checkbox label="開收銀機" value="canOpenCashier"
-                :disabled="!editAuthorityCheckList.includes('canOrder')" />
+              <el-checkbox label="免費招待" value="canFreeDrink" />
+              <el-checkbox label="開收銀機" value="canOpenCashier" />
               <el-checkbox label="查看訂單" value="canCheckOrder" />
               <el-checkbox label="編輯訂單狀態" value="canEditOrderStatus"
                 :disabled="!editAuthorityCheckList.includes('canCheckOrder')" />
@@ -168,11 +168,6 @@
         <el-table-column align="center" label="職稱" prop="jobTitle" min-width="80" />
         <el-table-column align="center" label="帳號" prop="account" min-width="80" />
         <el-table-column align="center" label="密碼" prop="password" min-width="95" />
-        <el-table-column align="center" label="點餐" min-width="80">
-          <template #default="{ row }">
-            <p class="text-green-500" :class="{ 'text-red-700': row.canOrder != 'O' }">{{ row.canOrder }}</p>
-          </template>
-        </el-table-column>
         <el-table-column align="center" label="免費招待" min-width="80">
           <template #default="{ row }">
             <p class="text-green-500" :class="{ 'text-red-700': row.canFreeDrink != 'O' }">{{ row.canFreeDrink }}</p>
@@ -299,6 +294,7 @@
       <div class="flex mr-2">
         <!-- 新增功能 -->
         <button @click="openAddPayMethodDialog"
+          :class="{ 'opacity-50': loginStore.userInfo.canSetPayMethod === 'X', 'pointer-events-none': loginStore.userInfo.canSetPayMethod === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
         <!-- 新增付款方式 -->
         <el-dialog v-model="addPayMethodDialog" title="新增付款方式" width="500">
@@ -337,9 +333,11 @@
         </el-dialog>
         <!-- 刪除功能 -->
         <button @click="deletePayMethod"
+          :class="{ 'opacity-50': loginStore.userInfo.canSetPayMethod === 'X', 'pointer-events-none': loginStore.userInfo.canSetPayMethod === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
         <!-- 編輯功能 -->
         <button @click="openEditPayMethodDialog"
+          :class="{ 'opacity-50': loginStore.userInfo.canSetPayMethod === 'X', 'pointer-events-none': loginStore.userInfo.canSetPayMethod === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
         <!-- 編輯付款方式 -->
         <el-dialog v-model="editPayMethodDialog" title="編輯付款方式" width="500">
@@ -412,6 +410,9 @@ import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 const authorityManagementStore = useAuthorityManagementStore()
 import { useOrderStore } from '@/stores/order'
 const orderStore = useOrderStore()
+import { useLoginStore } from '@/stores/login';
+const loginStore = useLoginStore()
+
 
 // 人員名單相關的功能
 // 存放當前選擇的人員
@@ -451,9 +452,6 @@ const currentInputStaffPassword = ref('')
 const authorityCheckList = ref([])
 // 勾選的項目改變把已勾選被禁用的選項取消勾選
 const handleAuthorityCheckListChange = (value) => {
-  if (!value.includes('canOrder')) {
-    authorityCheckList.value = authorityCheckList.value.filter(item => item != 'canFreeDrink' && item != 'canOpenCashier')
-  }
   if (!value.includes('canCheckOrder')) {
     authorityCheckList.value = authorityCheckList.value.filter(item => item != 'canEditOrderStatus' && item != 'canDeleteOrder')
   }
@@ -490,7 +488,6 @@ const addStaff = () => {
     account: currentInputStaffAccount.value,
     password: currentInputStaffPassword.value,
     authorityCheckList: authorityCheckList.value,
-    canOrder: authorityCheckList.value.some(item => item.includes('canOrder')) ? 'O' : 'X',
     canFreeDrink: authorityCheckList.value.some(item => item.includes('canFreeDrink')) ? 'O' : 'X',
     canOpenCashier: authorityCheckList.value.some(item => item.includes('canOpenCashier')) ? 'O' : 'X',
     canCheckOrder: authorityCheckList.value.some(item => item.includes('canCheckOrder')) ? 'O' : 'X',
@@ -516,6 +513,10 @@ const addStaff = () => {
 const deleteStaff = () => {
   if (currentStaff.value.id == 1) {
     ElMessage.error('不可刪除店長')
+    return
+  }
+  if (currentStaff.value.account === loginStore.userInfo.account) {
+    ElMessage.error('不可刪除自己')
     return
   }
   if (currentStaff.value.name) {
@@ -558,9 +559,6 @@ const currentEditInputStaffPassword = ref('')
 const editAuthorityCheckList = ref([])
 // 勾選的項目改變把已勾選被禁用的選項取消勾選
 const handleEditAuthorityCheckListChange = (value) => {
-  if (!value.includes('canOrder')) {
-    editAuthorityCheckList.value = editAuthorityCheckList.value.filter(item => item != 'canFreeDrink' && item != 'canOpenCashier')
-  }
   if (!value.includes('canCheckOrder')) {
     editAuthorityCheckList.value = editAuthorityCheckList.value.filter(item => item != 'canEditOrderStatus' && item != 'canDeleteOrder')
   }
@@ -575,6 +573,10 @@ const handleEditAuthorityCheckListChange = (value) => {
 const openEditStaffDialog = () => {
   if (currentStaff.value.id === 1) {
     ElMessage.error('不可編輯店長')
+    return
+  }
+  if (currentStaff.value.account === loginStore.userInfo.account) {
+    ElMessage.error('不可編輯自己')
     return
   }
   if (currentStaff.value.name) {
@@ -632,7 +634,6 @@ const editStaff = () => {
   currentStaff.value.account = currentEditInputStaffAccount.value
   currentStaff.value.password = currentEditInputStaffPassword.value
   currentStaff.value.authorityCheckList = editAuthorityCheckList.value
-  currentStaff.value.canOrder = editAuthorityCheckList.value.some(item => item.includes('canOrder')) ? 'O' : 'X'
   currentStaff.value.canFreeDrink = editAuthorityCheckList.value.some(item => item.includes('canFreeDrink')) ? 'O' : 'X'
   currentStaff.value.canOpenCashier = editAuthorityCheckList.value.some(item => item.includes('canOpenCashier')) ? 'O' : 'X'
   currentStaff.value.canCheckOrder = editAuthorityCheckList.value.some(item => item.includes('canCheckOrder')) ? 'O' : 'X'

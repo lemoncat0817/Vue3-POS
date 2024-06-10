@@ -212,7 +212,8 @@
           </el-dialog>
           <!-- 免費招待 -->
           <button @click="freeDiscount"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">免費招待</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300"
+            :class="{ 'opacity-50': loginStore.userInfo.canFreeDrink === 'X', 'pointer-events-none': loginStore.userInfo.canFreeDrink === 'X' }">免費招待</button>
           <!-- 環保折扣 -->
           <button @click="ecoDiscount"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">{{
@@ -223,7 +224,8 @@
               discountStore.oftenUseDiscount[1].name }}</button>
           <!-- 開收銀機 -->
           <button @click="openCashier"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">開收銀機</button>
+            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300"
+            :class="{ 'opacity-50': loginStore.userInfo.canOpenCashier === 'X', 'pointer-events-none': loginStore.userInfo.canOpenCashier === 'X' }">開收銀機</button>
           <!-- 優惠券 -->
           <button @click="openDiscountMenu"
             class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">優惠券</button>

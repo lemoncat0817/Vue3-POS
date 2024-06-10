@@ -11,6 +11,8 @@
         class="w-[200px] rounded-[20px] p-2 bg-[#f8f8dc] text-[#560710] text-center focus:w-[300px] transition-width duration-500">
       <button @click="login"
         class="w-[100px] rounded-[20px] p-2 bg-[#cc191f] text-center cursor-pointer font-bold hover:w-[200px] transition-width duration-500 hover:bg-[#ff4500]">登入</button>
+      <button @click="quicklyLogin(1)">快速登入(admin)</button>
+      <button @click="quicklyLogin(2)">快速登入</button>
     </div>
   </div>
 </template>
@@ -24,7 +26,18 @@ import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 const authorityManagementStore = useAuthorityManagementStore()
 import { ElMessage, ElNotification } from 'element-plus'
 
+const quicklyLogin = (num) => {
+  if (num === 1) {
+    loginStore.account = 'lemon'
+    loginStore.password = 'lemon123'
+    login()
+  } else {
+    loginStore.account = 'emily'
+    loginStore.password = 'emily123'
+    login()
+  }
 
+}
 
 // 判定帳號密碼是否正確
 const login = () => {
@@ -35,7 +48,7 @@ const login = () => {
   })
   if (loginStore.userInfo) {
     loginStore.isLogin = true
-    router.push('/home')  
+    router.push('/home')
     ElNotification({
       title: '登入成功',
       message: `${loginStore.userInfo.jobTitle} - ${loginStore.userInfo.name},歡迎進入MAJI Tea POS機系統`,

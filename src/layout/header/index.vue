@@ -93,7 +93,7 @@ const logout = () => {
   })
     .then(() => {
       router.push('/login')
-      loginStore.isLogin = true
+      loginStore.isLogin = false
       loginStore.userInfo = []
       ElMessage({
         type: 'success',

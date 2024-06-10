@@ -155,9 +155,11 @@
           <template #default="{ row }">
             <div class="flex justify-end">
               <button @click="editOrderStatus(row.orderId)"
-                class="border-2 border-solid border-black rounded-lg text-blue-800 font-bold bg-red-400 text-lg mx-1 px-1 select-none active:bg-yellow-300">編輯訂單狀態</button>
+                class="border-2 border-solid border-black rounded-lg text-blue-800 font-bold bg-red-400 text-lg mx-1 px-1 select-none active:bg-yellow-300"
+                :class="{ 'opacity-50': loginStore.userInfo.canEditOrderStatus === 'X', 'pointer-events-none': loginStore.userInfo.canEditOrderStatus === 'X' }">編輯訂單狀態</button>
               <button @click="deleteOrder(row.orderId)"
-                class="border-2 border-solid border-black rounded-lg text-blue-800 font-bold bg-red-400 text-lg mx-1 px-1 select-none active:bg-yellow-300">刪除訂單</button>
+                class="border-2 border-solid border-black rounded-lg text-blue-800 font-bold bg-red-400 text-lg mx-1 px-1 select-none active:bg-yellow-300"
+                :class="{ 'opacity-50': loginStore.userInfo.canDeleteOrder === 'X', 'pointer-events-none': loginStore.userInfo.canDeleteOrder === 'X' }">刪除訂單</button>
             </div>
           </template>
         </el-table-column>
@@ -178,6 +180,8 @@
 import { ref, computed } from 'vue'
 import { useOrderStore } from "@/stores/order"
 const orderStore = useOrderStore()
+import { useLoginStore } from "@/stores/login"
+const loginStore = useLoginStore()
 import { ElMessageBox, ElMessage } from 'element-plus'
 
 // 分頁相關功能

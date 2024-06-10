@@ -6,7 +6,8 @@
       <div class="flex mr-2">
         <!-- 新增功能 -->
         <button @click="openAddTypeDialog"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
+          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300"
+          :class="{ 'opacity-50': loginStore.userInfo.canSetDrinkType === 'X', 'pointer-events-none': loginStore.userInfo.canSetDrinkType === 'X' }">新增</button>
         <!-- 新增飲品類型 -->
         <el-dialog v-model="addTypeDialog" title="新增飲品類型" width="500">
           <!-- 飲品類型的Id -->
@@ -37,10 +38,10 @@
           </template>
         </el-dialog>
         <!-- 刪除功能 -->
-        <button @click="deleteDrinkType"
+        <button @click="deleteDrinkType" :class="{ 'opacity-50': loginStore.userInfo.canSetDrinkType === 'X', 'pointer-events-none': loginStore.userInfo.canSetDrinkType === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
         <!-- 編輯功能 -->
-        <button @click="openEditTypeDialog"
+        <button @click="openEditTypeDialog" :class="{ 'opacity-50': loginStore.userInfo.canSetDrinkType === 'X', 'pointer-events-none': loginStore.userInfo.canSetDrinkType === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
         <!-- 編輯飲品類型 -->
         <el-dialog v-model="editTypeDialog" title="編輯飲品類型" width="500">
@@ -94,8 +95,8 @@
     <div class="flex justify-between mt-2">
       <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">飲料品項</div>
       <div class="flex mr-2">
-        <!-- 新增功能 -->
-        <button @click="openAddDrinkDialog"
+        <!-- 新增功能 --> 
+        <button @click="openAddDrinkDialog" :class="{ 'opacity-50': loginStore.userInfo.canSetDrink === 'X', 'pointer-events-none': loginStore.userInfo.canSetDrink === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
         <!-- 新增飲品類型 -->
         <el-dialog v-model="addDrinkDialog" title="新增飲料品項" width="500">
@@ -164,10 +165,10 @@
           </template>
         </el-dialog>
         <!-- 刪除功能 -->
-        <button @click="deleteDrink"
+        <button @click="deleteDrink" :class="{ 'opacity-50': loginStore.userInfo.canSetDrink === 'X', 'pointer-events-none': loginStore.userInfo.canSetDrink === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
         <!-- 編輯功能 -->
-        <button @click="openEditDrinkDialog"
+        <button @click="openEditDrinkDialog" :class="{ 'opacity-50': loginStore.userInfo.canSetDrink === 'X', 'pointer-events-none': loginStore.userInfo.canSetDrink === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
         <!-- 編輯飲品類型 -->
         <el-dialog v-model="editDrinkDialog" title="編輯飲料品項" width="500">
@@ -267,8 +268,8 @@
     <div class="flex justify-between mt-2">
       <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">配料</div>
       <div class="flex mr-2">
-        <!-- 新增功能 -->
-        <button @click="openAddIngredientsDialog"
+        <!-- 新增功能 --> 
+        <button @click="openAddIngredientsDialog" :class="{ 'opacity-50': loginStore.userInfo.canSetIngredients === 'X', 'pointer-events-none': loginStore.userInfo.canSetIngredients === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
         <!-- 新增配料 -->
         <el-dialog v-model="addIngredientsDialog" title="新增配料" width="500">
@@ -299,10 +300,10 @@
           </template>
         </el-dialog>
         <!-- 刪除功能 -->
-        <button @click="deleteDrinkIngredients"
+        <button @click="deleteDrinkIngredients" :class="{ 'opacity-50': loginStore.userInfo.canSetIngredients === 'X', 'pointer-events-none': loginStore.userInfo.canSetIngredients === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
         <!-- 編輯功能 -->
-        <button @click="openEditIngredientsDialog"
+        <button @click="openEditIngredientsDialog" :class="{ 'opacity-50': loginStore.userInfo.canSetIngredients === 'X', 'pointer-events-none': loginStore.userInfo.canSetIngredients === 'X' }"
           class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
         <!-- 編輯配料 -->
         <el-dialog v-model="editIngredientsDialog" title="編輯配料" width="500">
@@ -358,6 +359,8 @@ import { ref, computed } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
+import { useLoginStore } from "@/stores/login"
+const loginStore = useLoginStore()
 
 // 飲品類型相關功能
 // 存放當前已選類型
