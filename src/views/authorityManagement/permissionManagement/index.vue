@@ -1,6 +1,6 @@
 <template>
   <!-- 人員名單 -->
-  <div class="flex-[2] border-r-2 border-solid border-black rounded-lg">
+  <div class="2xl:flex-[2] xl:w-[70%] lg:w-[60%] border-r-2 border-solid border-black rounded-lg">
     <div class="flex justify-between mt-2">
       <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">人員名單</div>
       <div class="flex mr-2">
@@ -160,7 +160,7 @@
         </el-dialog>
       </div>
     </div>
-    <div class="overflow-x-auto w-[987px]">
+    <div class="overflow-x-auto w-full">
       <el-table class="cursor-pointer mt-2" :data="sliceStaffList" highlight-current-row height="440"
         style="width: 100%; overflow-x:auto;" empty-text="人員名單是空的" @current-change="handleCurrentStaffChange">
         <el-table-column fixed align="center" label="人員名稱" prop="name" min-width="80" />
@@ -288,7 +288,7 @@
     </div>
   </div>
   <!-- 付款方式 -->
-  <div class="flex-[1]">
+  <div class="2xl:flex-[1] xl:w-[30%] lg:w-[40%]">
     <div class="flex justify-between mt-2">
       <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">付款方式</div>
       <div class="flex mr-2">
@@ -382,7 +382,7 @@
         empty-text="沒有付款方式" @current-change="handleCurrentPayMethodChange">
         <el-table-column align="center" type="index" label="序號" min-width="55" />
         <el-table-column align="center" label="Id" prop="id" min-width="55" />
-        <el-table-column align="center" label="付款方式" prop="name" min-width="80" />
+        <el-table-column align="center" label="付款方式" prop="name" min-width="100" />
         <el-table-column align="center" label="支付方式" prop="useMethod" min-width="80" />
         <el-table-column align="center" label="使用" min-width="55">
           <template #default="{ row }">

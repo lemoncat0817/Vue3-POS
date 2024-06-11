@@ -12,7 +12,7 @@
       </div>
     </div>
     <div v-if="authorityManagementStore.currentAuthorityManagementPage === 0"
-      class="w-4/5 h-[600px] mt-6 border-2 border-solid border-black rounded-lg flex ">
+      class="w-[90%] h-[600px] mt-6 border-2 border-solid border-black rounded-lg flex ">
       <PermissionManagement />
     </div>
   </div>
