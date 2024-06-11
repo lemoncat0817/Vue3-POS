@@ -1,11 +1,11 @@
 <template>
   <div class="w-full h-full flex flex-col ">
     <!-- 飲料類型上半部 -->
-    <div class="w-[90%] h-full flex flex-wrap ml-10">
+    <div class="w-full h-full  grid grid-cols-5 place-items-center">
       <div @click="changeType(item.type)" v-for="item in sliceDrinkType" :key="item.id"
-        class="w-28 h-28 bg-red-400 border-solid border-2 border-black rounded-lg m-2 flex justify-center items-center cursor-pointer"
+        class="2xl:w-28 2xl:h-28 xl:w-24 xl:h-24 lg:w-[72px] lg:h-[72px] bg-red-400 border-solid border-2 border-black rounded-lg flex justify-center items-center cursor-pointer"
         :class="{ 'bg-yellow-400': item.type === drinkStore.drinkTypeMenu }">
-        <p class="text-blue-800 text-xl font-bold select-none	">{{ item.name }}
+        <p class="px-2 text-blue-800 2xl:text-xl xl:text-lg lg:text-sm font-bold select-none	">{{ item.name }}
         </p>
       </div>
     </div>
@@ -17,7 +17,7 @@
           :total="drinkStore.drinkType.length" @current-change="handleCurrentChange" />
       </div>
       <p class="text-blue-800">{{ `${drinkStore.drinkType.length > 0
-        ? currentPage : 0}/${Math.ceil(drinkStore.drinkType.length / 10) }頁` }}</p>
+        ? currentPage : 0}/${Math.ceil(drinkStore.drinkType.length / 10)}頁` }}</p>
     </div>
   </div>
 </template>

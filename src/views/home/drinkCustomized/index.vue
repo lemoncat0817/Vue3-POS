@@ -2,30 +2,26 @@
   <div class="w-full h-full flex flex-col items-center">
     <!-- 飲料客製化上半部 -->
     <!-- 如果選擇糖度/冰塊菜單則顯示 -->
-    <div v-if="drinkStore.drinkMenu === 0" class="w-[95%] h-full ">
+    <div v-if="drinkStore.drinkMenu === 0" class="w-[95%] h-full">
       <!-- 如果飲品可以客製化則顯示 -->
-      <div v-if="drinkStore.drinkItem.customized != 'none'" class="w-full h-full flex flex-col items-center">
-        <div class="w-full h-full flex flex-wrap ">
+      <div v-if="drinkStore.drinkItem.customized != 'none'" class="w-full h-full grid grid-rows-2 place-items-center">
+        <div class="w-full h-full grid grid-cols-6 gap-x-4 place-items-center">
           <div @click="changeSugar(item.name)" v-for="item in drinkStore.drinkSugar" :key="item.id"
-            class="w-20 h-20 bg-red-300 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center "
+            class="xl:w-20 xl:h-20 lg:w-16 lg:h-16 bg-red-300 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center "
             :class="{ 'bg-yellow-400': item.name === drinkStore.drinkSetSugar }">
-            <p class="text-blue-800 text-xl font-bold select-none	">{{ item.name }}</p>
+            <p class="text-blue-800 2xl:2xl:text-xl xl:text-lg xl:text-lg font-bold select-none	">{{ item.name }}</p>
           </div>
         </div>
-        <div class="w-full h-full flex ">
-          <div class="w-[75%] h-full flex flex-wrap ">
-            <div @click="changeIce(item.name)" v-for="item in filterIce" :key="item.id"
-              class="w-20 h-20 bg-green-300 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
-              :class="{ 'bg-yellow-400': item.name === drinkStore.drinkSetIce }">
-              <p class="text-blue-800 text-xl font-bold select-none	">{{ item.name }}</p>
-            </div>
+        <div class="w-full h-full grid grid-cols-7 xl:gap-x-3 lg:gap-x-4  place-items-center">
+          <div @click="changeIce(item.name)" v-for="item in filterIce" :key="item.id"
+            class="2xl:w-20 2xl:h-20 xl:w-[68px] xl:h-[68px] lg:w-[54px] lg:h-[50px] bg-green-300 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
+            :class="{ 'bg-yellow-400': item.name === drinkStore.drinkSetIce }">
+            <p class="text-blue-800 2xl:text-xl xl:text-lg lg:text-sm font-bold select-none	">{{ item.name }}</p>
           </div>
-          <div class="w-[30%] h-full flex flex-wrap ">
-            <div @click="changeSize(item.name)" v-for="item in filterSize" :key="item.id"
-              class="w-20 h-20 bg-blue-300 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
-              :class="{ 'bg-yellow-400': item.name === drinkStore.drinkSetSize }">
-              <p class="text-blue-800 text-xl font-bold select-none	">{{ item.name }}</p>
-            </div>
+          <div @click="changeSize(item.name)" v-for="item in filterSize" :key="item.id"
+            class="2xl:w-20 2xl:h-20 xl:w-[68px] xl:h-[68px] lg:w-[54px] lg:h-[50px] bg-blue-300 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
+            :class="{ 'bg-yellow-400': item.name === drinkStore.drinkSetSize }">
+            <p class="text-blue-800 2xl:text-xl xl:text-lg lg:text-sm font-bold select-none	">{{ item.name }}</p>
           </div>
         </div>
       </div>
@@ -35,40 +31,40 @@
       </div>
     </div>
     <!-- 如果選擇加料菜單則顯示 -->
-    <div v-if="drinkStore.drinkMenu === 1" class="w-[95%] h-full ">
-      <div class="w-full h-full flex flex-wrap  ">
+    <div v-if="drinkStore.drinkMenu === 1" class="w-full h-full ">
+      <div class="w-full h-full grid grid-cols-5 place-items-center  ">
         <div @click="changeAdd(item)" v-for="item in sliceAddMenu" :key="item.id"
-          class="w-24 h-24 bg-red-400 border-solid border-2 rounded-lg m-2 cursor-pointer flex justify-center items-center"
+          class="2xl:w-[100px] 2xl:h-[100px] xl:w-24 xl:h-24 lg:w-[72px] lg:h-[72px] bg-red-400 border-solid border-2 rounded-lg  cursor-pointer flex justify-center items-center"
           :class="{ 'bg-yellow-400': drinkStore.drinkAddList.some(addItem => addItem.name === item.name) }">
-          <p class="text-blue-800 text-xl font-bold select-none	">{{ item.name }}</p>
+          <p class="text-blue-800 2xl:text-xl xl:text-lg font-bold select-none	">{{ item.name }}</p>
         </div>
       </div>
     </div>
     <!-- 飲料客製化下半部 -->
     <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
-      <div v-if="drinkStore.drinkMenu === 1" class="w-1/2 flex justify-around items-center">
-        <p class="text-blue-800">{{ `共 ${drinkStore.drinkAdd.length} 樣` }}</p>
+      <div v-if="drinkStore.drinkMenu === 1" class="xl:w-1/2 grid grid-cols-3 gap-x-2 place-items-center">
+        <p class="text-blue-800 xl:text-base lg:text-sm">{{ `共 ${drinkStore.drinkAdd.length} 樣` }}</p>
         <div class="h-full flex items-center">
           <el-pagination v-model:current-page="currentPage" small background layout="prev, next"
-            :total="drinkStore.drinkAdd.length" :page-size="12" @current-change="handleCurrentChange" />
+            :total="drinkStore.drinkAdd.length" :page-size="10" @current-change="handleCurrentChange" />
         </div>
-        <p class="text-blue-800">{{ `${drinkStore.drinkAdd.length > 0
-          ? currentPage : 0}/${Math.ceil(drinkStore.drinkAdd.length / 12)}頁` }}</p>
+        <p class="text-blue-800 xl:text-base lg:text-sm">{{ `${drinkStore.drinkAdd.length > 0
+          ? currentPage : 0}/${Math.ceil(drinkStore.drinkAdd.length / 10)}頁` }}</p>
       </div>
       <div class="h-full flex items-center">
         <div @click="drinkStore.drinkMenu = 0"
-          class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1"
+          class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 flex justify-center items-center"
           :class="{ 'bg-yellow-400': drinkStore.drinkMenu === 0 }">
-          <p class="w-full h-full text-xl font-bold select-none	"> 糖度/冰塊/大小</p>
+          <p class="2xl:text-xl xl:text-lg lg:text-sm font-bold select-none	"> 糖度/冰塊/大小</p>
         </div>
         <div @click="drinkStore.drinkMenu = 1"
-          class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 mx-2 "
+          class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 mx-2 flex justify-center items-center"
           :class="{ 'bg-yellow-400': drinkStore.drinkMenu === 1 }">
-          <p class="w-full h-full text-xl font-bold select-none	">加料</p>
+          <p class=" 2xl:text-xl xl:text-lg lg:text-sm font-bold select-none	">加料</p>
         </div>
         <div @click="resetAll"
-          class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 active:bg-yellow-400">
-          <p class="w-full h-full text-xl font-bold select-none	">重置</p>
+          class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 flex justify-center items-center active:bg-yellow-400">
+          <p class="2xl:text-xl xl:text-lg lg:text-sm font-bold select-none	">重置</p>
         </div>
       </div>
     </div>
@@ -134,7 +130,7 @@ const handleCurrentChange = (page) => {
 const currentPage = ref(1)
 // 計算並切換當前頁面內容
 const sliceAddMenu = computed(() => {
-  return drinkStore.drinkAdd.slice((currentPage.value - 1) * 12, currentPage.value * 12)
+  return drinkStore.drinkAdd.slice((currentPage.value - 1) * 10, currentPage.value * 10)
 })
 
 // 重置所有已選擇項目的相關功能

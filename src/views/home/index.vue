@@ -5,61 +5,61 @@
       <!-- 資訊顯示欄 -->
       <div class="w-full h-[70px] flex bg-red-300 shadow-xl rounded-lg">
         <!-- 資訊顯示欄左半部 -->
-        <div class="w-1/2 h-full">
+        <div class="xl:w-1/2 h-full lg:w-[40%]">
           <!-- 當前時間 -->
           <div class="w-full h-1/2 flex items-center">
             <div class="ml-2 text-lg flex">
-              <p class="mr-2 font-bold text-lg">{{ getDate() }}</p>
-              <p class="font-bold text-lg">{{ time }}</p>
+              <p class="mr-2 font-bold xl:text-lg lg:text-base">{{ getDate() }}</p>
+              <p class="font-bold xl:text-lg lg:text-base">{{ time }}</p>
             </div>
           </div>
           <!-- 機台編號和班別 -->
           <div class="flex w-full h-1/2 items-center">
             <div class="mx-2 flex ">
-              <p class="text-blue-500 mr-2 font-bold text-lg">機台編號</p>
-              <p class="font-bold text-lg">A</p>
+              <p class="text-blue-500 mr-2 font-bold xl:text-lg lg:text-base">機台編號</p>
+              <p class="font-bold xl:text-lg lg:text-base">A</p>
             </div>
             <div class=" flex">
-              <p class="text-blue-500 mr-2 font-bold text-lg">班別</p>
-              <p class="font-bold text-lg">{{ getMoment() }}</p>
+              <p class="text-blue-500 mr-2 font-bold xl:text-lg lg:text-base">班別</p>
+              <p class="font-bold xl:text-lg lg:text-base">{{ getMoment() }}</p>
             </div>
           </div>
         </div>
         <!-- 資訊顯示欄右半部 -->
-        <div class="w-1/2 h-full">
-          <div class="h-full flex justify-between  mr-2">
+        <div class="xl:w-1/2 h-full lg:w-[60%]">
+          <div class="h-full flex justify-between mr-2 items-center">
             <div class="flex-col">
               <!-- 購買袋子數量 -->
               <div class="flex mr-2">
-                <p class="text-blue-500 mr-2 font-bold ">購買袋子數量</p>
-                <p class=" flex justify-end font-bold">{{ drinkStore.currentBagCount }} 個</p>
+                <p class="text-blue-500 mr-2 font-bold xl:text-base lg:text-sm">購買袋子數量</p>
+                <p class=" flex justify-end font-bold xl:text-base lg:text-sm">{{ drinkStore.currentBagCount }} 個</p>
               </div>
               <!-- 當前飲料杯數 -->
               <div class="flex mr-2">
-                <p class="text-blue-500 mr-2 font-bold ">當前飲料杯數</p>
-                <p class=" flex justify-end font-bold">{{ drinkStore.currentDrinkCount }} 杯</p>
+                <p class="text-blue-500 mr-2 font-bold xl:text-base lg:text-sm">當前飲料杯數</p>
+                <p class=" flex justify-end font-bold xl:text-base lg:text-sm">{{ drinkStore.currentDrinkCount }} 杯</p>
               </div>
               <!-- 當前付款方式 -->
               <div class="flex mr-2">
-                <p class="text-blue-500 mr-2 font-bold ">當前付款方式</p>
-                <p class=" flex justify-end font-bold">{{ orderStore.payment }}</p>
+                <p class="text-blue-500 mr-2 font-bold  xl:text-base lg:text-sm">當前付款方式</p>
+                <p class=" flex justify-end font-bold xl:text-base lg:text-sm">{{ orderStore.payment }}</p>
               </div>
             </div>
             <div class="flex-col">
               <!-- 目前累積金額 -->
               <div class="flex justify-end">
-                <p class="text-blue-500 mr-2 font-bold ">目前累積金額</p>
-                <p class=" flex justify-end font-bold">$ {{ drinkStore.drinkTotalMoney }} 元</p>
+                <p class="text-blue-500 mr-2 font-bold xl:text-base lg:text-sm">目前累積金額</p>
+                <p class=" flex justify-end font-bold xl:text-base lg:text-sm">$ {{ drinkStore.drinkTotalMoney }} 元</p>
               </div>
               <!-- 優惠券已折抵金額 -->
               <div class="flex justify-end">
-                <p class="text-blue-500 mr-2 font-bold ">優惠券已折抵</p>
-                <p class=" flex justify-end font-bold">$ {{ drinkStore.useDiscountPrice }} 元</p>
+                <p class="text-blue-500 mr-2 font-bold xl:text-base lg:text-sm">優惠券已折抵</p>
+                <p class=" flex justify-end font-bold xl:text-base lg:text-sm">$ {{ drinkStore.useDiscountPrice }} 元</p>
               </div>
               <!-- 顧客應付價格 -->
               <div class="flex justify-end">
-                <p class="text-blue-500 mr-2 font-bold">顧客應付金額</p>
-                <p class=" flex justify-end font-bold">$ {{ drinkStore.drinkPayPrice }} 元</p>
+                <p class="text-blue-500 mr-2 font-bold xl:text-base lg:text-sm">顧客應付金額</p>
+                <p class=" flex justify-end font-bold xl:text-base lg:text-sm">$ {{ drinkStore.drinkPayPrice }} 元</p>
               </div>
             </div>
           </div>
@@ -70,33 +70,34 @@
         <!--  -->
         <div class="w-full h-[10%] bg-gray-200 shadow-xl rounded-lg flex">
           <!-- 單號、服務人員、功能按鈕左半部 -->
-          <div class="w-1/2 h-full flex justify-around items-center">
+          <div class="2xl:w-1/2 h-full flex justify-around items-center xl:w-[45%] lg:w-[40%]">
             <!-- 單號 -->
-            <div class="flex h-1/2 items-center">
-              <p class="mr-2 text-blue-500 font-bold text-lg">單號:</p>
-              <p class="text-red-500 font-bold text-lg"> {{ `${getDateForOrder()}${orderStore.currentOrderNumber}` }}
+            <div class="w-1/2 flex h-1/2 items-center xl:flex-row lg:flex-col lg:justify-center">
+              <p class="xl:mr-2 text-blue-500 font-bold 2xl:text-lg xl:text-sm lg:text-sm ">單號:</p>
+              <p class="text-red-500 font-bold 2xl:text-lg xl:text-sm lg:text-sm"> {{
+                `${getDateForOrder()}${orderStore.currentOrderNumber}` }}
               </p>
             </div>
             <!-- 服務人員 -->
-            <div class="w-1/2 h-full flex items-center">
-              <p class="text-blue-500 mr-2 font-bold text-lg">服務人員:</p>
-              <p class="text-red-400 font-bold text-lg ">{{ `${loginStore.userInfo.jobTitle} -
+            <div class="w-1/2 h-full flex items-center xl:flex-row lg:flex-col lg:justify-center">
+              <p class="xl:mr-2 text-blue-500 font-bold 2xl:text-lg xl:text-sm lg:text-sm">服務人員:</p>
+              <p class="text-red-500 font-bold 2xl:text-lg xl:text-sm lg:text-sm">{{ `${loginStore.userInfo.jobTitle} -
                 ${loginStore.userInfo.name} ` }}</p>
             </div>
           </div>
           <!-- 單號、服務人員、功能按鈕右半部 -->
-          <div class="w-1/2 h-full flex items-center">
+          <div class="2xl:w-1/2 h-full flex items-center xl:w-[55%] lg:w-[60%]">
             <!-- 功能按鈕 -->
             <div class="w-full h-full flex items-center justify-end">
               <!-- 刪除已勾選商品 -->
               <button @click="clearSelectNotPay"
-                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">刪除已勾選品項</button>
+                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300 2xl:text-base xl:text-sm lg:text-xs">刪除已勾選品項</button>
               <!-- 清空全部品項 -->
               <button @click="clearNotPay"
-                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">清空全部品項</button>
+                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300 2xl:text-base xl:text-sm lg:text-xs">清空全部品項</button>
               <!-- 修改付款方式 -->
               <button @click="openPayMethodMenu"
-                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">修改付款方式</button>
+                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300 2xl:text-base xl:text-sm lg:text-xs">修改付款方式</button>
               <!-- 付款方式選單 -->
               <el-dialog v-model="dialogPayMethod" title="選擇付款方式" width="500">
                 <div class="w-full h-[112px] flex grid grid-cols-4 grid-rows-3 gap-2">
@@ -128,7 +129,7 @@
               </el-dialog>
               <!-- 送出訂單 -->
               <button @click="sendOrder"
-                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300">送出訂單</button>
+                class="bg-red-300 text-blue-800 text-lg font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300 2xl:text-base xl:text-sm lg:text-xs">送出訂單</button>
             </div>
           </div>
         </div>
@@ -136,16 +137,16 @@
         <div class="w-full h-[90%]">
           <el-table @selection-change="handleSelectionChange" :data="drinkStore.drinkNotPay" border height="100%"
             style="width: 100%" empty-text="目前無待付款的飲品">
-            <el-table-column align="center" type="selection" min-width="20" />
-            <el-table-column align="center" center label="序號" type="index" min-width="30" />
-            <el-table-column align="center" label="商品" min-width="80" prop="name" />
+            <el-table-column align="center" type="selection" min-width="30" />
+            <el-table-column align="center" center label="序號" type="index" min-width="55" />
+            <el-table-column align="center" label="商品" min-width="100" prop="name" />
             <el-table-column align="center" label="單價" min-width="60">
               <template #default="{ row }">
                 <p>{{ row.price }} 元</p>
               </template>
             </el-table-column>
-            <el-table-column align="center" label="加料" prop="addList" min-width="80" />
-            <el-table-column align="center" label="配料金額" min-width="60">
+            <el-table-column align="center" label="加料" prop="addList" min-width="100" />
+            <el-table-column align="center" label="配料金額" min-width="80">
               <template #default="{ row }">
                 <p> {{ row.addListPrice }} 元</p>
               </template>
@@ -155,12 +156,12 @@
                 <p> {{ row.count }} 杯</p>
               </template>
             </el-table-column>
-            <el-table-column align="center" label="折扣金額" min-width="60">
+            <el-table-column align="center" label="折扣金額" min-width="80">
               <template #default="{ row }">
                 <p> {{ row.discount }} 元</p>
               </template>
             </el-table-column>
-            <el-table-column align="center" label="使用的折扣" min-width="80">
+            <el-table-column align="center" label="使用的折扣" min-width="140">
               <template #default="{ row }">
                 <div v-if="row.useDiscountPercent === '' && row.useDiscountMoney === '' && row.useDiscountFree === ''">
                   <p>無使用折扣</p>
@@ -178,7 +179,7 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column align="center" label="小計" min-width="60">
+            <el-table-column align="center" label="小計" min-width="80">
               <template #default="{ row }">
                 <p> {{ row.totalPrice }}元</p>
               </template>
@@ -187,15 +188,15 @@
         </div>
       </div>
       <!-- 主要功能區、數量設置鍵盤 -->
-      <div class="w-full h-[281px] flex border-solid border-t-2 border-gray-200">
+      <div class="w-full h-[281px] flex justify-around border-solid border-t-2 border-gray-200">
         <!-- 主要功能區 -->
-        <div class="w-[60%] h-[95%] mt-2 flex justify-center items-center flex-wrap">
+        <div class="lg:w-[65%] h-[95%] mt-2 place-items-center grid grid-cols-5 lg:gap-x-3 ">
           <!-- 載具 -->
           <button @click="scanCarrier"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">載具</button>
+            class="2xl:w-24 lg:w-20 lg:h-20 2xl:h-24 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold xl:text-lg lg:text-base px-0.5 select-none active:bg-yellow-300">載具</button>
           <!-- 加購袋子 -->
           <button @click="openBagDialog"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">加購袋子</button>
+            class="2xl:w-24 lg:w-20 lg:h-20 2xl:h-24 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold xl:text-lg lg:text-base px-0.5 select-none active:bg-yellow-300">加購袋子</button>
           <!-- 加購袋子選單 -->
           <el-dialog v-model="dialogBag" title="加購袋子數量" width="500">
             <div class="w-[100%] mx-2">
@@ -212,23 +213,23 @@
           </el-dialog>
           <!-- 免費招待 -->
           <button @click="freeDiscount"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300"
+            class="2xl:w-24 lg:w-20 lg:h-20 2xl:h-24 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold xl:text-lg lg:text-base px-0.5 select-none active:bg-yellow-300"
             :class="{ 'opacity-50': loginStore.userInfo.canFreeDrink === 'X', 'pointer-events-none': loginStore.userInfo.canFreeDrink === 'X' }">免費招待</button>
           <!-- 環保折扣 -->
           <button @click="ecoDiscount"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">{{
+            class="2xl:w-24 lg:w-20 lg:h-20 2xl:h-24 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold xl:text-lg lg:text-base px-0.5 select-none active:bg-yellow-300">{{
               discountStore.oftenUseDiscount[0].name }}</button>
           <!-- 瓶裝折扣 -->
           <button @click="bottleDiscount"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">{{
+            class="2xl:w-24 lg:w-20 lg:h-20 2xl:h-24 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold xl:text-lg lg:text-base px-0.5 select-none active:bg-yellow-300">{{
               discountStore.oftenUseDiscount[1].name }}</button>
           <!-- 開收銀機 -->
           <button @click="openCashier"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300"
+            class="2xl:w-24 lg:w-20 lg:h-20 2xl:h-24 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold xl:text-lg lg:text-base px-0.5 select-none active:bg-yellow-300"
             :class="{ 'opacity-50': loginStore.userInfo.canOpenCashier === 'X', 'pointer-events-none': loginStore.userInfo.canOpenCashier === 'X' }">開收銀機</button>
           <!-- 優惠券 -->
           <button @click="openDiscountMenu"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">優惠券</button>
+            class="2xl:w-24 lg:w-20 lg:h-20 2xl:h-24 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold xl:text-lg lg:text-base px-0.5 select-none active:bg-yellow-300">優惠券</button>
           <!-- 優惠券選單 -->
           <el-dialog v-model="dialogDiscount" title="選擇優惠券" width="500" class="h-[60%] overflow-auto">
             <div class="w-[100%] mx-2">
@@ -296,64 +297,64 @@
           </el-dialog>
           <!-- 九折 -->
           <button @click="oftenUseDiscount1"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">{{
+            class="2xl:w-24 lg:w-20 lg:h-20 2xl:h-24 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold xl:text-lg lg:text-base px-0.5 select-none active:bg-yellow-300">{{
               discountStore.oftenUseDiscount[2].name }}</button>
           <!-- 八五折 -->
           <button @click="oftenUseDiscount2"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">{{
+            class="2xl:w-24 lg:w-20 lg:h-20 2xl:h-24 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold xl:text-lg lg:text-base px-0.5 select-none active:bg-yellow-300">{{
               discountStore.oftenUseDiscount[3].name }}</button>
           <!-- 員工八折 -->
           <button @click="oftenUseDiscount3"
-            class="w-24 h-24 bg-red-400 border-solid border-2 border-black rounded-xl mx-2 text-blue-800 font-bold text-xl select-none active:bg-yellow-300">{{
+            class="2xl:w-24 lg:w-20 lg:h-20 2xl:h-24 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold xl:text-lg lg:text-base px-0.5 select-none active:bg-yellow-300">{{
               discountStore.oftenUseDiscount[4].name }}</button>
         </div>
         <!-- 數量設置鍵盤 -->
-        <div class="w-[30%] h-[95%] mt-2 bg-red-200 border-solid border-2 border-black rounded-xl">
+        <div class="lg:w-[30%] h-[95%] mt-2 bg-red-200 border-solid border-2 border-black rounded-xl">
           <div class="w-full h-1/5 flex items-center justify-around">
             <input v-model="drinkStore.drinkCount" oninput="value=value.replace(/[^\d]/g,'')" maxlength="5" disabled
               class="w-[65%] h-4/5 ml-2 border-solid border-2 border-black text-right p-2 text-blue-800 font-bold text-3xl 	" />
             <button @click="addCount('delete')"
-              class="w-[20%] h-4/5 ml-2 bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-3xl select-none	 active:bg-yellow-300">←</button>
+              class="w-[20%] h-4/5 ml-2 bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold xl:text-3xl lg:text-2xl select-none	 active:bg-yellow-300">←</button>
           </div>
           <div class="w-full h-1/5 flex items-center justify-around ">
             <button @click="addCount('7')"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">7</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">7</button>
             <button @click="addCount('8')"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">8</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">8</button>
             <button @click="addCount('9')"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">9</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">9</button>
             <button @click="addNewDrink"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">加入</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">新增</button>
           </div>
           <div class="w-full h-1/5 flex items-center justify-around ">
             <button @click="addCount('4')"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">4</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">4</button>
             <button @click="addCount('5')"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">5</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">5</button>
             <button @click="addCount('6')"
-              class="w-[20%] bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">6</button>
+              class="w-[20%] bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">6</button>
             <button @click="drinkStore.drinkCount = '10'"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">10</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">10</button>
           </div>
           <div class="w-full h-1/5 flex items-center justify-around ">
             <button @click="addCount('1')"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">1</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">1</button>
             <button @click="addCount('2')"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">2</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">2</button>
             <button @click="addCount('3')"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">3</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">3</button>
             <button @click="drinkStore.drinkCount = '50'"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">50</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">50</button>
           </div>
           <div class="w-full h-1/5 flex items-center justify-around ">
             <button @click="addCount('0')"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">0</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">0</button>
             <button @click="addCount('00')"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">00</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">00</button>
             <button @click="drinkStore.drinkCount = '0'"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">重設</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">重設</button>
             <button @click="drinkStore.drinkCount = '100'"
-              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black rounded-xl font-bold text-xl select-none active:bg-yellow-300">100</button>
+              class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm select-none active:bg-yellow-300">100</button>
           </div>
         </div>
       </div>
