@@ -1,12 +1,12 @@
 <template>
   <!-- 現金折扣券 -->
-  <div class="flex-[1]">
+  <div class="lg:flex-[1] w-[33%]">
     <div class="flex justify-between mt-2">
-      <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">現金折扣券</div>
+      <div class="ml-2 lg:text-lg text-sm text-blue-800 font-bold border-b-2 border-solid border-black">現金折扣券</div>
       <div class="flex mr-2">
         <!-- 新增功能 -->
         <button @click="openAddMoneyDiscountDialog" :class="{ 'opacity-50': loginStore.userInfo.canSetMoneyDiscount === 'X', 'pointer-events-none': loginStore.userInfo.canSetMoneyDiscount === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
+          class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md text-sm text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
         <!-- 新增現金折扣券 -->
         <el-dialog v-model="addMoneyDiscountDialog" title="新增現金折扣券" width="500">
           <!-- 現金折扣券的Id -->
@@ -37,10 +37,10 @@
         </el-dialog>
         <!-- 刪除功能 -->
         <button @click="deleteDrinkMoneyDiscount" :class="{ 'opacity-50': loginStore.userInfo.canSetMoneyDiscount === 'X', 'pointer-events-none': loginStore.userInfo.canSetMoneyDiscount === 'X' }" 
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
+          class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md text-sm text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
         <!-- 編輯功能 -->
         <button @click="openEditMoneyDiscountDialog" :class="{ 'opacity-50': loginStore.userInfo.canSetMoneyDiscount === 'X', 'pointer-events-none': loginStore.userInfo.canSetMoneyDiscount === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
+          class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md text-sm text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
         <!-- 編輯現金折扣券 -->
         <el-dialog v-model="editMoneyDiscountDialog" title="編輯現金折扣券" width="500">
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
@@ -87,13 +87,13 @@
       </div>
     </div>
   </div>
-  <div class="flex-[1] border-x-2 border-solid border-black rounded-lg">
+  <div class="lg:flex-[1] w-[34%] border-x-2 border-solid border-black rounded-lg">
     <div class="flex justify-between mt-2">
-      <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">折數折扣券</div>
+      <div class="ml-2 lg:text-lg text-sm text-blue-800 font-bold border-b-2 border-solid border-black">折數折扣券</div>
       <div class="flex mr-2">
         <!-- 新增功能 -->
         <button @click="openAddPercentDiscountDialog" :class="{ 'opacity-50': loginStore.userInfo.canSetPercentDiscount === 'X', 'pointer-events-none': loginStore.userInfo.canSetPercentDiscount === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
+          class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md text-sm text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
         <!-- 新增折數折扣券 -->
         <el-dialog v-model="addPercentDiscountDialog" title="新增折數折扣券" width="500">
           <!-- 折數折扣券的Id -->
@@ -124,10 +124,10 @@
         </el-dialog>
         <!-- 刪除功能 -->
         <button @click="deleteDrinkPercentDiscount" :class="{ 'opacity-50': loginStore.userInfo.canSetPercentDiscount === 'X', 'pointer-events-none': loginStore.userInfo.canSetPercentDiscount === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
+          class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md text-sm text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
         <!-- 編輯功能 -->
         <button @click="openEditPercentDiscountDialog" :class="{ 'opacity-50': loginStore.userInfo.canSetPercentDiscount === 'X', 'pointer-events-none': loginStore.userInfo.canSetPercentDiscount === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
+          class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md text-sm text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
         <!-- 編輯折數折扣券 -->
         <el-dialog v-model="editPercentDiscountDialog" title="編輯折數折扣券" width="500">
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
@@ -175,13 +175,13 @@
     </div>
   </div>
   <!-- 常用優惠 -->
-  <div class="flex-[1]">
+  <div class="lg:flex-[1] w-[33%]">
     <div class="flex justify-between mt-2">
-      <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">常用優惠</div>
+      <div class="ml-2 lg:text-lg text-sm text-blue-800 font-bold border-b-2 border-solid border-black">常用優惠</div>
       <div class="flex mr-2">
         <!-- 編輯功能 -->
         <button @click="openEditOftenUseDiscountDialog" :class="{ 'opacity-50': loginStore.userInfo.canSetOftenUseDiscount === 'X', 'pointer-events-none': loginStore.userInfo.canSetOftenUseDiscount === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
+          class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md text-sm text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
         <!-- 編輯常用優惠 -->
         <el-dialog v-model="editOftenUseDiscountDialog" title="編輯常用優惠" width="500">
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
