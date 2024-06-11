@@ -15,11 +15,13 @@
           優惠設定</div>
       </div>
     </div>
-    <div v-if="settingStore.currentSettingPage === 0" class="w-4/5 h-[600px] mt-6 border-2 border-solid border-black rounded-lg flex ">
-      <ProductManagement/>
+    <div v-if="settingStore.currentSettingPage === 0"
+      class="2xl:w-4/5 xl:w-[90%] lg:w-[95%] h-[600px] mt-6 border-2 border-solid border-black rounded-lg flex ">
+      <ProductManagement />
     </div>
-    <div v-if="settingStore.currentSettingPage === 1" class="w-4/5 h-[600px] mt-6 border-2 border-solid border-black rounded-lg flex ">
-      <OfferSetting/>
+    <div v-if="settingStore.currentSettingPage === 1"
+      class="2xl:w-4/5 xl:w-[90%] lg:w-[95%] h-[600px] mt-6 border-2 border-solid border-black rounded-lg flex ">
+      <OfferSetting />
     </div>
   </div>
 </template>
