@@ -1,13 +1,13 @@
 <template>
   <!-- 人員名單 -->
-  <div class="2xl:flex-[2] xl:w-[70%] lg:w-[60%] border-r-2 border-solid border-black rounded-lg">
+  <div class="2xl:flex-[2] xl:w-[70%] w-[60%] border-r-2 border-solid border-black rounded-lg">
     <div class="flex justify-between mt-2">
-      <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">人員名單</div>
+      <div class="ml-2 md:text-lg sm:text-sm text-xs text-blue-800 font-bold border-b-2 border-solid border-black">人員名單</div>
       <div class="flex mr-2">
         <!-- 新增功能 -->
         <button @click="openAddStaffDialog"
           :class="{ 'opacity-50': loginStore.userInfo.canSetAuthority === 'X', 'pointer-events-none': loginStore.userInfo.canSetAuthority === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
+          class="px-2 border-2 border-solid border-black rounded-lg mx-1 md:text-md text-xs text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
         <!-- 新增人員 -->
         <el-dialog v-model="addStaffDialog" title="新增人員" width="500">
           <!-- 人員的Id -->
@@ -82,11 +82,11 @@
         <!-- 刪除功能 -->
         <button @click="deleteStaff"
           :class="{ 'opacity-50': loginStore.userInfo.canSetAuthority === 'X', 'pointer-events-none': loginStore.userInfo.canSetAuthority === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
+          class="px-2 border-2 border-solid border-black rounded-lg mx-1 md:text-md text-xs text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
         <!-- 編輯功能 -->
         <button @click="openEditStaffDialog"
           :class="{ 'opacity-50': loginStore.userInfo.canSetAuthority === 'X', 'pointer-events-none': loginStore.userInfo.canSetAuthority === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
+          class="px-2 border-2 border-solid border-black rounded-lg mx-1 md:text-md text-xs text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
         <!-- 編輯人員 -->
         <el-dialog v-model="editStaffDialog" title="編輯人員" width="500">
           <!-- 人員的Id -->
@@ -288,14 +288,14 @@
     </div>
   </div>
   <!-- 付款方式 -->
-  <div class="2xl:flex-[1] xl:w-[30%] lg:w-[40%]">
+  <div class="2xl:flex-[1] xl:w-[30%] w-[40%]">
     <div class="flex justify-between mt-2">
-      <div class="ml-2 text-lg text-blue-800 font-bold border-b-2 border-solid border-black">付款方式</div>
+      <div class="ml-2 md:text-lg sm:text-sm text-xs text-blue-800 font-bold border-b-2 border-solid border-black">付款方式</div>
       <div class="flex mr-2">
         <!-- 新增功能 -->
         <button @click="openAddPayMethodDialog"
           :class="{ 'opacity-50': loginStore.userInfo.canSetPayMethod === 'X', 'pointer-events-none': loginStore.userInfo.canSetPayMethod === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
+          class="px-2 border-2 border-solid border-black rounded-lg mx-1 md:text-md text-xs text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">新增</button>
         <!-- 新增付款方式 -->
         <el-dialog v-model="addPayMethodDialog" title="新增付款方式" width="500">
           <!-- 付款方式的Id -->
@@ -334,11 +334,11 @@
         <!-- 刪除功能 -->
         <button @click="deletePayMethod"
           :class="{ 'opacity-50': loginStore.userInfo.canSetPayMethod === 'X', 'pointer-events-none': loginStore.userInfo.canSetPayMethod === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
+          class="px-2 border-2 border-solid border-black rounded-lg mx-1 md:text-md text-xs text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">刪除</button>
         <!-- 編輯功能 -->
         <button @click="openEditPayMethodDialog"
           :class="{ 'opacity-50': loginStore.userInfo.canSetPayMethod === 'X', 'pointer-events-none': loginStore.userInfo.canSetPayMethod === 'X' }"
-          class="px-2 border-2 border-solid border-black rounded-lg mx-1 text-md text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
+          class="px-2 border-2 border-solid border-black rounded-lg mx-1 md:text-md text-xs text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300">編輯</button>
         <!-- 編輯付款方式 -->
         <el-dialog v-model="editPayMethodDialog" title="編輯付款方式" width="500">
           <!-- 付款方式的Id -->

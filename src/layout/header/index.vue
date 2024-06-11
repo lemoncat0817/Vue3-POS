@@ -5,31 +5,31 @@
     <div @click="changePage(0)"
       class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
       :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/home' }">
-      <p class="text-white font-bold text-2xl">點餐</p>
+      <p class="text-white font-bold md:text-2xl sm:text-lg text-md">點餐</p>
     </div>
     <div @click="changePage(1)"
       class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
       :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/order' }">
-      <p class=" text-white font-bold text-2xl">查看訂單</p>
+      <p class=" text-white font-bold md:text-2xl sm:text-lg text-md">查看訂單</p>
     </div>
     <div @click="changePage(2)"
       class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
       :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/backgroundSetting' }">
-      <p class=" text-white font-bold text-2xl">後台設定</p>
+      <p class=" text-white font-bold md:text-2xl sm:text-lg text-md">後台設定</p>
     </div>
     <div @click="changePage(3)"
       class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
       :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/dataAnalysis' }">
-      <p class=" text-white font-bold text-2xl">數據分析</p>
+      <p class=" text-white font-bold md:text-2xl sm:text-lg text-md">數據分析</p>
     </div>
     <div @click="changePage(4)"
       class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
       :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/authorityManagement' }">
-      <p class=" text-white font-bold text-2xl">權限管理</p>
+      <p class=" text-white font-bold md:text-2xl sm:text-lg text-md">權限管理</p>
     </div>
     <div @click="logout"
       class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none active:bg-yellow-400">
-      <p class=" text-white font-bold text-2xl">登出</p>
+      <p class=" text-white font-bold md:text-2xl sm:text-lg text-md">登出</p>
     </div>
   </div>
 </template>
