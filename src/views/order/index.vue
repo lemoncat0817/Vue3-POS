@@ -1,6 +1,6 @@
 <template>
   <div class="w-full flex items-center flex-col overflow-y-auto ">
-    <div class="w-4/5 mt-10 flex flex-col items-center">
+    <div class="lg:w-4/5 w-[90%] w-full mt-10 flex flex-col items-center">
       <h1
         class="px-2 text-3xl text-white font-bold text-center border-2 border-solid border-black rounded-lg bg-red-500">
         訂單</h1>
@@ -14,7 +14,7 @@
           </div>
           <template #reference>
             <button
-              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl  select-none active:bg-yellow-300">篩選訂單編號</button>
+              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl lg:text-md text-sm select-none active:bg-yellow-300">篩選訂單編號</button>
           </template>
         </el-popover>
         <el-popover placement="bottom" title="輸入要查詢的訂單時間" :width="200" trigger="click">
@@ -25,7 +25,7 @@
           </div>
           <template #reference>
             <button
-              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl  select-none active:bg-yellow-300">篩選訂單時間</button>
+              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl lg:text-md text-sm select-none active:bg-yellow-300">篩選訂單時間</button>
           </template>
         </el-popover>
         <el-popover placement="bottom" title="輸入要查詢的服務人員" :width="200" trigger="click">
@@ -36,7 +36,7 @@
           </div>
           <template #reference>
             <button
-              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl  select-none active:bg-yellow-300">篩選服務人員</button>
+              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl lg:text-md text-sm select-none active:bg-yellow-300">篩選服務人員</button>
           </template>
         </el-popover>
         <el-popover placement="bottom" title="輸入要查詢的訂單狀態" :width="200" trigger="click">
@@ -47,7 +47,7 @@
           </div>
           <template #reference>
             <button
-              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl  select-none active:bg-yellow-300">篩選訂單狀態</button>
+              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl lg:text-md text-sm select-none active:bg-yellow-300">篩選訂單狀態</button>
           </template>
         </el-popover>
         <el-popover placement="bottom" title="輸入要查詢的付款方式" :width="200" trigger="click">
@@ -58,14 +58,14 @@
           </div>
           <template #reference>
             <button
-              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl  select-none active:bg-yellow-300">篩選付款方式</button>
+              class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl lg:text-md text-sm select-none active:bg-yellow-300">篩選付款方式</button>
           </template>
         </el-popover>
         <button @click="resetFilter"
-          class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl  select-none active:bg-yellow-300">重置篩選</button>
+          class="px-2 border-2 border-solid border-black text-center mx-3 text-blue-800 bg-red-500 rounded-lg font-bold 2xl:text-2xl xl:text-xl lg:text-md text-sm select-none active:bg-yellow-300">重置篩選</button>
       </div>
     </div>
-    <div class="w-4/5 mt-10 ">
+    <div class="lg:w-4/5 w-[90%] mt-10 ">
       <!-- 訂單資料表格 -->
       <el-table :data="sliceOrder" style="width: 100%; height: 530px;" empty-text="目前無訂單">
         <el-table-column width="30" type="expand">
@@ -155,10 +155,10 @@
           <template #default="{ row }">
             <div class="flex justify-end">
               <button @click="editOrderStatus(row.orderId)"
-                class="border-2 border-solid border-black rounded-lg text-blue-800 font-bold bg-red-400 xl:text-lg mx-1 px-1 select-none active:bg-yellow-300"
+                class="border-2 border-solid border-black rounded-lg text-blue-800 font-bold bg-red-400 xl:text-lg lg:text-md text-sm mx-1 px-1 select-none active:bg-yellow-300"
                 :class="{ 'opacity-50': loginStore.userInfo.canEditOrderStatus === 'X', 'pointer-events-none': loginStore.userInfo.canEditOrderStatus === 'X' }">編輯訂單狀態</button>
               <button @click="deleteOrder(row.orderId)"
-                class="border-2 border-solid border-black rounded-lg text-blue-800 font-bold bg-red-400 xl:text-lg mx-1 px-1 select-none active:bg-yellow-300"
+                class="border-2 border-solid border-black rounded-lg text-blue-800 font-bold bg-red-400 xl:text-lg lg:text-md text-sm mx-1 px-1 select-none active:bg-yellow-300"
                 :class="{ 'opacity-50': loginStore.userInfo.canDeleteOrder === 'X', 'pointer-events-none': loginStore.userInfo.canDeleteOrder === 'X' }">刪除訂單</button>
             </div>
           </template>
