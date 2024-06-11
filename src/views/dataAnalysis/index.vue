@@ -6,19 +6,19 @@
         數據分析</h1>
       <div class="mt-5 flex justify-center items-center">
         <div @click="dataAnalysisStore.currentDataAnalysis = 0"
-          class="px-2 border-2 border-solid border-black text-center lg:mx-3 mx-1 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl text-md cursor-pointer select-none"
+          class="px-2 border-2 border-solid border-black text-center lg:mx-3 md:mx-1 mx-0.5 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl md:text-md  text-[10px] cursor-pointer select-none"
           :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 0 }">
           營業額</div>
         <div @click="dataAnalysisStore.currentDataAnalysis = 1"
-          class="px-2 border-2 border-solid border-black text-center lg:mx-3 mx-1 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl text-md cursor-pointer select-none"
+          class="px-2 border-2 border-solid border-black text-center lg:mx-3 md:mx-1 mx-0.5 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl md:text-md  text-[10px] cursor-pointer select-none"
           :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 1 }">
           熱門飲料</div>
         <div @click="dataAnalysisStore.currentDataAnalysis = 2"
-          class="px-2 border-2 border-solid border-black text-center lg:mx-3 mx-1 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl text-md cursor-pointer select-none"
+          class="px-2 border-2 border-solid border-black text-center lg:mx-3 md:mx-1 mx-0.5 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl md:text-md  text-[10px] cursor-pointer select-none"
           :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 2 }">
           熱門配料</div>
         <div @click="dataAnalysisStore.currentDataAnalysis = 3"
-          class="px-2 border-2 border-solid border-black text-center lg:mx-3 mx-1 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl text-md cursor-pointer select-none"
+          class="px-2 border-2 border-solid border-black text-center lg:mx-3 md:mx-1 mx-0.5 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl md:text-md  text-[10px] cursor-pointer select-none"
           :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 3 }">
           常用付款方式</div>
         <el-date-picker class="border-2 border-solid border-black mx-3 font-bold text-2xl select-none"
