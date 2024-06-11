@@ -1,6 +1,6 @@
 <template>
   <div class="w-full flex items-center flex-col overflow-y-auto ">
-    <div class="w-4/5 mt-10 flex flex-col items-center">
+    <div class="2xl:w-[85%] xl:w-[90%] lg:w-[95%] mt-10 flex flex-col items-center">
       <h1
         class="text-3xl text-white font-bold text-center border-2 border-solid border-black rounded-lg bg-red-500 px-2">
         數據分析</h1>
