@@ -71,23 +71,29 @@
         <el-table-column width="30" type="expand">
           <template #default="{ row }">
             <div class="flex w-full justify-center mb-2">
-              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1">已買袋子數量:
-                <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderBagCount }}</p>個
+              <div class="text-blue-800 font-bold 2xl:text-lg sm:text-sm text-xs mx-2 flex bg-gray-300 rounded-lg px-1">
+                已買袋子數量:
+                <p class="text-red-500 font-bold 2xl:text-lg sm:text-sm text-xs mx-1">{{ row.orderBagCount }}</p>個
               </div>
-              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1">飲料杯數:
-                <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderCupCount }}</p>杯
+              <div class="text-blue-800 font-bold 2xl:text-lg sm:text-sm text-xs mx-2 flex bg-gray-300 rounded-lg px-1">
+                飲料杯數:
+                <p class="text-red-500 font-bold 2xl:text-lg sm:text-sm text-xs mx-1">{{ row.orderCupCount }}</p>杯
               </div>
-              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1"> 訂單原始金額: $
-                <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderTotalPrice }}</p>元
+              <div class="text-blue-800 font-bold 2xl:text-lg sm:text-sm text-xs mx-2 flex bg-gray-300 rounded-lg px-1">
+                訂單原始金額: $
+                <p class="text-red-500 font-bold 2xl:text-lg sm:text-sm text-xs mx-1">{{ row.orderTotalPrice }}</p>元
               </div>
-              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1">已使用的優惠券:
-                <p class="text-red-500 font-bold text-lg mx-1">{{ row.discountName }}</p>
+              <div class="text-blue-800 font-bold 2xl:text-lg sm:text-sm text-xs mx-2 flex bg-gray-300 rounded-lg px-1">
+                已使用的優惠券:
+                <p class="text-red-500 font-bold 2xl:text-lg sm:text-sm text-xs mx-1">{{ row.discountName }}</p>
               </div>
-              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1">優惠券折扣金額: $
-                <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderDiscount }}</p>元
+              <div class="text-blue-800 font-bold 2xl:text-lg sm:text-sm text-xs mx-2 flex bg-gray-300 rounded-lg px-1">
+                優惠券折扣金額: $
+                <p class="text-red-500 font-bold 2xl:text-lg sm:text-sm text-xs mx-1">{{ row.orderDiscount }}</p>元
               </div>
-              <div class="text-blue-800 font-bold text-lg mx-2 flex bg-gray-300 rounded-lg px-1">顧客應付金額: $
-                <p class="text-red-500 font-bold text-lg mx-1">{{ row.orderPaymentPrice }}</p>元
+              <div class="text-blue-800 font-bold 2xl:text-lg sm:text-sm text-xs mx-2 flex bg-gray-300 rounded-lg px-1">
+                顧客應付金額: $
+                <p class="text-red-500 font-bold 2xl:text-lg sm:text-sm text-xs mx-1">{{ row.orderPaymentPrice }}</p>元
               </div>
             </div>
             <el-table :data="row.orderData" border style="width: 100%">

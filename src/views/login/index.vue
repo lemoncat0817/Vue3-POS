@@ -1,8 +1,8 @@
 <template>
   <div
-    class="w-screen 2xl:h-[900px] xl:h-[800px] h-[959px] lg:h-[768px] bg-[url('@/assets/login-Bg.png')] bg-no-repeat bg-[length:100%_100%] text-white relative">
+    class="w-screen 2xl:h-screen xl:h-[800px] h-[959px] lg:h-[768px] bg-[url('@/assets/login-Bg.png')] bg-no-repeat bg-[length:100%_100%] text-white relative">
     <div
-      class="absolute top-[40%] left-[50%] translate-x-[-50%] translate-y-[-50%] flex flex-col items-center xl:gap-[30px] lg:gap-[15px] gap-[10px]">
+      class="absolute top-[40%] left-[50%] translate-x-[-50%] translate-y-[-50%] flex flex-col items-center xl:gap-[20px] lg:gap-[15px] gap-[10px]">
       <div class="flex items-center gap-[1px]">
         <h1
           class="md:text-[50px] sm:text-[40px] text-[30px] font-bold bg-gradient-to-r from-red-500 to-pink-300 bg-clip-text text-transparent lg:text-[45px]">
