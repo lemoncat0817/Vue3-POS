@@ -1,35 +1,87 @@
-# Vue3-POS
+# MAJI Tea POS機系統
 
-This template should help get you started developing with Vue 3 in Vite.
+這是一個使用Vue3、Vue-Router、Pinia、Element-Plus、Echarts和Vite構建的POS機系統，樣式編寫用TailWind CSS。
 
-## Recommended IDE Setup
+## Demo網站
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+[MAJI Tea POS機系統 Demo](https://lemoncat0817.github.io/Vue3-POS/)
 
-## Customize configuration
+## 功能介紹教學影片
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+[觀看功能介紹教學影片](https://youtu.be/4ELxt64heEs?si=Vx-REYNuS8zd2Sxz)
 
-## Project Setup
+## 開發功能
+
+1. **登入頁面**
+
+   - 使用Vue-Router的路由守衛來避免未登入的狀態透過輸入網址進入頁面。
+
+2. **點餐功能**
+
+   - 選擇飲品類型、飲品名稱、糖度/冰塊、飲料容器大小、額外添加的配料、餐點數量，付款方式。
+
+3. **折扣系統**
+
+   - 免費招待、環保杯折扣、自帶瓶裝飲料杯折扣、優惠券套用功能。
+
+4. **查看歷史訂單功能**
+
+   - 編輯訂單狀態、刪除訂單、查看訂單詳細內容、篩選顯示的訂單。
+
+5. **後台設定功能**
+
+   - 商品管理：增加、刪除、修改飲品類型、飲料名稱、配料。
+   - 優惠設定：增加、刪除、修改現金折扣券、折數折扣券，編輯常用優惠的折價額度。
+
+6. **數據分析功能**
+
+   - 選擇時間區間查看數據，以折線圖呈現營業額，以圓餅圖呈現熱門飲品、熱門配料、常用付款方式。
+
+7. **權限管理功能**
+   - 增加、刪除、修改員工名單，設定各別的權限。
+   - 設定付款方式：增加、刪除、修改，並且控制是否啟用。
+
+## 使用技術
+
+1. **Vue3 Composition API**
+2. **Vue-Router**
+   - 頁面切換及訪問權限控制。
+3. **Pinia**
+   - 資料管理。
+4. **Element-Plus**
+   - UI組件庫。
+5. **TailWind CSS**
+   - 快速樣式編寫，主要版型使用Flex和Grid布局。
+6. **Vite**
+   - 專案建立與打包。
+7. **ESLint**
+   - 程式碼規範管理。
+8. **Prettier**
+   - 程式碼格式化。
+9. **Git**
+   - 版本控制。
+10. **Echarts**
+
+- 數據分析圖表。
+
+## 安裝與運行
+
+確保你已安裝Node.js和pnpm。
+
+### 安裝依賴
 
 ```sh
 pnpm install
 ```
 
-### Compile and Hot-Reload for Development
+### 開發模式啟動服務器
 
 ```sh
 pnpm dev
 ```
 
-### Compile and Minify for Production
+### 生產模式構建
 
 ```sh
 pnpm build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-pnpm lint
 ```
