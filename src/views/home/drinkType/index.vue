@@ -3,9 +3,9 @@
     <!-- 飲料類型上半部 -->
     <div class="w-full h-full  grid grid-cols-5 place-items-center">
       <div @click="changeType(item.type)" v-for="item in sliceDrinkType" :key="item.id"
-        class="2xl:w-28 2xl:h-28 xl:w-24 xl:h-24 lg:w-[72px] lg:h-[72px] bg-red-400 border-solid border-2 border-black rounded-lg flex justify-center items-center cursor-pointer"
+        class="2xl:w-28 2xl:h-28 xl:w-24 xl:h-24 lg:w-[72px] lg:h-[72px] w-14 h-14 bg-red-400 border-solid border-2 border-black rounded-lg flex justify-center items-center cursor-pointer"
         :class="{ 'bg-yellow-400': item.type === drinkStore.drinkTypeMenu }">
-        <p class="px-2 text-blue-800 2xl:text-xl xl:text-lg lg:text-sm font-bold select-none	">{{ item.name }}
+        <p class="px-2 text-blue-800 2xl:text-xl xl:text-lg lg:text-sm text-xs font-bold select-none	">{{ item.name }}
         </p>
       </div>
     </div>
