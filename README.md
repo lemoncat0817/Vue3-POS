@@ -2,6 +2,8 @@
 
 這是一個使用Vue3、Vue-Router、Pinia、Element-Plus、Echarts和Vite構建的POS機系統，樣式編寫用TailWind CSS。
 
+> **重構進行中**：本專案正依照重構規劃書分階段進行架構升級（TypeScript strict 化、pnpm workspace、伺服端與離線同步等），目前完成度為 P0（工程骨架）。畫面功能與行為與先前版本一致，尚未變動。
+
 ## Demo網站
 
 [MAJI Tea POS機系統 Demo](https://lemoncat0817.github.io/Vue3-POS/)
@@ -63,45 +65,64 @@
 ## 使用技術
 
 1. **Vue3 Composition API**
-2. **Vue-Router**
+2. **TypeScript**（strict 模式）
+
+- 型別檢查：`vue-tsc` / `tsc`。
+
+3. **Vue-Router**
    
 - 頁面切換及訪問權限控制
 
-3. **Pinia**
+4. **Pinia**
   
 - 資料管理。
 
-4. **Element-Plus**
+5. **Element-Plus**
   
 - UI組件庫。
 
-5. **TailWind CSS**
+6. **TailWind CSS**
   
 - 快速樣式編寫，主要版型使用Flex和Grid布局。
 
-6. **Vite**
+7. **Vite**
   
 - 專案建立與打包。
 
-7. **ESLint**
-  
-- 程式碼規範管理。
+8. **ESLint 9**（flat config）
 
-8. **Prettier**
+- 程式碼規範管理，含跨套件依賴邊界檢查。
+
+9. **Prettier**
   
 - 程式碼格式化。
 
-9. **Git**
+10. **Vitest / Playwright**
+
+- 單元測試與端對端測試。
+
+11. **Git**
   
 - 版本控制。
 
-10. **Echarts**
+12. **Echarts**
 
 - 數據分析圖表。
 
+## 專案結構
+
+本專案為 pnpm workspace monorepo：
+
+```
+apps/pos/          前端應用（Vue 3 + TypeScript，本專案的主要程式碼）
+apps/api/          伺服端（Cloudflare Workers，規劃中，尚未實作）
+packages/pos-domain/    領域邏輯與共用資料（純 TypeScript，規劃中）
+packages/pos-contract/  API 契約定義（規劃中）
+```
+
 ## 安裝與運行
 
-確保你已安裝Node.js和pnpm。
+確保你已安裝 Node.js（20.19 以上）和 pnpm。
 
 ### 安裝依賴
 
@@ -119,4 +140,13 @@ pnpm dev
 
 ```sh
 pnpm build
+```
+
+### 其他常用指令
+
+```sh
+pnpm typecheck   # 對所有套件執行型別檢查
+pnpm lint        # 執行 ESLint
+pnpm test        # 執行 Vitest 單元測試
+pnpm test:e2e    # 執行 Playwright 端對端測試
 ```
