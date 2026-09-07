@@ -7,6 +7,7 @@ import { catalogRoutes } from './routes/catalog'
 import { deviceRoutes } from './routes/devices'
 import { orderRoutes } from './routes/orders'
 import { promotionRoutes } from './routes/promotions'
+import { reportRoutes } from './routes/reports'
 import { staffRoutes } from './routes/staff'
 
 export type { AppEnv }
@@ -58,6 +59,7 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string }) {
   app.route('/api/devices', deviceRoutes)
   app.route('/api/orders', orderRoutes)
   app.route('/api/promotions', promotionRoutes)
+  app.route('/api/reports', reportRoutes)
   app.route('/api/staff', staffRoutes)
 
   app.doc('/openapi.json', {
