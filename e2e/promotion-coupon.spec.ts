@@ -33,7 +33,10 @@ test('套用現金折價券後，畫面顯示與伺服端回應的折抵金額�
   await page.getByRole('button', { name: '送出訂單' }).click()
   await page.getByRole('button', { name: '確定' }).click()
   await page.getByRole('button', { name: '收取現金' }).click()
-  await expect(page.getByText('訂單送出成功')).toBeVisible()
+  // P8：ElMessage 改用 Reka Toast（見 components/ui/ToastHost.vue 的
+  // 說明），畫面上這則訊息用 testid 定位，避免跟 Reka 另外渲染的
+  // aria-live 隱藏播報文字撞在一起。
+  await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
 
   const res = await orderResponse
   const body = (await res.json()) as { orderPaymentPrice: number; orderDiscount: number; discountName: string }

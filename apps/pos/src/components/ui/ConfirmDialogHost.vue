@@ -10,7 +10,7 @@
           {{ state.description }}
         </AlertDialogDescription>
         <div class="mt-6 flex justify-end gap-3">
-          <AlertDialogCancel as-child>
+          <AlertDialogCancel v-if="!state.singleButton" as-child>
             <button
               type="button"
               data-confirm-result="cancel"

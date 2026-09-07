@@ -34,7 +34,10 @@ test('斷網時送出的 3 張訂單先落地本機佇列，重新連線後自�
     await page.getByRole('button', { name: '送出訂單' }).click()
     await page.getByRole('button', { name: '確定' }).click()
     await page.getByRole('button', { name: '收取現金' }).click()
-    await expect(page.getByText('訂單送出成功').last()).toBeVisible()
+    // P8：ElMessage 改用 Reka Toast（見 components/ui/ToastHost.vue 的
+    // 說明），畫面上這則訊息用 testid 定位，避免跟 Reka 另外渲染的
+    // aria-live 隱藏播報文字撞在一起。
+    await expect(page.getByTestId('toast-message').last()).toHaveText('訂單送出成功')
     // 送單後待付款清單歸零會另外彈一次通知，關掉才能繼續下一輪操作。
     await page.getByRole('button', { name: '繼續選取品項' }).click()
   }

@@ -19,11 +19,13 @@ test('環保折扣：勾選品項後套用，小計正確扣減，取消後恢�
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
 
-  const row = page.locator('.el-table__row').first()
+  // P8：待付款清單改用純 HTML table + 原生 checkbox，取代 el-table（見
+  // views/home/index.vue 的說明），row 用 data-testid="cart-row" 定位。
+  const row = page.getByTestId('cart-row').first()
   await expect(row).toContainText('80')
 
   // 勾選該列，套用環保折扣（每杯扣 5 元）。
-  await row.locator('.el-checkbox__inner').click()
+  await row.locator('input[type="checkbox"]').click()
   await page.getByRole('button', { name: '環保折扣' }).click()
   await expect(row.locator('td').nth(9)).toContainText('75')
 

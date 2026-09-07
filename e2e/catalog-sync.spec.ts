@@ -27,6 +27,8 @@ test('點餐頁掛載時會向 apps/api 要一份菜單，且點餐流程用得�
   await page.getByText('楊枝甘露2.0', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
-  const row = page.locator('.el-table__row').first()
+  // P8：待付款清單改用純 HTML table，取代 el-table（見 views/home/
+  // index.vue 的說明），row 用 data-testid="cart-row" 定位。
+  const row = page.getByTestId('cart-row').first()
   await expect(row).toContainText('80')
 })

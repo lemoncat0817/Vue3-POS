@@ -25,7 +25,10 @@ test('訂單編號篩選輸入正規表示式特殊字元不會讓頁面出錯�
   await page.getByRole('button', { name: '確定' }).click()
   // 預設付款方式為「紙鈔」現金，送出後彈出「應收取現金…」提示。
   await page.getByRole('button', { name: '收取現金' }).click()
-  await expect(page.getByText('訂單送出成功')).toBeVisible()
+  // P8：ElMessage 改用 Reka Toast（見 components/ui/ToastHost.vue 的
+  // 說明），畫面上這則訊息用 testid 定位，避免跟 Reka 另外渲染的
+  // aria-live 隱藏播報文字撞在一起。
+  await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
   // 送出後待付款清單歸零，會另外彈出「清單已清空」的通知（見 D-13 修復），
   // 要先關掉才能點側邊欄，不然點擊會被彈窗攔截。
   await page.getByRole('button', { name: '繼續選取品項' }).click()
