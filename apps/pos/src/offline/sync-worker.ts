@@ -40,6 +40,17 @@ export async function syncOnce(
   if (syncStatus.isSyncing) return
   syncStatus.isSyncing = true
   try {
+    // 瀏覽器已經知道自己離線時，直接跳過——不要明知道會失敗還硬打一次。
+    // 這不只是省一次無謂的請求：home/index.vue 每次送單都會呼叫一次
+    // syncNow()，離線時連續送好幾張單會讓佇列最舊的那筆在短時間內被
+    // 「嘗試又失敗」好幾輪，指數退避的 attempts 因此漲得比真實使用情境
+    // 快很多，反而讓它要等更久才輪到下一次真正有機會成功的重試（連線
+    // 恢復後）。跳過離線時的嘗試，attempts 只在「真的打過但失敗」時才
+    // 增加，退避時間才會反映真實的失敗次數。放在 try 區塊內（而不是
+    // 函式最開頭就 return）是為了讓 finally 照樣執行
+    // refreshPendingCount()——離線時新入列的項目一樣要反映在
+    // pendingCount 上，不能因為跳過了嘗試就沒更新這個數字。
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return
     const due = await listDueOrders()
     for (const entry of due) {
       const ok = await syncOne(entry, onSynced)

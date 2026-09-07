@@ -50,6 +50,11 @@ test('斷網時送出的 3 張訂單先落地本機佇列，重新連線後自�
   await expect(page).toHaveURL(/\/order$/)
   await expect(page.locator('.el-table__row')).toHaveCount(7)
 
+  // 頁首的同步狀態列（見 layout/header/index.vue）要讓店員看得出「這 3
+  // 張單還沒真的送達伺服端」，不是只有畫面上看起來送出去了。
+  const syncBadge = page.getByTestId('sync-status')
+  await expect(syncBadge).toContainText('3 筆')
+
   // 監看重新連線後真正送往伺服端的請求，直接從回應內容確認：剛好 3 次
   // 成功的 POST，且伺服端配發了 3 個不同的 orderId（沒有把同一張單
   // 重複送成兩筆，也沒有漏掉任何一筆）。
@@ -68,4 +73,6 @@ test('斷網時送出的 3 張訂單先落地本機佇列，重新連線後自�
   await context.setOffline(false)
 
   await expect.poll(() => syncedOrderIds.size, { timeout: 20_000, intervals: [500] }).toBe(3)
+  // 全部同步完成後，狀態列應該恢復成「沒有東西要顯示」。
+  await expect(syncBadge).toBeHidden()
 })

@@ -98,4 +98,21 @@ describe('syncOnce', () => {
     expect(createOrder).toHaveBeenCalledTimes(1)
     expect(await offlineDb.outboxOrders.count()).toBe(2)
   })
+
+  it('navigator.onLine 為 false 時完全不嘗試（避免明知會失敗還讓 attempts 白白增加）', async () => {
+    await enqueueOrder(payload('01ARZ3NDEKTSV4RRFFQ69G5FA5'), 'local-5')
+    const onLineSpy = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+
+    await syncOnce(vi.fn())
+
+    expect(createOrder).not.toHaveBeenCalled()
+    const row = await offlineDb.outboxOrders.get('01ARZ3NDEKTSV4RRFFQ69G5FA5')
+    expect(row).toMatchObject({ status: 'pending', attempts: 0 })
+    // 跳過嘗試不代表跳過狀態更新：離線時新入列的項目一樣要反映在
+    // pendingCount 上，同步狀態列（見 layout/header/index.vue）才顯示
+    // 得出「有東西還沒送出去」。
+    expect(syncStatus.pendingCount).toBe(1)
+
+    onLineSpy.mockRestore()
+  })
 })
