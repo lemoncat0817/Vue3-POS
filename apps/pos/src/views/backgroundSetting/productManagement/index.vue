@@ -10,37 +10,38 @@ class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text
           :class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetDrinkType === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetDrinkType === 'X' }"
           @click="openAddTypeDialog">新增</button>
         <!-- 新增飲品類型 -->
-        <el-dialog v-model="addTypeDialog" title="新增飲品類型" width="500">
-          <!-- 飲品類型的Id -->
+        <!-- P8：組件庫替換——el-dialog 改用 ModalDialog（Reka UI
+             Dialog）。這個頁面的資料本來就完全是本機陣列操作（見
+             stores/drink.ts 的說明，從沒接過 API），驗證邏輯維持原本
+             的一連串 if/else，只是把 ElMessage／ElMessageBox 換成
+             showToast／confirm／alert，不改成 VeeValidate + Zod——這裡
+             欄位之間有大量互相牽動的邏輯（例如客製化選「無」會連動關掉
+             瓶裝開關、清空瓶裝價格），改成 schema 驅動反而容易在沒有
+             e2e 覆蓋的情況下悄悄改變行為。 -->
+        <ModalDialog v-model:open="addTypeDialog" title="新增飲品類型">
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             飲品類型的Id:<input
 v-model="currentInputId" type="number" min="1" step="1"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
               placeholder="純數字,例如:1,2,3..." />
           </div>
-          <!-- 飲品類型 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             飲品類型:<input
 v-model="currentInputName"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
               placeholder="例如: 原味茶,芝芝系列..." />
           </div>
-          <!-- 飲品類型的代號 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             飲品類型的代號:<input
 v-model="currentInputType"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
               placeholder="例如: drinkMilk..." />
           </div>
-          <template #footer>
-            <div class="dialog-footer">
-              <el-button @click="closeAddTypeDialog">取消</el-button>
-              <el-button type="primary" @click="addDrinkType">
-                新增
-              </el-button>
-            </div>
-          </template>
-        </el-dialog>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeAddTypeDialog">取消</button>
+            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addDrinkType">新增</button>
+          </div>
+        </ModalDialog>
         <!-- 刪除功能 -->
         <button
 :class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetDrinkType === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetDrinkType === 'X' }"
@@ -52,7 +53,7 @@ v-model="currentInputType"
           class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md md:text-sm text-xs text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300"
           @click="openEditTypeDialog">編輯</button>
         <!-- 編輯飲品類型 -->
-        <el-dialog v-model="editTypeDialog" title="編輯飲品類型" width="500">
+        <ModalDialog v-model:open="editTypeDialog" title="編輯飲品類型">
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             飲品類型的Id:<input
 v-model="currentEditInputId" type="number" min="1" step="1"
@@ -71,35 +72,47 @@ v-model="currentEditInputType"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
               placeholder="例如: drinkMilk..." />
           </div>
-          <template #footer>
-            <div class="dialog-footer">
-              <el-button @click="closeEditTypeDialog">取消</el-button>
-              <el-button type="primary" @click="editDrinkType">
-                保存
-              </el-button>
-            </div>
-          </template>
-        </el-dialog>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeEditTypeDialog">取消</button>
+            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editDrinkType">保存</button>
+          </div>
+        </ModalDialog>
       </div>
     </div>
     <div>
-      <el-table
-class="cursor-pointer mt-2" :data="sliceDrinkType" highlight-current-row height="440" empty-text="無飲品類型"
-        @current-change="handleCurrentChange">
-        <el-table-column align="center" type="index" label="序號" min-width="55" />
-        <el-table-column align="center" label="Id" prop="id" min-width="55" />
-        <el-table-column align="center" label="類型" prop="name" min-width="95" />
-        <el-table-column align="center" label="類型代號" prop="type" min-width="130" />
-      </el-table>
-      <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center mt-10">
-        <p class="text-blue-800">{{ `共 ${drinkStore.drinkType.length} 樣` }}</p>
-        <div class="h-full flex items-center">
-          <el-pagination
-v-model:current-page="drinkTypeCurrentPage" small background layout="prev, next"
-            :total="drinkStore.drinkType.length" @current-change="handleDrinkTypeCurrentChange" />
+      <!-- P8：組件庫替換——el-table 改用純 HTML table，跟其餘 P8 已
+           遷移頁面一致；highlight-current-row 改成點列時比對 id 加
+           class，el-pagination（只用 prev/next）改用原生按鈕。 -->
+      <table class="mt-2 w-full text-center text-sm">
+        <thead class="bg-surface-100 text-xs font-bold text-surface-500">
+          <tr>
+            <th class="px-2 py-2">序號</th>
+            <th class="px-2 py-2">Id</th>
+            <th class="px-2 py-2">類型</th>
+            <th class="px-2 py-2">類型代號</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-100">
+          <tr v-if="sliceDrinkType.length === 0">
+            <td colspan="4" class="px-2 py-8 text-surface-400">無飲品類型</td>
+          </tr>
+          <tr
+            v-for="(row, index) in sliceDrinkType" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50"
+            :class="{ 'bg-primary-50': currentType.id === row.id }" @click="currentType = row">
+            <td class="px-2 py-2">{{ index + 1 }}</td>
+            <td class="px-2 py-2">{{ row.id }}</td>
+            <td class="px-2 py-2">{{ row.name }}</td>
+            <td class="px-2 py-2">{{ row.type }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="mt-4 flex items-center justify-around rounded-lg bg-surface-100 px-2 py-2 text-sm text-surface-600">
+        <p>{{ `共 ${drinkStore.drinkType.length} 樣` }}</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40" :disabled="drinkTypeCurrentPage <= 1" @click="handleDrinkTypeCurrentChange(drinkTypeCurrentPage - 1)">‹</button>
+          <button type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40" :disabled="drinkTypeCurrentPage >= drinkTypePageCount" @click="handleDrinkTypeCurrentChange(drinkTypeCurrentPage + 1)">›</button>
         </div>
-        <p class="text-blue-800">{{ `${drinkStore.drinkType.length > 0 ? drinkTypeCurrentPage : 0
-          }/${Math.ceil(drinkStore.drinkType.length / 10)}頁` }}</p>
+        <p>{{ `${drinkStore.drinkType.length > 0 ? drinkTypeCurrentPage : 0}/${drinkTypePageCount}頁` }}</p>
       </div>
     </div>
   </div>
@@ -113,29 +126,30 @@ v-model:current-page="drinkTypeCurrentPage" small background layout="prev, next"
 :class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetDrink === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetDrink === 'X' }"
           class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md md:text-sm text-xs text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300"
           @click="openAddDrinkDialog">新增</button>
-        <!-- 新增飲品類型 -->
-        <el-dialog v-model="addDrinkDialog" title="新增飲料品項" width="500">
-          <!-- 飲料品項的Id -->
+        <!-- 新增飲料品項 -->
+        <!-- P8：組件庫替換——el-switch 改用 Reka UI 的 Switch 原語，
+             el-select／el-option 改用 Reka UI 的 Select 原語。 -->
+        <ModalDialog v-model:open="addDrinkDialog" title="新增飲料品項">
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             飲料品項的Id:<input
 v-model="currentDrinkInputId" type="number" min="1" step="1"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
               placeholder="純數字,例如:1,2,3..." />
           </div>
-          <!-- 飲料名稱 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             飲料名稱:<input
 v-model="currentDrinkInputName"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
               placeholder="例如: 芝芝金萱,金萱雙Q..." />
           </div>
-          <!-- 大杯價格 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             大杯價格:
-            <div class="flex">
-              <el-switch
-v-model="setPriceL" active-text="有" inactive-text="無" inline-prompt
-                @change="checkPriceLSwitch" />
+            <div class="flex items-center">
+              <SwitchRoot
+                v-model="setPriceL" class="relative h-6 w-11 rounded-full bg-surface-300 data-[state=checked]:bg-primary-500"
+                @update:model-value="checkPriceLSwitch">
+                <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+              </SwitchRoot>
               <input
 v-if="setPriceL" v-model="currentDrinkInputPriceL" type="number" min="1" step="1"
                 class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2" placeholder="無此容器，請關左側開關" />
@@ -144,13 +158,14 @@ v-if="setPriceL" v-model="currentDrinkInputPriceL" type="number" min="1" step="1
               </div>
             </div>
           </div>
-          <!-- 瓶裝價格 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             瓶裝價格:
-            <div class="flex">
-              <el-switch
-v-model="setPriceBottle" active-text="有" inactive-text="無" inline-prompt
-                @change="checkPriceBottleSwitch" />
+            <div class="flex items-center">
+              <SwitchRoot
+                v-model="setPriceBottle" class="relative h-6 w-11 rounded-full bg-surface-300 data-[state=checked]:bg-primary-500"
+                @update:model-value="checkPriceBottleSwitch">
+                <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+              </SwitchRoot>
               <input
 v-if="setPriceBottle" v-model="currentDrinkInputPriceBottle" type="number" min="1" step="1"
                 class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2" placeholder="無此容器，請關左側開關" />
@@ -159,34 +174,32 @@ v-if="setPriceBottle" v-model="currentDrinkInputPriceBottle" type="number" min="
               </div>
             </div>
           </div>
-          <!-- 客製化 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             客製化:
-            <el-select
-v-model="currentDrinkSelectCustomized" placeholder="請選擇飲料的客製化設定" style="width: 235px"
-              @change="checkAddDrinkSelectCustomized">
-              <el-option v-for="item in customized" :key="item.value" :label="item.label" :value="item.value">
-                <span style="float: left">{{ item.label }}</span>
-                <span
-style="
-                    float: right;
-                    color: var(--el-text-color-secondary);
-                    font-size: 13px;
-                  ">
-                  {{ item.value }}
-                </span>
-              </el-option>
-            </el-select>
+            <SelectRoot v-model="currentDrinkSelectCustomized" @update:model-value="checkAddDrinkSelectCustomized">
+              <SelectTrigger class="flex w-[235px] items-center justify-between rounded-lg border-2 border-solid border-black bg-white px-2 py-1 text-left">
+                <SelectValue placeholder="請選擇飲料的客製化設定" />
+                <span aria-hidden="true">▾</span>
+              </SelectTrigger>
+              <SelectPortal>
+                <SelectContent class="z-50 w-[235px] rounded-lg border border-surface-200 bg-white shadow-lg" position="popper">
+                  <SelectViewport class="p-1">
+                    <SelectItem
+                      v-for="item in customized" :key="item.value" :value="item.value"
+                      class="flex cursor-pointer justify-between rounded px-2 py-1 outline-none hover:bg-surface-100 data-[state=checked]:bg-primary-50">
+                      <SelectItemText>{{ item.label }}</SelectItemText>
+                      <span class="text-xs text-surface-400">{{ item.value }}</span>
+                    </SelectItem>
+                  </SelectViewport>
+                </SelectContent>
+              </SelectPortal>
+            </SelectRoot>
           </div>
-          <template #footer>
-            <div class="dialog-footer">
-              <el-button @click="closeAddDrinkDialog">取消</el-button>
-              <el-button type="primary" @click="addDrink">
-                新增
-              </el-button>
-            </div>
-          </template>
-        </el-dialog>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeAddDrinkDialog">取消</button>
+            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addDrink">新增</button>
+          </div>
+        </ModalDialog>
         <!-- 刪除功能 -->
         <button
 :class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetDrink === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetDrink === 'X' }"
@@ -197,28 +210,27 @@ style="
 :class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetDrink === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetDrink === 'X' }"
           class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md md:text-sm text-xs text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300"
           @click="openEditDrinkDialog">編輯</button>
-        <!-- 編輯飲品類型 -->
-        <el-dialog v-model="editDrinkDialog" title="編輯飲料品項" width="500">
-          <!-- 飲料品項的Id -->
+        <!-- 編輯飲料品項 -->
+        <ModalDialog v-model:open="editDrinkDialog" title="編輯飲料品項">
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             飲料品項的Id:<input
 v-model="currentEditDrinkInputId" type="number" min="1" step="1"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2" placeholder="無此容器，請關左側開關" />
           </div>
-          <!-- 飲料名稱 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             飲料名稱:<input
 v-model="currentEditDrinkInputName"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
               placeholder="例如: 芝芝金萱,金萱雙Q..." />
           </div>
-          <!-- 大杯價格 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             大杯價格:
-            <div class="flex">
-              <el-switch
-v-model="setEditPriceL" active-text="有" inactive-text="無" inline-prompt
-                @change="checkEditPriceLSwitch" />
+            <div class="flex items-center">
+              <SwitchRoot
+                v-model="setEditPriceL" class="relative h-6 w-11 rounded-full bg-surface-300 data-[state=checked]:bg-primary-500"
+                @update:model-value="checkEditPriceLSwitch">
+                <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+              </SwitchRoot>
               <input
 v-if="setEditPriceL" v-model="currentEditDrinkInputPriceL" type="number" min="1" step="1"
                 class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2" placeholder="無此容器，請關左側開關" />
@@ -227,13 +239,14 @@ v-if="setEditPriceL" v-model="currentEditDrinkInputPriceL" type="number" min="1"
               </div>
             </div>
           </div>
-          <!-- 瓶裝價格 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             瓶裝價格:
-            <div class="flex">
-              <el-switch
-v-model="setEditPriceBottle" active-text="有" inactive-text="無" inline-prompt
-                @change="checkEditPriceBottleSwitch" />
+            <div class="flex items-center">
+              <SwitchRoot
+                v-model="setEditPriceBottle" class="relative h-6 w-11 rounded-full bg-surface-300 data-[state=checked]:bg-primary-500"
+                @update:model-value="checkEditPriceBottleSwitch">
+                <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+              </SwitchRoot>
               <input
 v-if="setEditPriceBottle" v-model="currentEditDrinkInputPriceBottle" type="number" min="1" step="1"
                 class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
@@ -243,61 +256,70 @@ v-if="setEditPriceBottle" v-model="currentEditDrinkInputPriceBottle" type="numbe
               </div>
             </div>
           </div>
-          <!-- 客製化 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             客製化:
-            <el-select
-v-model="currentEditDrinkSelectCustomized" placeholder="請選擇飲料的客製化設定" style="width: 235px"
-              @change="checkEditDrinkSelectCustomized">
-              <el-option v-for="item in customized" :key="item.value" :label="item.label" :value="item.value">
-                <span style="float: left">{{ item.label }}</span>
-                <span
-style="
-                    float: right;
-                    color: var(--el-text-color-secondary);
-                    font-size: 13px;
-                  ">
-                  {{ item.value }}
-                </span>
-              </el-option>
-            </el-select>
+            <SelectRoot v-model="currentEditDrinkSelectCustomized" @update:model-value="checkEditDrinkSelectCustomized">
+              <SelectTrigger class="flex w-[235px] items-center justify-between rounded-lg border-2 border-solid border-black bg-white px-2 py-1 text-left">
+                <SelectValue placeholder="請選擇飲料的客製化設定" />
+                <span aria-hidden="true">▾</span>
+              </SelectTrigger>
+              <SelectPortal>
+                <SelectContent class="z-50 w-[235px] rounded-lg border border-surface-200 bg-white shadow-lg" position="popper">
+                  <SelectViewport class="p-1">
+                    <SelectItem
+                      v-for="item in customized" :key="item.value" :value="item.value"
+                      class="flex cursor-pointer justify-between rounded px-2 py-1 outline-none hover:bg-surface-100 data-[state=checked]:bg-primary-50">
+                      <SelectItemText>{{ item.label }}</SelectItemText>
+                      <span class="text-xs text-surface-400">{{ item.value }}</span>
+                    </SelectItem>
+                  </SelectViewport>
+                </SelectContent>
+              </SelectPortal>
+            </SelectRoot>
           </div>
-          <template #footer>
-            <div class="dialog-footer">
-              <el-button @click="closeEditDrinkDialog">取消</el-button>
-              <el-button type="primary" @click="editDrink">
-                保存
-              </el-button>
-            </div>
-          </template>
-        </el-dialog>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeEditDrinkDialog">取消</button>
+            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editDrink">保存</button>
+          </div>
+        </ModalDialog>
       </div>
     </div>
     <div>
-      <el-table
-class="cursor-pointer mt-2" :data="sliceDrink" highlight-current-row height="440" empty-text="請先選擇飲品類型"
-        @current-change="handleCurrentDrinkChange">
-        <el-table-column align="center" type="index" label="序號" min-width="55" />
-        <el-table-column align="center" label="Id" prop="id" min-width="55" />
-        <el-table-column align="center" label="飲料名稱" prop="name" min-width="130" />
-        <el-table-column align="center" label="大杯價格" prop="priceL" min-width="80" />
-        <el-table-column align="center" label="瓶裝價格" prop="priceBottle" min-width="80" />
-        <el-table-column align="center" label="客製化" prop="customized" min-width="70" />
-      </el-table>
-      <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center mt-10">
-        <p class="text-blue-800">{{ `共 ${currentType.drinkList ? currentType.drinkList.length : 0} 樣` }}
-        </p>
-        <div class="h-full flex items-center">
-          <el-pagination
-v-if="currentType.drinkList" v-model:current-page="drinkCurrentPage" small background
-            layout="prev, next" :total="currentType.drinkList.length" @current-change="handleDrinkCurrentChange" />
-          <el-pagination
-v-else v-model:current-page="drinkCurrentPage" small background layout="prev, next"
-            :total="0" />
+      <table class="mt-2 w-full text-center text-sm">
+        <thead class="bg-surface-100 text-xs font-bold text-surface-500">
+          <tr>
+            <th class="px-2 py-2">序號</th>
+            <th class="px-2 py-2">Id</th>
+            <th class="px-2 py-2">飲料名稱</th>
+            <th class="px-2 py-2">大杯價格</th>
+            <th class="px-2 py-2">瓶裝價格</th>
+            <th class="px-2 py-2">客製化</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-100">
+          <tr v-if="sliceDrink.length === 0">
+            <td colspan="6" class="px-2 py-8 text-surface-400">請先選擇飲品類型</td>
+          </tr>
+          <tr
+            v-for="(row, index) in sliceDrink" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50"
+            :class="{ 'bg-primary-50': currentDrink.id === row.id }" @click="currentDrink = row">
+            <td class="px-2 py-2">{{ index + 1 }}</td>
+            <td class="px-2 py-2">{{ row.id }}</td>
+            <td class="px-2 py-2">{{ row.name }}</td>
+            <td class="px-2 py-2">{{ row.priceL }}</td>
+            <td class="px-2 py-2">{{ row.priceBottle }}</td>
+            <td class="px-2 py-2">{{ row.customized }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="mt-4 flex items-center justify-around rounded-lg bg-surface-100 px-2 py-2 text-sm text-surface-600">
+        <p>{{ `共 ${currentType.drinkList ? currentType.drinkList.length : 0} 樣` }}</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40" :disabled="drinkCurrentPage <= 1" @click="handleDrinkCurrentChange(drinkCurrentPage - 1)">‹</button>
+          <button type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40" :disabled="drinkCurrentPage >= drinkPageCount" @click="handleDrinkCurrentChange(drinkCurrentPage + 1)">›</button>
         </div>
-        <p v-if="currentType.drinkList" class="text-blue-800">{{
-          `${drinkCurrentPage}/${Math.ceil(currentType.drinkList.length / 10)}頁` }}</p>
-        <p v-else class="text-blue-800">0/0頁</p>
+        <p v-if="currentType.drinkList">{{ `${drinkCurrentPage}/${drinkPageCount}頁` }}</p>
+        <p v-else>0/0頁</p>
       </div>
     </div>
   </div>
@@ -312,36 +334,29 @@ v-else v-model:current-page="drinkCurrentPage" small background layout="prev, ne
           class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md md:text-sm text-xs text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300"
           @click="openAddIngredientsDialog">新增</button>
         <!-- 新增配料 -->
-        <el-dialog v-model="addIngredientsDialog" title="新增配料" width="500">
-          <!-- 配料的Id -->
+        <ModalDialog v-model:open="addIngredientsDialog" title="新增配料">
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             配料的Id:<input
 v-model="currentIngredientsInputId" type="number" min="1" step="1"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
               placeholder="純數字,例如:1,2,3..." />
           </div>
-          <!-- 配料名稱 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             配料名稱:<input
 v-model="currentIngredientsInputName"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2" placeholder="例如: 波霸,雙Q果..." />
           </div>
-          <!-- 配料的價錢 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             配料的價錢:<input
 v-model="currentIngredientsInputPrice" type="number" min="1" step="1"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
               placeholder="純數字,例如:1,2,3..." />
           </div>
-          <template #footer>
-            <div class="dialog-footer">
-              <el-button @click="closeAddIngredientsDialog">取消</el-button>
-              <el-button type="primary" @click="addDrinkIngredients">
-                新增
-              </el-button>
-            </div>
-          </template>
-        </el-dialog>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeAddIngredientsDialog">取消</button>
+            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addDrinkIngredients">新增</button>
+          </div>
+        </ModalDialog>
         <!-- 刪除功能 -->
         <button
 :class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetIngredients === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetIngredients === 'X' }"
@@ -353,7 +368,7 @@ v-model="currentIngredientsInputPrice" type="number" min="1" step="1"
           class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md md:text-sm text-xs text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300"
           @click="openEditIngredientsDialog">編輯</button>
         <!-- 編輯配料 -->
-        <el-dialog v-model="editIngredientsDialog" title="編輯配料" width="500">
+        <ModalDialog v-model:open="editIngredientsDialog" title="編輯配料">
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             配料的Id:<input
 v-model="currentEditIngredientsInputId" type="number" min="1" step="1"
@@ -371,36 +386,44 @@ v-model="currentEditIngredientsInputPrice" type="number" min="1" step="1"
               class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
               placeholder="純數字,例如:1,2,3..." />
           </div>
-          <template #footer>
-            <div class="dialog-footer">
-              <el-button @click="closeEditIngredientsDialog">取消</el-button>
-              <el-button type="primary" @click="editDrinkIngredients">
-                保存
-              </el-button>
-            </div>
-          </template>
-        </el-dialog>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeEditIngredientsDialog">取消</button>
+            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editDrinkIngredients">保存</button>
+          </div>
+        </ModalDialog>
       </div>
     </div>
     <div>
-      <el-table
-class="cursor-pointer mt-2" :data="sliceIngredients" highlight-current-row height="440" empty-text="無配料"
-        @current-change="handleCurrentIngredientsChange">
-        <el-table-column align="center" type="index" label="序號" min-width="55" />
-        <el-table-column align="center" label="Id" prop="id" min-width="55" />
-        <el-table-column align="center" label="配料名稱" prop="name" min-width="90" />
-        <el-table-column align="center" label="價錢" prop="price" min-width="65" />
-      </el-table>
-      <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center mt-10">
-        <p class="text-blue-800">{{ `共 ${drinkStore.drinkAdd.length} 樣` }}</p>
-        <div class="h-full flex items-center">
-          <el-pagination
-v-model:current-page="drinkIngredientsCurrentPage" small background layout="prev, next"
-            :total="drinkStore.drinkAdd.length" @current-change="handleIngredientsCurrentChange" />
+      <table class="mt-2 w-full text-center text-sm">
+        <thead class="bg-surface-100 text-xs font-bold text-surface-500">
+          <tr>
+            <th class="px-2 py-2">序號</th>
+            <th class="px-2 py-2">Id</th>
+            <th class="px-2 py-2">配料名稱</th>
+            <th class="px-2 py-2">價錢</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-100">
+          <tr v-if="sliceIngredients.length === 0">
+            <td colspan="4" class="px-2 py-8 text-surface-400">無配料</td>
+          </tr>
+          <tr
+            v-for="(row, index) in sliceIngredients" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50"
+            :class="{ 'bg-primary-50': currentIngredientsDrink.id === row.id }" @click="currentIngredientsDrink = row">
+            <td class="px-2 py-2">{{ index + 1 }}</td>
+            <td class="px-2 py-2">{{ row.id }}</td>
+            <td class="px-2 py-2">{{ row.name }}</td>
+            <td class="px-2 py-2">{{ row.price }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="mt-4 flex items-center justify-around rounded-lg bg-surface-100 px-2 py-2 text-sm text-surface-600">
+        <p>{{ `共 ${drinkStore.drinkAdd.length} 樣` }}</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40" :disabled="drinkIngredientsCurrentPage <= 1" @click="handleIngredientsCurrentChange(drinkIngredientsCurrentPage - 1)">‹</button>
+          <button type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40" :disabled="drinkIngredientsCurrentPage >= drinkIngredientsPageCount" @click="handleIngredientsCurrentChange(drinkIngredientsCurrentPage + 1)">›</button>
         </div>
-        <p class="text-blue-800">{{ `${drinkStore.drinkAdd.length > 0
-          ? drinkIngredientsCurrentPage : 0}/${Math.ceil(drinkStore.drinkAdd.length / 10)}頁` }}
-        </p>
+        <p>{{ `${drinkStore.drinkAdd.length > 0 ? drinkIngredientsCurrentPage : 0}/${drinkIngredientsPageCount}頁` }}</p>
       </div>
     </div>
   </div>
@@ -408,7 +431,21 @@ v-model:current-page="drinkIngredientsCurrentPage" small background layout="prev
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { ElMessageBox, ElMessage } from 'element-plus'
+import {
+  SelectContent,
+  SelectItem,
+  SelectItemText,
+  SelectPortal,
+  SelectRoot,
+  SelectTrigger,
+  SelectValue,
+  SelectViewport,
+  SwitchRoot,
+  SwitchThumb,
+} from 'reka-ui'
+import ModalDialog from '@/components/ui/ModalDialog.vue'
+import { alert, confirm } from '@/composables/useConfirm'
+import { showToast } from '@/composables/useToast'
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
 import { useLoginStore } from "@/stores/login"
@@ -418,11 +455,10 @@ import { fromSelection } from '@/utils/selection'
 
 // 飲品類型相關功能
 // 存放當前已選類型
+// P8：組件庫替換——el-table 的 @current-change 事件改成模板上直接
+// @click="currentType = row"（見上方 template），不需要中介的
+// handleCurrentChange 函式，其餘兩個表格（飲料品項／配料）比照辦理。
 const currentType = ref<MaybeSelected<DrinkTypeGroup>>({})
-// 接收當前回傳的已選的類型
-const handleCurrentChange = (row: DrinkTypeGroup) => {
-  currentType.value = row
-}
 // 存放當前輸入的Id
 const currentInputId = ref<FormNumeric>('')
 // 存放當前輸入的類型名稱
@@ -441,28 +477,28 @@ const openAddTypeDialog = () => {
 // 關閉新增dialog視窗
 const closeAddTypeDialog = () => {
   addTypeDialog.value = false
-  ElMessage.error('取消操作')
+  showToast('取消操作', 'error')
 }
 // 新增茶品類型
 const addDrinkType = () => {
   if (currentInputId.value === '' || currentInputName.value === '' || currentInputType.value === '') {
-    ElMessage.error('請輸入完整資訊')
+    showToast('請輸入完整資訊', 'error')
     return
   }
   if (drinkStore.drinkType.find((item) => item.id == currentInputId.value)) {
-    ElMessage.error('此Id已存在,請重新輸入')
+    showToast('此Id已存在,請重新輸入', 'error')
     return
   }
   if (drinkStore.drinkType.find((item) => item.name == currentInputName.value)) {
-    ElMessage.error('此類型已存在,請重新輸入')
+    showToast('此類型已存在,請重新輸入', 'error')
     return
   }
   if (drinkStore.drinkType.find((item) => item.type == currentInputType.value)) {
-    ElMessage.error('此類型代碼已存在,請重新輸入')
+    showToast('此類型代碼已存在,請重新輸入', 'error')
     return
   }
   if (Number(currentInputId.value) <= 0) {
-    ElMessage.error('Id不可為負數且需大於0,請重新輸入')
+    showToast('Id不可為負數且需大於0,請重新輸入', 'error')
     return
   }
   const newDrinkType: DrinkTypeGroup = {
@@ -473,7 +509,7 @@ const addDrinkType = () => {
   }
   drinkStore.drinkType.push(newDrinkType)
   addTypeDialog.value = false
-  ElMessage.success('新增成功')
+  showToast('新增成功', 'success')
 }
 // 存放當前茶品類型當前的頁數
 const drinkTypeCurrentPage = ref(1)
@@ -485,36 +521,22 @@ const handleDrinkTypeCurrentChange = (page: number) => {
 const sliceDrinkType = computed(() => {
   return drinkStore.drinkType.slice((drinkTypeCurrentPage.value - 1) * 10, drinkTypeCurrentPage.value * 10)
 })
+const drinkTypePageCount = computed(() => Math.max(Math.ceil(drinkStore.drinkType.length / 10), 1))
 // 刪除當前選擇的飲料類型
-const deleteDrinkType = () => {
+const deleteDrinkType = async () => {
   if (drinkStore.drinkType.length == 1) {
-    ElMessage.error('至少要留有一個飲料類型，需修改請善用編輯功能')
+    showToast('至少要留有一個飲料類型，需修改請善用編輯功能', 'error')
     return
   }
-  if (currentType.value.name) {
-    ElMessageBox.confirm(
-      `是否刪除 ${currentType.value.name} 類型?`,
-      '警告',
-      {
-        confirmButtonText: '確定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-      .then(() => {
-        drinkStore.drinkTypeMenu = ''
-        drinkStore.drinkType = drinkStore.drinkType.filter((item) => item.id !== currentType.value.id);
-        window.location.reload()
-      })
-      .catch(() => {
-        ElMessage.error('取消操作');
-      })
-  } else {
-    ElMessageBox.alert('請先選擇要刪除的類型', '通知', {
-      confirmButtonText: '繼續選擇',
-      type: 'info',
-    })
+  if (!currentType.value.name) {
+    void alert({ title: '通知', description: '請先選擇要刪除的類型', confirmText: '繼續選擇' })
+    return
   }
+  const result = await confirm({ title: '警告', description: `是否刪除 ${currentType.value.name} 類型?` })
+  if (result !== 'confirm') return
+  drinkStore.drinkTypeMenu = ''
+  drinkStore.drinkType = drinkStore.drinkType.filter((item) => item.id !== currentType.value.id)
+  window.location.reload()
 }
 // 控制編輯dialog視窗開關
 const editTypeDialog = ref(false)
@@ -532,45 +554,42 @@ const openEditTypeDialog = () => {
     currentEditInputType.value = currentType.value.type!
     editTypeDialog.value = true
   } else {
-    ElMessageBox.alert('請先選擇要編輯的類型', '通知', {
-      confirmButtonText: '繼續選擇',
-      type: 'info',
-    })
+    void alert({ title: '通知', description: '請先選擇要編輯的類型', confirmText: '繼續選擇' })
   }
 }
 // 關閉編輯dialog視窗
 const closeEditTypeDialog = () => {
   editTypeDialog.value = false
-  ElMessage.error('取消操作')
+  showToast('取消操作', 'error')
 }
 // 編輯茶品類型
 const editDrinkType = () => {
   if (currentEditInputId.value === '' || currentEditInputName.value === '' || currentEditInputType.value === '') {
-    ElMessage.error('請輸入完整資訊')
+    showToast('請輸入完整資訊', 'error')
     return
   }
   if (currentEditInputId.value == currentType.value.id && currentEditInputName.value == currentType.value.name && currentEditInputType.value == currentType.value.type) {
     editTypeDialog.value = false
-    ElMessage.success('保存成功')
+    showToast('保存成功', 'success')
     return
   } else {
     const anotherId = drinkStore.drinkType.filter(item => item.id != currentType.value.id)
     if (anotherId.some(item => item.id == currentEditInputId.value)) {
-      ElMessage.error('此Id已存在,請重新輸入')
+      showToast('此Id已存在,請重新輸入', 'error')
       return
     }
     const anotherName = drinkStore.drinkType.filter(item => item.name != currentType.value.name)
     if (anotherName.some(item => item.name == currentEditInputName.value)) {
-      ElMessage.error('此類型已存在,請重新輸入')
+      showToast('此類型已存在,請重新輸入', 'error')
       return
     }
     const anotherType = drinkStore.drinkType.filter(item => item.type != currentType.value.type)
     if (anotherType.some(item => item.type == currentEditInputType.value)) {
-      ElMessage.error('此類型代號已存在,請重新輸入')
+      showToast('此類型代號已存在,請重新輸入', 'error')
       return
     }
     if (Number(currentEditInputId.value) <= 0) {
-      ElMessage.error('Id不可為負數且需大於0,請重新輸入')
+      showToast('Id不可為負數且需大於0,請重新輸入', 'error')
       return
     }
   }
@@ -578,16 +597,12 @@ const editDrinkType = () => {
   currentType.value.name = currentEditInputName.value
   currentType.value.type = currentEditInputType.value
   editTypeDialog.value = false
-  ElMessage.success('保存成功')
+  showToast('保存成功', 'success')
 }
 
 // 飲料品項相關功能
 // 存放當前已選的飲料品項
 const currentDrink = ref<MaybeSelected<DrinkListItem>>({})
-// 接收當前回傳的已選的飲料品項
-const handleCurrentDrinkChange = (row: DrinkListItem) => {
-  currentDrink.value = row
-}
 // 控制新增飲料品項dialog視窗開關
 const addDrinkDialog = ref(false)
 // 打開新增飲料品項dialog視窗
@@ -602,10 +617,7 @@ const openAddDrinkDialog = () => {
     currentDrinkSelectCustomized.value = ''
     addDrinkDialog.value = true
   } else {
-    ElMessageBox.alert('請先選擇要新增飲料品項的的飲品類型', '通知', {
-      confirmButtonText: '繼續選擇',
-      type: 'info',
-    })
+    void alert({ title: '通知', description: '請先選擇要新增飲料品項的的飲品類型', confirmText: '繼續選擇' })
     return
   }
 }
@@ -640,14 +652,14 @@ const checkAddDrinkSelectCustomized = () => {
     setPriceL.value = true
     setPriceBottle.value = false
     currentDrinkInputPriceBottle.value = 'none'
-    ElMessage.error('容器僅限大杯,已關閉瓶裝價格輸入')
+    showToast('容器僅限大杯,已關閉瓶裝價格輸入', 'error')
     return
   }
 }
 // 關閉新增飲料品項dialog視窗
 const closeAddDrinkDialog = () => {
   addDrinkDialog.value = false
-  ElMessage.error('取消操作')
+  showToast('取消操作', 'error')
 }
 // 是否可以使用大杯裝
 const setPriceL = ref(true)
@@ -668,34 +680,34 @@ const checkPriceBottleSwitch = () => {
     setPriceL.value = true
     setPriceBottle.value = false
     currentDrinkInputPriceBottle.value = 'none'
-    ElMessage.error('因為無客製化，容器僅限大杯,請調整客製化設定')
+    showToast('因為無客製化，容器僅限大杯,請調整客製化設定', 'error')
     return
   }
 }
 // 新增飲料品項
 const addDrink = () => {
   if (currentDrinkInputId.value === '' || currentDrinkInputName.value === '' || currentDrinkInputPriceL.value === '' || currentDrinkInputPriceBottle.value === '' || currentDrinkSelectCustomized.value === '') {
-    ElMessage.error('請輸入完整資訊')
+    showToast('請輸入完整資訊', 'error')
     return
   }
   if (currentType.value.drinkList!.find((item) => item.id == currentDrinkInputId.value)) {
-    ElMessage.error('此Id已存在,請重新輸入')
+    showToast('此Id已存在,請重新輸入', 'error')
     return
   }
   if (currentType.value.drinkList!.find((item) => item.name == currentDrinkInputName.value)) {
-    ElMessage.error('此飲料名稱已存在,請重新輸入')
+    showToast('此飲料名稱已存在,請重新輸入', 'error')
     return
   }
   if (currentDrinkInputPriceL.value === 'none' && currentDrinkInputPriceBottle.value === 'none') {
-    ElMessage.error('請至少選擇一種飲料容器，請重新輸入')
+    showToast('請至少選擇一種飲料容器，請重新輸入', 'error')
     return
   }
   if (setPriceL.value == true && currentDrinkInputPriceL.value === 'none') {
-    ElMessage.error('大杯價格不可為空，請重新輸入')
+    showToast('大杯價格不可為空，請重新輸入', 'error')
     return
   }
   if (setPriceBottle.value == true && currentDrinkInputPriceBottle.value === 'none') {
-    ElMessage.error('瓶裝價格不可為空，請重新輸入')
+    showToast('瓶裝價格不可為空，請重新輸入', 'error')
     return
   }
   if (currentDrinkSelectCustomized.value === 'none') {
@@ -703,20 +715,20 @@ const addDrink = () => {
       setPriceL.value = true
       setPriceBottle.value = false
       currentDrinkInputPriceBottle.value = 'none'
-      ElMessage.error('因為無客製化，容器僅限大杯,已關閉瓶裝價格輸入')
+      showToast('因為無客製化，容器僅限大杯,已關閉瓶裝價格輸入', 'error')
       return
     }
   }
   if (Number(currentDrinkInputId.value) <= 0) {
-    ElMessage.error('Id不可為負數且需大於0,請重新輸入')
+    showToast('Id不可為負數且需大於0,請重新輸入', 'error')
     return
   }
   if (setPriceL.value == true && Number(currentDrinkInputPriceL.value) < 0) {
-    ElMessage.error('大杯價格不可為負數,請重新輸入')
+    showToast('大杯價格不可為負數,請重新輸入', 'error')
     return
   }
   if (setPriceBottle.value == true && Number(currentDrinkInputPriceBottle.value) < 0) {
-    ElMessage.error('瓶裝價格不可為負數,請重新輸入')
+    showToast('瓶裝價格不可為負數,請重新輸入', 'error')
     return
   }
   const newDrink: DrinkListItem = {
@@ -728,33 +740,18 @@ const addDrink = () => {
   }
   currentType.value.drinkList!.push(newDrink)
   addDrinkDialog.value = false
-  ElMessage.success('新增成功')
+  showToast('新增成功', 'success')
 }
 // 刪除當前選擇的飲料品項
-const deleteDrink = () => {
-  if (currentDrink.value != null && currentDrink.value.name) {
-    ElMessageBox.confirm(
-      `是否刪除飲料品項 ${currentDrink.value.name} ?`,
-      '警告',
-      {
-        confirmButtonText: '確定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-      .then(() => {
-        currentType.value.drinkList = currentType.value.drinkList!.filter((item) => item.id !== currentDrink.value.id)
-        ElMessage.success('刪除成功')
-      })
-      .catch(() => {
-        ElMessage.error('取消操作');
-      })
-  } else {
-    ElMessageBox.alert('請先選擇要刪除的飲料品項', '通知', {
-      confirmButtonText: '繼續選擇',
-      type: 'info',
-    })
+const deleteDrink = async () => {
+  if (currentDrink.value == null || !currentDrink.value.name) {
+    void alert({ title: '通知', description: '請先選擇要刪除的飲料品項', confirmText: '繼續選擇' })
+    return
   }
+  const result = await confirm({ title: '警告', description: `是否刪除飲料品項 ${currentDrink.value.name} ?` })
+  if (result !== 'confirm') return
+  currentType.value.drinkList = currentType.value.drinkList!.filter((item) => item.id !== currentDrink.value.id)
+  showToast('刪除成功', 'success')
 }
 // 存放當前編輯輸入的Id
 const currentEditDrinkInputId = ref<FormNumeric>('')
@@ -785,7 +782,7 @@ const checkEditPriceBottleSwitch = () => {
     setEditPriceL.value = true
     setEditPriceBottle.value = false
     currentEditDrinkInputPriceBottle.value = 'none'
-    ElMessage.error('因為無客製化，容器僅限大杯,請調整客製化設定')
+    showToast('因為無客製化，容器僅限大杯,請調整客製化設定', 'error')
     return
   }
 }
@@ -795,7 +792,7 @@ const checkEditDrinkSelectCustomized = () => {
     setEditPriceL.value = true
     setEditPriceBottle.value = false
     currentEditDrinkInputPriceBottle.value = 'none'
-    ElMessage.error('容器僅限大杯,已關閉瓶裝價格輸入')
+    showToast('容器僅限大杯,已關閉瓶裝價格輸入', 'error')
     return
   }
 }
@@ -804,7 +801,7 @@ const editDrinkDialog = ref(false)
 // 關閉編輯dialog視窗
 const closeEditDrinkDialog = () => {
   editDrinkDialog.value = false
-  ElMessage.error('取消操作')
+  showToast('取消操作', 'error')
 }
 // 開啟編輯dialog視窗
 const openEditDrinkDialog = () => {
@@ -818,44 +815,41 @@ const openEditDrinkDialog = () => {
     currentEditDrinkSelectCustomized.value = currentDrink.value.customized!
     editDrinkDialog.value = true
   } else {
-    ElMessageBox.alert('請先選擇要編輯的飲料品項', '通知', {
-      confirmButtonText: '繼續選擇',
-      type: 'info',
-    })
+    void alert({ title: '通知', description: '請先選擇要編輯的飲料品項', confirmText: '繼續選擇' })
   }
 }
 
 // 編輯飲料品項
 const editDrink = () => {
   if (currentEditDrinkInputId.value === '' || currentEditDrinkInputName.value === '' || currentEditDrinkInputPriceL.value === '' || currentEditDrinkInputPriceBottle.value === '' || currentEditDrinkSelectCustomized.value === '') {
-    ElMessage.error('請輸入完整資訊')
+    showToast('請輸入完整資訊', 'error')
     return
   }
   if (setEditPriceL.value == true && currentEditDrinkInputPriceL.value === 'none') {
-    ElMessage.error('大杯價格不可為空，請重新輸入')
+    showToast('大杯價格不可為空，請重新輸入', 'error')
     return
   }
   if (setEditPriceBottle.value == true && currentEditDrinkInputPriceBottle.value === 'none') {
-    ElMessage.error('瓶裝價格不可為空，請重新輸入')
+    showToast('瓶裝價格不可為空，請重新輸入', 'error')
     return
   }
   if (currentEditDrinkInputId.value == currentDrink.value.id && currentEditDrinkInputName.value == currentDrink.value.name && currentEditDrinkInputPriceL.value == currentDrink.value.priceL && currentEditDrinkInputPriceBottle.value == currentDrink.value.priceBottle && currentEditDrinkSelectCustomized.value == currentDrink.value.customized) {
     editDrinkDialog.value = false
-    ElMessage.success('保存成功')
+    showToast('保存成功', 'success')
     return
   } else {
     const anotherId = currentType.value.drinkList!.filter(item => item.id != currentDrink.value.id)
     if (anotherId.some(item => item.id == currentEditDrinkInputId.value)) {
-      ElMessage.error('此Id已存在,請重新輸入')
+      showToast('此Id已存在,請重新輸入', 'error')
       return
     }
     const anotherName = currentType.value.drinkList!.filter(item => item.name != currentDrink.value.name)
     if (anotherName.some(item => item.name == currentEditDrinkInputName.value)) {
-      ElMessage.error('此飲料名稱已存在,請重新輸入')
+      showToast('此飲料名稱已存在,請重新輸入', 'error')
       return
     }
     if (currentEditDrinkInputPriceL.value == 'none' && currentEditDrinkInputPriceBottle.value == 'none') {
-      ElMessage.error('請至少選擇一種飲料容器,請重新輸入')
+      showToast('請至少選擇一種飲料容器,請重新輸入', 'error')
       return
     }
     if (currentEditDrinkSelectCustomized.value === 'none') {
@@ -863,20 +857,20 @@ const editDrink = () => {
         setEditPriceL.value = true
         setEditPriceBottle.value = false
         currentEditDrinkInputPriceBottle.value = 'none'
-        ElMessage.error('因為無客製化，容器僅限大杯,已關閉瓶裝價格輸入')
+        showToast('因為無客製化，容器僅限大杯,已關閉瓶裝價格輸入', 'error')
         return
       }
     }
     if (Number(currentEditDrinkInputId.value) <= 0) {
-      ElMessage.error('Id不可為負數且需大於0,請重新輸入')
+      showToast('Id不可為負數且需大於0,請重新輸入', 'error')
       return
     }
     if (setEditPriceL.value == true && Number(currentEditDrinkInputPriceL.value) < 0) {
-      ElMessage.error('大杯價格不可為負數,請重新輸入')
+      showToast('大杯價格不可為負數,請重新輸入', 'error')
       return
     }
     if (setEditPriceBottle.value == true && Number(currentEditDrinkInputPriceBottle.value) < 0) {
-      ElMessage.error('瓶裝價格不可為負數,請重新輸入')
+      showToast('瓶裝價格不可為負數,請重新輸入', 'error')
       return
     }
   }
@@ -886,7 +880,7 @@ const editDrink = () => {
   currentDrink.value.priceBottle = currentEditDrinkInputPriceBottle.value
   currentDrink.value.customized = currentEditDrinkSelectCustomized.value as DrinkCustomized
   editDrinkDialog.value = false
-  ElMessage.success('保存成功')
+  showToast('保存成功', 'success')
 }
 // 存放當前茶品類型當前的頁數
 const drinkCurrentPage = ref(1)
@@ -902,14 +896,11 @@ const sliceDrink = computed(() => {
     return []
   }
 })
+const drinkPageCount = computed(() => Math.max(Math.ceil((currentType.value.drinkList?.length ?? 0) / 10), 1))
 
 // 配料的相關功能
 // 存放當前所選的配料選項
 const currentIngredientsDrink = ref<MaybeSelected<DrinkAddOnOption>>({})
-// 接收當前回傳的已選的飲料品項
-const handleCurrentIngredientsChange = (row: DrinkAddOnOption) => {
-  currentIngredientsDrink.value = row
-}
 // 控制新增配料dialog視窗開關
 const addIngredientsDialog = ref(false)
 // 打開新增配料dialog視窗
@@ -922,7 +913,7 @@ const openAddIngredientsDialog = () => {
 // 關閉新增配料dialog視窗
 const closeAddIngredientsDialog = () => {
   addIngredientsDialog.value = false
-  ElMessage.error('取消操作')
+  showToast('取消操作', 'error')
 }
 // 存放當前輸入的配料Id
 const currentIngredientsInputId = ref<FormNumeric>('')
@@ -933,23 +924,23 @@ const currentIngredientsInputPrice = ref<FormNumeric>('')
 // 新增配料
 const addDrinkIngredients = () => {
   if (currentIngredientsInputId.value === '' || currentIngredientsInputName.value === '' || currentIngredientsInputPrice.value === '') {
-    ElMessage.error('請輸入完整資訊')
+    showToast('請輸入完整資訊', 'error')
     return
   }
   if (drinkStore.drinkAdd.find((item) => item.id == currentIngredientsInputId.value)) {
-    ElMessage.error('此Id已存在,請重新輸入')
+    showToast('此Id已存在,請重新輸入', 'error')
     return
   }
   if (drinkStore.drinkAdd.find((item) => item.name == currentIngredientsInputName.value)) {
-    ElMessage.error('此配料名稱已存在,請重新輸入')
+    showToast('此配料名稱已存在,請重新輸入', 'error')
     return
   }
   if (Number(currentIngredientsInputId.value) <= 0) {
-    ElMessage.error('Id不可為負數且需大於0,請重新輸入')
+    showToast('Id不可為負數且需大於0,請重新輸入', 'error')
     return
   }
   if (Number(currentIngredientsInputPrice.value) < 0) {
-    ElMessage.error('配料價格不可為負數,請重新輸入')
+    showToast('配料價格不可為負數,請重新輸入', 'error')
     return
   }
   const newIngredients: DrinkAddOnOption = {
@@ -959,40 +950,25 @@ const addDrinkIngredients = () => {
   }
   drinkStore.drinkAdd.push(newIngredients)
   addIngredientsDialog.value = false
-  ElMessage.success('新增成功')
+  showToast('新增成功', 'success')
 }
 // 刪除配料
-const deleteDrinkIngredients = () => {
-  if (currentIngredientsDrink.value.name) {
-    ElMessageBox.confirm(
-      `是否刪除配料 ${currentIngredientsDrink.value.name} ?`,
-      '警告',
-      {
-        confirmButtonText: '確定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-      .then(() => {
-        drinkStore.drinkAdd = drinkStore.drinkAdd.filter((item) => item.id !== currentIngredientsDrink.value.id)
-        ElMessage.success('刪除成功')
-      })
-      .catch(() => {
-        ElMessage.error('取消操作');
-      })
-  } else {
-    ElMessageBox.alert('請先選擇要刪除的配料', '通知', {
-      confirmButtonText: '繼續選擇',
-      type: 'info',
-    })
+const deleteDrinkIngredients = async () => {
+  if (!currentIngredientsDrink.value.name) {
+    void alert({ title: '通知', description: '請先選擇要刪除的配料', confirmText: '繼續選擇' })
+    return
   }
+  const result = await confirm({ title: '警告', description: `是否刪除配料 ${currentIngredientsDrink.value.name} ?` })
+  if (result !== 'confirm') return
+  drinkStore.drinkAdd = drinkStore.drinkAdd.filter((item) => item.id !== currentIngredientsDrink.value.id)
+  showToast('刪除成功', 'success')
 }
 // 控制編輯dialog視窗開關
 const editIngredientsDialog = ref(false)
 // 關閉編輯dialog視窗
 const closeEditIngredientsDialog = () => {
   editIngredientsDialog.value = false
-  ElMessage.error('取消操作')
+  showToast('取消操作', 'error')
 }
 // 存放當前編輯輸入的配料Id
 const currentEditIngredientsInputId = ref<FormNumeric>('')
@@ -1008,39 +984,36 @@ const openEditIngredientsDialog = () => {
     currentEditIngredientsInputPrice.value = currentIngredientsDrink.value.price!
     editIngredientsDialog.value = true
   } else {
-    ElMessageBox.alert('請先選擇要編輯的配料', '通知', {
-      confirmButtonText: '繼續選擇',
-      type: 'info',
-    })
+    void alert({ title: '通知', description: '請先選擇要編輯的配料', confirmText: '繼續選擇' })
   }
 }
 // 編輯配料
 const editDrinkIngredients = () => {
   if (currentEditIngredientsInputId.value === '' || currentEditIngredientsInputName.value === '' || currentEditIngredientsInputPrice.value === '') {
-    ElMessage.error('請輸入完整資訊')
+    showToast('請輸入完整資訊', 'error')
     return
   }
   if (currentEditIngredientsInputId.value == currentIngredientsDrink.value.id && currentEditIngredientsInputName.value == currentIngredientsDrink.value.name && currentEditIngredientsInputPrice.value == currentIngredientsDrink.value.price) {
     editIngredientsDialog.value = false
-    ElMessage.success('保存成功')
+    showToast('保存成功', 'success')
     return
   } else {
     const anotherId = drinkStore.drinkAdd.filter(item => item.id != currentIngredientsDrink.value.id)
     if (anotherId.some(item => item.id == currentEditIngredientsInputId.value)) {
-      ElMessage.error('此Id已存在,請重新輸入')
+      showToast('此Id已存在,請重新輸入', 'error')
       return
     }
     const anotherName = drinkStore.drinkAdd.filter(item => item.name != currentIngredientsDrink.value.name)
     if (anotherName.some(item => item.name == currentEditIngredientsInputName.value)) {
-      ElMessage.error('此配料名稱已存在,請重新輸入')
+      showToast('此配料名稱已存在,請重新輸入', 'error')
       return
     }
     if (Number(currentEditIngredientsInputId.value) <= 0) {
-      ElMessage.error('Id不可為負數且需大於0,請重新輸入')
+      showToast('Id不可為負數且需大於0,請重新輸入', 'error')
       return
     }
     if (Number(currentEditIngredientsInputPrice.value) < 0) {
-      ElMessage.error('配料價格不可為負數,請重新輸入')
+      showToast('配料價格不可為負數,請重新輸入', 'error')
       return
     }
   }
@@ -1048,7 +1021,7 @@ const editDrinkIngredients = () => {
   currentIngredientsDrink.value.name = currentEditIngredientsInputName.value
   currentIngredientsDrink.value.price = currentEditIngredientsInputPrice.value
   editIngredientsDialog.value = false
-  ElMessage.success('保存成功')
+  showToast('保存成功', 'success')
 }
 // 存放當前茶品類型當前的頁數
 const drinkIngredientsCurrentPage = ref(1)
@@ -1064,6 +1037,7 @@ const sliceIngredients = computed(() => {
     return []
   }
 })
+const drinkIngredientsPageCount = computed(() => Math.max(Math.ceil(drinkStore.drinkAdd.length / 10), 1))
 </script>
 
 <style lang="scss" scoped></style>
