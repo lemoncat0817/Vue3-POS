@@ -1,52 +1,52 @@
 <template>
-  <div class="flex w-full flex-col items-center overflow-y-auto bg-surface-50 px-4 pb-10">
+  <div class="flex w-full flex-col items-center overflow-y-auto bg-surface-50 dark:bg-surface-950 px-4 pb-10">
     <div class="mt-10 flex w-full max-w-6xl flex-col items-center">
-      <h1 class="text-3xl font-black text-surface-900">訂單</h1>
-      <p class="mt-1 text-sm text-surface-500">查看、篩選、管理已送出的訂單</p>
+      <h1 class="text-3xl font-black text-surface-900 dark:text-surface-100">訂單</h1>
+      <p class="mt-1 text-sm text-surface-500 dark:text-surface-400">查看、篩選、管理已送出的訂單</p>
 
       <!-- 篩選功能：P8 重新設計——原本 5 個 el-popover，點按鈕才彈出「只有
            一個輸入框」的小面板，多按一次才能看到／改掉篩選內容。改成一次
            全部顯示在同一張卡片上，不需要額外的彈出層。 -->
-      <div class="mt-6 grid w-full grid-cols-2 gap-3 rounded-2xl border border-surface-200 bg-white p-4 shadow-sm sm:grid-cols-3 lg:grid-cols-6">
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500">
+      <div class="mt-6 grid w-full grid-cols-2 gap-3 rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm sm:grid-cols-3 lg:grid-cols-6">
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500 dark:text-surface-400">
           訂單編號
           <input
             v-model="filterOrderId"
-            class="rounded-lg border border-surface-300 px-2 py-1.5 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             placeholder="輸入訂單編號" />
         </label>
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500">
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500 dark:text-surface-400">
           訂單時間
           <input
             v-model="filterOrderTime"
-            class="rounded-lg border border-surface-300 px-2 py-1.5 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             placeholder="輸入訂單時間" />
         </label>
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500">
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500 dark:text-surface-400">
           服務人員
           <input
             v-model="filterOrderStaff"
-            class="rounded-lg border border-surface-300 px-2 py-1.5 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             placeholder="輸入服務人員" />
         </label>
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500">
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500 dark:text-surface-400">
           訂單狀態
           <input
             v-model="filterOrderStatus"
-            class="rounded-lg border border-surface-300 px-2 py-1.5 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             placeholder="輸入訂單狀態" />
         </label>
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500">
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500 dark:text-surface-400">
           付款方式
           <input
             v-model="filterOrderPayMethod"
-            class="rounded-lg border border-surface-300 px-2 py-1.5 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             placeholder="輸入付款方式" />
         </label>
         <div class="flex items-end">
           <button
             type="button"
-            class="w-full rounded-lg border border-surface-300 px-2 py-1.5 text-sm font-bold text-surface-600 transition-colors hover:bg-surface-100"
+            class="w-full rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm font-bold text-surface-600 dark:text-surface-400 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800"
             @click="resetFilter">
             重置篩選
           </button>
@@ -56,10 +56,10 @@
 
     <!-- 訂單資料表格：P8 改用 TanStack Table（headless）取代 el-table，
          畫面本身用這個專案自己的 Tailwind token 從頭寫。 -->
-    <div class="mt-6 w-full max-w-6xl overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-sm">
+    <div class="mt-6 w-full max-w-6xl overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
-          <thead class="bg-surface-100 text-xs font-bold uppercase tracking-wide text-surface-500">
+          <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
             <tr>
               <th class="w-10 px-3 py-3" />
               <th v-for="header in leafHeaders" :key="header.id" class="px-3 py-3">
@@ -67,18 +67,18 @@
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-surface-100">
+          <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
             <template v-if="table.getRowModel().rows.length === 0">
               <tr>
-                <td :colspan="leafHeaders.length + 1" class="px-3 py-10 text-center text-surface-400">目前無訂單</td>
+                <td :colspan="leafHeaders.length + 1" class="px-3 py-10 text-center text-surface-400 dark:text-surface-500">目前無訂單</td>
               </tr>
             </template>
             <template v-for="row in table.getRowModel().rows" :key="row.id">
-              <tr data-testid="order-row" class="transition-colors hover:bg-surface-50">
+              <tr data-testid="order-row" class="transition-colors hover:bg-surface-50 dark:hover:bg-surface-950">
                 <td class="px-3 py-3">
                   <button
                     type="button"
-                    class="flex h-6 w-6 items-center justify-center rounded-full text-surface-500 transition-transform hover:bg-surface-100"
+                    class="flex h-6 w-6 items-center justify-center rounded-full text-surface-500 dark:text-surface-400 transition-transform hover:bg-surface-100 dark:hover:bg-surface-800"
                     :class="{ 'rotate-90': expandedOrderId === row.original.orderId }"
                     :aria-label="expandedOrderId === row.original.orderId ? '收合明細' : '展開明細'"
                     @click="toggleExpand(row.original.orderId)">
@@ -89,31 +89,31 @@
                   <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
                 </td>
               </tr>
-              <tr v-if="expandedOrderId === row.original.orderId" class="bg-surface-50">
+              <tr v-if="expandedOrderId === row.original.orderId" class="bg-surface-50 dark:bg-surface-950">
                 <td :colspan="leafHeaders.length + 1" class="px-4 py-4">
                   <div class="mb-3 flex flex-wrap gap-2">
-                    <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-surface-600 shadow-sm">
-                      已買袋子數量：<span class="text-primary-600">{{ row.original.orderBagCount }}</span> 個
+                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
+                      已買袋子數量：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderBagCount }}</span> 個
                     </span>
-                    <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-surface-600 shadow-sm">
-                      飲料杯數：<span class="text-primary-600">{{ row.original.orderCupCount }}</span> 杯
+                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
+                      飲料杯數：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderCupCount }}</span> 杯
                     </span>
-                    <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-surface-600 shadow-sm">
-                      訂單原始金額：<span class="text-primary-600">${{ row.original.orderTotalPrice }}</span>
+                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
+                      訂單原始金額：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderTotalPrice }}</span>
                     </span>
-                    <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-surface-600 shadow-sm">
-                      已使用的優惠券：<span class="text-primary-600">{{ row.original.discountName }}</span>
+                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
+                      已使用的優惠券：<span class="text-primary-600 dark:text-primary-400">{{ row.original.discountName }}</span>
                     </span>
-                    <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-surface-600 shadow-sm">
-                      優惠券折抵：<span class="text-primary-600">${{ row.original.orderDiscount }}</span>
+                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
+                      優惠券折抵：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderDiscount }}</span>
                     </span>
-                    <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-surface-600 shadow-sm">
-                      顧客應付金額：<span class="text-primary-600">${{ row.original.orderPaymentPrice }}</span>
+                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
+                      顧客應付金額：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderPaymentPrice }}</span>
                     </span>
                   </div>
-                  <div class="overflow-hidden rounded-xl border border-surface-200 bg-white">
+                  <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900">
                     <table class="w-full text-center text-xs">
-                      <thead class="bg-surface-100 font-bold text-surface-500">
+                      <thead class="bg-surface-100 dark:bg-surface-800 font-bold text-surface-500 dark:text-surface-400">
                         <tr>
                           <th class="px-2 py-2">序號</th>
                           <th class="px-2 py-2">商品</th>
@@ -126,7 +126,7 @@
                           <th class="px-2 py-2">小計</th>
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-surface-100">
+                      <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
                         <tr v-for="(line, index) in row.original.orderData" :key="index">
                           <td class="px-2 py-2">{{ index + 1 }}</td>
                           <td class="px-2 py-2">{{ line.name }}</td>
@@ -140,9 +140,9 @@
                               目前無使用折扣
                             </div>
                             <div v-else class="flex flex-wrap justify-center gap-1">
-                              <span v-if="line.useDiscountFree != ''" class="rounded-full bg-sky-100 px-2 py-0.5 text-sky-700">{{ line.useDiscountFree }}</span>
-                              <span v-if="line.useDiscountPercent != ''" class="rounded-full bg-red-100 px-2 py-0.5 text-red-700">{{ line.useDiscountPercent }}</span>
-                              <span v-if="line.useDiscountMoney != ''" class="rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">{{ line.useDiscountMoney }}</span>
+                              <span v-if="line.useDiscountFree != ''" class="rounded-full bg-info-100 px-2 py-0.5 text-info-700 dark:bg-info-950 dark:text-info-300">{{ line.useDiscountFree }}</span>
+                              <span v-if="line.useDiscountPercent != ''" class="rounded-full bg-danger-100 px-2 py-0.5 text-danger-700 dark:bg-danger-950 dark:text-danger-300">{{ line.useDiscountPercent }}</span>
+                              <span v-if="line.useDiscountMoney != ''" class="rounded-full bg-warning-100 px-2 py-0.5 text-warning-700 dark:bg-warning-950 dark:text-warning-300">{{ line.useDiscountMoney }}</span>
                             </div>
                           </td>
                           <td class="px-2 py-2 font-bold">{{ line.totalPrice }} 元</td>
@@ -159,25 +159,25 @@
 
       <!-- 分頁器：P8 改用 TanStack Table 內建的分頁 row model，取代原本
            手動 slice 的分頁邏輯。 -->
-      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-surface-200 px-4 py-3">
-        <div class="text-sm text-surface-500">
-          總共有 <span class="font-bold text-primary-600">{{ filterOrder.length }}</span> 筆訂單，
-          當前頁面有 <span class="font-bold text-primary-600">{{ table.getRowModel().rows.length }}</span> 筆訂單
+      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-surface-200 dark:border-surface-800 px-4 py-3">
+        <div class="text-sm text-surface-500 dark:text-surface-400">
+          總共有 <span class="font-bold text-primary-600 dark:text-primary-400">{{ filterOrder.length }}</span> 筆訂單，
+          當前頁面有 <span class="font-bold text-primary-600 dark:text-primary-400">{{ table.getRowModel().rows.length }}</span> 筆訂單
         </div>
         <div class="flex items-center gap-1">
           <button
             type="button"
-            class="rounded-lg border border-surface-300 px-3 py-1.5 text-sm font-bold text-surface-600 disabled:cursor-not-allowed disabled:opacity-40"
+            class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-600 dark:text-surface-400 disabled:cursor-not-allowed disabled:opacity-40"
             :disabled="!table.getCanPreviousPage()"
             @click="table.previousPage()">
             上一頁
           </button>
-          <span class="px-2 text-sm font-bold text-surface-700">
+          <span class="px-2 text-sm font-bold text-surface-700 dark:text-surface-300">
             {{ table.getState().pagination.pageIndex + 1 }} / {{ Math.max(table.getPageCount(), 1) }}
           </span>
           <button
             type="button"
-            class="rounded-lg border border-surface-300 px-3 py-1.5 text-sm font-bold text-surface-600 disabled:cursor-not-allowed disabled:opacity-40"
+            class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-600 dark:text-surface-400 disabled:cursor-not-allowed disabled:opacity-40"
             :disabled="!table.getCanNextPage()"
             @click="table.nextPage()">
             下一頁
@@ -256,8 +256,8 @@ function toggleExpand(orderId: string) {
 
 const statusBadgeClass = (status: OrderRecord['orderStatus']) =>
   status === '已完成'
-    ? 'rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700'
-    : 'rounded-full bg-surface-200 px-2 py-0.5 text-xs font-bold text-surface-600'
+    ? 'rounded-full bg-success-100 px-2 py-0.5 text-xs font-bold text-success-700 dark:bg-success-950 dark:text-success-300'
+    : 'rounded-full bg-surface-200 dark:bg-surface-800 px-2 py-0.5 text-xs font-bold text-surface-600 dark:text-surface-400'
 
 const columnHelper = createColumnHelper<OrderRecord>()
 const columns = [
@@ -284,7 +284,7 @@ const columns = [
         h('button', {
           type: 'button',
           class: [
-            'rounded-lg border border-surface-300 px-2 py-1 text-xs font-bold text-surface-700 transition-colors hover:bg-surface-100',
+            'rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-300 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800',
             canEditStatus ? '' : 'pointer-events-none opacity-40',
           ],
           onClick: () => editOrderStatus(order.orderId),
@@ -292,7 +292,7 @@ const columns = [
         h('button', {
           type: 'button',
           class: [
-            'rounded-lg border border-red-200 px-2 py-1 text-xs font-bold text-red-600 transition-colors hover:bg-red-50',
+            'rounded-lg border border-danger-200 px-2 py-1 text-xs font-bold text-danger-600 transition-colors hover:bg-danger-50 dark:border-danger-800 dark:text-danger-400 dark:hover:bg-danger-950',
             canDelete ? '' : 'pointer-events-none opacity-40',
           ],
           onClick: () => deleteOrder(order.orderId),

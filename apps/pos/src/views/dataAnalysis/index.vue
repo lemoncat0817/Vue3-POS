@@ -1,39 +1,54 @@
 <template>
   <div class="w-full flex items-center flex-col overflow-y-auto ">
     <div class="2xl:w-[85%] xl:w-[90%] lg:w-[95%] mt-10 flex flex-col items-center">
-      <h1
-        class="text-3xl text-white font-bold text-center border-2 border-solid border-black rounded-lg bg-red-500 px-2">
-        數據分析</h1>
-      <div class="mt-5 flex justify-center items-center">
-        <div
-class="px-2 border-2 border-solid border-black text-center lg:mx-3 md:mx-1 mx-0.5 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl md:text-md  text-[10px] cursor-pointer select-none"
-          :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 0 }"
+      <!-- P11（規劃書 §12「視覺系統與體驗」）：原本標題與四個分頁籤都是
+           滿版飽和紅＋純黑邊框，選取態疊一層飽和黃；日期輸入框則是寫死
+           的米色（#f8f8dc）配色，跟其餘頁面的 token 完全脫節。這裡改成
+           跟其餘頁面一致的中性分頁籤＋品牌色選取態，並補上深色模式。
+           分頁籤同時從 <div @click> 改成語意正確的 <button>。 -->
+      <h1 class="text-3xl font-black text-surface-900 dark:text-surface-100">數據分析</h1>
+      <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
+        <button
+type="button"
+          class="rounded-lg border px-4 py-2 text-sm font-bold transition-colors lg:text-base"
+          :class="dataAnalysisStore.currentDataAnalysis === 0
+            ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300'
+            : 'border-surface-300 text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-200 dark:hover:bg-surface-800'"
           @click="dataAnalysisStore.currentDataAnalysis = 0">
-          營業額</div>
-        <div
-class="px-2 border-2 border-solid border-black text-center lg:mx-3 md:mx-1 mx-0.5 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl md:text-md  text-[10px] cursor-pointer select-none"
-          :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 1 }"
+          營業額</button>
+        <button
+type="button"
+          class="rounded-lg border px-4 py-2 text-sm font-bold transition-colors lg:text-base"
+          :class="dataAnalysisStore.currentDataAnalysis === 1
+            ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300'
+            : 'border-surface-300 text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-200 dark:hover:bg-surface-800'"
           @click="dataAnalysisStore.currentDataAnalysis = 1">
-          熱門飲料</div>
-        <div
-class="px-2 border-2 border-solid border-black text-center lg:mx-3 md:mx-1 mx-0.5 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl md:text-md  text-[10px] cursor-pointer select-none"
-          :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 2 }"
+          熱門飲料</button>
+        <button
+type="button"
+          class="rounded-lg border px-4 py-2 text-sm font-bold transition-colors lg:text-base"
+          :class="dataAnalysisStore.currentDataAnalysis === 2
+            ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300'
+            : 'border-surface-300 text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-200 dark:hover:bg-surface-800'"
           @click="dataAnalysisStore.currentDataAnalysis = 2">
-          熱門配料</div>
-        <div
-class="px-2 border-2 border-solid border-black text-center lg:mx-3 md:mx-1 mx-0.5 text-blue-800 bg-red-500 rounded-lg font-bold lg:text-2xl md:text-md  text-[10px] cursor-pointer select-none"
-          :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 3 }"
+          熱門配料</button>
+        <button
+type="button"
+          class="rounded-lg border px-4 py-2 text-sm font-bold transition-colors lg:text-base"
+          :class="dataAnalysisStore.currentDataAnalysis === 3
+            ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300'
+            : 'border-surface-300 text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-200 dark:hover:bg-surface-800'"
           @click="dataAnalysisStore.currentDataAnalysis = 3">
-          常用付款方式</div>
-        <div class="flex items-center gap-2 mx-3">
+          常用付款方式</button>
+        <div class="mx-3 flex items-center gap-2">
           <input
 type="date" aria-label="開始時間" :value="toNativeDate(selectTime[0])"
-            class="border-2 border-solid border-black rounded-lg px-2 py-1 font-bold lg:text-lg text-sm bg-[#f8f8dc] text-[#560710]"
+            class="rounded-lg border border-surface-300 bg-white px-2 py-1.5 text-sm font-bold text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
             @change="(e) => selectTime = [fromNativeDate((e.target as HTMLInputElement).value), selectTime[1]]">
-          <span class="text-white font-bold lg:text-2xl text-sm">到</span>
+          <span class="text-sm font-bold text-surface-500 dark:text-surface-400">到</span>
           <input
 type="date" aria-label="結束時間" :value="toNativeDate(selectTime[1])"
-            class="border-2 border-solid border-black rounded-lg px-2 py-1 font-bold lg:text-lg text-sm bg-[#f8f8dc] text-[#560710]"
+            class="rounded-lg border border-surface-300 bg-white px-2 py-1.5 text-sm font-bold text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
             @change="(e) => selectTime = [selectTime[0], fromNativeDate((e.target as HTMLInputElement).value)]">
         </div>
       </div>
