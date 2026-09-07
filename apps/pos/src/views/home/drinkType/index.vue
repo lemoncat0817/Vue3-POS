@@ -3,27 +3,27 @@
     <!-- 飲料類型上半部 -->
     <div class="w-full h-full  grid grid-cols-5 place-items-center">
       <div
-v-for="item in sliceDrinkType" :key="item.id" class="2xl:w-28 2xl:h-28 xl:w-24 xl:h-24 lg:w-[72px] lg:h-[72px]md:w-14 md:h-14 sm:w-12 sm:h-12 w-11 h-11 bg-red-400 border-solid border-2 border-black rounded-lg flex justify-center items-center cursor-pointer"
-        :class="{ 'bg-yellow-400': item.type === drinkStore.drinkTypeMenu }"
+v-for="item in sliceDrinkType" :key="item.id" class="2xl:w-28 2xl:h-28 xl:w-24 xl:h-24 lg:w-[72px] lg:h-[72px] md:w-14 md:h-14 sm:w-12 sm:h-12 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg flex justify-center items-center cursor-pointer"
+        :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': item.type === drinkStore.drinkTypeMenu }"
         @click="changeType(item.type)">
-        <p class="md:px-2 px-0.5 text-blue-800 2xl:text-xl xl:text-lg lg:text-sm md:text-xs sm:text-[10px] text-[8px] font-bold select-none	">{{ item.name }}
+        <p class="md:px-2 px-0.5 text-surface-700 dark:text-surface-100 2xl:text-xl xl:text-lg lg:text-sm md:text-xs sm:text-[10px] text-[8px] font-bold select-none	">{{ item.name }}
         </p>
       </div>
     </div>
     <!-- 飲料類型下半部 -->
     <!-- P8：el-pagination 只用了 prev/next 兩顆按鈕，改用原生按鈕，取代
          el-pagination（見 home/index.vue 的說明，同一輪組件庫替換）。 -->
-    <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
-      <p class="text-blue-800">{{ `共 ${drinkStore.drinkType.length} 樣` }}</p>
+    <div class="w-full h-10 bg-surface-100 dark:bg-surface-800 shadow-xl rounded-lg flex justify-around items-center">
+      <p class="text-surface-700 dark:text-surface-100">{{ `共 ${drinkStore.drinkType.length} 樣` }}</p>
       <div class="h-full flex items-center gap-2">
         <button
-          type="button" class="rounded border border-surface-400 px-2 text-blue-800 disabled:opacity-40"
+          type="button" class="rounded border border-surface-400 dark:border-surface-600 px-2 text-surface-700 dark:text-surface-100 disabled:opacity-40"
           :disabled="currentPage <= 1" @click="handleCurrentChange(currentPage - 1)">‹</button>
         <button
-          type="button" class="rounded border border-surface-400 px-2 text-blue-800 disabled:opacity-40"
+          type="button" class="rounded border border-surface-400 dark:border-surface-600 px-2 text-surface-700 dark:text-surface-100 disabled:opacity-40"
           :disabled="currentPage >= pageCount" @click="handleCurrentChange(currentPage + 1)">›</button>
       </div>
-      <p class="text-blue-800">{{ `${drinkStore.drinkType.length > 0
+      <p class="text-surface-700 dark:text-surface-100">{{ `${drinkStore.drinkType.length > 0
         ? currentPage : 0}/${pageCount}頁` }}</p>
     </div>
   </div>

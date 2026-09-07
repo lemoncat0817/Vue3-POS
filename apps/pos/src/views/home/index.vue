@@ -3,7 +3,7 @@
     <!-- 左半部 -->
     <div class="w-3/5 ">
       <!-- 資訊顯示欄 -->
-      <div class="w-full h-[70px] flex bg-red-300 shadow-xl rounded-lg">
+      <div class="w-full h-[70px] flex bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 shadow-xl rounded-lg">
         <!-- 資訊顯示欄左半部 -->
         <div class="xl:w-1/2 h-full lg:w-[40%] w-[35%]">
           <!-- 當前時間 -->
@@ -16,7 +16,7 @@
           <!-- 機台編號和班別 -->
           <div class="flex w-full h-1/2 items-center">
             <div class="mx-2 flex md:flex-row flex-col items-center justify-center ">
-              <p class="text-blue-500 mr-2 font-bold xl:text-lg lg:text-base md:text-sm text-xs">機台編號</p>
+              <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-lg lg:text-base md:text-sm text-xs">機台編號</p>
               <p class="text-center font-bold xl:text-lg lg:text-base md:text-sm text-xs">A</p>
             </div>
             <div class=" flex md:flex-row flex-col items-start justify-center">
@@ -30,13 +30,13 @@
             <div class="flex-col">
               <!-- 購買袋子數量 -->
               <div class="flex mr-2">
-                <p class="text-blue-500 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">購買袋子數量</p>
+                <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">購買袋子數量</p>
                 <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">{{ drinkStore.currentBagCount }}
                   個</p>
               </div>
               <!-- 當前飲料杯數 -->
               <div class="flex mr-2">
-                <p class="text-blue-500 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">當前飲料杯數</p>
+                <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">當前飲料杯數</p>
                 <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">{{ drinkStore.currentDrinkCount
                   }} 杯</p>
               </div>
@@ -44,19 +44,19 @@
             <div class="flex-col">
               <!-- 目前累積金額 -->
               <div class="flex justify-end">
-                <p class="text-blue-500 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">目前累積金額</p>
+                <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">目前累積金額</p>
                 <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">$ {{ drinkStore.drinkTotalMoney
                   }} 元</p>
               </div>
               <!-- 優惠券已折抵金額 -->
               <div class="flex justify-end">
-                <p class="text-blue-500 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">優惠券已折抵</p>
+                <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">優惠券已折抵</p>
                 <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">$ {{ drinkStore.useDiscountPrice
                   }} 元</p>
               </div>
               <!-- 顧客應付價格 -->
               <div class="flex justify-end">
-                <p class="text-blue-500 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">顧客應付金額</p>
+                <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">顧客應付金額</p>
                 <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">$ {{ drinkStore.drinkPayPrice }}
                   元</p>
               </div>
@@ -67,21 +67,21 @@
       <!-- 單號、服務人員、功能按鈕以及待付款清單 -->
       <div class="w-full h-[527px]">
         <!--  -->
-        <div class="w-full h-[10%] bg-gray-200 shadow-xl rounded-lg flex">
+        <div class="w-full h-[10%] bg-surface-100 dark:bg-surface-800 shadow-xl rounded-lg flex">
           <!-- 單號、服務人員、功能按鈕左半部 -->
           <div class="2xl:w-1/2 h-full flex justify-around items-center xl:w-[45%] lg:w-[40%] w-[30%]">
             <!-- 單號 -->
             <div class="w-1/2 flex h-1/2 items-center xl:flex-row flex-col justify-center">
-              <p class="xl:mr-2 text-blue-500 font-bold 2xl:text-lg xl:text-sm lg:text-sm  text-[9px]">單號:</p>
-              <p class="text-red-500 font-bold 2xl:text-lg xl:text-sm lg:text-sm md:text-[10px] text-[9px]"> {{
+              <p class="xl:mr-2 text-surface-500 dark:text-surface-400 font-bold 2xl:text-lg xl:text-sm lg:text-sm  text-[9px]">單號:</p>
+              <p class="text-primary-600 dark:text-primary-400 font-bold 2xl:text-lg xl:text-sm lg:text-sm md:text-[10px] text-[9px]"> {{
                 orderStore.nextOrderId }}
               </p>
             </div>
             <!-- 服務人員 -->
             <div class="w-1/2 h-full flex items-center xl:flex-row flex-col justify-center">
-              <p class="xl:mr-2 text-blue-500 font-bold 2xl:text-lg xl:text-sm lg:text-sm md:text-[10px] text-[9px]">
+              <p class="xl:mr-2 text-surface-500 dark:text-surface-400 font-bold 2xl:text-lg xl:text-sm lg:text-sm md:text-[10px] text-[9px]">
                 服務人員:</p>
-              <p class="text-red-500 font-bold 2xl:text-lg xl:text-sm lg:text-sm md:text-[10px] text-[9px]">{{
+              <p class="text-primary-600 dark:text-primary-400 font-bold 2xl:text-lg xl:text-sm lg:text-sm md:text-[10px] text-[9px]">{{
                 `${fromSelection(loginStore.userInfo)?.jobTitle} -
                 ${fromSelection(loginStore.userInfo)?.name} ` }}</p>
             </div>
@@ -92,11 +92,11 @@
             <div class="w-full h-full flex items-center justify-end">
               <!-- 刪除已勾選商品 -->
               <button
-class="bg-red-300 text-blue-800 md:text-[10px] text-[8px] font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300 2xl:text-base xl:text-sm lg:text-xs"
+class="border border-surface-300 bg-white text-surface-700 hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-100 dark:hover:bg-surface-800 md:text-[10px] text-[8px] font-bold rounded-lg mr-2 px-1 select-none 2xl:text-base xl:text-sm lg:text-xs"
                 @click="clearSelectNotPay">刪除已勾選品項</button>
               <!-- 清空全部品項 -->
               <button
-class="bg-red-300 text-blue-800 md:text-[10px] text-[8px] font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300 2xl:text-base xl:text-sm lg:text-xs"
+class="border border-surface-300 bg-white text-surface-700 hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-100 dark:hover:bg-surface-800 md:text-[10px] text-[8px] font-bold rounded-lg mr-2 px-1 select-none 2xl:text-base xl:text-sm lg:text-xs"
                 @click="clearNotPay">清空全部品項</button>
               <!-- 結帳／付款 -->
               <!-- P6（規劃書 §10 P0「混合支付」）：原本「先選一種付款
@@ -105,8 +105,11 @@ class="bg-red-300 text-blue-800 md:text-[10px] text-[8px] font-bold border-solid
                    真正組出這筆訂單要用哪些付款方式、各分擔多少的地方。
                    結帳前不再需要先「修改付款方式」——這件事本身就是每次
                    結帳當下才決定的，不是需要事先設定的持久狀態。 -->
+              <!-- 結帳是這個工作區裡唯一的主要動作，維持品牌紅、跟前面
+                   兩個次要動作（邊框樣式）明確區分——規劃書 §12「結帳
+                   畫面上真正需要搶眼的只有金額與主要動作鍵」。 -->
               <button
-class="bg-red-300 text-blue-800 md:text-[10px] text-[8px] font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300 2xl:text-base xl:text-sm lg:text-xs"
+class="bg-primary-600 text-white hover:bg-primary-700 md:text-[10px] text-[8px] font-bold rounded-lg mr-2 px-2 select-none 2xl:text-base xl:text-sm lg:text-xs"
                 data-testid="checkout-button" @click="openPaymentPanel">結帳</button>
               <PaymentPanel
                 :open="dialogPayment" :due-amount="drinkStore.drinkPayPrice" :payment-methods="orderStore.paymentList"
@@ -173,16 +176,16 @@ class="bg-red-300 text-blue-800 md:text-[10px] text-[8px] font-bold border-solid
         </div>
       </div>
       <!-- 主要功能區、數量設置鍵盤 -->
-      <div class="w-full h-[281px] flex justify-around border-solid border-t-2 border-gray-200">
+      <div class="w-full h-[281px] flex justify-around border-solid border-t-2 border-surface-200 dark:border-surface-800">
         <!-- 主要功能區 -->
         <div class="lg:w-[65%] h-[95%] w-[60%] mt-2 place-items-center grid grid-cols-5 lg:gap-x-3 gap-x-3.5 ml-1">
           <!-- 載具 -->
           <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-yellow-300"
+class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
             @click="scanCarrier">載具</button>
           <!-- 加購袋子 -->
           <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-yellow-300"
+class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
             @click="openBagDialog">加購袋子</button>
           <!-- 加購袋子選單 -->
           <!-- P8：組件庫替換——el-slider（連拖曳滑桿跟旁邊的數字輸入框
@@ -209,27 +212,27 @@ class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-
           </ModalDialog>
           <!-- 免費招待 -->
           <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-yellow-300"
+class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
             :class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canFreeDrink === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canFreeDrink === 'X' }"
             @click="freeDiscount">免費招待</button>
           <!-- 環保折扣 -->
           <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-yellow-300"
+class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
             @click="ecoDiscount">{{
               discountStore.oftenUseDiscount[0].name }}</button>
           <!-- 瓶裝折扣 -->
           <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-yellow-300"
+class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
             @click="bottleDiscount">{{
               discountStore.oftenUseDiscount[1].name }}</button>
           <!-- 開收銀機 -->
           <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-yellow-300"
+class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
             :class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canOpenCashier === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canOpenCashier === 'X' }"
             @click="openCashier">開收銀機</button>
           <!-- 優惠券 -->
           <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-yellow-300"
+class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
             @click="openDiscountMenu">優惠券</button>
           <!-- 優惠券選單 -->
           <!-- P8：組件庫替換——el-dialog、el-pagination 換法跟上面付款
@@ -238,14 +241,14 @@ class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-
             <div class="mx-2 max-h-[60vh] overflow-auto">
               <div class="flex h-[85%] items-center justify-center">
                 <div
-class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1"
-                  :class="{ 'bg-yellow-400': discountStore.discountMenu === 0 }"
+class="h-[85%] text-surface-700 dark:text-surface-100 bg-white dark:bg-surface-800 border rounded-lg border-surface-300 dark:border-surface-700 cursor-pointer px-1"
+                  :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.discountMenu === 0 }"
                   @click="changeMoneyDiscount">
                   <p class="w-full h-full text-xl font-bold">現金折扣券</p>
                 </div>
                 <div
-class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-black cursor-pointer px-1 mx-2 "
-                  :class="{ 'bg-yellow-400': discountStore.discountMenu === 1 }"
+class="h-[85%] text-surface-700 dark:text-surface-100 bg-white dark:bg-surface-800 border rounded-lg border-surface-300 dark:border-surface-700 cursor-pointer px-1 mx-2 "
+                  :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.discountMenu === 1 }"
                   @click="changePercentDiscount">
                   <p class="w-full h-full text-xl font-bold">折數折扣券</p>
                 </div>
@@ -253,10 +256,10 @@ class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-
               <div v-if="discountStore.discountMenu === 0" class="my-2">
                 <div class="mb-2">
                   <div
-v-for="item in sliceMoneyDiscount" :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-red-400 rounded-xl"
-                    :class="{ 'bg-yellow-400': discountStore.moneySelectingDiscountId === item.id }"
+v-for="item in sliceMoneyDiscount" :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-white dark:bg-surface-800 rounded-xl"
+                    :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.moneySelectingDiscountId === item.id }"
                     @click="selectMoneyDiscount(item.id)">
-                    <p class="text-3xl text-blue-500 font-bold select-none	">{{ item.name }}</p>
+                    <p class="text-3xl font-bold select-none">{{ item.name }}</p>
                   </div>
                 </div>
                 <!-- 現金折扣券分頁器 -->
@@ -276,10 +279,10 @@ v-for="item in sliceMoneyDiscount" :key="item.id" class="h-16 mb-1 flex justify-
               <div v-if="discountStore.discountMenu === 1" class="my-2">
                 <div class="mb-2">
                   <div
-v-for="item in slicePercentDiscount" :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-red-400 rounded-xl"
-                    :class="{ 'bg-yellow-400': discountStore.percentSelectingDiscountId === item.id }"
+v-for="item in slicePercentDiscount" :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-white dark:bg-surface-800 rounded-xl"
+                    :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.percentSelectingDiscountId === item.id }"
                     @click="selectPercentDiscount(item.id)">
-                    <p class="text-3xl text-blue-500 font-bold select-none	">{{ item.name }}</p>
+                    <p class="text-3xl font-bold select-none">{{ item.name }}</p>
                   </div>
                 </div>
                 <!-- 折數折扣券分頁器 -->
@@ -304,91 +307,94 @@ v-for="item in slicePercentDiscount" :key="item.id" class="h-16 mb-1 flex justif
           </ModalDialog>
           <!-- 九折 -->
           <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-yellow-300"
+class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
             @click="oftenUseDiscount1">{{
               discountStore.oftenUseDiscount[2].name }}</button>
           <!-- 八五折 -->
           <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-yellow-300"
+class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
             @click="oftenUseDiscount2">{{
               discountStore.oftenUseDiscount[3].name }}</button>
           <!-- 員工八折 -->
           <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-red-400 border-solid border-2 border-black rounded-xl  text-blue-800 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-yellow-300"
+class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
             @click="oftenUseDiscount3">{{
               discountStore.oftenUseDiscount[4].name }}</button>
         </div>
         <!-- 數量設置鍵盤 -->
-        <div class="lg:w-[30%] h-[95%] w-[35%] mt-2 bg-red-200 border-solid border-2 border-black rounded-xl">
+        <div class="lg:w-[30%] h-[95%] w-[35%] mt-2 bg-white dark:bg-surface-900 border border-surface-300 dark:border-surface-700 rounded-xl">
           <div class="w-full h-1/5 flex items-center justify-around">
             <input
 v-model="drinkStore.drinkCount" oninput="value=value.replace(/[^\d]/g,'')" maxlength="5" disabled
-              class="w-[65%] h-4/5 ml-2 border-solid border-2 border-black text-right p-2 text-blue-800 font-bold text-3xl 	" />
+              class="w-[65%] h-4/5 ml-2 border border-surface-300 dark:border-surface-700 text-right p-2 text-surface-700 dark:text-surface-100 font-bold text-3xl 	" />
             <button
-class="w-[20%] lg:h-4/5 h-[70%] ml-2 bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg rounded-md font-bold xl:text-3xl lg:text-2xl select-none	 active:bg-yellow-300"
+class="w-[20%] lg:h-4/5 h-[70%] ml-2 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg rounded-md font-bold xl:text-3xl lg:text-2xl select-none	 active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('delete')">←</button>
           </div>
           <div class="w-full h-1/5 flex items-center justify-around ">
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('7')">7</button>
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('8')">8</button>
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('9')">9</button>
+            <!-- 「新增」是這組鍵盤的確認動作（把目前選好的品項＋杯數
+                 加進待付款清單），跟純粹輸入數字的按鍵不同語意，維持
+                 品牌色。 -->
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%] bg-primary-600 text-white hover:bg-primary-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none"
               @click="addNewDrink">新增</button>
           </div>
           <div class="w-full h-1/5 flex items-center justify-around ">
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('4')">4</button>
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('5')">5</button>
             <button
-class="w-[20%] bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%] bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('6')">6</button>
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="drinkStore.drinkCount = '10'">10</button>
           </div>
           <div class="w-full h-1/5 flex items-center justify-around ">
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('1')">1</button>
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('2')">2</button>
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('3')">3</button>
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="drinkStore.drinkCount = '50'">50</button>
           </div>
           <div class="w-full h-1/5 flex items-center justify-around ">
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('0')">0</button>
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="addCount('00')">00</button>
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="drinkStore.drinkCount = '0'">重設</button>
             <button
-class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-yellow-300"
+class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
               @click="drinkStore.drinkCount = '100'">100</button>
           </div>
         </div>
       </div>
     </div>
     <!-- 右半部 -->
-    <div class="w-2/5  border-solid border-l-2 border-gray-200 ">
+    <div class="w-2/5  border-solid border-l-2 border-surface-200 dark:border-surface-800 ">
       <!-- 飲料類型 -->
       <div class="w-full h-[308px] ">
         <DrinkType />
