@@ -32,6 +32,10 @@ export default withVueTs(
       'apps/pos/public/**',
       'playwright-report/**',
       'test-results/**',
+      // wrangler dev 本機執行時產生的暫存建置輸出（.gitignore 已排除，
+      // 但 ESLint flat config 不會自動套用 .gitignore，需要在這裡另外
+      // 排除，否則會把 esbuild 打包出來的 minified 程式碼當成原始碼檢查）。
+      'apps/api/.wrangler/**',
     ],
   },
 
