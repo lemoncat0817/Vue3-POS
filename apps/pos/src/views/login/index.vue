@@ -68,7 +68,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
-import { ElMessage, ElNotification } from 'element-plus'
+import { showToast } from '@/composables/useToast'
 import { operatorLogin, toStaffMember } from '@/api/auth'
 import { ApiError } from '@/api/http'
 
@@ -97,24 +97,24 @@ const quicklyLogin = (num: number) => {
 
 // P4：登入改成真的向伺服端驗證帳號＋PIN（POST /api/auth/operator-login），
 // 不再是本機明碼比對（見 apps/api/README.md 的身分系統說明）。
+// P8：組件庫替換——ElNotification／ElMessage 改用 composables/
+// useToast.ts（見 views/order/index.vue 的說明，同一套基礎設施）；
+// 原本 ElNotification 有獨立的標題＋內文兩行，這裡的 toast 只有單行
+// 訊息，合併成一句。
 const login = async () => {
   try {
     const staff = await operatorLogin(loginStore.account, loginStore.pin)
     loginStore.userInfo = toStaffMember(staff)
     loginStore.isLogin = true
     router.push('/home')
-    ElNotification({
-      title: '登入成功',
-      message: `${staff.jobTitle} - ${staff.name},歡迎進入MAJI Tea POS機系統`,
-      type: 'success',
-    })
+    showToast(`登入成功：${staff.jobTitle} - ${staff.name}，歡迎進入 MAJI Tea POS機系統`, 'success')
   } catch (err) {
     loginStore.isLogin = false
     loginStore.userInfo = []
     if (err instanceof ApiError && err.status === 401) {
-      ElMessage.error('帳號或是 PIN 有誤,請重新輸入')
+      showToast('帳號或是 PIN 有誤,請重新輸入', 'error')
     } else {
-      ElMessage.error('連不上伺服端，請確認網路連線')
+      showToast('連不上伺服端，請確認網路連線', 'error')
     }
   }
 }

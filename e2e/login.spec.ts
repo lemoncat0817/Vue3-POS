@@ -22,6 +22,6 @@ test('帳號密碼錯誤時停留在登入頁並顯示錯誤訊息', async ({ pa
   await page.getByPlaceholder('請輸入 PIN').fill('9999')
   await page.getByRole('button', { name: '登入' }).click()
 
-  await expect(page.getByText('帳號或是 PIN 有誤')).toBeVisible()
+  await expect(page.getByTestId('toast-message')).toHaveText(/帳號或是 PIN 有誤/)
   await expect(page).toHaveURL(/\/login$/)
 })
