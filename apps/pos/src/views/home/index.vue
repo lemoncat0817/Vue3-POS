@@ -443,6 +443,7 @@ const loginStore = useLoginStore()
 import type { CartLineItem, FormNumeric, OrderRecord, PaymentMethod } from '@/types'
 import { fromSelection } from '@/utils/selection'
 import { getBusinessDate, priceLine, toggleContainer, toggleFree, toggleRate, type LineDiscountFlags, type OftenUseRates } from '@pos/domain'
+import type { AppliedCoupon } from '@pos/contract'
 import { buildCreateOrderRequest } from '@/api/orders'
 import { enqueueOrder } from '@/offline/outbox'
 import { useOrderSync } from '@/offline/useOrderSync'
@@ -1010,6 +1011,18 @@ const sendOrder = () => {
         orderStore.order.push(toPayOrder)
         ElMessage.success('訂單送出成功')
 
+        // P5：訂單層級折價券只送「套用了哪張」，折抵金額由伺服端查真正
+        // 的折價券資料重算（見 api/orders.ts 的說明）。要在這裡（清空
+        // 待付款清單、連帶重置 discountStore 的選取狀態之前）就讀出
+        // 目前實際套用的是哪一張，晚一步讀就會被 watch(drinkNotPay) 的
+        // 重置邏輯清空。
+        const appliedCoupon: AppliedCoupon =
+          discountStore.moneyDiscountId !== 0
+            ? { type: 'money', couponId: String(discountStore.moneyDiscountId) }
+            : discountStore.percentDiscountId !== 0
+              ? { type: 'percent', couponId: String(discountStore.percentDiscountId) }
+              : { type: 'none' }
+
         // P3：訂單先入本機離線佇列，不管有沒有網路都會成功——沖泡飲料、
         // 收現金這些現場動作不能被 Wi-Fi 斷線卡住。SyncWorker（見
         // App.vue、src/offline/）背景把它送到伺服端；這裡額外呼叫一次
@@ -1023,8 +1036,7 @@ const sendOrder = () => {
           lines: toPayOrder.orderData,
           bagCount: toPayOrder.orderBagCount,
           payment: toPayOrder.orderPayment,
-          orderDiscount: toPayOrder.orderDiscount,
-          discountName: toPayOrder.discountName,
+          appliedCoupon,
         })
         void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
 

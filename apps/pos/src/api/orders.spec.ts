@@ -33,8 +33,7 @@ describe('buildCreateOrderRequest', () => {
       lines: [sampleLine],
       bagCount: 0,
       payment: '現金',
-      orderDiscount: 0,
-      discountName: '無',
+      appliedCoupon: { type: 'none' },
     })
 
     expect(request.lines[0]).toMatchObject({ price: 80, count: 1 })
@@ -48,8 +47,7 @@ describe('buildCreateOrderRequest', () => {
       lines: [sampleLine],
       bagCount: 0,
       payment: '現金',
-      orderDiscount: 0,
-      discountName: '無',
+      appliedCoupon: { type: 'none' },
     })
     const b = buildCreateOrderRequest({
       businessDate: '20240610',
@@ -57,11 +55,32 @@ describe('buildCreateOrderRequest', () => {
       lines: [sampleLine],
       bagCount: 0,
       payment: '現金',
-      orderDiscount: 0,
-      discountName: '無',
+      appliedCoupon: { type: 'none' },
     })
 
     expect(a.idempotencyKey).toMatch(/^[0-9A-HJKMNP-TV-Z]{26}$/)
     expect(a.idempotencyKey).not.toBe(b.idempotencyKey)
+  })
+
+  it('appliedCoupon 原封不動送出（money／percent 兩種形狀）', () => {
+    const money = buildCreateOrderRequest({
+      businessDate: '20240610',
+      staff: '店長 - Lemon',
+      lines: [sampleLine],
+      bagCount: 0,
+      payment: '現金',
+      appliedCoupon: { type: 'money', couponId: 'money-1' },
+    })
+    expect(money.appliedCoupon).toEqual({ type: 'money', couponId: 'money-1' })
+
+    const percent = buildCreateOrderRequest({
+      businessDate: '20240610',
+      staff: '店長 - Lemon',
+      lines: [sampleLine],
+      bagCount: 0,
+      payment: '現金',
+      appliedCoupon: { type: 'percent', couponId: 'percent-1' },
+    })
+    expect(percent.appliedCoupon).toEqual({ type: 'percent', couponId: 'percent-1' })
   })
 })

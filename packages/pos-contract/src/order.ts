@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { businessDateSchema, ulidSchema } from './common'
+import { appliedCouponSchema } from './promotion'
 
 /**
  * 訂單相關的 schema。
@@ -36,12 +37,14 @@ export type OrderLineInput = z.infer<typeof orderLineInputSchema>
 export const paymentUseMethodSchema = z.enum(['紙鈔', '感應', '掃描'])
 export type PaymentUseMethod = z.infer<typeof paymentUseMethodSchema>
 
-/** 送出訂單的請求。orderDiscount 是訂單層級折價券折抵金額——訂單層級
- *  的折價券計算邏輯尚未搬進 @pos/domain（現金／折數折價券目前只存在
- *  於用戶端的 discountStore，見規劃書 P5 促銷引擎），因此這個欄位現階段
- *  仍由用戶端提供；伺服端會確保 `應付金額 = 品項小計加總 - orderDiscount`
- *  且不得為負，但不會重新驗證這個折抵金額本身是否對應真實存在的
- *  折價券。 */
+/**
+ * 送出訂單的請求。appliedCoupon 只是「套用了哪張折價券」的意圖（P5：
+ * 促銷引擎），實際折抵金額（orderDiscount）與名稱（discountName）由
+ * 伺服端查真正的折價券資料重算——這是 D-01／D-02 修復方式在訂單層級
+ * 促銷的延伸，見 apps/api/src/routes/orders.ts。P4 以前這裡曾經直接
+ * 收用戶端算好的 orderDiscount／discountName 數字，不驗證是否對應
+ * 真實存在的折價券，是身分系統落地前的一個真實缺口。
+ */
 export const createOrderRequestSchema = z.object({
   idempotencyKey: ulidSchema,
   businessDate: businessDateSchema,
@@ -49,8 +52,7 @@ export const createOrderRequestSchema = z.object({
   lines: z.array(orderLineInputSchema).min(1),
   bagCount: z.number().int().nonnegative(),
   payment: z.string().min(1),
-  orderDiscount: z.number().int().nonnegative(),
-  discountName: z.string(),
+  appliedCoupon: appliedCouponSchema,
 })
 export type CreateOrderRequest = z.infer<typeof createOrderRequestSchema>
 

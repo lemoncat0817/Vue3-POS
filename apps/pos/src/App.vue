@@ -9,7 +9,9 @@ import { useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { usePageStore } from '@/stores/page'
 import { useDrinkStore } from '@/stores/drink'
+import { useDiscountStore } from '@/stores/discount'
 import { fetchCatalog, toDrinkAddOnOptions, toDrinkTypeGroups } from '@/api/catalog'
+import { fetchPromotions, toMoneyDiscounts, toOftenUseDiscountList, toPercentDiscounts } from '@/api/promotions'
 import { useOrderSync } from '@/offline/useOrderSync'
 
 // D-07 修復：還原上次瀏覽頁籤的導航副作用，從 stores/page.ts 移到這裡
@@ -45,6 +47,24 @@ watch(catalog, (value) => {
   drinkStore.hydrateCatalogFromServer({
     groups: toDrinkTypeGroups(value),
     addOns: toDrinkAddOnOptions(value),
+  })
+})
+
+// P5：促銷資料（現金／折數折價券、常用折扣）同步，跟菜單同步採同一套
+// 邏輯（見 stores/discount.ts 的 promotionSource 說明）。
+const discountStore = useDiscountStore()
+const { data: promotions } = useQuery({
+  queryKey: ['promotions'],
+  queryFn: fetchPromotions,
+  staleTime: Infinity,
+  retry: 1,
+})
+watch(promotions, (value) => {
+  if (!value) return
+  discountStore.hydratePromotionsFromServer({
+    moneyDiscount: toMoneyDiscounts(value),
+    percentDiscount: toPercentDiscounts(value),
+    oftenUseDiscount: toOftenUseDiscountList(value),
   })
 })
 

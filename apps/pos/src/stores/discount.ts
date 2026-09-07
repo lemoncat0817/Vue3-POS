@@ -3,6 +3,14 @@ import { defineStore } from 'pinia'
 import type { FormNumeric, MoneyDiscount, OftenUseDiscountList, PercentDiscount } from '@/types'
 
 export const useDiscountStore = defineStore('discount', () => {
+  // P5：促銷資料（現金／折數折價券、常用折扣）改由 apps/api 當唯一
+  // 來源（見 src/api/promotions.ts）。下面保留的種子資料是「第一次
+  // 啟動、還沒同步過、且伺服端也連不到」時的離線預設值，不是常態資料
+  // 來源。promotionSource 的用法跟 stores/drink.ts 的 catalogSource
+  // 完全一樣：只在第一次（本機從未同步過伺服端促銷資料）時套用，之後
+  // 永遠以本機資料為準，避免背景同步蓋掉畫面上還沒送出的編輯狀態。
+  const promotionSource = ref<'seed' | 'server'>('seed')
+
   // 當前折價券選單
   const discountMenu = ref(0)
   // 當前正在選的現金折價券id
@@ -94,7 +102,25 @@ export const useDiscountStore = defineStore('discount', () => {
   }
   ])
 
-  return { discountMenu, moneyDiscount, moneyDiscountId, percentDiscountId, percentDiscount, currentMoneyDiscount, moneySelectingDiscountId, percentSelectingDiscountId, currentPercentDiscount, currentDiscountName, oftenUseDiscount }
+  // 見上方 promotionSource 的說明：只在第一次（本機從未同步過伺服端
+  // 促銷資料）時套用。
+  const hydratePromotionsFromServer = (promotions: {
+    moneyDiscount: MoneyDiscount[]
+    percentDiscount: PercentDiscount[]
+    oftenUseDiscount: OftenUseDiscountList
+  }) => {
+    if (promotionSource.value === 'server') return
+    moneyDiscount.value = promotions.moneyDiscount
+    percentDiscount.value = promotions.percentDiscount
+    oftenUseDiscount.value = promotions.oftenUseDiscount
+    promotionSource.value = 'server'
+  }
+
+  return {
+    promotionSource,
+    hydratePromotionsFromServer,
+    discountMenu, moneyDiscount, moneyDiscountId, percentDiscountId, percentDiscount, currentMoneyDiscount, moneySelectingDiscountId, percentSelectingDiscountId, currentPercentDiscount, currentDiscountName, oftenUseDiscount,
+  }
 }, {
   persist: true,
 })

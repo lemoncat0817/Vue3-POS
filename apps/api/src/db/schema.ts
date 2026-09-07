@@ -35,6 +35,35 @@ export const addOnOptions = sqliteTable('add_on_options', {
   price: integer('price').notNull(),
 })
 
+// ---------- 促銷（P5：規劃書 §10 的促銷引擎） ----------
+
+/** 現金折價券（例如「$50折價券」），後台可自由新增／刪除。 */
+export const moneyCoupons = sqliteTable('money_coupons', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  discountMoney: integer('discount_money').notNull(),
+})
+
+/** 折數折價券（例如「整單95折」），後台可自由新增／刪除。 */
+export const percentCoupons = sqliteTable('percent_coupons', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  discountPercent: real('discount_percent').notNull(),
+})
+
+/**
+ * 常用折扣固定 5 筆（見 @pos/domain 的 OftenUseRates），slot 是
+ * 0～4 的固定位置（0：環保折扣、1：瓶裝折扣、2～4：三個折數折扣），
+ * 後台只能編輯內容、不能新增或刪除這張表的列（對照 apps/pos 現行
+ * offerSetting 頁面：常用折扣沒有新增/刪除功能，只有編輯）。
+ */
+export const oftenUseRates = sqliteTable('often_use_rates', {
+  slot: integer('slot').primaryKey(),
+  name: text('name').notNull(),
+  discountMoney: integer('discount_money').notNull(),
+  discountPercent: real('discount_percent').notNull(),
+})
+
 // ---------- 裝置憑證（P4：規劃書 §9 的身分系統） ----------
 
 /**
@@ -132,4 +161,15 @@ export const orderLines = sqliteTable('order_lines', {
   oftenUseDiscount3: integer('often_use_discount_3', { mode: 'boolean' }).notNull(),
 })
 
-export const schema = { catalogGroups, catalogItems, addOnOptions, devices, staff, orders, orderLines }
+export const schema = {
+  catalogGroups,
+  catalogItems,
+  addOnOptions,
+  moneyCoupons,
+  percentCoupons,
+  oftenUseRates,
+  devices,
+  staff,
+  orders,
+  orderLines,
+}

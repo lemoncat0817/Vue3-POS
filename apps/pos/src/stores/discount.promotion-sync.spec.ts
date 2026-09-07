@@ -1,0 +1,61 @@
+import { createPinia, setActivePinia } from 'pinia'
+import { describe, expect, it } from 'vitest'
+import { useDiscountStore } from './discount'
+
+/**
+ * P5：驗證 hydratePromotionsFromServer() 的「只套用一次」保護，跟
+ * stores/drink.ts 的 hydrateCatalogFromServer() 是同一個理由——
+ * backgroundSetting/offerSetting 頁面若在本機新增／編輯過折價券，
+ * 之後的同步不該把畫面上的狀態蓋掉。
+ */
+describe('useDiscountStore — hydratePromotionsFromServer()', () => {
+  it('第一次呼叫時，用伺服端資料取代種子資料', () => {
+    setActivePinia(createPinia())
+    const discountStore = useDiscountStore()
+
+    expect(discountStore.promotionSource).toBe('seed')
+    discountStore.hydratePromotionsFromServer({
+      moneyDiscount: [{ id: 'money-1', name: '測試折價券', discountMoney: 99 }],
+      percentDiscount: [{ id: 'percent-1', name: '測試折數', discountMoney: 0.5 }],
+      oftenUseDiscount: [
+        { id: 0, name: 'a', discountMoney: 1, discountPercent: 1 },
+        { id: 1, name: 'b', discountMoney: 1, discountPercent: 1 },
+        { id: 2, name: 'c', discountMoney: 0, discountPercent: 1 },
+        { id: 3, name: 'd', discountMoney: 0, discountPercent: 1 },
+        { id: 4, name: 'e', discountMoney: 0, discountPercent: 1 },
+      ],
+    })
+
+    expect(discountStore.promotionSource).toBe('server')
+    expect(discountStore.moneyDiscount).toEqual([{ id: 'money-1', name: '測試折價券', discountMoney: 99 }])
+  })
+
+  it('已經同步過一次之後，再呼叫不會覆蓋本機（可能已被管理員編輯過）的資料', () => {
+    setActivePinia(createPinia())
+    const discountStore = useDiscountStore()
+    const oftenUseDiscount = [
+      { id: 0, name: 'a', discountMoney: 1, discountPercent: 1 },
+      { id: 1, name: 'b', discountMoney: 1, discountPercent: 1 },
+      { id: 2, name: 'c', discountMoney: 0, discountPercent: 1 },
+      { id: 3, name: 'd', discountMoney: 0, discountPercent: 1 },
+      { id: 4, name: 'e', discountMoney: 0, discountPercent: 1 },
+    ] as const
+
+    discountStore.hydratePromotionsFromServer({
+      moneyDiscount: [{ id: 'money-1', name: '測試折價券', discountMoney: 99 }],
+      percentDiscount: [],
+      oftenUseDiscount: [...oftenUseDiscount],
+    })
+    // 模擬管理員在背景設定頁新增了一張折價券。
+    discountStore.moneyDiscount.push({ id: 'money-2', name: '管理員新增的折價券', discountMoney: 1 })
+
+    discountStore.hydratePromotionsFromServer({
+      moneyDiscount: [{ id: 'money-1', name: '測試折價券（伺服端又改了名字）', discountMoney: 99 }],
+      percentDiscount: [],
+      oftenUseDiscount: [...oftenUseDiscount],
+    })
+
+    expect(discountStore.moneyDiscount).toHaveLength(2)
+    expect(discountStore.moneyDiscount[1]).toMatchObject({ name: '管理員新增的折價券' })
+  })
+})

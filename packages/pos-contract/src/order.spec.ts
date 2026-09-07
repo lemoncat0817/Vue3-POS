@@ -23,8 +23,7 @@ const validRequest = {
   lines: [validLine],
   bagCount: 0,
   payment: '現金',
-  orderDiscount: 0,
-  discountName: '無',
+  appliedCoupon: { type: 'none' as const },
 }
 
 describe('createOrderRequestSchema', () => {
@@ -53,6 +52,24 @@ describe('createOrderRequestSchema', () => {
       lines: [{ ...validLine, count: -1 }],
     })
     expect(result.success).toBe(false)
+  })
+
+  it('appliedCoupon 接受 none／money／percent 三種形狀', () => {
+    expect(createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'none' } }).success).toBe(true)
+    expect(
+      createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'money', couponId: 'money-1' } })
+        .success,
+    ).toBe(true)
+    expect(
+      createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'percent', couponId: 'percent-1' } })
+        .success,
+    ).toBe(true)
+  })
+
+  it('拒絕缺少 couponId 的 money／percent 折價券', () => {
+    expect(createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'money' } }).success).toBe(
+      false,
+    )
   })
 
   it('addList 可以是字面值或字串陣列兩種形狀', () => {

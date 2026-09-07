@@ -8,5 +8,6 @@
 export * from './common'
 export * from './catalog'
 export * from './device'
+export * from './promotion'
 export * from './order'
 export * from './staff'
