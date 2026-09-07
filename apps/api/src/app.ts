@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { cors } from 'hono/cors'
 import type { AnyDb } from './db/types'
 import type { AppEnv } from './types'
+import { authRoutes } from './routes/auth'
 import { catalogRoutes } from './routes/catalog'
 import { deviceRoutes } from './routes/devices'
 import { orderRoutes } from './routes/orders'
@@ -51,6 +52,7 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string }) {
 
   app.openapi(healthRoute, (c) => c.json({ ok: true as const }))
 
+  app.route('/api/auth', authRoutes)
   app.route('/api/catalog', catalogRoutes)
   app.route('/api/devices', deviceRoutes)
   app.route('/api/orders', orderRoutes)

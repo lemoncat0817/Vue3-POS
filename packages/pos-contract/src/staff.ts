@@ -25,8 +25,9 @@ export const authorityKeySchema = z.enum([
 export type AuthorityKey = z.infer<typeof authorityKeySchema>
 
 /**
- * 員工資料。刻意不含密碼／憑證欄位——身分驗證（裝置憑證＋操作員登入）
- * 是 P4 的範圍，P2 這裡只先有「名單與權限」這份資料本身。
+ * 員工資料。刻意不含密碼／憑證欄位——這是給列表／登入回應用的公開形狀，
+ * PIN 雜湊值只存在伺服端資料庫（見 apps/api/src/db/schema.ts），永遠
+ * 不會出現在任何 API 回應裡。
  */
 export const staffSchema = z.object({
   id: z.string().min(1),
@@ -37,5 +38,22 @@ export const staffSchema = z.object({
 })
 export type Staff = z.infer<typeof staffSchema>
 
-export const createStaffRequestSchema = staffSchema.omit({ id: true })
+/** 操作員 PIN：4～6 碼數字，供實體終端機的數字鍵盤輸入（P4：規劃書 §9）。 */
+export const pinSchema = z.string().regex(/^\d{4,6}$/, 'PIN 必須是 4 到 6 碼數字')
+
+export const createStaffRequestSchema = staffSchema.omit({ id: true }).extend({ pin: pinSchema })
 export type CreateStaffRequest = z.infer<typeof createStaffRequestSchema>
+
+/**
+ * 操作員登入請求。pin 這裡不用 pinSchema 的格式限制——格式不對跟格式對
+ * 但驗證失敗，都要走同一個「帳號或 PIN 錯誤」的 401，不要讓格式驗證
+ * 錯誤本身洩漏「這個帳號存不存在」以外的額外資訊。
+ */
+export const operatorLoginRequestSchema = z.object({
+  account: z.string().min(1),
+  pin: z.string().min(1),
+})
+export type OperatorLoginRequest = z.infer<typeof operatorLoginRequestSchema>
+
+export const operatorLoginResponseSchema = staffSchema
+export type OperatorLoginResponse = z.infer<typeof operatorLoginResponseSchema>

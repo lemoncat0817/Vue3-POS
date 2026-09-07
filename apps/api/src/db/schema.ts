@@ -68,6 +68,15 @@ export const staff = sqliteTable(
     // 權限只有這一份陣列來源（對照 D-10：apps/pos 現行是 16 個獨立布林
     // 欄位加一份平行陣列的雙重來源）。
     capabilities: text('capabilities', { mode: 'json' }).$type<AuthorityKey[]>().notNull(),
+    // 操作員 PIN（P4：規劃書 §9）。只存雜湊值＋鹽（見 src/auth/hash.ts），
+    // 明碼只在登入請求（POST /api/auth/operator-login）當下經手。
+    pinHash: text('pin_hash').notNull(),
+    pinSalt: text('pin_salt').notNull(),
+    // 連續輸入錯誤的次數與鎖定到期時間，見 routes/auth.ts 的鎖定邏輯
+    // ——4～6 碼的 PIN 遠比密碼容易暴力猜中，沒有這道防線的話雜湊本身
+    // 起不了太大作用。
+    failedPinAttempts: integer('failed_pin_attempts').notNull().default(0),
+    lockedUntil: text('locked_until'),
   },
   (table) => [uniqueIndex('staff_account_idx').on(table.account)],
 )

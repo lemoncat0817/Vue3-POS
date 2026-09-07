@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { createStaffRequestSchema, staffSchema } from '@pos/contract'
+import { hashSecret } from '../auth/hash'
 import { staff } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
@@ -55,10 +56,20 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
     )
   })
   .openapi(createStaffRoute, async (c) => {
-    const input = c.req.valid('json')
+    const { pin, ...input } = c.req.valid('json')
     const db = c.get('db')
 
-    const newStaff = { id: crypto.randomUUID(), ...input }
+    // PIN 只在這裡經手一次，雜湊後存進資料庫，明碼不落地（見
+    // src/auth/hash.ts）。
+    const { hash, salt } = await hashSecret(pin)
+    const newStaff = {
+      id: crypto.randomUUID(),
+      ...input,
+      pinHash: hash,
+      pinSalt: salt,
+      failedPinAttempts: 0,
+      lockedUntil: null,
+    }
     await db.insert(staff).values(newStaff)
 
     return c.json(staffSchema.parse(newStaff), 201)
