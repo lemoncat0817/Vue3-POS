@@ -14,7 +14,7 @@ test('後台新增／刪除現金折價券會真的呼叫伺服端，重新整�
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
-  await page.locator('p').filter({ hasText: '後台設定' }).click()
+  await page.getByRole('button', { name: '後台設定', exact: true }).click()
   await expect(page).toHaveURL(/\/backgroundSetting$/)
   await page.getByText('優惠設定', { exact: true }).click()
 
@@ -45,7 +45,7 @@ test('後台新增／刪除現金折價券會真的呼叫伺服端，重新整�
 
   // 重新整理後仍然看得到（證明是真的存在伺服端，不是只在這個分頁的記憶體裡）。
   await page.reload()
-  await page.locator('p').filter({ hasText: '後台設定' }).click()
+  await page.getByRole('button', { name: '後台設定', exact: true }).click()
   await page.getByText('優惠設定', { exact: true }).click()
   await expect(page.getByText(couponName)).toBeVisible()
 
@@ -64,7 +64,7 @@ test('後台新增／刪除現金折價券會真的呼叫伺服端，重新整�
   await expect(page.getByText(couponName)).toHaveCount(0)
 
   await page.reload()
-  await page.locator('p').filter({ hasText: '後台設定' }).click()
+  await page.getByRole('button', { name: '後台設定', exact: true }).click()
   await page.getByText('優惠設定', { exact: true }).click()
   await expect(page.getByText(couponName)).toHaveCount(0)
 })
@@ -85,7 +85,7 @@ test('後台編輯現金折價券：沒選取會提示、欄位不合法會即�
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
-  await page.locator('p').filter({ hasText: '後台設定' }).click()
+  await page.getByRole('button', { name: '後台設定', exact: true }).click()
   await expect(page).toHaveURL(/\/backgroundSetting$/)
   await page.getByText('優惠設定', { exact: true }).click()
 

@@ -1,22 +1,23 @@
 import colors from 'tailwindcss/colors'
 
-// P8：整體視覺重構的起點（規劃書原本的「組件庫替換」章節）。這個專案
-// 原本完全沒有設計 token——每個畫面各自寫死 bg-red-500／border-2
-// border-black／bg-yellow-400 這類具體的 Tailwind 色階，同一個「這是
-// 主要品牌色」的意圖散落在幾十個檔案裡，沒有共用的語意名稱。這裡開始
-// 建立語意化的色彩 token：
-// - primary：品牌紅（沿用現有識別，MAJI Tea 的主色，也是 vite.config.ts
-//   PWA manifest 的 theme_color #ef4444 所在的色階）
-// - accent：品牌黃（沿用既有慣例——目前導覽列「當前分頁」、圖表分頁籤
-//   選取狀態都用 yellow-400/500 當「已選取」的語意色，這裡把它明確
-//   收斂成 accent，而不是繼續讓每個檔案各自硬寫 yellow-400）
-// - surface：中性色階，取代原本到處都是的純黑邊框（border-black）跟
-//   突兀的陰影，改用有層次的灰階邊框／背景
+// P8→P11：整體視覺重構（規劃書 §12「視覺系統與體驗」）。
 //
-// 這是漸進式的重構起點：先在新頁面（P8 的替換示範）套用這套 token，
-// 舊頁面暫時維持原樣，不強迫一次全面套用（見 P8 commit 的說明）。
+// P8 只先建立三個語意色（primary/accent/surface）當漸進式起點；P11 把
+// 這套 token 補完成規劃書 §12 描述的完整體系：
+// - 語意色跟品牌色分開：danger/success/warning/info 四組獨立色階，
+//   不再共用品牌紅——「刪除」「帳差短少」這類危險語意，不該跟「主要
+//   動作鍵」用同一個紅（規劃書 §12「危險色只給破壞性操作，不再與
+//   品牌紅共用同一個紅」）。
+// - 深色模式：darkMode 設為 'class'，由 composables/useTheme.ts 控制
+//   根元素的 class，兩套色階都要通過對比度檢查（見 useTheme.ts 的
+//   說明）。
+// - 字級沿用 Tailwind 預設的比例尺（1.25 全域比例），不再讓每個畫面
+//   各自堆疊斷點特例（xl:text-lg lg:text-sm md:text-[10px] 這類）——
+//   新畫面改用 clamp() 或單一固定字級，讓同一種資訊在不同解析度下
+//   維持同一個相對關係，而不是逐一斷點手調。
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
@@ -27,13 +28,24 @@ export default {
         primary: colors.red,
         accent: colors.amber,
         surface: colors.stone,
+        // 語意色——跟 primary（品牌紅）刻意分開，見上方說明。
+        success: colors.emerald,
+        danger: colors.rose,
+        warning: colors.amber,
+        info: colors.sky,
       },
       fontFamily: {
         sans: ['"Noto Sans TC"', '"Noto Sans"', 'system-ui', 'sans-serif'],
       },
       height: {
         'calc': 'calc(100vh - 80px)'
-      }
+      },
+      boxShadow: {
+        // 浮層專用（對話框、下拉選單），跟一般卡片的 shadow-sm/md 區分
+        // 開來——規劃書 §12「圓角與陰影」：邊框與陰影按角色分配，浮層
+        // 才用陰影表達層級，不是每個區塊都套一套。
+        overlay: '0 20px 40px -8px rgb(0 0 0 / 0.25)',
+      },
     },
   },
   plugins: [],

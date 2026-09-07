@@ -1,57 +1,53 @@
 <template>
-  <div class="w-screen h-20 bg-red-500 flex justify-center items-center relative">
-    <!-- P3：離線送單佇列的同步狀態（見 src/offline/sync-worker.ts）。平常
-         佇列是空的，不佔畫面；有東西還沒送達伺服端時才顯示，讓店員知道
-         「這張單其實還沒真的送出去，先別急著關電腦」。 -->
-    <div
-      v-if="syncStatus.pendingCount > 0"
-      data-testid="sync-status"
-      class="absolute right-4 top-2 flex items-center gap-1 rounded-full border-2 border-black px-3 py-1 text-sm font-bold text-blue-900 select-none"
-      :class="syncStatus.lastError ? 'bg-orange-300' : 'bg-yellow-300'">
-      <span v-if="syncStatus.isSyncing">同步中</span>
-      <span v-else-if="syncStatus.lastError">同步失敗，將自動重試</span>
-      <span v-else>等待連線同步</span>
-      <span>（{{ syncStatus.pendingCount }} 筆）</span>
+  <header
+    class="flex h-16 w-screen items-center gap-1 border-b border-surface-200 bg-white px-4 dark:border-surface-800 dark:bg-surface-950">
+    <!-- P11（規劃書 §12「視覺系統與體驗」）：原本整條導覽列都是滿版
+         bg-red-500，每個分頁籤各自再套一層 bg-red-600，「已選取」用
+         bg-yellow-500 + scale-[1.2]。改成中性色的頂欄（跟結帳畫面主體
+         同一套 surface 色階），品牌紅只留給「目前選取的分頁」——規劃書
+         §12「結帳畫面上真正需要搶眼的只有金額與主要動作鍵」的原則同樣
+         適用在導覽列：不是每個東西都要用品牌色搶注意力。分頁籤也從
+         <div @click> 改成語意正確的 <button>，讓 Tab／Enter 這類鍵盤
+         操作原生就能用（規劃書 §13「全鍵盤可達」）。 -->
+    <img src="@/assets/logo.png" alt="MAJI Tea logo" class="mr-3 h-11 w-11 rounded-lg">
+
+    <nav class="flex items-center gap-1">
+      <button
+        v-for="item in navItems" :key="item.path" type="button"
+        class="rounded-lg px-4 py-2 text-sm font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
+        :class="router.currentRoute.value.path === item.path
+          ? 'bg-primary-600 text-white'
+          : 'text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'"
+        @click="changePage(item.path)">
+        {{ item.label }}
+      </button>
+    </nav>
+
+    <div class="ml-auto flex items-center gap-2">
+      <!-- P3：離線送單佇列的同步狀態（見 src/offline/sync-worker.ts）。
+           平常佇列是空的，不佔畫面；有東西還沒送達伺服端時才顯示。 -->
+      <div
+        v-if="syncStatus.pendingCount > 0" data-testid="sync-status"
+        class="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold"
+        :class="syncStatus.lastError ? 'bg-warning-100 text-warning-800' : 'bg-info-100 text-info-800'">
+        <span v-if="syncStatus.isSyncing">同步中</span>
+        <span v-else-if="syncStatus.lastError">同步失敗，將自動重試</span>
+        <span v-else>等待連線同步</span>
+        <span>（{{ syncStatus.pendingCount }} 筆）</span>
+      </div>
+
+      <button
+        type="button" class="rounded-lg p-2 text-surface-500 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800"
+        :aria-label="theme === 'dark' ? '切換為淺色模式' : '切換為深色模式'" @click="toggleTheme">
+        <span aria-hidden="true">{{ theme === 'dark' ? '🌙' : '☀️' }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-200 dark:hover:bg-surface-800"
+        @click="logout">登出</button>
     </div>
-    <img
-src="@/assets/logo.png" alt="logo"
-      class="w-16 h-4/5 rounded-lg mr-5 border-2 border-black border-solid hover:animate-spin">
-    <div
-class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
-      :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/home' }"
-      @click="changePage(0)">
-      <p class="text-white font-bold md:text-2xl sm:text-lg text-md">點餐</p>
-    </div>
-    <div
-class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
-      :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/order' }"
-      @click="changePage(1)">
-      <p class=" text-white font-bold md:text-2xl sm:text-lg text-md">查看訂單</p>
-    </div>
-    <div
-class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
-      :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/backgroundSetting' }"
-      @click="changePage(2)">
-      <p class=" text-white font-bold md:text-2xl sm:text-lg text-md">後台設定</p>
-    </div>
-    <div
-class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
-      :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/dataAnalysis' }"
-      @click="changePage(3)">
-      <p class=" text-white font-bold md:text-2xl sm:text-lg text-md">數據分析</p>
-    </div>
-    <div
-class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none"
-      :class="{ 'bg-yellow-500 scale-[1.2]': router.currentRoute.value.path === '/authorityManagement' }"
-      @click="changePage(4)">
-      <p class=" text-white font-bold md:text-2xl sm:text-lg text-md">權限管理</p>
-    </div>
-    <div
-class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor-pointer select-none active:bg-yellow-400"
-      @click="logout">
-      <p class=" text-white font-bold md:text-2xl sm:text-lg text-md">登出</p>
-    </div>
-  </div>
+  </header>
 </template>
 
 <script setup lang="ts">
@@ -63,7 +59,18 @@ import { useRouter } from "vue-router"
 const router = useRouter()
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
+import { useTheme } from '@/composables/useTheme'
 import { syncStatus } from '@/offline/sync-worker'
+
+const { theme, toggleTheme } = useTheme()
+
+const navItems = [
+  { path: '/home', label: '點餐' },
+  { path: '/order', label: '查看訂單' },
+  { path: '/backgroundSetting', label: '後台設定' },
+  { path: '/dataAnalysis', label: '數據分析' },
+  { path: '/authorityManagement', label: '權限管理' },
+]
 
 // 切換頁面
 // P7（D-12）：原本這裡每個分支都要手動同步一份 pageStore.currentPage，
@@ -72,37 +79,21 @@ import { syncStatus } from '@/offline/sync-worker'
 // P8：組件庫替換——ElMessageBox.confirm／ElMessage 改用 composables/
 // useConfirm.ts／useToast.ts（見 views/order/index.vue 的說明，同一套
 // 基礎設施）。
-const changePage = async (page: number) => {
-  if (page === 0) {
-    router.push('/home')
-  }
-  if (page === 1) {
-    router.push('/order')
-  }
-  if (page === 2) {
-    if (drinkStore.drinkNotPay.length != 0) {
-      const result = await confirm({
-        title: '警告',
-        description: '前往後台設定頁面後將清空點餐頁面,是否要前往後台設定頁面?',
-        confirmText: '確定前往',
-        cancelText: '取消前往',
-      })
-      if (result !== 'confirm') {
-        showToast('取消前往後台設定頁面', 'error')
-        return
-      }
-      drinkStore.drinkNotPay = []
-      router.push('/backgroundSetting')
-    } else {
-      router.push('/backgroundSetting')
+const changePage = async (path: string) => {
+  if (path === '/backgroundSetting' && drinkStore.drinkNotPay.length != 0) {
+    const result = await confirm({
+      title: '警告',
+      description: '前往後台設定頁面後將清空點餐頁面,是否要前往後台設定頁面?',
+      confirmText: '確定前往',
+      cancelText: '取消前往',
+    })
+    if (result !== 'confirm') {
+      showToast('取消前往後台設定頁面', 'error')
+      return
     }
+    drinkStore.drinkNotPay = []
   }
-  if (page === 3) {
-    router.push('/dataAnalysis')
-  }
-  if (page === 4) {
-    router.push('/authorityManagement')
-  }
+  router.push(path)
 }
 
 // 登出
@@ -126,5 +117,3 @@ const logout = async () => {
   showToast('登出成功', 'success')
 }
 </script>
-
-<style lang="scss" scoped></style>

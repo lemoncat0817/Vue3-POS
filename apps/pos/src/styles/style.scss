@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* P11（規劃書 §12「深色模式」）：全站共用的底色與文字色，取代原本
+   每個畫面各自決定要不要設定背景色的作法——沒有這一層，深色模式下
+   沒特別處理過背景色的區塊會維持瀏覽器預設的白底，切換主題時畫面
+   會一半深一半淺，看起來像壞掉。個別畫面仍可以再疊自己的
+   dark:bg-xxx 表達更細緻的層次（見 tailwind.config.js 的 surface
+   色階），這裡只保底。 */
+body {
+  @apply bg-white text-surface-900 dark:bg-surface-950 dark:text-surface-100;
+}

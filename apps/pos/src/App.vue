@@ -18,6 +18,13 @@ import { useDiscountStore } from '@/stores/discount'
 import { fetchCatalog, toDrinkAddOnOptions, toDrinkTypeGroups } from '@/api/catalog'
 import { fetchPromotions, toMoneyDiscounts, toOftenUseDiscountList, toPercentDiscounts } from '@/api/promotions'
 import { useOrderSync } from '@/offline/useOrderSync'
+// P11（規劃書 §12「深色模式」）：在根元件匯入一次即可——useTheme.ts
+// 的 watchEffect 是模組層級的副作用，只要這個模組被 import 過一次就會
+// 開始套用 class，不需要在模板裡用到回傳值。App.vue 一定會是第一個
+// 掛載的元件（不管使用者落在登入頁或已登入的任何頁面），這裡匯入能
+// 保證「畫面出現的第一刻」就是正確的主題，不會先閃一下淺色再切換。
+import { useTheme } from '@/composables/useTheme'
+useTheme()
 
 // D-07／D-12 修復：還原上次瀏覽頁籤原本是這裡的 onMounted 副作用，靠
 // App.vue 一定會掛載這件事來保證會執行。P7 把這段邏輯改成直接掛在
