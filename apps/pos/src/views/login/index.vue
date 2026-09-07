@@ -1,62 +1,68 @@
 <template>
-  <div
-    class="w-screen 2xl:h-screen xl:h-[800px] h-[959px] lg:h-[768px] bg-[url('@/assets/login-Bg.png')] bg-no-repeat bg-[length:100%_100%] text-white relative">
-    <div v-if="isWatchVideo" class="absolute top-[40%] left-[50%] translate-x-[-50%] translate-y-[-50%] flex flex-col items-center xl:gap-[20px] lg:gap-[15px] gap-[10px]g">
+  <div class="flex min-h-screen w-screen items-center justify-center bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 p-4 dark:from-surface-950 dark:via-surface-900 dark:to-surface-950">
+    <!-- P11（規劃書 §12「資產處置」）：原本的 login-Bg.png 背景圖移除
+         ——固定像素圖在深色模式下無法成立（圖片本身不會跟著換色），且
+         省下首屏的大圖傳輸。改用 token 化的漸層背景，兩套主題都能
+         正確表達。 -->
+    <div v-if="isWatchVideo" class="flex flex-col items-center gap-6 rounded-2xl bg-white p-6 shadow-overlay dark:bg-surface-900">
       <iframe
 width="560" height="315" src="https://www.youtube.com/embed/4ELxt64heEs?si=V5_55DrBO2G1kN0L"
-        title="YouTube video player" frameborder="0"
+        title="YouTube video player" class="rounded-lg" frameborder="0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
       </iframe>
       <button
-        class="border-2 border-black border-solid rounded-lg p-1 ml-1 bg-red-500 text-blue-700 font-bold hover:bg-red-600 active:bg-yellow-400"
+        type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700"
         @click="isWatchVideo = !isWatchVideo">回到登入頁面</button>
     </div>
-    <div
-v-if="!isWatchVideo"
-      class="absolute top-[40%] left-[50%] translate-x-[-50%] translate-y-[-50%] flex flex-col items-center xl:gap-[20px] lg:gap-[15px] gap-[10px]">
-      <div class="flex items-center gap-[1px]">
-        <h1
-          class="md:text-[50px] sm:text-[40px] text-[30px] font-bold bg-gradient-to-r from-red-500 to-pink-300 bg-clip-text text-transparent lg:text-[45px]">
-          MAJI
-          Tea
-        </h1>
-        <img
-src="@/assets/logo.png" alt="logo"
-          class="w-16 h-4/5 rounded-lg ml-2 border-2 border-black border-solid lg:w-14 hover:scale-[1.1] hover:animate-bounce ">
+
+    <div v-else class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-overlay dark:bg-surface-900">
+      <div class="mb-8 flex flex-col items-center gap-3">
+        <img src="@/assets/logo.png" alt="MAJI Tea logo" class="h-16 w-16 rounded-xl">
+        <h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-50">MAJI Tea POS</h1>
         <button
-          class="border-2 border-black border-solid rounded-lg p-1 ml-1 bg-red-500 text-blue-700 font-bold hover:bg-red-600 active:bg-yellow-400"
+          type="button" class="text-sm font-bold text-primary-600 hover:underline dark:text-primary-400"
           @click="isWatchVideo = !isWatchVideo">觀看教學影片</button>
       </div>
-      <div class="flex items-center gap-[10px]">
-        <p class="text-[15px] font-bold text-red-400 sm:text-[20px]">帳號</p>
-        <input
-v-model="loginStore.account" placeholder="請輸入帳號"
-          class="w-[200px] xl:h-12 lg:h-10 h-8 rounded-[20px] p-2 bg-[#f8f8dc] text-[#560710] font-bold text-lg text-center lg:w-[180px] focus:w-[300px] transition-width duration-500">
-      </div>
-      <div class="flex items-center gap-[10px]">
-        <p class="text-[15px] font-bold text-red-400 sm:text-[20px]">PIN</p>
-        <input
-v-model="loginStore.pin" placeholder="請輸入 PIN" type="password" inputmode="numeric" maxlength="6"
-          class="w-[200px] xl:h-12 lg:h-10  h-8 rounded-[20px] p-2 bg-[#f8f8dc] text-[#560710] font-bold text-lg text-center lg:w-[180px] focus:w-[300px] transition-width duration-500">
-      </div>
-      <div>
-        <input v-model="loginStore.isRememberPin" type="checkbox"> 記住 PIN
+
+      <form class="flex flex-col gap-4" @submit.prevent="login">
+        <label class="flex flex-col gap-1 text-sm font-bold text-surface-600 dark:text-surface-300">
+          帳號
+          <input
+            v-model="loginStore.account" placeholder="請輸入帳號" autocomplete="username"
+            class="rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-center text-lg font-bold text-surface-900 outline-none transition-colors focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-50">
+        </label>
+        <label class="flex flex-col gap-1 text-sm font-bold text-surface-600 dark:text-surface-300">
+          PIN
+          <input
+            v-model="loginStore.pin" placeholder="請輸入 PIN" type="password" inputmode="numeric" maxlength="6"
+            autocomplete="current-password"
+            class="rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-center text-lg font-bold tracking-[0.3em] text-surface-900 outline-none transition-colors focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-50">
+        </label>
+        <label class="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-400">
+          <input v-model="loginStore.isRememberPin" type="checkbox" class="h-4 w-4 rounded border-surface-300">
+          記住 PIN
+        </label>
         <button
-class="w-[100px] xl:h-12 lg:h-10 h-8 leading-[8px] text-center rounded-[20px] p-2 bg-[#cc191f] text-center cursor-pointer font-bold lg:w-[80px] hover:scale-[1.3] hover:w-[150px] transition-all duration-500 ml-5 hover:bg-[#ff4500] hover:text-blue-800"
-          @click="login">登入</button>
-      </div>
-      <p class="sm:text-lg text-base font-bold text-red-300">快速登入(測試時使用,實際使用會移除)</p>
-      <div class="flex justify-between w-[300px]">
-        <button
-          class="border-2 border-black border-solid rounded-lg px-2 bg-blue-500 text-center font-bold text-red-200 text-lg lg:text-base hover:bg-blue-800 hover:scale-[1.1] active:bg-yellow-700"
-          @click="quicklyLogin(1)">店長(管理員)</button>
-        <button
-          class="border-2 border-black border-solid rounded-lg px-2 bg-blue-500 text-center font-bold text-red-200 text-lg lg:text-base hover:bg-blue-800 hover:scale-[1.1] active:bg-yellow-700"
-          @click="quicklyLogin(2)">值班經理</button>
-        <button
-          class="border-2 border-black border-solid rounded-lg px-2 bg-blue-500 text-center font-bold text-red-200 text-lg lg:text-base hover:bg-blue-800 hover:scale-[1.1] active:bg-yellow-700"
-          @click="quicklyLogin(3)">工讀生</button>
+          type="submit"
+          class="rounded-lg bg-primary-600 py-2.5 text-base font-bold text-white transition-colors hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500">
+          登入
+        </button>
+      </form>
+
+      <div class="mt-6 border-t border-surface-200 pt-4 dark:border-surface-700">
+        <p class="mb-2 text-center text-xs font-bold text-surface-400">快速登入（測試時使用，實際使用會移除）</p>
+        <div class="flex justify-between gap-2">
+          <button
+            type="button" class="flex-1 rounded-lg border border-surface-300 py-1.5 text-xs font-bold text-surface-600 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
+            @click="quicklyLogin(1)">店長(管理員)</button>
+          <button
+            type="button" class="flex-1 rounded-lg border border-surface-300 py-1.5 text-xs font-bold text-surface-600 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
+            @click="quicklyLogin(2)">值班經理</button>
+          <button
+            type="button" class="flex-1 rounded-lg border border-surface-300 py-1.5 text-xs font-bold text-surface-600 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
+            @click="quicklyLogin(3)">工讀生</button>
+        </div>
       </div>
     </div>
   </div>
@@ -101,6 +107,10 @@ const quicklyLogin = (num: number) => {
 // useToast.ts（見 views/order/index.vue 的說明，同一套基礎設施）；
 // 原本 ElNotification 有獨立的標題＋內文兩行，這裡的 toast 只有單行
 // 訊息，合併成一句。
+// P11：帳號／PIN 輸入框改包進真正的 <form>（見樣板的 @submit.prevent），
+// 按 Enter 就能送出，不用滑鼠點「登入」按鈕，也讓瀏覽器原生知道這是
+// 一組登入表單（修掉先前「Password field is not contained in a
+// form」的主控台警告）。
 const login = async () => {
   try {
     const staff = await operatorLogin(loginStore.account, loginStore.pin)
@@ -119,5 +129,3 @@ const login = async () => {
   }
 }
 </script>
-
-<style lang="scss" scoped></style>
