@@ -1,9 +1,13 @@
+import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import App from './App.vue'
+
+// App.vue 掛載時也會啟動離線送單佇列的背景同步（見 src/offline/），
+// 需要 IndexedDB——jsdom 沒有原生實作，用 fake-indexeddb 補上。
 
 // App.vue 掛載時會嘗試呼叫 GET /api/catalog（見 P3 的菜單同步邏輯）。
 // 單元測試環境沒有真的後端可打，這裡固定讓 fetch 失敗，驗證的重點正是
@@ -50,5 +54,9 @@ describe('App', () => {
     // pageStore.currentPage 預設為 0，掛載後應導向 /home。
     expect(router.currentRoute.value.path).toBe('/home')
     expect(wrapper.html()).toContain('點餐')
+
+    // 卸載時要停掉背景同步（見 App.vue 的 onUnmounted），不然 setInterval
+    // 會在這個測試結束後繼續跑。
+    wrapper.unmount()
   })
 })

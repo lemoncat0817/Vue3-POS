@@ -442,7 +442,12 @@ import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { CartLineItem, FormNumeric, OrderRecord, PaymentMethod } from '@/types'
 import { fromSelection } from '@/utils/selection'
-import { priceLine, toggleContainer, toggleFree, toggleRate, type LineDiscountFlags, type OftenUseRates } from '@pos/domain'
+import { getBusinessDate, priceLine, toggleContainer, toggleFree, toggleRate, type LineDiscountFlags, type OftenUseRates } from '@pos/domain'
+import { buildCreateOrderRequest } from '@/api/orders'
+import { enqueueOrder } from '@/offline/outbox'
+import { useOrderSync } from '@/offline/useOrderSync'
+
+const orderSync = useOrderSync()
 
 // 當前時間相關功能
 // 存放當前時間
@@ -1004,6 +1009,25 @@ const sendOrder = () => {
         }
         orderStore.order.push(toPayOrder)
         ElMessage.success('訂單送出成功')
+
+        // P3：訂單先入本機離線佇列，不管有沒有網路都會成功——沖泡飲料、
+        // 收現金這些現場動作不能被 Wi-Fi 斷線卡住。SyncWorker（見
+        // App.vue、src/offline/）背景把它送到伺服端；這裡額外呼叫一次
+        // syncNow() 只是「有網路時不用乾等下一次輪詢」，不是同步送單
+        // 成敗的必要步驟——就算這次呼叫本身也失敗，佇列裡的紀錄還在，
+        // 之後照樣會被重試。用 toPayOrder.orderData（而不是待會就會被
+        // 清空的 drinkStore.drinkNotPay）取品項清單。
+        const request = buildCreateOrderRequest({
+          businessDate: getBusinessDate(new Date()),
+          staff: toPayOrder.staff,
+          lines: toPayOrder.orderData,
+          bagCount: toPayOrder.orderBagCount,
+          payment: toPayOrder.orderPayment,
+          orderDiscount: toPayOrder.orderDiscount,
+          discountName: toPayOrder.discountName,
+        })
+        void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
+
         orderStore.currentSelectingUseMethod = '紙鈔'
         orderStore.useMethod = '紙鈔'
         drinkStore.drinkNotPay = []

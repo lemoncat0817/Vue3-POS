@@ -103,9 +103,22 @@ export const useOrderStore = defineStore('order', () => {
     return id
   }
 
+  // P3：離線送單先用本機序號（issueOrderId()）顯示，SyncWorker 同步成功
+  // 後把伺服端算出的正式 orderId（見 apps/api/src/routes/orders.ts：
+  // 同一營業日訂單數 + 1）回填——單店單機情境下兩者通常相同，但佇列
+  // 裡有多筆等待同步、或同一營業日內曾經有過從未同步成功的失敗訂單時
+  // 可能不同，以伺服端為準（見 src/offline/sync-worker.ts 的說明）。
+  const reconcileOrderId = (localOrderId: string, serverOrderId: string) => {
+    if (localOrderId === serverOrderId) return
+    const record = order.value.find((item) => item.orderId === localOrderId)
+    if (record) {
+      record.orderId = serverOrderId
+    }
+  }
+
   return {
     currentOrderNumber, order, payment, paymentList, currentSelectingPayment, currentSelectingUseMethod, useMethod,
-    nextOrderId, issueOrderId,
+    nextOrderId, issueOrderId, reconcileOrderId,
   }
 }, {
   persist: true,
