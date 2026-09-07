@@ -48,5 +48,11 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
   if (!res.ok) {
     throw new ApiError(`${init?.method ?? 'GET'} ${path} 失敗：HTTP ${res.status}`, res.status)
   }
+  // 204 No Content 沒有 body，res.json() 對空字串解析會直接丟例外
+  // ——刪除類端點（例如 DELETE /api/promotions/money-coupons/:id）就是
+  // 回這個狀態碼，呼叫端這時候通常也不關心回傳值本身。
+  if (res.status === 204) {
+    return undefined as T
+  }
   return res.json() as Promise<T>
 }
