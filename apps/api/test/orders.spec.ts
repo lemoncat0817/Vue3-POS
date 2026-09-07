@@ -237,3 +237,98 @@ describe('GET /api/orders', () => {
     expect(await res.json()).toEqual([])
   })
 })
+
+async function createOne(
+  app: Awaited<ReturnType<typeof createTestAppWithDevice>>['app'],
+  deviceToken: string,
+): Promise<string> {
+  const res = await app.request('/api/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+    body: JSON.stringify(buildRequest()),
+  })
+  const body = await readJson(res)
+  return body.orderId
+}
+
+describe('PATCH /api/orders/:orderId/status（P6：多終端情境，取代 apps/pos 舊版只改本機狀態的做法）', () => {
+  it('沒有裝置憑證時拒絕', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken)
+
+    const res = await app.request(`/api/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderStatus: '已取消' }),
+    })
+    expect(res.status).toBe(401)
+  })
+
+  it('更新存在的訂單狀態，之後 GET 也看得到新狀態', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken)
+
+    const res = await app.request(`/api/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ orderStatus: '已取消' }),
+    })
+    expect(res.status).toBe(200)
+    const body = await readJson(res)
+    expect(body.orderStatus).toBe('已取消')
+
+    const list = await readJson(await app.request('/api/orders'))
+    expect(list.find((o: { orderId: string }) => o.orderId === orderId).orderStatus).toBe('已取消')
+  })
+
+  it('訂單不存在時回傳 404', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/orders/does-not-exist/status', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ orderStatus: '已取消' }),
+    })
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('DELETE /api/orders/:orderId（P6：多終端情境，取代 apps/pos 舊版只改本機狀態的做法）', () => {
+  it('沒有裝置憑證時拒絕', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken)
+
+    const res = await app.request(`/api/orders/${orderId}`, { method: 'DELETE' })
+    expect(res.status).toBe(401)
+  })
+
+  it('刪除存在的訂單，連明細一起消失，之後 GET 也看不到', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken)
+
+    const res = await app.request(`/api/orders/${orderId}`, {
+      method: 'DELETE',
+      headers: { 'X-Device-Token': deviceToken },
+    })
+    expect(res.status).toBe(204)
+
+    const list = await readJson(await app.request('/api/orders'))
+    expect(list.find((o: { orderId: string }) => o.orderId === orderId)).toBeUndefined()
+  })
+
+  it('訂單不存在時回傳 404', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/orders/does-not-exist', {
+      method: 'DELETE',
+      headers: { 'X-Device-Token': deviceToken },
+    })
+    expect(res.status).toBe(404)
+  })
+})

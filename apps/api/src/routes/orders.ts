@@ -1,6 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq, sql } from 'drizzle-orm'
-import { createOrderRequestSchema, orderSchema, type AppliedCoupon } from '@pos/contract'
+import { createOrderRequestSchema, orderSchema, orderStatusSchema, type AppliedCoupon } from '@pos/contract'
 import { priceLine, type OftenUseRates } from '@pos/domain'
 import { moneyCoupons, orderLines, orders, oftenUseRates as oftenUseRatesTable, percentCoupons } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -54,6 +54,51 @@ const listOrdersRoute = createRoute({
       description: '訂單清單',
       content: { 'application/json': { schema: z.array(orderSchema) } },
     },
+  },
+})
+
+const errorSchema = z.object({ error: z.string() })
+
+/**
+ * P6：apps/pos 的訂單列表頁（編輯訂單狀態／刪除訂單）原本只改本機
+ * Pinia 狀態，從來沒有打過任何 API——單店單機情境下看不太出問題，但
+ * 一旦有第二台終端（或同一台裝置重新整理），本機的異動就會被伺服端
+ * 尚未更新的資料蓋掉，兩邊看到的訂單狀態不一致。這兩個端點把這個動作
+ * 變成真的伺服端操作。
+ */
+const updateOrderStatusRequestSchema = z.object({ orderStatus: orderStatusSchema })
+
+const updateOrderStatusRoute = createRoute({
+  method: 'patch',
+  path: '/{orderId}/status',
+  middleware: [requireDeviceToken] as const,
+  request: {
+    params: z.object({ orderId: z.string().min(1) }),
+    body: { content: { 'application/json': { schema: updateOrderStatusRequestSchema } } },
+  },
+  responses: {
+    200: { description: '訂單狀態更新成功', content: { 'application/json': { schema: orderSchema } } },
+    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這筆訂單', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+// 這裡是真的從資料庫刪掉整筆訂單（含明細），不是軟刪除／狀態標記——
+// 沿用 apps/pos 既有「刪除訂單」的語意（見 views/order/index.vue）。
+// 對正式營運的收銀紀錄而言，事後想留稽核軌跡的話，更常見的做法是只
+// 允許把狀態改成「已取消」、不允許真的刪除；這裡沒有另外加這層限制，
+// 是刻意保留跟既有 UI 一致的行為，不是這個端點本身故意要禁止軟刪除。
+const deleteOrderRoute = createRoute({
+  method: 'delete',
+  path: '/{orderId}',
+  middleware: [requireDeviceToken] as const,
+  request: {
+    params: z.object({ orderId: z.string().min(1) }),
+  },
+  responses: {
+    204: { description: '訂單已刪除' },
+    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這筆訂單', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
@@ -270,4 +315,33 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       allOrders.map((order) => toOrderResponse(order, linesByOrder.get(order.orderId) ?? [])),
       200,
     )
+  })
+  .openapi(updateOrderStatusRoute, async (c) => {
+    const { orderId } = c.req.valid('param')
+    const { orderStatus } = c.req.valid('json')
+    const db = c.get('db')
+
+    const existing = await db.select().from(orders).where(eq(orders.orderId, orderId)).get()
+    if (!existing) {
+      return c.json({ error: '找不到這筆訂單' }, 404)
+    }
+
+    await db.update(orders).set({ orderStatus }).where(eq(orders.orderId, orderId))
+    const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
+    return c.json(toOrderResponse({ ...existing, orderStatus }, lines), 200)
+  })
+  .openapi(deleteOrderRoute, async (c) => {
+    const { orderId } = c.req.valid('param')
+    const db = c.get('db')
+
+    const existing = await db.select().from(orders).where(eq(orders.orderId, orderId)).get()
+    if (!existing) {
+      return c.json({ error: '找不到這筆訂單' }, 404)
+    }
+
+    // 先刪明細再刪主檔（order_lines.order_id 參照 orders.order_id，見
+    // db/schema.ts），順序反過來會違反外鍵約束。
+    await db.delete(orderLines).where(eq(orderLines.orderId, orderId))
+    await db.delete(orders).where(eq(orders.orderId, orderId))
+    return c.body(null, 204)
   })

@@ -199,6 +199,21 @@ import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { fromSelection } from '@/utils/selection'
+import { deleteOrder as deleteOrderRequest, updateOrderStatus } from '@/api/orders'
+import { ApiError } from '@/api/http'
+
+// P6：訂單還在離線佇列裡等待第一次同步時，伺服端根本沒有這筆訂單，
+// 編輯狀態／刪除都會收到 404——用同一句話提示，不用另外做「排入佇列
+// 稍後重試」（見 api/orders.ts 的說明）。
+function orderApiErrorMessage(err: unknown): string {
+  if (err instanceof ApiError && err.status === 404) {
+    return '這筆訂單可能還在等待同步到伺服端，請稍後再試一次'
+  }
+  if (err instanceof ApiError) {
+    return `操作失敗：${err.message}`
+  }
+  return '連不上伺服端，請確認網路連線'
+}
 
 // 分頁相關功能
 // 當前頁數
@@ -242,7 +257,7 @@ const resetFilter = () => {
 }
 
 // 訂單操作相關功能
-// 編輯訂單狀態
+// 編輯訂單狀態（P6：改成真的呼叫伺服端，見 api/orders.ts 的說明）
 const editOrderStatus = (id: string) => {
   ElMessageBox.confirm(
     '請選擇當前的訂單狀態',
@@ -252,15 +267,29 @@ const editOrderStatus = (id: string) => {
       cancelButtonText: '已取消',
       type: 'info',
     }
-  ).then(() => {
-    orderStore.order.find(item => item.orderId === id)!.orderStatus = '已完成'
-    ElMessage.success('訂單狀態已設定為已完成')
-  }).catch(() => {
-    orderStore.order.find(item => item.orderId === id)!.orderStatus = '已取消'
-    ElMessage.success('訂單狀態已設定為已取消')
+  ).then(async () => {
+    try {
+      await updateOrderStatus(id, '已完成')
+      orderStore.order.find(item => item.orderId === id)!.orderStatus = '已完成'
+      ElMessage.success('訂單狀態已設定為已完成')
+    } catch (err) {
+      ElMessage.error(orderApiErrorMessage(err))
+    }
+  }).catch(async (reason) => {
+    // ElMessageBox 的 catch 同時涵蓋「點了取消按鈕」跟「直接關掉視窗」，
+    // 這裡沿用既有行為：只有明確點取消按鈕（reason === 'cancel'）才當
+    // 「使用者選了已取消」，避免關掉視窗也被當成一次狀態異動。
+    if (reason !== 'cancel') return
+    try {
+      await updateOrderStatus(id, '已取消')
+      orderStore.order.find(item => item.orderId === id)!.orderStatus = '已取消'
+      ElMessage.success('訂單狀態已設定為已取消')
+    } catch (err) {
+      ElMessage.error(orderApiErrorMessage(err))
+    }
   })
 }
-// 刪除訂單
+// 刪除訂單（P6：改成真的呼叫伺服端，見 api/orders.ts 的說明）
 const deleteOrder = (id: string) => {
   ElMessageBox.confirm(
     '是否要該筆刪除訂單?',
@@ -270,9 +299,14 @@ const deleteOrder = (id: string) => {
       cancelButtonText: '取消',
       type: 'warning',
     }
-  ).then(() => {
-    orderStore.order = orderStore.order.filter(item => item.orderId != id)
-    ElMessage.success('刪除成功')
+  ).then(async () => {
+    try {
+      await deleteOrderRequest(id)
+      orderStore.order = orderStore.order.filter(item => item.orderId != id)
+      ElMessage.success('刪除成功')
+    } catch (err) {
+      ElMessage.error(orderApiErrorMessage(err))
+    }
   }).catch(() => {
     ElMessage.error('取消操作')
   })

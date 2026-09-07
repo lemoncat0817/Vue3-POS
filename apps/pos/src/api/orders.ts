@@ -1,4 +1,4 @@
-import { createOrderRequestSchema, orderSchema, type AppliedCoupon, type CreateOrderRequest, type Order } from '@pos/contract'
+import { createOrderRequestSchema, orderSchema, type AppliedCoupon, type CreateOrderRequest, type Order, type OrderStatus } from '@pos/contract'
 import { ulid } from '@pos/domain'
 import type { CartLineItem } from '@/types'
 import { fetchJson } from './http'
@@ -15,6 +15,31 @@ export async function createOrder(payload: CreateOrderRequest): Promise<Order> {
     body: JSON.stringify(payload),
   })
   return orderSchema.parse(body)
+}
+
+/**
+ * 對應 PATCH /api/orders/:orderId/status、DELETE /api/orders/:orderId
+ * （P6：規劃書 §3「多終端情境」）。views/order/index.vue 的編輯訂單狀態／
+ * 刪除訂單原本只改本機 Pinia 狀態，從來沒有打過任何 API——單店單機
+ * 情境下看不太出問題，但只要有第二台終端，本機的異動就會被伺服端
+ * 尚未更新的資料蓋掉。這兩個函式改成真的呼叫伺服端。
+ *
+ * 這兩個操作都要求訂單已經同步到伺服端（先前用 idempotencyKey 送過
+ * POST /api/orders 且伺服端配發過正式 orderId）——如果這筆訂單還在
+ * 離線佇列裡等待同步（見 src/offline/），伺服端會回 404，呼叫端要自己
+ * 處理這個情況（見 views/order/index.vue 的錯誤訊息），這裡不額外做
+ * 「排入佇列稍後重試」，避免跟送單本身的離線佇列機制混在一起。
+ */
+export async function updateOrderStatus(orderId: string, orderStatus: OrderStatus): Promise<Order> {
+  const body = await fetchJson<unknown>(`/api/orders/${encodeURIComponent(orderId)}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ orderStatus }),
+  })
+  return orderSchema.parse(body)
+}
+
+export async function deleteOrder(orderId: string): Promise<void> {
+  await fetchJson<null>(`/api/orders/${encodeURIComponent(orderId)}`, { method: 'DELETE' })
 }
 
 /**
