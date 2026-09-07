@@ -57,8 +57,6 @@ class="border-2 border-black border-solid rounded-xl px-1 mx-2 bg-red-600 cursor
 <script setup lang="ts">
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
-import { usePageStore } from '@/stores/page'
-const pageStore = usePageStore()
 import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import { useRouter } from "vue-router"
@@ -67,13 +65,14 @@ import { ElMessageBox, ElMessage } from 'element-plus';
 import { syncStatus } from '@/offline/sync-worker'
 
 // 切換頁面
+// P7（D-12）：原本這裡每個分支都要手動同步一份 pageStore.currentPage，
+// 現在「記住上次瀏覽頁籤」改由 router.afterEach 自動處理（見
+// router/index.ts、stores/page.ts），這裡只需要單純導航。
 const changePage = (page: number) => {
   if (page === 0) {
-    pageStore.currentPage = page
     router.push('/home')
   }
   if (page === 1) {
-    pageStore.currentPage = page
     router.push('/order')
   }
   if (page === 2) {
@@ -84,7 +83,6 @@ const changePage = (page: number) => {
         type: 'warning',
       })
         .then(() => {
-          pageStore.currentPage = page
           drinkStore.drinkNotPay = []
           router.push('/backgroundSetting')
         })
@@ -94,15 +92,12 @@ const changePage = (page: number) => {
         })
     } else {
       router.push('/backgroundSetting')
-      pageStore.currentPage = page
     }
   }
   if (page === 3) {
-    pageStore.currentPage = page
     router.push('/dataAnalysis')
   }
   if (page === 4) {
-    pageStore.currentPage = page
     router.push('/authorityManagement')
   }
 }

@@ -4,31 +4,19 @@
 
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { usePageStore } from '@/stores/page'
 import { useDrinkStore } from '@/stores/drink'
 import { useDiscountStore } from '@/stores/discount'
 import { fetchCatalog, toDrinkAddOnOptions, toDrinkTypeGroups } from '@/api/catalog'
 import { fetchPromotions, toMoneyDiscounts, toOftenUseDiscountList, toPercentDiscounts } from '@/api/promotions'
 import { useOrderSync } from '@/offline/useOrderSync'
 
-// D-07 修復：還原上次瀏覽頁籤的導航副作用，從 stores/page.ts 移到這裡
-// ——App.vue 是應用程式的根元件，一定會掛載，行為不再取決於「哪個
-// 元件第一次用到 pageStore」。
-const router = useRouter()
-const pageStore = usePageStore()
-onMounted(() => {
-  nextTick(() => {
-    if (pageStore.currentPage === 0) {
-      router.push('/home')
-    }
-    if (pageStore.currentPage === 1) {
-      router.push('/order')
-    }
-  })
-})
+// D-07／D-12 修復：還原上次瀏覽頁籤原本是這裡的 onMounted 副作用，靠
+// App.vue 一定會掛載這件事來保證會執行。P7 把這段邏輯改成直接掛在
+// router.beforeEach 本身（見 router/index.ts）——導航守衛本來就保證
+//「每一次導航都會跑」，比「根元件的 onMounted」更直接、也不用再繞經
+// pageStore 這個中介狀態去手動同步 vue-router 自己已經知道的路由。
 
 // P3：App.vue 是根元件，一定會掛載，適合當成「啟動時嘗試同步一次菜單」
 // 的單一進入點（GET /api/catalog 不需要登入即可呼叫）。staleTime:

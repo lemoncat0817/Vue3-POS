@@ -1,15 +1,15 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
-// D-07：原本這裡用 useRouter()／onMounted() 在 store 的 setup 函式內
-// 註冊生命週期鉤子與導航副作用。Pinia store 不是元件，onMounted 能不能
-// 正確掛上去，取決於「這個 store 第一次被哪個元件呼叫」——不是真正
-// 決定性的行為。這個 store 現在只保留純狀態，掛載時的導航還原邏輯移到
-// App.vue（見該檔案），交給一定會執行、生命週期明確的根元件負責。
+// D-12 修復：原本這裡是一個手動維護的數字 currentPage（0～4），呼叫端
+// （layout/header/index.vue 的 changePage()）每次導航都要記得手動同步
+// 賦值——跟 vue-router 自己知道的目前路由是兩份分開維護、容易漏同步的
+// 狀態。現在改成只記錄「上次造訪的路由名稱」，且改由 router/index.ts
+// 的 router.afterEach 自動寫入（見該檔案），呼叫端不用再手動維護這份
+// 狀態，也不會有漏掉某個分頁忘記賦值的問題。
 export const usePageStore = defineStore('page', () => {
-  // 當前訂單編號
-  const currentPage = ref(0)
-  return { currentPage }
+  const lastVisitedName = ref<string | null>(null)
+  return { lastVisitedName }
 }, {
   persist: true,
 })

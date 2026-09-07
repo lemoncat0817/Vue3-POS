@@ -28,12 +28,12 @@ afterEach(() => {
  * 的元件測試留給後續階段依實際重構內容補上，這裡不預先寫尚不存在的
  * 測試案例。
  *
- * P1 修復 D-07 後，App.vue 會在掛載時依 pageStore.currentPage 導向
- * /home 或 /order（見該元件），因此這裡的假路由需要真的定義這兩條路徑，
- * 並提供一個 Pinia 實例。
+ * P7（D-12）：還原上次瀏覽頁籤的邏輯已經從這個元件移到 router/index.ts
+ * 的導航守衛本身（見該檔案、router/index.spec.ts），App.vue 不再自己
+ * 判斷要導去哪裡，這裡只需要驗證「掛載本身能正常運作、離線也不會壞」。
  */
 describe('App', () => {
-  it('掛載後依上次瀏覽的頁籤導向對應路由（D-07：還原邏輯掛在根元件上）', async () => {
+  it('掛載後能正常渲染目前的路由，連不到伺服端也不影響掛載', async () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -42,7 +42,7 @@ describe('App', () => {
         { path: '/order', component: { template: '<div>查看訂單</div>' } },
       ],
     })
-    router.push('/')
+    router.push('/home')
     await router.isReady()
 
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -51,7 +51,6 @@ describe('App', () => {
     })
     await flushPromises()
 
-    // pageStore.currentPage 預設為 0，掛載後應導向 /home。
     expect(router.currentRoute.value.path).toBe('/home')
     expect(wrapper.html()).toContain('點餐')
 
