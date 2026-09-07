@@ -427,7 +427,7 @@ class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:r
 
 <script setup lang="ts">
 import { getDate, getMoment, getTime } from '@/utils/time'
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import DrinkType from './drinkType/index.vue'
 import DrinkMenu from './drinkMenu/index.vue'
 import DrinkCustomized from './drinkCustomized/index.vue'
@@ -442,6 +442,7 @@ import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { CartLineItem, FormNumeric, OrderRecord, PaymentMethod } from '@/types'
 import { fromSelection } from '@/utils/selection'
+import { priceLine, toggleContainer, toggleFree, toggleRate, type LineDiscountFlags, type OftenUseRates } from '@pos/domain'
 
 // 當前時間相關功能
 // 存放當前時間
@@ -460,6 +461,16 @@ onMounted(() => {
 // 修正留待 P1 一併處理計時器生命週期。
 onUnmounted(() => {
   clearInterval(undefined)
+})
+
+// D-13 修復：drink.ts 的 store 不再直接彈窗（狀態層不依賴 UI 套件），
+// 只在待付款清單清空時遞增 cartClearedNotice；實際顯示提示的責任交給
+// 這個會渲染清單的元件自己 watch。
+watch(() => drinkStore.cartClearedNotice, () => {
+  ElMessageBox.alert('待付款清單已無品項，套用優惠券以及加購的袋子數量已重置', '通知', {
+    confirmButtonText: '繼續選取品項',
+    type: 'info',
+  })
 })
 
 // 杯數相關功能
@@ -683,230 +694,117 @@ const openCashier = () => {
 
 // 折扣相關功能
 // 免費招待
+// 把 discountStore.oftenUseDiscount（表單輸入可能是字串）轉成 pos-domain
+// 計價引擎要的固定 5 筆數值設定。
+const oftenUseRates = (): OftenUseRates => {
+  const toRate = (d: (typeof discountStore.oftenUseDiscount)[number]) => ({
+    name: d.name,
+    discountMoney: Number(d.discountMoney),
+    discountPercent: Number(d.discountPercent),
+  })
+  const [eco, bottle, rate1, rate2, rate3] = discountStore.oftenUseDiscount
+  return [toRate(eco), toRate(bottle), toRate(rate1), toRate(rate2), toRate(rate3)]
+}
+
+// 對目前已勾選的品項套用同一種旗標切換，並用 priceLine() 重新計算金額。
+// 取代原本六個函式各自手動改欄位的寫法（見 pricing.ts 的說明），修復
+// D-01（套用與取消計算式不對稱）與 D-02（清除折數折扣時欄位名稱打錯）。
+const applyDiscountToggle = (toggle: (flags: LineDiscountFlags) => LineDiscountFlags) => {
+  const rates = oftenUseRates()
+  drinkSelectList.value.forEach(item => {
+    const nextFlags = toggle(item)
+    const priced = priceLine({ price: Number(item.price), count: item.count, addListPrice: item.addListPrice }, nextFlags, rates)
+    Object.assign(item, nextFlags, priced)
+  })
+}
+
+const noSelectionAlert = () => {
+  ElMessageBox.alert('尚未選取品項', '通知', {
+    confirmButtonText: '繼續選取品項',
+    type: 'info'
+  })
+}
+const stillFreeAlert = () => {
+  ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '通知', {
+    confirmButtonText: '重新選取',
+    type: 'info'
+  })
+}
+
+// 招待
 const freeDiscount = () => {
   if (Number(drinkSelectList.value) <= 0) {
-    ElMessageBox.alert('尚未選取品項', '通知', {
-      confirmButtonText: '繼續選取品項',
-      type: 'info'
-    })
-  } else {
-    drinkSelectList.value.forEach(item => {
-      item.freeDiscount = !item.freeDiscount
-      item.ecoDiscount = false
-      item.bottleDiscount = false
-      // D-02：這三行的欄位名稱多了「Discount」後綴，CartLineItem 根本沒有
-      // 這些欄位——所以「免費招待」實際上並未清除折數折扣，取消招待後
-      // 金額會出錯。P0 只如實保留這個既有行為（型別上用 as any 繞過，
-      // 執行期仍然是對物件動態新增這三個從未被讀取的欄位），修正排在 P1
-      // 領域抽離階段。
-      ;(item as any).oftenUseDiscount1Discount = false
-      ;(item as any).oftenUseDiscount2Discount = false
-      ;(item as any).oftenUseDiscount3Discount = false
-    })
-    drinkSelectList.value.map(item => {
-      const originalPrice = Number(item.price) * item.count + item.addListPrice * item.count
-      if (item.freeDiscount) {
-        item.currentDiscountMoney = 0
-        item.currentDiscountPercent = 0
-        item.useDiscountFree = '招待'
-        item.useDiscountMoney = ''
-        item.useDiscountPercent = ''
-        item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
-        item.discount = originalPrice - item.totalPrice
-      } else {
-        item.currentDiscountPercent = 1
-        item.useDiscountFree = ''
-        item.totalPrice = Math.round(originalPrice * item.currentDiscountPercent)
-        item.discount = originalPrice - item.totalPrice
-      }
-      return item
-    })
+    noSelectionAlert()
+    return
   }
+  applyDiscountToggle(toggleFree)
 }
 // 環保折扣
 const ecoDiscount = () => {
   if (Number(drinkSelectList.value) <= 0) {
-    ElMessageBox.alert('尚未選取品項', '通知', {
-      confirmButtonText: '繼續選取品項',
-      type: 'info'
-    })
+    noSelectionAlert()
+    return
   }
-  else if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '通知', {
-      confirmButtonText: '重新選取',
-      type: 'info'
-    })
-  } else {
-    drinkSelectList.value.forEach(item => {
-      item.ecoDiscount = !item.ecoDiscount
-      item.bottleDiscount = false
-    })
-    drinkSelectList.value.map(item => {
-      const originalPrice = Number(item.price) * item.count + item.addListPrice * item.count
-      if (item.ecoDiscount) {
-        item.currentDiscountMoney = Number(discountStore.oftenUseDiscount[0].discountMoney)
-        item.useDiscountMoney = discountStore.oftenUseDiscount[0].name
-        item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
-        item.discount = originalPrice - item.totalPrice
-      } else {
-        item.currentDiscountMoney = 0
-        item.useDiscountMoney = ''
-        item.totalPrice = Math.round(originalPrice * item.currentDiscountPercent)
-        item.discount = originalPrice - item.totalPrice
-      }
-      return item
-    })
+  if (drinkSelectList.value.every(item => item.freeDiscount)) {
+    stillFreeAlert()
+    return
   }
+  applyDiscountToggle(flags => toggleContainer(flags, 'eco'))
 }
 // 瓶裝折扣
 const bottleDiscount = () => {
   if (Number(drinkSelectList.value) <= 0) {
-    ElMessageBox.alert('尚未選取品項', '通知', {
-      confirmButtonText: '繼續選取品項',
+    noSelectionAlert()
+    return
+  }
+  if (drinkSelectList.value.every(item => item.freeDiscount)) {
+    stillFreeAlert()
+    return
+  }
+  if (!drinkSelectList.value.every(item => item.size === 'bottle')) {
+    ElMessageBox.alert('選取的所有品項都要是瓶裝才可以使用此功能', '通知', {
+      confirmButtonText: '重新選取品項',
       type: 'info'
     })
-  } else {
-    if (drinkSelectList.value.every(item => item.freeDiscount)) {
-      ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '通知', {
-        confirmButtonText: '重新選取',
-        type: 'info'
-      })
-    }
-    else if (drinkSelectList.value.every(item => item.size === 'bottle')) {
-      drinkSelectList.value.forEach(item => {
-        item.bottleDiscount = !item.bottleDiscount
-        item.ecoDiscount = false
-      })
-    } else {
-      ElMessageBox.alert('選取的所有品項都要是瓶裝才可以使用此功能', '通知', {
-        confirmButtonText: '重新選取品項',
-        type: 'info'
-      })
-      return
-    }
-
-    drinkSelectList.value.map(item => {
-      const originalPrice = Number(item.price) * item.count + item.addListPrice * item.count
-      if (item.bottleDiscount) {
-        item.currentDiscountMoney = Number(discountStore.oftenUseDiscount[1].discountMoney)
-        item.useDiscountMoney = discountStore.oftenUseDiscount[1].name
-        item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
-        item.discount = originalPrice - item.totalPrice
-      } else {
-        item.currentDiscountMoney = 0
-        item.useDiscountMoney = ''
-        item.totalPrice = Math.round(originalPrice * item.currentDiscountPercent)
-        item.discount = originalPrice - item.totalPrice
-      }
-      return item
-    })
+    return
   }
+  applyDiscountToggle(flags => toggleContainer(flags, 'bottle'))
 }
-// 常用折數折扣1
+// 常用折數折扣1（九折）
 const oftenUseDiscount1 = () => {
   if (Number(drinkSelectList.value) <= 0) {
-    ElMessageBox.alert('尚未選取品項', '通知', {
-      confirmButtonText: '繼續選取品項',
-      type: 'info'
-    })
-  } else if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '通知', {
-      confirmButtonText: '重新選取',
-      type: 'info'
-    })
-  } else {
-    drinkSelectList.value.forEach(item => {
-      item.oftenUseDiscount1 = !item.oftenUseDiscount1
-      item.oftenUseDiscount2 = false
-      item.oftenUseDiscount3 = false
-    })
-    drinkSelectList.value.map(item => {
-      const originalPrice = Number(item.price) * item.count + item.addListPrice * item.count
-      if (item.oftenUseDiscount1) {
-        item.currentDiscountPercent = Number(discountStore.oftenUseDiscount[2].discountPercent)
-        item.useDiscountPercent = discountStore.oftenUseDiscount[2].name
-        item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
-        item.discount = originalPrice - item.totalPrice
-      } else {
-        item.currentDiscountPercent = 1
-        item.useDiscountPercent = ''
-        item.totalPrice = Math.round(originalPrice * item.currentDiscountPercent) - item.currentDiscountMoney * item.count
-        item.discount = originalPrice - item.totalPrice
-      }
-      return item
-    })
+    noSelectionAlert()
+    return
   }
+  if (drinkSelectList.value.every(item => item.freeDiscount)) {
+    stillFreeAlert()
+    return
+  }
+  applyDiscountToggle(flags => toggleRate(flags, 1))
 }
-
-// 常用折數折扣2
+// 常用折數折扣2（八五折）
 const oftenUseDiscount2 = () => {
   if (Number(drinkSelectList.value) <= 0) {
-    ElMessageBox.alert('尚未選取品項', '通知', {
-      confirmButtonText: '繼續選取品項',
-      type: 'info'
-    })
-  } else if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '通知', {
-      confirmButtonText: '重新選取',
-      type: 'info'
-    })
-  } else {
-    drinkSelectList.value.forEach(item => {
-      item.oftenUseDiscount2 = !item.oftenUseDiscount2
-      item.oftenUseDiscount1 = false
-      item.oftenUseDiscount3 = false
-    })
-    drinkSelectList.value.map(item => {
-      const originalPrice = Number(item.price) * item.count + item.addListPrice * item.count
-      if (item.oftenUseDiscount2) {
-        item.currentDiscountPercent = Number(discountStore.oftenUseDiscount[3].discountPercent)
-        item.useDiscountPercent = discountStore.oftenUseDiscount[3].name
-        item.totalPrice = Math.round(Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent))
-        item.discount = originalPrice - item.totalPrice
-      } else {
-        item.currentDiscountPercent = 1
-        item.useDiscountPercent = ''
-        item.totalPrice = Math.round(Math.round(originalPrice * item.currentDiscountPercent) - item.currentDiscountMoney * item.count)
-        item.discount = originalPrice - item.totalPrice
-      }
-      return item
-    })
+    noSelectionAlert()
+    return
   }
+  if (drinkSelectList.value.every(item => item.freeDiscount)) {
+    stillFreeAlert()
+    return
+  }
+  applyDiscountToggle(flags => toggleRate(flags, 2))
 }
-// 常用折數折扣3
+// 常用折數折扣3（員工八折）
 const oftenUseDiscount3 = () => {
   if (Number(drinkSelectList.value) <= 0) {
-    ElMessageBox.alert('尚未選取品項', '通知', {
-      confirmButtonText: '繼續選取品項',
-      type: 'info'
-    })
-  } else if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    ElMessageBox.alert('選取的品項中有品項尚未取消免費招待無法再添加折扣', '通知', {
-      confirmButtonText: '重新選取',
-      type: 'info'
-    })
-  } else {
-    drinkSelectList.value.forEach(item => {
-      item.oftenUseDiscount3 = !item.oftenUseDiscount3
-      item.oftenUseDiscount2 = false
-      item.oftenUseDiscount1 = false
-    })
-    drinkSelectList.value.map(item => {
-      const originalPrice = Number(item.price) * item.count + item.addListPrice * item.count
-      if (item.oftenUseDiscount3) {
-        item.currentDiscountPercent = Number(discountStore.oftenUseDiscount[4].discountPercent)
-        item.useDiscountPercent = discountStore.oftenUseDiscount[4].name
-        item.totalPrice = Math.round((originalPrice - item.currentDiscountMoney * item.count) * item.currentDiscountPercent)
-        item.discount = originalPrice - item.totalPrice
-      } else {
-        item.currentDiscountPercent = 1
-        item.useDiscountPercent = ''
-        item.totalPrice = Math.round(originalPrice * item.currentDiscountPercent) - item.currentDiscountMoney * item.count
-        item.discount = originalPrice - item.totalPrice
-      }
-      return item
-    })
+    noSelectionAlert()
+    return
   }
+  if (drinkSelectList.value.every(item => item.freeDiscount)) {
+    stillFreeAlert()
+    return
+  }
+  applyDiscountToggle(flags => toggleRate(flags, 3))
 }
 
 // 優惠券相關功能

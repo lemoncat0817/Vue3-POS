@@ -1,6 +1,5 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import { defineStore } from 'pinia'
-import { ElMessageBox } from 'element-plus'
 import { useDiscountStore } from '@/stores/discount'
 import type { CartLineItem, DrinkAddOnOption, DrinkListItem, DrinkSimpleOption, DrinkTypeGroup } from '@/types'
 import { fromSelection } from '@/utils/selection'
@@ -695,6 +694,13 @@ export const useDrinkStore = defineStore('drink', () => {
   onMounted(() => {
     initialized.value = true
   })
+  // D-13：原本這裡直接呼叫 ElMessageBox.alert，讓 store（狀態層）依賴
+  // UI 套件，store 因此無法脫離瀏覽器測試。改為只遞增一個計數器，UI 提示
+  // 交給實際顯示畫面的元件（home/index.vue）自己 watch 這個計數器來彈窗。
+  // initialized 這個守衛仍然保留——它防的不是「掛載前彈窗」，而是
+  // pinia-plugin-persistedstate 還原持久化狀態時，drinkNotPay 被重新賦值
+  // 觸發這個 watch，搶在 discountStore 也還原完成前就把它重置成 0。
+  const cartClearedNotice = ref(0)
   // 判定待付款清單是否清空
   watch(() => drinkNotPay.value, () => {
     // 如果未初始化，直接返回
@@ -709,10 +715,7 @@ export const useDrinkStore = defineStore('drink', () => {
       discountStore.currentPercentDiscount = 0
       discountStore.percentSelectingDiscountId = 0
       discountStore.currentDiscountName = ''
-      ElMessageBox.alert('待付款清單已無品項，套用優惠券以及加購的袋子數量已重置', '通知', {
-        confirmButtonText: '繼續選取品項',
-        type: 'info',
-      })
+      cartClearedNotice.value++
     }
   })
 
@@ -761,6 +764,7 @@ export const useDrinkStore = defineStore('drink', () => {
     currentBagCount,
     useDiscountPrice,
     drinkTotalMoney,
+    cartClearedNotice,
     currentDrinkCount,
   }
 }, {
