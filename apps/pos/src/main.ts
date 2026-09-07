@@ -14,6 +14,9 @@ app.use(pinia)
 // Vue-router
 import router from './router'
 app.use(router)
+// TanStack Query（P3：用戶端的伺服端狀態管理，見 src/api/）
+import { VueQueryPlugin } from '@tanstack/vue-query'
+app.use(VueQueryPlugin)
 // Element Plus
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
