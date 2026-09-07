@@ -6,3 +6,4 @@
  * 供迴歸比對用的黃金資料集。
  */
 export { GOLDEN_ORDERS } from './fixtures/golden-orders'
+export * from './money'

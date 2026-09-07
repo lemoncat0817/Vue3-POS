@@ -27,6 +27,7 @@
     "@vue/tsconfig": "^0.9.1",
     "eslint": "^9.39.5",
     "eslint-plugin-vue": "^9.33.0",
+    "fast-check": "^4.9.0",
     "globals": "^15.14.0",
     "jsdom": "^25.0.1",
     "prettier": "^3.9.6",
