@@ -154,8 +154,8 @@
   <!-- 新增現金折扣券 -->
   <ModalDialog v-model:open="addMoneyDiscountDialog" title="新增現金折扣券">
     <Form v-slot="{ isSubmitting }" :validation-schema="toTypedSchema(moneyCouponSchema())" :initial-values="{ name: '' }" @submit="onSubmitAddMoneyDiscount">
-      <FormField name="name" label="折扣券名稱" placeholder="例如: $50折價券..." />
-      <FormField name="discountMoney" label="折扣的金額" type="number" step="1" placeholder="純數字,例如:1,2,3..." />
+      <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: $50折價券..." />
+      <FormField name="discountMoney" label="折扣的金額" type="number" step="1" :disabled="isSubmitting" placeholder="純數字,例如:1,2,3..." />
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="addMoneyDiscountDialog = false">取消</button>
         <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">新增</button>
@@ -169,8 +169,8 @@
       :validation-schema="toTypedSchema(moneyCouponSchema(currentMoneyDiscount.id))"
       :initial-values="{ name: currentMoneyDiscount.name, discountMoney: Number(currentMoneyDiscount.discountMoney) }"
       @submit="onSubmitEditMoneyDiscount">
-      <FormField name="name" label="折扣券名稱" placeholder="例如: $50折價券..." />
-      <FormField name="discountMoney" label="折扣的金額" type="number" step="1" placeholder="純數字,例如:1,2,3..." />
+      <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: $50折價券..." />
+      <FormField name="discountMoney" label="折扣的金額" type="number" step="1" :disabled="isSubmitting" placeholder="純數字,例如:1,2,3..." />
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="editMoneyDiscountDialog = false">取消</button>
         <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">保存</button>
@@ -181,8 +181,8 @@
   <!-- 新增折數折扣券 -->
   <ModalDialog v-model:open="addPercentDiscountDialog" title="新增折數折扣券">
     <Form v-slot="{ isSubmitting }" :validation-schema="toTypedSchema(percentCouponSchema())" :initial-values="{ name: '' }" @submit="onSubmitAddPercentDiscount">
-      <FormField name="name" label="折扣券名稱" placeholder="例如: 九折折價券..." />
-      <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" placeholder="純數字,例如:0.9,0.75..." />
+      <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: 九折折價券..." />
+      <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="isSubmitting" placeholder="純數字,例如:0.9,0.75..." />
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="addPercentDiscountDialog = false">取消</button>
         <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">新增</button>
@@ -196,8 +196,8 @@
       :validation-schema="toTypedSchema(percentCouponSchema(currentPercentDiscount.id))"
       :initial-values="{ name: currentPercentDiscount.name, discountPercent: Number(currentPercentDiscount.discountMoney) }"
       @submit="onSubmitEditPercentDiscount">
-      <FormField name="name" label="折扣券名稱" placeholder="例如: 九折折價券..." />
-      <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" placeholder="純數字,例如:0.9,0.75..." />
+      <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: 九折折價券..." />
+      <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="isSubmitting" placeholder="純數字,例如:0.9,0.75..." />
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="editPercentDiscountDialog = false">取消</button>
         <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">保存</button>
@@ -216,9 +216,9 @@
         discountPercent: Number(currentOftenUseDiscount.discountPercent),
       }"
       @submit="onSubmitEditOftenUseDiscount">
-      <FormField name="name" label="優惠名稱" :disabled="nameDisabled" placeholder="例如: 九折,員工八折..." />
-      <FormField name="discountMoney" label="折扣的金額" type="number" step="1" :disabled="moneyDisabled" placeholder="純數字,例如:1,2,3..." />
-      <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="percentDisabled" placeholder="純數字,例如:0.95,0.85..." />
+      <FormField name="name" label="優惠名稱" :disabled="nameDisabled || isSubmitting" placeholder="例如: 九折,員工八折..." />
+      <FormField name="discountMoney" label="折扣的金額" type="number" step="1" :disabled="moneyDisabled || isSubmitting" placeholder="純數字,例如:1,2,3..." />
+      <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="percentDisabled || isSubmitting" placeholder="純數字,例如:0.95,0.85..." />
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="editOftenUseDiscountDialog = false">取消</button>
         <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">保存</button>
@@ -279,6 +279,19 @@ import {
 // API，直到跑 e2e/promotion-admin.spec.ts 才抓到）。<Form> 元件每次
 // 使用都是獨立的元件實例，各自的 provide() 互不影響，這才是 VeeValidate
 // 官方文件建議「同一頁有多個表單」時的用法。
+//
+// 每個 FormField 都額外綁了 :disabled="isSubmitting"（不是只有送出
+// 按鈕）：VeeValidate 的 <Form> 送出時，驗證失敗也不會馬上結束——
+// handleSubmit() 內部是等 validate() 這個 async 呼叫真的 resolve 後，
+// 才用當下（resolve 當下，不是「點擊當下」）的 formValues 判斷有效性。
+// 如果送出失敗後（例如名稱撞名）使用者能繼續打字，等這次失敗的驗證
+// 終於 resolve 時，欄位可能已經被改成合法值，會被誤判為「這次送出其實
+// 是合法的」，用當下已經被改到一半的欄位值（可能有些欄位改了、有些還
+// 沒改）當作合法輸入送出——實際發生過：e2e 測試裡「先打錯名稱送出被擋
+// →改名字→改金額→再送出」這個流程，最後送出的金額偶爾會是「改名字
+// 那個時間點」的舊值，不是最後打的新值（用 console.log 逐步追蹤
+// FormField 的 input 事件跟 onSubmit 收到的 values 才抓到，不是靠猜的）。
+// 送出中鎖住全部欄位（不只鎖按鈕）就不會有這個中繼狀態可以被誤用。
 function apiErrorMessage(err: unknown): string {
   if (err instanceof ApiError) return `操作失敗：${err.message}`
   return '連不上伺服端，請確認網路連線'
