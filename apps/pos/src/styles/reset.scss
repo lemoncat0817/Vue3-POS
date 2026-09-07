@@ -81,7 +81,17 @@ audio,
 video {
   margin: 0;
   padding: 0;
-  border: 0;
+  /* P11：這份 reset（經典的 Eric Meyer CSS Reset）的 border: 0 用一個
+     元素選擇器清單（div、p、table…近 90 個標籤）蓋掉這些標籤的預設
+     邊框——這個規則本身沒問題，問題是它比 Tailwind 自己的 preflight
+     (`*, ::before, ::after { border-width: 0 }`，套用萬用選擇器，
+     特異度刻意設到最低，就是設計成任何 class 都蓋得過它) 特異度更高
+     （元素選擇器 > 萬用選擇器），導致「在這近 90 個標籤上用 Tailwind
+     的 border／border-2 這類邊框工具類」全部失效，且完全沒有錯誤
+     訊息——這個專案原本每個要有邊框的方塊都同時疊了飽和背景色
+     （例如 bg-red-400），邊框本身看不看得見根本沒差，這個 bug 才會
+     一直沒被發現。這裡改回讓 Tailwind 的 preflight 全權負責邊框重置，
+     不跟它打架；margin／padding／font 這幾行不受影響，維持原樣。 */
   font-size: 100%;
   font: inherit;
   vertical-align: baseline;
