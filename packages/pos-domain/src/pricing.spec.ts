@@ -8,16 +8,8 @@ import {
   toggleRate,
   type LineBase,
   type LineDiscountFlags,
-  type OftenUseRates,
 } from './pricing'
-
-const OFTEN_USE: OftenUseRates = [
-  { name: '環保折扣', discountMoney: 5, discountPercent: 1 },
-  { name: '瓶裝折扣', discountMoney: 10, discountPercent: 1 },
-  { name: '九折', discountMoney: 0, discountPercent: 0.9 },
-  { name: '八五折', discountMoney: 0, discountPercent: 0.85 },
-  { name: '員工八折', discountMoney: 0, discountPercent: 0.8 },
-]
+import { DEFAULT_OFTEN_USE_RATES as OFTEN_USE } from './fixtures/often-use-rates'
 
 const flagsArb: fc.Arbitrary<LineDiscountFlags> = fc.record({
   freeDiscount: fc.boolean(),

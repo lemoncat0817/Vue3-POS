@@ -6,6 +6,7 @@
  * 供迴歸比對用的黃金資料集。
  */
 export { GOLDEN_ORDERS } from './fixtures/golden-orders'
+export { DEFAULT_OFTEN_USE_RATES } from './fixtures/often-use-rates'
 export * from './money'
 export * from './pricing'
 export * from './business-date'
