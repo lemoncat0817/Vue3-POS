@@ -7,10 +7,12 @@ export type AppEnv = {
   Variables: {
     db: AnyDb
     /**
-     * 目前僅有的裝置層級憑證檢查（見 src/middleware/require-device-token.ts）
-     * ——單一固定字串比對，是 P4 完整身分系統（裝置憑證＋操作員登入）
-     * 之前的最小可行防護，先讓「有動作會被拒絕」這件事在 P2 就是真的。
+     * P2 遺留的裝置層級憑證檢查（見 src/middleware/require-device-token.ts）
+     * ——單一固定字串比對。P4 開始逐步升級成 devices 資料表（見
+     * db/schema.ts）＋雜湊比對，這個欄位在完全切換完成前繼續保留。
      */
     deviceToken: string
+    /** 核發新裝置憑證用的密鑰（見 middleware/require-provisioning-secret.ts）。 */
+    provisioningSecret: string
   }
 }

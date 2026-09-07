@@ -35,6 +35,27 @@ export const addOnOptions = sqliteTable('add_on_options', {
   price: integer('price').notNull(),
 })
 
+// ---------- 裝置憑證（P4：規劃書 §9 的身分系統） ----------
+
+/**
+ * 一台終端機一筆紀錄。只存雜湊值＋鹽（見 src/auth/hash.ts）；明碼只在
+ * 核發當下（POST /api/devices）回傳一次，之後即使是這個資料庫本身也
+ * 還原不出明碼——跟 GitHub personal access token 那類憑證同一種設計。
+ * revokedAt 非 null 代表這台裝置的憑證已被撤銷，requireDeviceToken
+ * （見 middleware/require-device-token.ts）會拒絕它，不需要真的刪除
+ * 這筆紀錄（保留稽核軌跡）。
+ */
+export const devices = sqliteTable('devices', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  tokenHash: text('token_hash').notNull(),
+  tokenSalt: text('token_salt').notNull(),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(current_timestamp)`),
+  revokedAt: text('revoked_at'),
+})
+
 // ---------- 員工 ----------
 
 export const staff = sqliteTable(
@@ -102,4 +123,4 @@ export const orderLines = sqliteTable('order_lines', {
   oftenUseDiscount3: integer('often_use_discount_3', { mode: 'boolean' }).notNull(),
 })
 
-export const schema = { catalogGroups, catalogItems, addOnOptions, staff, orders, orderLines }
+export const schema = { catalogGroups, catalogItems, addOnOptions, devices, staff, orders, orderLines }
