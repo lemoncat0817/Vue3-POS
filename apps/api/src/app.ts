@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { cors } from 'hono/cors'
 import type { AnyDb } from './db/types'
 import type { AppEnv } from './types'
 import { catalogRoutes } from './routes/catalog'
@@ -30,6 +31,13 @@ const healthRoute = createRoute({
  */
 export function createApp(db: AnyDb, config: { deviceToken: string }) {
   const app = new OpenAPIHono<AppEnv>()
+
+  // 單店單機使用（見規劃書 §1 的部署前提），前端（apps/pos）跟這個 API
+  // 執行在不同 origin／port（GitHub Pages 靜態站 vs. Cloudflare
+  // Workers），需要 CORS 才能跨源呼叫。這裡不是對外公開的多租戶 API，
+  // 沒有 cookie-based session 要保護，允許任意 origin 讀取即可；真正的
+  // 存取控制在 requireDeviceToken（見 middleware/require-device-token.ts）。
+  app.use('*', cors({ origin: '*', allowHeaders: ['Content-Type', 'X-Device-Token'] }))
 
   app.use('*', async (c, next) => {
     c.set('db', db)
