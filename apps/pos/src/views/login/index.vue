@@ -35,13 +35,13 @@ v-model="loginStore.account" placeholder="請輸入帳號"
           class="w-[200px] xl:h-12 lg:h-10 h-8 rounded-[20px] p-2 bg-[#f8f8dc] text-[#560710] font-bold text-lg text-center lg:w-[180px] focus:w-[300px] transition-width duration-500">
       </div>
       <div class="flex items-center gap-[10px]">
-        <p class="text-[15px] font-bold text-red-400 sm:text-[20px]">密碼</p>
+        <p class="text-[15px] font-bold text-red-400 sm:text-[20px]">PIN</p>
         <input
-v-model="loginStore.password" placeholder="請輸入密碼" type="password"
+v-model="loginStore.pin" placeholder="請輸入 PIN" type="password" inputmode="numeric" maxlength="6"
           class="w-[200px] xl:h-12 lg:h-10  h-8 rounded-[20px] p-2 bg-[#f8f8dc] text-[#560710] font-bold text-lg text-center lg:w-[180px] focus:w-[300px] transition-width duration-500">
       </div>
       <div>
-        <input v-model="loginStore.isRememberPassword" type="checkbox"> 記住密碼
+        <input v-model="loginStore.isRememberPin" type="checkbox"> 記住 PIN
         <button
 class="w-[100px] xl:h-12 lg:h-10 h-8 leading-[8px] text-center rounded-[20px] p-2 bg-[#cc191f] text-center cursor-pointer font-bold lg:w-[80px] hover:scale-[1.3] hover:w-[150px] transition-all duration-500 ml-5 hover:bg-[#ff4500] hover:text-blue-800"
           @click="login">登入</button>
@@ -68,51 +68,54 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
-import { useAuthorityManagementStore } from '@/stores/authorityManagement'
-const authorityManagementStore = useAuthorityManagementStore()
 import { ElMessage, ElNotification } from 'element-plus'
+import { operatorLogin, toStaffMember } from '@/api/auth'
+import { ApiError } from '@/api/http'
 
 // 教學影片相關功能
 const isWatchVideo = ref(false)
 
-// 快速登入相關功能
+// 快速登入相關功能（種子資料的 PIN，見 apps/api/seed/staff.sql）
 const quicklyLogin = (num: number) => {
   if (num === 1) {
     loginStore.account = 'lemon'
-    loginStore.password = 'lemon123'
+    loginStore.pin = '1234'
     login()
   }
   if (num === 2) {
     loginStore.account = 'james'
-    loginStore.password = 'james123'
+    loginStore.pin = '2345'
     login()
   }
   if (num === 3) {
     loginStore.account = 'emily'
-    loginStore.password = 'emily123'
+    loginStore.pin = '3456'
     login()
   }
 
 }
 
-// 判定帳號密碼是否正確
-const login = () => {
-  loginStore.userInfo = authorityManagementStore.staffList.find(item => {
-    if (item.account === loginStore.account && item.password === loginStore.password) {
-      return item
-    }
-  })
-  if (loginStore.userInfo) {
+// P4：登入改成真的向伺服端驗證帳號＋PIN（POST /api/auth/operator-login），
+// 不再是本機明碼比對（見 apps/api/README.md 的身分系統說明）。
+const login = async () => {
+  try {
+    const staff = await operatorLogin(loginStore.account, loginStore.pin)
+    loginStore.userInfo = toStaffMember(staff)
     loginStore.isLogin = true
     router.push('/home')
     ElNotification({
       title: '登入成功',
-      message: `${loginStore.userInfo.jobTitle} - ${loginStore.userInfo.name},歡迎進入MAJI Tea POS機系統`,
+      message: `${staff.jobTitle} - ${staff.name},歡迎進入MAJI Tea POS機系統`,
       type: 'success',
     })
-  } else {
+  } catch (err) {
     loginStore.isLogin = false
-    ElMessage.error('帳號或是密碼有誤,請重新輸入')
+    loginStore.userInfo = []
+    if (err instanceof ApiError && err.status === 401) {
+      ElMessage.error('帳號或是 PIN 有誤,請重新輸入')
+    } else {
+      ElMessage.error('連不上伺服端，請確認網路連線')
+    }
   }
 }
 </script>

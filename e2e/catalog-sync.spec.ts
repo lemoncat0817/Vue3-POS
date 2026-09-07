@@ -13,7 +13,7 @@ test('點餐頁掛載時會向 apps/api 要一份菜單，且點餐流程用得�
 
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
-  await page.getByPlaceholder('請輸入密碼').fill('lemon123')
+  await page.getByPlaceholder('請輸入 PIN').fill('1234')
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 

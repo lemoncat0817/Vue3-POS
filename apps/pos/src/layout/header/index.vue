@@ -118,8 +118,8 @@ const logout = () => {
       router.push('/login')
       loginStore.isLogin = false
       loginStore.userInfo = []
-      if (loginStore.isRememberPassword === false) {
-        loginStore.password = ''
+      if (loginStore.isRememberPin === false) {
+        loginStore.pin = ''
       }
       ElMessage({
         type: 'success',

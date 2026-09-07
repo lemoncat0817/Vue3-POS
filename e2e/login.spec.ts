@@ -8,7 +8,7 @@ test('店長帳號可以登入並看到點餐頁面', async ({ page }) => {
   await page.goto('login')
 
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
-  await page.getByPlaceholder('請輸入密碼').fill('lemon123')
+  await page.getByPlaceholder('請輸入 PIN').fill('1234')
   await page.getByRole('button', { name: '登入' }).click()
 
   await expect(page).toHaveURL(/\/home$/)
@@ -19,9 +19,9 @@ test('帳號密碼錯誤時停留在登入頁並顯示錯誤訊息', async ({ pa
   await page.goto('login')
 
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
-  await page.getByPlaceholder('請輸入密碼').fill('wrong-password')
+  await page.getByPlaceholder('請輸入 PIN').fill('9999')
   await page.getByRole('button', { name: '登入' }).click()
 
-  await expect(page.getByText('帳號或是密碼有誤')).toBeVisible()
+  await expect(page.getByText('帳號或是 PIN 有誤')).toBeVisible()
   await expect(page).toHaveURL(/\/login$/)
 })

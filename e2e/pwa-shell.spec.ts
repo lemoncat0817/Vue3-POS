@@ -23,5 +23,5 @@ test('service worker 預先快取應用程式外殼，離線重新整理仍能�
   await page.reload()
 
   await expect(page.getByPlaceholder('請輸入帳號')).toBeVisible()
-  await expect(page.getByPlaceholder('請輸入密碼')).toBeVisible()
+  await expect(page.getByPlaceholder('請輸入 PIN')).toBeVisible()
 })

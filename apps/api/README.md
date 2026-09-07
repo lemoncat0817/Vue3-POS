@@ -96,7 +96,14 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
 雞還是先有蛋的問題。這把密鑰只在建置初期使用，日常營運用不到。
 
 操作員 PIN（辨識「現在是哪位員工在操作」，跟裝置憑證是分開的兩件事）
-尚未實作，是這個階段接下來的範圍。
+見 `POST /api/auth/operator-login`（`src/routes/auth.ts`）：帳號＋4～6碼
+PIN，一樣要先有有效的裝置憑證才能嘗試（PIN 遠比裝置憑證短，這一層先
+擋掉沒有終端機憑證的用戶端整條暴力猜測路徑），連續錯誤 5 次鎖定 5
+分鐘。`seed/staff.sql` 有三個示範帳號（跟 apps/pos 舊版
+`stores/authorityManagement.ts` 的三個 demo 帳號權限對應）：
+`lemon`／PIN `1234`（店長，全權限）、`james`／PIN `2345`（值班經理）、
+`emily`／PIN `3456`（工讀生）——PIN 明碼只出現在這裡跟 seed 檔案的
+註解裡，資料庫本身只有雜湊值。
 
 ## 免費額度是否夠用（§12 效能預算）
 

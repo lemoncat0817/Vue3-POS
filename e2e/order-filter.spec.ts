@@ -12,7 +12,7 @@ import { expect, test } from '@playwright/test'
 test('訂單編號篩選輸入正規表示式特殊字元不會讓頁面出錯，且篩選結果正確', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
-  await page.getByPlaceholder('請輸入密碼').fill('lemon123')
+  await page.getByPlaceholder('請輸入 PIN').fill('1234')
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
