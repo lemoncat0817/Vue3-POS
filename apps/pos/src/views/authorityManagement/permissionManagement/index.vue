@@ -454,6 +454,9 @@ v-model:current-page="payMethodCurrentPage" small background layout="prev, next"
 </template>
 
 <script setup lang="ts">
+// P4：這個頁面顯示／編輯的「密碼」欄位是純本機狀態，跟登入（views/
+// login/index.vue 改用伺服端 PIN 驗證）已經沒有關聯，見 stores/
+// authorityManagement.ts 開頭的說明。
 import { ref, computed } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
