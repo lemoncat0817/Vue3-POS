@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createApp } from '../src/app'
+import { createTestApp } from './helpers/app'
 import { createTestDb } from './helpers/db'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 測試只做屬性斷言，不需要完整型別
@@ -38,7 +38,7 @@ function buildRequest(overrides: Record<string, unknown> = {}) {
 
 describe('POST /api/orders', () => {
   it('金額由伺服端用 priceLine() 重算，不信任用戶端送來的數字（用戶端送的請求本來就不含金額）', async () => {
-    const app = createApp(createTestDb())
+    const app = createTestApp(createTestDb())
     const res = await app.request('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -59,7 +59,7 @@ describe('POST /api/orders', () => {
 
   it('同一營業日內連續建立訂單，編號依序遞增', async () => {
     const db = createTestDb()
-    const app = createApp(db)
+    const app = createTestApp(db)
     await app.request('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -76,7 +76,7 @@ describe('POST /api/orders', () => {
 
   it('重送同一個 idempotencyKey 回傳原本那筆訂單，不會建立第二筆（冪等）', async () => {
     const db = createTestDb()
-    const app = createApp(db)
+    const app = createTestApp(db)
     const first = await app.request('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -99,7 +99,7 @@ describe('POST /api/orders', () => {
   })
 
   it('拒絕不合法的請求（Zod 驗證失敗，例如空的品項清單）', async () => {
-    const app = createApp(createTestDb())
+    const app = createTestApp(createTestDb())
     const res = await app.request('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -111,7 +111,7 @@ describe('POST /api/orders', () => {
 
 describe('GET /api/orders', () => {
   it('沒有訂單時回傳空陣列', async () => {
-    const app = createApp(createTestDb())
+    const app = createTestApp(createTestDb())
     const res = await app.request('/api/orders')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([])

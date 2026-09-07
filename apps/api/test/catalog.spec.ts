@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createApp } from '../src/app'
+import { createTestApp } from './helpers/app'
 import { addOnOptions, catalogGroups, catalogItems } from '../src/db/schema'
 import { createTestDb } from './helpers/db'
 
@@ -13,7 +13,7 @@ describe('GET /api/catalog', () => {
     ])
     await db.insert(addOnOptions).values([{ id: 'a1', name: '珍珠', price: 10 }])
 
-    const app = createApp(db)
+    const app = createTestApp(db)
     const res = await app.request('/api/catalog')
     expect(res.status).toBe(200)
 
@@ -35,7 +35,7 @@ describe('GET /api/catalog', () => {
   })
 
   it('沒有資料時回傳空陣列，不是錯誤', async () => {
-    const app = createApp(createTestDb())
+    const app = createTestApp(createTestDb())
     const res = await app.request('/api/catalog')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ groups: [], addOns: [] })

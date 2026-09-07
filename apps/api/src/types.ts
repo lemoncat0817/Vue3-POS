@@ -6,5 +6,11 @@ import type { AnyDb } from './db/types'
 export type AppEnv = {
   Variables: {
     db: AnyDb
+    /**
+     * 目前僅有的裝置層級憑證檢查（見 src/middleware/require-device-token.ts）
+     * ——單一固定字串比對，是 P4 完整身分系統（裝置憑證＋操作員登入）
+     * 之前的最小可行防護，先讓「有動作會被拒絕」這件事在 P2 就是真的。
+     */
+    deviceToken: string
   }
 }

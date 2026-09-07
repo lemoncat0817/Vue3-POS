@@ -59,10 +59,24 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
    ```sh
    pnpm --filter @pos/api run db:migrate:remote
    ```
-4. **部署**：
+4. **設定裝置憑證**（見下方「權限檢查」說明）：
+   ```sh
+   pnpm exec wrangler secret put DEVICE_TOKEN
+   ```
+   本機開發（`wrangler dev`）用 `.dev.vars` 檔案設定同一個變數，例如
+   `DEVICE_TOKEN=dev-secret`（`.dev.vars` 已加進 .gitignore，不會被提交）。
+5. **部署**：
    ```sh
    pnpm --filter @pos/api run deploy
    ```
+
+## 權限檢查（P2 的最小可行版本）
+
+異動性的端點（目前是 `POST /api/staff`）要求 `X-Device-Token` 標頭與
+`DEVICE_TOKEN` 這個 secret 相符，見 `src/middleware/require-device-token.ts`。
+這不是重構規劃書 §9 規劃的完整身分系統（裝置憑證＋操作員 PIN 授權包）
+——那是 P4 的範圍。這裡先用單一固定字串，只為了讓「有動作會被拒絕」
+在 P2 就是可以測試、真實存在的行為。P4 會直接取代這個中介層。
 
 ## 免費額度是否夠用（§12 效能預算）
 

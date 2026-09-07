@@ -1,4 +1,7 @@
-/** Worker 的 binding 環境變數（wrangler.jsonc 的 `[[d1_databases]]` 對應這裡的 DB）。 */
+/** Worker 的 binding／secret 環境變數（wrangler.jsonc 對應這裡的 DB；
+ *  DEVICE_TOKEN 用 `wrangler secret put DEVICE_TOKEN` 設定，不寫進
+ *  wrangler.jsonc）。 */
 export interface Env {
   DB: D1Database
+  DEVICE_TOKEN: string
 }
