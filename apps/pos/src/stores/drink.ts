@@ -4,11 +4,13 @@ import { ElMessageBox } from 'element-plus'
 import { useDiscountStore } from '@/stores/discount'
 import type { CartLineItem, DrinkAddOnOption, DrinkListItem, DrinkSimpleOption, DrinkTypeGroup } from '@/types'
 import { fromSelection } from '@/utils/selection'
-const discountStore = useDiscountStore()
-
-
 
 export const useDrinkStore = defineStore('drink', () => {
+  // D-06：原本這行寫在 defineStore() 外面（模組頂層），執行時機早於
+  // app.use(pinia)，靠模組載入順序僥倖成立。移進 setup 函式內，確保
+  // 一定在 Pinia 初始化完成之後才呼叫。
+  const discountStore = useDiscountStore()
+
   // 定義飲料品項資料
   // 定義各種系列的選項資料
   const drinkType = ref<DrinkTypeGroup[]>([
