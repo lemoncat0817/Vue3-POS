@@ -46,8 +46,18 @@ v-if="selectTime[0] != selectTime[1] && dataAnalysisStore.currentDataAnalysis ==
 </template>
 
 <script setup lang="ts">
-import * as echarts from 'echarts'
+// P7（D-16）：原本 `import * as echarts from 'echarts'` 把 echarts 全部
+// 圖表類型、元件、算圖引擎（3D、地圖、雷達圖……這個頁面完全沒用到）一次
+// 全部打進 bundle。這個頁面只用到折線圖、圓餅圖、標題／提示框／圖例／
+// 直角座標系，改成從 echarts/core 個別匯入實際用到的部分，`use()` 手動
+// 註冊——echarts 官方文件推薦的按需引入寫法。
+import * as echarts from 'echarts/core'
+import { LineChart, PieChart } from 'echarts/charts'
+import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 import { ref, watch, nextTick, computed } from 'vue'
+
+echarts.use([LineChart, PieChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer])
 import { useQuery } from '@tanstack/vue-query'
 import { useDataAnalysisStore } from "@/stores/dataAnalysis"
 const dataAnalysisStore = useDataAnalysisStore()

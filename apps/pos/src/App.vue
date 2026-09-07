@@ -1,11 +1,17 @@
 <template>
-  <RouterView />
+  <!-- P7（D-16）：全域中文語系原本靠 main.ts 的 `app.use(ElementPlus,
+       {locale: zhTw})` 一次帶入，改成 on-demand 匯入元件後改用官方文件
+       建議的 <el-config-provider> 包住整棵樹（見 main.ts 的說明）。 -->
+  <el-config-provider :locale="zhTw">
+    <RouterView />
+  </el-config-provider>
 </template>
 
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
+import zhTw from 'element-plus/es/locale/lang/zh-tw'
 import { useDrinkStore } from '@/stores/drink'
 import { useDiscountStore } from '@/stores/discount'
 import { fetchCatalog, toDrinkAddOnOptions, toDrinkTypeGroups } from '@/api/catalog'
