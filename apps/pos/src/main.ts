@@ -34,3 +34,19 @@ app.use(ElementPlus, {
 } as any)
 
 app.mount('#app')
+
+// PWA 更新策略（P3，見 vite.config.ts 的 VitePWA 設定說明：registerType
+// 選 'prompt'，不背景默默重新整理，交由使用者自己決定何時套用）。
+import { registerSW } from 'virtual:pwa-register'
+import { ElNotification } from 'element-plus'
+const updateSW = registerSW({
+  onNeedRefresh() {
+    ElNotification({
+      title: '有新版本可以使用',
+      message: '點這裡重新整理即可套用最新版本，購物車與待同步的訂單不會遺失。',
+      type: 'info',
+      duration: 0,
+      onClick: () => updateSW(true),
+    })
+  },
+})
