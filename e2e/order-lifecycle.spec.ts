@@ -51,7 +51,10 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
   await page.getByRole('button', { name: '已取消', exact: true }).click()
   const statusBody = (await (await statusResponse).json()) as { orderStatus: string }
   expect(statusBody.orderStatus).toBe('已取消')
-  await expect(page.getByText('訂單狀態已設定為已取消')).toBeVisible()
+  // P8：ElMessage 改用 Reka Toast（見 components/ui/ToastHost.vue 的
+  // 說明），畫面上這則訊息用 testid 定位，避免跟 Reka 另外渲染的
+  // aria-live 隱藏播報文字撞在一起。
+  await expect(page.getByTestId('toast-message')).toHaveText('訂單狀態已設定為已取消')
   await expect(row).toContainText('已取消')
 
   // 刪除訂單，確認畫面上這一列真的消失，且是等伺服端回應成功才消失。
@@ -62,6 +65,6 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
   await page.getByRole('button', { name: '確定' }).click()
   const deleteRes = await deleteResponse
   expect(deleteRes.status()).toBe(204)
-  await expect(page.getByText('刪除成功')).toBeVisible()
+  await expect(page.getByTestId('toast-message')).toHaveText('刪除成功')
   await expect(page.getByTestId('order-row').filter({ hasText: createBody.orderId })).toHaveCount(0)
 })
