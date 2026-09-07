@@ -47,42 +47,39 @@ v-if="selectTime[0] != selectTime[1] && dataAnalysisStore.currentDataAnalysis ==
 
 <script setup lang="ts">
 import * as echarts from 'echarts'
-import { ref, onMounted, watch, nextTick } from 'vue'
-import { useOrderStore } from "@/stores/order"
-const orderStore = useOrderStore()
+import { ref, watch, nextTick, computed } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
 import { useDataAnalysisStore } from "@/stores/dataAnalysis"
 const dataAnalysisStore = useDataAnalysisStore()
-import { getDate } from '@/utils/time'
+import { getDate, formatBusinessDate, toBusinessDate } from '@/utils/time'
+import { fetchSalesReport } from '@/api/reports'
+import type { RankedCount } from '@pos/contract'
 
-// 營業額相關的功能
+// P7（D-15）：這個頁面原本直接對 stores/order.ts 裡「這台裝置自己送過
+// 的訂單」（見該 store 的說明）逐筆 `.filter()` 統計，切換一次圖表要重新
+// 掃過整份陣列好幾遍，且看不到其他終端機送出的訂單。現在改成呼叫
+// GET /api/reports/sales（見 api/reports.ts），統計直接由伺服端對 D1
+// 做 SQL 聚合，一次回應涵蓋這個頁面四個分頁全部需要的資料。
+
 // 當前選擇的時間預設為當天
 // el-date-picker 的 daterange 固定回傳 [開始日期, 結束日期] 兩個元素，
 // 標成 tuple 讓 selectTime.value[0]/[1] 不必因 noUncheckedIndexedAccess
 // 而多包一層 undefined 判斷。
 const selectTime = ref<[string, string]>([getDate(), getDate()])
+
+// queryKey 用 computed 包起來，selectTime 改變時（切換日期區間）會自動
+// 重新呼叫 API；staleTime 沒有另外設定——跟菜單／促銷資料不同，報表
+// 資料理應反映「最新送出的訂單」，不適合長期沿用舊的快取結果。
+const { data: salesReport } = useQuery({
+  queryKey: computed(() => ['salesReport', selectTime.value[0], selectTime.value[1]] as const),
+  queryFn: () => fetchSalesReport(toBusinessDate(selectTime.value[0]), toBusinessDate(selectTime.value[1])),
+})
+
 // 時間區間只有一天的營業額
-// 獲得圖表一天的DOM
 const oneDayBusiness = ref<HTMLDivElement>()
-// 計算營業時間的8-22
-const businessHoursOfADay = (startTime: number, endTime: number) => {
-  const label: string[] = []
-  for (let hours = startTime; hours <= endTime; hours++) {
-    label.push(`${hours < 10 ? '0' + hours : hours}:00`)
-  }
-  return label
-}
-// 計算營業額8-22每小時分別的營業額
-const sumOfBusinessOfADay = (startTime: number, endTime: number, date: string) => {
-  const label: number[] = []
-  let data: typeof orderStore.order = []
-  for (let hours = startTime; hours <= endTime; hours++) {
-    data = orderStore.order.filter(order => order.orderTime.slice(0, 10) === date && order.orderTime.slice(11, 13) === `${hours < 10 ? '0' + hours : hours}`)
-    label.push(data.map(data => data.orderPaymentPrice).reduce((acc, cur) => acc + cur, 0))
-  }
-  return label
-}
 // 展示一天的營業額
-const showOneDayBusiness = (date: string) => {
+const showOneDayBusiness = () => {
+  if (!salesReport.value) return
   const myChart = echarts.init(oneDayBusiness.value)
   myChart.setOption({
     title: {
@@ -95,7 +92,7 @@ const showOneDayBusiness = (date: string) => {
     },
     xAxis: {
       type: 'category',
-      data: businessHoursOfADay(8, 22),
+      data: salesReport.value.hourlyRevenue.map(point => `${String(point.hour).padStart(2, '0')}:00`),
       axisLabel: {
         show: true,
         color: 'blue',
@@ -114,7 +111,7 @@ const showOneDayBusiness = (date: string) => {
     },
     series: [
       {
-        data: sumOfBusinessOfADay(8, 22, date),
+        data: salesReport.value.hourlyRevenue.map(point => point.revenue),
         type: 'line',
         smooth: true
       }
@@ -123,33 +120,9 @@ const showOneDayBusiness = (date: string) => {
 }
 // 獲得範圍營業額圖表的DOM
 const rangeBusiness = ref<HTMLDivElement>()
-// 獲得選擇的時間的範圍日期
-const getRangeDate = (startDate: string, endDate: string) => {
-  const dateArray: string[] = []
-  const currentDate = new Date(startDate.replace(/-/g, '/'))
-  const end = new Date(endDate.replace(/-/g, '/'))
-  while (currentDate <= end) {
-    const year = currentDate.getFullYear()
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0') // 月份是0索引的
-    const day = String(currentDate.getDate()).padStart(2, '0')
-    const formattedDate = `${year}/${month}/${day}`
-    dateArray.push(formattedDate)
-    currentDate.setDate(currentDate.getDate() + 1)
-  }
-  return dateArray
-}
-// 計算營業額所選的時間範圍每天分別的營業額
-const sumOfBusinessOfRange = (dateLength: number) => {
-  const label: number[] = []
-  let data: typeof orderStore.order = []
-  for (let date = 0; date < dateLength; date++) {
-    data = orderStore.order.filter(order => order.orderTime.slice(0, 10) === getRangeDate(selectTime.value[0], selectTime.value[1])[date])
-    label.push(data.map(data => data.orderPaymentPrice).reduce((acc, cur) => acc + cur, 0))
-  }
-  return label
-}
 // 展示所選範圍的營業額
 const showRangeBusiness = () => {
+  if (!salesReport.value) return
   const myChart = echarts.init(rangeBusiness.value)
   myChart.setOption({
     title: {
@@ -162,7 +135,7 @@ const showRangeBusiness = () => {
     },
     xAxis: {
       type: 'category',
-      data: getRangeDate(selectTime.value[0], selectTime.value[1]),
+      data: salesReport.value.dailyRevenue.map(point => formatBusinessDate(point.businessDate)),
       axisLabel: {
         show: true,
         color: 'blue',
@@ -181,230 +154,81 @@ const showRangeBusiness = () => {
     },
     series: [
       {
-        data: sumOfBusinessOfRange(getRangeDate(selectTime.value[0], selectTime.value[1]).length),
+        data: salesReport.value.dailyRevenue.map(point => point.revenue),
         type: 'line',
         smooth: true
       }
     ]
   })
 }
+
+// 三張排行圖表（熱門飲料／配料／付款方式）共用同一套 pie 圖設定，差別
+// 只在資料來源、標題、單位。原本這裡是三份幾乎一樣的函式，個別重新
+// 掃一次同一份訂單陣列——現在資料已經由伺服端算好、直接是排好序的前
+// 五名，這裡只需要共用一個渲染函式。
+const showRanking = (
+  el: HTMLDivElement | undefined,
+  data: RankedCount[],
+  title: string,
+  unit: string,
+) => {
+  const myChart = echarts.init(el)
+  myChart.setOption({
+    title: {
+      text: `${selectTime.value[0] === selectTime.value[1] ? selectTime.value[0] : selectTime.value[0] + '~' + selectTime.value[1]} ${title}`,
+      left: 'center'
+    },
+    tooltip: {
+      trigger: 'item',
+      triggerOn: 'click',
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'left',
+    },
+    series: [
+      {
+        name: 'Access From',
+        type: 'pie',
+        radius: '50%',
+        data: data.length === 0
+          ? [{ value: 0, name: '目前無資料' }]
+          : data.map(item => ({ name: item.name, value: item.count })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        },
+        label: {
+          show: true,
+          formatter: `{b}: {c} ${unit} ({d}%)`,
+          color: 'inherit',
+          borderRadius: 5,
+          borderWidth: 1.5,
+          padding: [5, 5, 5, 5],
+          borderColor: 'inherit',
+          fontSize: 14,
+          fontWeight: 'bold',
+          lineHeight: 14,
+        }
+      }
+    ]
+  })
+}
 // 獲取熱門飲料圖表的DOM
 const hotDrink = ref<HTMLDivElement>()
-// 計算營業額所選的時間範圍每天分別的熱銷的飲料前五名
-const sumOfDrinkOfRange = (dateLength: number) => {
-  let data: typeof orderStore.order = []
-  const itemCounts: Record<string, number> = {}
-  for (let date = 0; date < dateLength; date++) {
-    data = orderStore.order.filter(order => order.orderTime.slice(0, 10) === getRangeDate(selectTime.value[0], selectTime.value[1])[date])
-    data.forEach(data => {
-      data.orderData.forEach(item => {
-        const current = itemCounts[item.name]
-        if (current) {
-          itemCounts[item.name] = current + item.count
-        } else {
-          itemCounts[item.name] = item.count
-        }
-      })
-    })
-  }
-  const sortedItems = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])
-  const topFiveItems = sortedItems.slice(0, 5)
-  const chartData = topFiveItems.map(item => ({ name: item[0], value: item[1] }))
-  return chartData
-}
-// 展示所選範圍的熱門飲料前五名
-const showRangeHotDrink = () => {
-  const myChart = echarts.init(hotDrink.value)
-  myChart.setOption({
-    title: {
-      text: `${selectTime.value[0] === selectTime.value[1] ? selectTime.value[0] : selectTime.value[0] + '~' + selectTime.value[1]} 銷售前五名的飲料`,
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'item',
-      triggerOn: 'click',
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-    },
-    series: [
-      {
-        name: 'Access From',
-        type: 'pie',
-        radius: '50%',
-        data: sumOfDrinkOfRange(getRangeDate(selectTime.value[0], selectTime.value[1]).length).length === 0 ? [{ value: 0, name: '目前無資料' }] : sumOfDrinkOfRange(getRangeDate(selectTime.value[0], selectTime.value[1]).length),
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        },
-        label: {
-          show: true,
-          formatter: '{b}: {c} 杯 ({d}%)',
-          color: 'inherit',
-          borderRadius: 5,
-          borderWidth: 1.5,
-          padding: [5, 5, 5, 5],
-          borderColor: 'inherit',
-          fontSize: 14,
-          fontWeight: 'bold',
-          lineHeight: 14,
-        }
-      }
-    ]
-  })
-}
 // 獲取熱門配料圖表的DOM
 const hotIngredients = ref<HTMLDivElement>()
-// 計算營業額所選的時間範圍每天分別的熱銷的配料前五名
-const sumOfIngredientsOfRange = (dateLength: number) => {
-  let data: typeof orderStore.order = []
-  const itemCounts: Record<string, number> = {}
-  for (let date = 0; date < dateLength; date++) {
-    data = orderStore.order.filter(order => order.orderTime.slice(0, 10) === getRangeDate(selectTime.value[0], selectTime.value[1])[date])
-    data.forEach(data => {
-      data.orderData.forEach(item => {
-        // addList 只有兩種實際形狀：字面值 '無添加配料'，或是配料名稱陣列
-        // （見 stores/drink.ts 的 addNewDrink）。這裡的 != 判斷與
-        // Array.isArray 對這兩種形狀而言恆為同一結果，多加的 Array.isArray
-        // 只是讓型別檢查能夠確認可以呼叫 forEach，不改變原本的判斷邏輯。
-        if (item.addList != '無添加配料' && Array.isArray(item.addList)) {
-          item.addList.forEach(addItem => {
-            if (itemCounts[addItem]) {
-              itemCounts[addItem] += item.count
-            } else {
-              itemCounts[addItem] = item.count
-            }
-          })
-        }
-      })
-    })
-  }
-  const sortedItems = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])
-  const topFiveItems = sortedItems.slice(0, 5)
-  const chartData = topFiveItems.map(item => ({ name: item[0], value: item[1] }))
-  return chartData
-}
-// 展示所選範圍的熱門配料前五名
-const showRangeHotIngredients = () => {
-  const myChart = echarts.init(hotIngredients.value)
-  myChart.setOption({
-    title: {
-      text: `${selectTime.value[0] === selectTime.value[1] ? selectTime.value[0] : selectTime.value[0] + '~' + selectTime.value[1]} 銷售前五名的配料`,
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'item',
-      triggerOn: 'click',
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-    },
-    series: [
-      {
-        name: 'Access From',
-        type: 'pie',
-        radius: '50%',
-        data: sumOfIngredientsOfRange(getRangeDate(selectTime.value[0], selectTime.value[1]).length).length === 0 ? [{ value: 0, name: '目前無資料' }] : sumOfIngredientsOfRange(getRangeDate(selectTime.value[0], selectTime.value[1]).length),
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        },
-        label: {
-          show: true,
-          formatter: '{b}: {c} 份 ({d}%)',
-          color: 'inherit',
-          borderRadius: 5,
-          borderWidth: 1.5,
-          padding: [5, 5, 5, 5],
-          borderColor: 'inherit',
-          fontSize: 14,
-          fontWeight: 'bold',
-          lineHeight: 14,
-        }
-      }
-    ]
-  })
-}
 // 獲取熱門付款方式圖表的DOM
 const hotPayMethod = ref<HTMLDivElement>()
-// 計算營業額所選的時間範圍每天分別的熱銷的付款方式前五名
-const sumOfPayMethodOfRange = (dateLength: number) => {
-  let data: typeof orderStore.order = []
-  const itemCounts: Record<string, number> = {}
-  for (let date = 0; date < dateLength; date++) {
-    data = orderStore.order.filter(order => order.orderTime.slice(0, 10) === getRangeDate(selectTime.value[0], selectTime.value[1])[date])
-    data.forEach(data => {
-      const current = itemCounts[data.orderPayment]
-      if (current) {
-        itemCounts[data.orderPayment] = current + 1
-      } else {
-        itemCounts[data.orderPayment] = 1
-      }
-    })
-  }
-  const sortedItems = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])
-  const topFiveItems = sortedItems.slice(0, 5)
-  const chartData = topFiveItems.map(item => ({ name: item[0], value: item[1] }))
-  return chartData
-}
-// 展示所選範圍的熱門付款方式前五名
-const showRangeHotPayMethod = () => {
-  const myChart = echarts.init(hotPayMethod.value)
-  myChart.setOption({
-    title: {
-      text: `${selectTime.value[0] === selectTime.value[1] ? selectTime.value[0] : selectTime.value[0] + '~' + selectTime.value[1]} 常用的前五項的付款方式`,
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'item',
-      triggerOn: 'click',
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-    },
-    series: [
-      {
-        name: 'Access From',
-        type: 'pie',
-        radius: '50%',
-        data: sumOfPayMethodOfRange(getRangeDate(selectTime.value[0], selectTime.value[1]).length).length === 0 ? [{ value: 0, name: '目前無資料' }] : sumOfPayMethodOfRange(getRangeDate(selectTime.value[0], selectTime.value[1]).length),
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        },
-        label: {
-          show: true,
-          formatter: '{b}: {c} 次 ({d}%)',
-          color: 'inherit',
-          borderRadius: 5,
-          borderWidth: 1.5,
-          padding: [5, 5, 5, 5],
-          borderColor: 'inherit',
-          fontSize: 14,
-          fontWeight: 'bold',
-          lineHeight: 14,
-        }
-      }
-    ]
-  })
-}
 
 // 判斷當前要顯示哪個圖表
 const initCharts = () => {
+  if (!salesReport.value) return
   if (selectTime.value[0] === selectTime.value[1] && dataAnalysisStore.currentDataAnalysis === 0) {
-    showOneDayBusiness(selectTime.value[0])
+    showOneDayBusiness()
     return
   }
   if (selectTime.value[0] != selectTime.value[1] && dataAnalysisStore.currentDataAnalysis === 0) {
@@ -412,33 +236,23 @@ const initCharts = () => {
     return
   }
   if (dataAnalysisStore.currentDataAnalysis === 1) {
-    showRangeHotDrink()
+    showRanking(hotDrink.value, salesReport.value.topDrinks, '銷售前五名的飲料', '杯')
     return
   }
   if (dataAnalysisStore.currentDataAnalysis === 2) {
-    showRangeHotIngredients()
+    showRanking(hotIngredients.value, salesReport.value.topAddOns, '銷售前五名的配料', '份')
     return
   }
   if (dataAnalysisStore.currentDataAnalysis === 3) {
-    showRangeHotPayMethod()
+    showRanking(hotPayMethod.value, salesReport.value.topPaymentMethods, '常用的前五項的付款方式', '次')
     return
   }
 }
 
-// 選擇時間改變時顯示當前所選擇的時間的營業額
-watch(() => selectTime.value, () => {
-  nextTick(() => {
-    initCharts()
-  })
-})
-// 要觀看的數據改變時重新渲染頁面
-watch(() => dataAnalysisStore.currentDataAnalysis, () => {
-  nextTick(() => {
-    initCharts()
-  })
-})
-// 頁面刷新時顯示當前所選擇的時間的營業額
-onMounted(() => {
+// 報表資料回來、選擇時間改變、或要觀看的分頁改變時，都要重新渲染圖表
+// ——這三者分別對應「資料到位」「v-if 切到不同 DOM 節點」兩種情境，都
+// 需要等 nextTick 讓對應的 <div ref> 掛載完成才能呼叫 echarts.init()。
+watch([salesReport, () => selectTime.value, () => dataAnalysisStore.currentDataAnalysis], () => {
   nextTick(() => {
     initCharts()
   })
