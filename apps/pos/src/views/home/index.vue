@@ -164,9 +164,9 @@ class="bg-primary-600 text-white hover:bg-primary-700 md:text-[10px] text-[8px] 
                     無使用折扣
                   </div>
                   <div v-else class="flex flex-wrap justify-center gap-1">
-                    <span v-if="row.useDiscountFree != ''" class="rounded-full bg-sky-100 px-2 py-0.5 text-sky-700">{{ row.useDiscountFree }}</span>
-                    <span v-if="row.useDiscountPercent != ''" class="rounded-full bg-red-100 px-2 py-0.5 text-red-700">{{ row.useDiscountPercent }}</span>
-                    <span v-if="row.useDiscountMoney != ''" class="rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">{{ row.useDiscountMoney }}</span>
+                    <span v-if="row.useDiscountFree != ''" class="rounded-full bg-info-100 px-2 py-0.5 text-info-700 dark:bg-info-950 dark:text-info-300">{{ row.useDiscountFree }}</span>
+                    <span v-if="row.useDiscountPercent != ''" class="rounded-full bg-danger-100 px-2 py-0.5 text-danger-700 dark:bg-danger-950 dark:text-danger-300">{{ row.useDiscountPercent }}</span>
+                    <span v-if="row.useDiscountMoney != ''" class="rounded-full bg-warning-100 px-2 py-0.5 text-warning-700 dark:bg-warning-950 dark:text-warning-300">{{ row.useDiscountMoney }}</span>
                   </div>
                 </td>
                 <td class="px-2 py-2 font-bold">{{ row.totalPrice }}元</td>

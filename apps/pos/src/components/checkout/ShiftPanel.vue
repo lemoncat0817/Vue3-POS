@@ -2,7 +2,7 @@
   <div
 class="flex cursor-pointer items-center gap-1" role="button" tabindex="0" data-testid="shift-status"
     @click="open = true" @keyup.enter="open = true">
-    <p class="mr-2 font-bold text-blue-500 xl:text-lg lg:text-base md:text-sm text-xs">班別</p>
+    <p class="mr-2 font-bold text-surface-700 dark:text-surface-300 xl:text-lg lg:text-base md:text-sm text-xs">班別</p>
     <p class="text-center font-bold xl:text-lg lg:text-base md:text-sm text-xs" :class="shift ? 'text-emerald-600' : 'text-surface-400'">
       {{ shift ? '營業中' : '尚未開帳' }}
     </p>
