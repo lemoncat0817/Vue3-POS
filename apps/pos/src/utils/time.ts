@@ -7,15 +7,6 @@ export const getDate = () => {
   return `${year}/${format(month)}/${format(day)}`;
 }
 
-export const getDateForOrder = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-  const format = (num: number) => num < 10 ? `0${num}` : num;
-  return `${year}${format(month)}${format(day)}`;
-}
-
 export const getMoment = () => {
   const now = new Date();
   const hour = now.getHours();

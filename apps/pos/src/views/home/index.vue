@@ -80,7 +80,7 @@
             <div class="w-1/2 flex h-1/2 items-center xl:flex-row flex-col justify-center">
               <p class="xl:mr-2 text-blue-500 font-bold 2xl:text-lg xl:text-sm lg:text-sm  text-[9px]">單號:</p>
               <p class="text-red-500 font-bold 2xl:text-lg xl:text-sm lg:text-sm md:text-[10px] text-[9px]"> {{
-                `${getDateForOrder()}${orderStore.currentOrderNumber}` }}
+                orderStore.nextOrderId }}
               </p>
             </div>
             <!-- 服務人員 -->
@@ -426,7 +426,7 @@ class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:r
 </template>
 
 <script setup lang="ts">
-import { getDate, getMoment, getTime, getDateForOrder } from '@/utils/time'
+import { getDate, getMoment, getTime } from '@/utils/time'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import DrinkType from './drinkType/index.vue'
 import DrinkMenu from './drinkMenu/index.vue'
@@ -1091,7 +1091,7 @@ const sendOrder = () => {
       const resetOrder = () => {
         // 送出訂單的格式
         const toPayOrder: OrderRecord = {
-          orderId: `${getDateForOrder()}${orderStore.currentOrderNumber}`,
+          orderId: orderStore.issueOrderId(),
           orderTime: `${getDate()} ${getTime()}`,
           orderStatus: '已完成',
           staff: `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name} `,
@@ -1110,7 +1110,6 @@ const sendOrder = () => {
         orderStore.useMethod = '紙鈔'
         drinkStore.drinkNotPay = []
         orderStore.payment = '現金'
-        orderStore.currentOrderNumber++
       }
     }).catch(() => {
       ElMessage.error('取消操作')
