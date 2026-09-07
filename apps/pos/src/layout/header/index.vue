@@ -61,14 +61,18 @@ import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import { useRouter } from "vue-router"
 const router = useRouter()
-import { ElMessageBox, ElMessage } from 'element-plus';
+import { confirm } from '@/composables/useConfirm'
+import { showToast } from '@/composables/useToast'
 import { syncStatus } from '@/offline/sync-worker'
 
 // 切換頁面
 // P7（D-12）：原本這裡每個分支都要手動同步一份 pageStore.currentPage，
 // 現在「記住上次瀏覽頁籤」改由 router.afterEach 自動處理（見
 // router/index.ts、stores/page.ts），這裡只需要單純導航。
-const changePage = (page: number) => {
+// P8：組件庫替換——ElMessageBox.confirm／ElMessage 改用 composables/
+// useConfirm.ts／useToast.ts（見 views/order/index.vue 的說明，同一套
+// 基礎設施）。
+const changePage = async (page: number) => {
   if (page === 0) {
     router.push('/home')
   }
@@ -77,19 +81,18 @@ const changePage = (page: number) => {
   }
   if (page === 2) {
     if (drinkStore.drinkNotPay.length != 0) {
-      ElMessageBox.confirm('前往後台設定頁面後將清空點餐頁面,是否要前往後台設定頁面?, ', '警告', {
-        confirmButtonText: '確定前往',
-        cancelButtonText: '取消前往',
-        type: 'warning',
+      const result = await confirm({
+        title: '警告',
+        description: '前往後台設定頁面後將清空點餐頁面,是否要前往後台設定頁面?',
+        confirmText: '確定前往',
+        cancelText: '取消前往',
       })
-        .then(() => {
-          drinkStore.drinkNotPay = []
-          router.push('/backgroundSetting')
-        })
-        .catch(() => {
-          ElMessage.error('取消前往後台設定頁面')
-          return
-        })
+      if (result !== 'confirm') {
+        showToast('取消前往後台設定頁面', 'error')
+        return
+      }
+      drinkStore.drinkNotPay = []
+      router.push('/backgroundSetting')
     } else {
       router.push('/backgroundSetting')
     }
@@ -103,30 +106,24 @@ const changePage = (page: number) => {
 }
 
 // 登出
-const logout = () => {
-  ElMessageBox.confirm('是否要登出? ', '警告', {
-    confirmButtonText: '登出',
-    cancelButtonText: '取消登出',
-    type: 'warning',
+const logout = async () => {
+  const result = await confirm({
+    title: '警告',
+    description: '是否要登出?',
+    confirmText: '登出',
+    cancelText: '取消登出',
   })
-    .then(() => {
-      router.push('/login')
-      loginStore.isLogin = false
-      loginStore.userInfo = []
-      if (loginStore.isRememberPin === false) {
-        loginStore.pin = ''
-      }
-      ElMessage({
-        type: 'success',
-        message: '登出成功',
-      })
-    })
-    .catch(() => {
-      ElMessage({
-        type: 'error',
-        message: '操作取消',
-      })
-    })
+  if (result !== 'confirm') {
+    showToast('操作取消', 'error')
+    return
+  }
+  router.push('/login')
+  loginStore.isLogin = false
+  loginStore.userInfo = []
+  if (loginStore.isRememberPin === false) {
+    loginStore.pin = ''
+  }
+  showToast('登出成功', 'success')
 }
 </script>
 
