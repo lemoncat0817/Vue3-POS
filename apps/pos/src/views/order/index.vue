@@ -220,13 +220,16 @@ const filterOrderStaff = ref('')
 const filterOrderStatus = ref('')
 const filterOrderPayMethod = ref('')
 // 篩選訂單清單
+// D-05：篩選字串含正規表示式特殊字元（如 "("）時，String.match() 會把它當
+// pattern 編譯，丟出 SyntaxError 讓整頁掛掉。這裡只需要單純的子字串比對，
+// 改用 includes() 就不會誤把使用者輸入當成正規表示式解析。
 const filterOrder = computed(() => {
   return orderStore.order.filter(item => {
-    return item.orderId.match(filterOrderId.value) &&
-      item.orderTime.match(filterOrderTime.value) &&
-      item.staff.match(filterOrderStaff.value) &&
-      item.orderStatus.match(filterOrderStatus.value) &&
-      item.orderPayment.match(filterOrderPayMethod.value)
+    return item.orderId.includes(filterOrderId.value) &&
+      item.orderTime.includes(filterOrderTime.value) &&
+      item.staff.includes(filterOrderStaff.value) &&
+      item.orderStatus.includes(filterOrderStatus.value) &&
+      item.orderPayment.includes(filterOrderPayMethod.value)
   })
 })
 // 重置篩選功能
