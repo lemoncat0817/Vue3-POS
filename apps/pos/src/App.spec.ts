@@ -1,8 +1,22 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import App from './App.vue'
+
+// App.vue 掛載時會嘗試呼叫 GET /api/catalog（見 P3 的菜單同步邏輯）。
+// 單元測試環境沒有真的後端可打，這裡固定讓 fetch 失敗，驗證的重點正是
+// 「連不到伺服端時，畫面仍然照常掛載，不會因為這個背景請求失敗而壞掉」。
+beforeEach(() => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => Promise.reject(new Error('測試環境沒有後端，模擬離線'))),
+  )
+})
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 /**
  * 這是 P0 階段唯一的元件測試，目的是證明 jsdom + @vue/test-utils +
@@ -27,8 +41,9 @@ describe('App', () => {
     router.push('/')
     await router.isReady()
 
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const wrapper = mount(App, {
-      global: { plugins: [createPinia(), router] },
+      global: { plugins: [createPinia(), router, [VueQueryPlugin, { queryClient }]] },
     })
     await flushPromises()
 

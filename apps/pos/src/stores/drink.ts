@@ -10,6 +10,20 @@ export const useDrinkStore = defineStore('drink', () => {
   // 一定在 Pinia 初始化完成之後才呼叫。
   const discountStore = useDiscountStore()
 
+  // P3：菜單資料改由 apps/api 當唯一來源（見 src/api/catalog.ts）。這裡
+  // 保留的陣列是「第一次啟動、還沒有任何持久化狀態、且伺服端也連不到」
+  // 時的離線種子資料，不是常態資料來源。
+  //
+  // drinkType／drinkAdd 整包狀態都會被 persist:true 存進 localStorage
+  // （見檔尾），backgroundSetting/productManagement 頁面又是直接原地
+  // 修改這兩個陣列（新增／刪除系列與加料選項），還沒有對應的伺服端寫入
+  // API——如果每次啟動都無條件用伺服端資料覆蓋，管理員在背景設定頁做的
+  // 異動會在下次重新整理後消失。catalogSource 就是用來擋這件事：只在
+  // 「這個瀏覽器從來沒同步過伺服端菜單」時才套用一次 hydrateCatalogFromServer()
+  // 的結果，之後永遠以本機（可能已被管理員編輯過）的資料為準。等後續
+  // 階段把菜單管理也接上伺服端寫入 API，才需要真正的雙向同步。
+  const catalogSource = ref<'seed' | 'server'>('seed')
+
   // 定義飲料品項資料
   // 定義各種系列的選項資料
   const drinkType = ref<DrinkTypeGroup[]>([
@@ -744,7 +758,18 @@ export const useDrinkStore = defineStore('drink', () => {
     return Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value - drinkPayPrice.value
   })
 
+  // 見上方 catalogSource 的說明：只在第一次（本機從未同步過伺服端菜單）
+  // 時套用，之後就算重新呼叫也不會再覆蓋本機資料。
+  const hydrateCatalogFromServer = (catalog: { groups: DrinkTypeGroup[]; addOns: DrinkAddOnOption[] }) => {
+    if (catalogSource.value === 'server') return
+    drinkType.value = catalog.groups
+    drinkAdd.value = catalog.addOns
+    catalogSource.value = 'server'
+  }
+
   return {
+    catalogSource,
+    hydrateCatalogFromServer,
     drinkType,
     drinkIce,
     drinkSugar,
