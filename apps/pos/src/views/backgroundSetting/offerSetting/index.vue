@@ -153,18 +153,19 @@
 
   <!-- 新增現金折扣券 -->
   <ModalDialog v-model:open="addMoneyDiscountDialog" title="新增現金折扣券">
-    <Form :validation-schema="toTypedSchema(moneyCouponSchema())" :initial-values="{ name: '' }" @submit="onSubmitAddMoneyDiscount">
+    <Form v-slot="{ isSubmitting }" :validation-schema="toTypedSchema(moneyCouponSchema())" :initial-values="{ name: '' }" @submit="onSubmitAddMoneyDiscount">
       <FormField name="name" label="折扣券名稱" placeholder="例如: $50折價券..." />
       <FormField name="discountMoney" label="折扣的金額" type="number" step="1" placeholder="純數字,例如:1,2,3..." />
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="addMoneyDiscountDialog = false">取消</button>
-        <button type="submit" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700">新增</button>
+        <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">新增</button>
       </div>
     </Form>
   </ModalDialog>
   <!-- 編輯現金折扣券 -->
   <ModalDialog v-model:open="editMoneyDiscountDialog" title="編輯現金折扣券">
     <Form
+      v-slot="{ isSubmitting }"
       :validation-schema="toTypedSchema(moneyCouponSchema(currentMoneyDiscount.id))"
       :initial-values="{ name: currentMoneyDiscount.name, discountMoney: Number(currentMoneyDiscount.discountMoney) }"
       @submit="onSubmitEditMoneyDiscount">
@@ -172,25 +173,26 @@
       <FormField name="discountMoney" label="折扣的金額" type="number" step="1" placeholder="純數字,例如:1,2,3..." />
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="editMoneyDiscountDialog = false">取消</button>
-        <button type="submit" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700">保存</button>
+        <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">保存</button>
       </div>
     </Form>
   </ModalDialog>
 
   <!-- 新增折數折扣券 -->
   <ModalDialog v-model:open="addPercentDiscountDialog" title="新增折數折扣券">
-    <Form :validation-schema="toTypedSchema(percentCouponSchema())" :initial-values="{ name: '' }" @submit="onSubmitAddPercentDiscount">
+    <Form v-slot="{ isSubmitting }" :validation-schema="toTypedSchema(percentCouponSchema())" :initial-values="{ name: '' }" @submit="onSubmitAddPercentDiscount">
       <FormField name="name" label="折扣券名稱" placeholder="例如: 九折折價券..." />
       <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" placeholder="純數字,例如:0.9,0.75..." />
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="addPercentDiscountDialog = false">取消</button>
-        <button type="submit" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700">新增</button>
+        <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">新增</button>
       </div>
     </Form>
   </ModalDialog>
   <!-- 編輯折數折扣券 -->
   <ModalDialog v-model:open="editPercentDiscountDialog" title="編輯折數折扣券">
     <Form
+      v-slot="{ isSubmitting }"
       :validation-schema="toTypedSchema(percentCouponSchema(currentPercentDiscount.id))"
       :initial-values="{ name: currentPercentDiscount.name, discountPercent: Number(currentPercentDiscount.discountMoney) }"
       @submit="onSubmitEditPercentDiscount">
@@ -198,7 +200,7 @@
       <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" placeholder="純數字,例如:0.9,0.75..." />
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="editPercentDiscountDialog = false">取消</button>
-        <button type="submit" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700">保存</button>
+        <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">保存</button>
       </div>
     </Form>
   </ModalDialog>
@@ -206,6 +208,7 @@
   <!-- 編輯常用優惠 -->
   <ModalDialog v-model:open="editOftenUseDiscountDialog" title="編輯常用優惠">
     <Form
+      v-slot="{ isSubmitting }"
       :validation-schema="toTypedSchema(oftenUseRateSchema())"
       :initial-values="{
         name: currentOftenUseDiscount.name,
@@ -218,7 +221,7 @@
       <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="percentDisabled" placeholder="純數字,例如:0.95,0.85..." />
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="editOftenUseDiscountDialog = false">取消</button>
-        <button type="submit" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700">保存</button>
+        <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">保存</button>
       </div>
     </Form>
   </ModalDialog>

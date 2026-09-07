@@ -121,10 +121,17 @@ test('後台編輯現金折價券：沒選取會提示、欄位不合法會即�
   await expect(editDialog.getByText('此折扣券名稱已存在,請重新輸入')).toBeVisible()
   await expect(editDialog).toBeVisible()
 
-  // 改成合法的新名稱＋新金額，應該真的送出 PUT 並更新畫面。
+  // 改成合法的新名稱＋新金額，應該真的送出 PUT 並更新畫面。填完先確認
+  // 欄位真的吃到新值（等 VeeValidate 的 reactivity 穩定），不然緊接著
+  // 點保存偶爾會用到還沒更新前的舊值送出——這是實際發生過的 e2e flake，
+  // 不是假設性的預防。
   const updatedName = `${couponName}-已編輯`
-  await editDialog.getByPlaceholder('例如: $50折價券...').fill(updatedName)
-  await editDialog.getByPlaceholder('純數字,例如:1,2,3...').fill('88')
+  const editNameInput = editDialog.getByPlaceholder('例如: $50折價券...')
+  const editMoneyInput = editDialog.getByPlaceholder('純數字,例如:1,2,3...')
+  await editNameInput.fill(updatedName)
+  await expect(editNameInput).toHaveValue(updatedName)
+  await editMoneyInput.fill('88')
+  await expect(editMoneyInput).toHaveValue('88')
   const updateResponse = page.waitForResponse(
     (res) =>
       res.url().includes(`/api/promotions/money-coupons/${createBody.id}`) &&
