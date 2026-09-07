@@ -4,6 +4,11 @@
        建議的 <el-config-provider> 包住整棵樹（見 main.ts 的說明）。 -->
   <el-config-provider :locale="zhTw">
     <RouterView />
+    <!-- P8：規劃書「組件庫替換」的確認框／提示訊息（Reka UI），全 App
+         只掛一個實例——見 components/ui/ 的說明。目前只有 order/index.vue
+         這個示範頁在用，其餘頁面仍照舊使用 ElMessage／ElMessageBox。 -->
+    <ConfirmDialogHost />
+    <ToastHost />
   </el-config-provider>
 </template>
 
@@ -12,6 +17,8 @@
 import { onMounted, onUnmounted, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import zhTw from 'element-plus/es/locale/lang/zh-tw'
+import ConfirmDialogHost from '@/components/ui/ConfirmDialogHost.vue'
+import ToastHost from '@/components/ui/ToastHost.vue'
 import { useDrinkStore } from '@/stores/drink'
 import { useDiscountStore } from '@/stores/discount'
 import { fetchCatalog, toDrinkAddOnOptions, toDrinkTypeGroups } from '@/api/catalog'

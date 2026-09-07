@@ -32,14 +32,16 @@ test('訂單編號篩選輸入正規表示式特殊字元不會讓頁面出錯�
 
   await page.getByText('查看訂單', { exact: true }).click()
   await expect(page).toHaveURL(/\/order$/)
-  const table = page.locator('.el-table').first()
+  // P8：篩選欄位改成一次全部顯示（見 views/order/index.vue 的說明），
+  // 不需要先點按鈕開啟彈出面板才能看到輸入框。
+  const orderIdInput = page.getByPlaceholder('輸入訂單編號')
+  const rows = page.getByTestId('order-row')
   // order store 內建 4 筆黃金資料集示範訂單（見 order.ts），加上剛送出
   // 的這一筆，總共 5 筆。
-  await expect(table.locator('.el-table__row')).toHaveCount(5)
+  await expect(rows).toHaveCount(5)
 
   // 觸發舊版 bug 的輸入：單獨一個「(」不是合法的正規表示式語法。
-  await page.getByRole('button', { name: '篩選訂單編號' }).click()
-  await page.getByPlaceholder('請輸入訂單編號').fill('(')
+  await orderIdInput.fill('(')
 
   // 頁面不應該白畫面或拋出未捕捉例外，且篩選正確地找不到符合的訂單
   // （目前的訂單編號格式是純數字，不含括號）。
@@ -48,10 +50,10 @@ test('訂單編號篩選輸入正規表示式特殊字元不會讓頁面出錯�
 
   // 換成合法的子字串（黃金資料集訂單編號共同前綴），確認篩選本身的邏輯
   // 仍然正確，不是只是「不會壞掉」。
-  await page.getByPlaceholder('請輸入訂單編號').fill('202406')
-  await expect(table.locator('.el-table__row')).toHaveCount(4)
+  await orderIdInput.fill('202406')
+  await expect(rows).toHaveCount(4)
 
   // 清空篩選後，全部訂單要能恢復顯示，確認頁面狀態沒有被破壞。
   await page.getByRole('button', { name: '重置篩選' }).click()
-  await expect(table.locator('.el-table__row')).toHaveCount(5)
+  await expect(rows).toHaveCount(5)
 })

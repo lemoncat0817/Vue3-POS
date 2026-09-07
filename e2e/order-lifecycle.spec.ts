@@ -34,7 +34,10 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
 
   await page.getByText('查看訂單', { exact: true }).click()
   await expect(page).toHaveURL(/\/order$/)
-  const row = page.locator('.el-table__row', { hasText: createBody.orderId })
+  // P8：訂單表格改用 TanStack Table 搭配自訂 Tailwind 標記（見
+  // views/order/index.vue 的說明），不再是 el-table，row 用
+  // data-testid="order-row" 定位。
+  const row = page.getByTestId('order-row').filter({ hasText: createBody.orderId })
   await expect(row).toBeVisible()
 
   // 編輯訂單狀態 → 選「已取消」（點取消按鈕，見 editOrderStatus 的說明）。
@@ -60,5 +63,5 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
   const deleteRes = await deleteResponse
   expect(deleteRes.status()).toBe(204)
   await expect(page.getByText('刪除成功')).toBeVisible()
-  await expect(page.locator('.el-table__row', { hasText: createBody.orderId })).toHaveCount(0)
+  await expect(page.getByTestId('order-row').filter({ hasText: createBody.orderId })).toHaveCount(0)
 })

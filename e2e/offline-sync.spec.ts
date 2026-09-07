@@ -48,7 +48,9 @@ test('斷網時送出的 3 張訂單先落地本機佇列，重新連線後自�
   // 筆 + 這裡新送的 3 筆），不需要網路。
   await page.getByText('查看訂單', { exact: true }).click()
   await expect(page).toHaveURL(/\/order$/)
-  await expect(page.locator('.el-table__row')).toHaveCount(7)
+  // P8：訂單表格改用 TanStack Table 搭配自訂 Tailwind 標記（見
+  // views/order/index.vue 的說明），row 用 data-testid="order-row" 定位。
+  await expect(page.getByTestId('order-row')).toHaveCount(7)
 
   // 頁首的同步狀態列（見 layout/header/index.vue）要讓店員看得出「這 3
   // 張單還沒真的送達伺服端」，不是只有畫面上看起來送出去了。
