@@ -135,6 +135,22 @@ export const orders = sqliteTable(
   (table) => [uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey)],
 )
 
+/**
+ * 訂單序號的原子計數器（P6：規劃書 §3「多終端情境」）。
+ *
+ * P2～P5 的作法是「查同一營業日已有幾筆訂單、+1」，這在單一終端情境下
+ * 沒問題，但兩台終端幾乎同時送單時，兩者查到的訂單數可能相同，算出
+ * 一樣的序號——後 insert 的那筆會因為 orderId 撞到 orders 表的
+ * primary key 直接失敗，顧客等於白排了隊。這張表用 SQLite 的
+ * `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` 換成單一 SQL
+ * 陳述式內完成「讀當前值、加一、寫回」，不需要額外包交易（單一陳述式
+ * 本身就是原子的），見 routes/orders.ts 的 nextOrderSequence()。
+ */
+export const orderSequences = sqliteTable('order_sequences', {
+  businessDate: text('business_date').primaryKey(),
+  counter: integer('counter').notNull(),
+})
+
 export const orderLines = sqliteTable('order_lines', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   orderId: text('order_id')
@@ -172,4 +188,5 @@ export const schema = {
   staff,
   orders,
   orderLines,
+  orderSequences,
 }

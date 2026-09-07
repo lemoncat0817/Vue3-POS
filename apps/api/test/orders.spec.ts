@@ -89,6 +89,41 @@ describe('POST /api/orders', () => {
     expect(body2.orderId).toBe('202406102')
   })
 
+  it('多筆訂單同時送出時，每筆都核發到不同的序號（P6：多終端情境，不會撞號）', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    const idempotencyKeys = [
+      '01ARZ3NDEKTSV4RRFFQ69G5FA1',
+      '01ARZ3NDEKTSV4RRFFQ69G5FA2',
+      '01ARZ3NDEKTSV4RRFFQ69G5FA3',
+      '01ARZ3NDEKTSV4RRFFQ69G5FA4',
+      '01ARZ3NDEKTSV4RRFFQ69G5FA5',
+    ]
+    // 用 Promise.all 同時送出——模擬多台終端幾乎同時送單。實測過這裡
+    // 用 better-sqlite3 的測試環境不一定能穩定重現舊版「查同一營業日
+    // 已有幾筆訂單、+1」的撞號 bug（better-sqlite3 是同步呼叫，這個
+    // 測試環境下的 await 交錯時機跟真正兩個獨立網路請求打進 Workers
+    // runtime 不完全一樣）；這裡當基本正確性檢查，實際撞號情境已經用
+    // wrangler dev 對本機 D1 手動送過真正並發的請求驗證過（見
+    // apps/api/README.md）。
+    const responses = await Promise.all(
+      idempotencyKeys.map((idempotencyKey) =>
+        app.request('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+          body: JSON.stringify(buildRequest({ idempotencyKey })),
+        }),
+      ),
+    )
+
+    expect(responses.every((res) => res.status === 201)).toBe(true)
+    const bodies = await Promise.all(responses.map((res) => readJson(res)))
+    const orderIds = bodies.map((body) => body.orderId)
+    expect(new Set(orderIds).size).toBe(idempotencyKeys.length)
+  })
+
   it('重送同一個 idempotencyKey 回傳原本那筆訂單，不會建立第二筆（冪等）', async () => {
     const db = createTestDb()
     await seedPromotions(db)

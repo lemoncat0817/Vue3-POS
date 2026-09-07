@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { eq, like } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { createOrderRequestSchema, orderSchema, type AppliedCoupon } from '@pos/contract'
 import { priceLine, type OftenUseRates } from '@pos/domain'
 import { moneyCoupons, orderLines, orders, oftenUseRates as oftenUseRatesTable, percentCoupons } from '../db/schema'
@@ -120,6 +120,49 @@ async function loadOftenUseRates(db: AnyDb): Promise<OftenUseRates> {
 }
 
 /**
+ * 原子核發下一個訂單序號（P6：規劃書 §3「多終端情境」）。單一 SQL
+ * 陳述式（INSERT ... ON CONFLICT DO UPDATE ... RETURNING）內完成
+ * 「這個營業日目前的計數、加一、寫回」，不需要另外包交易——單一陳述式
+ * 本身就是原子的，兩台終端幾乎同時送單也不會核發到同一個序號（對照
+ * P2～P5「查同一營業日已有幾筆訂單、+1」的作法：兩次查詢中間有空檔，
+ * 兩台終端可能查到同一個計數，算出同一個序號，其中一筆 insert 會因為
+ * orderId 撞到 primary key 直接失敗）。
+ *
+ * 第一次插入某個營業日的計數列時，起始值不是無條件從 1 開始，而是
+ * COALESCE 這個營業日在 orders 表裡已經用掉的最大序號＋1（沒有的話
+ * 才是 1）。這不是多餘的防禦：這張表是這次改動才新增的，orders 表裡
+ * 可能已經有用舊版「查訂單數＋1」算出來的資料（本機開發／既有部署都
+ * 是這樣）——如果無條件從 1 開始，第一筆新單就會撞到舊資料的
+ * primary key。這裡假設 orderId 固定是 8 碼營業日＋序號（SUBSTR 從
+ * 第 9 碼切）——businessDateSchema 已經驗證是 8 碼數字，這個假設成立。
+ */
+async function nextOrderSequence(db: AnyDb, businessDate: string): Promise<number> {
+  // 刻意不把 orderSequences／orders 的 Column 物件內插進這段 sql``——
+  // drizzle 會把它們展開成完整限定名稱（例如 "order_sequences"."business_date"），
+  // 但 SQLite 的 INSERT 欄位清單、ON CONFLICT 欄位清單、SET 左側都只
+  // 接受不限定的欄位名稱，用限定名稱會直接語法錯誤。這裡的表名／欄位名
+  // 都是寫死的常值（不是使用者輸入），直接寫字面量就好，只有真正的值
+  // （businessDate）才用參數帶入。
+  const row = await db.get<{ counter: number }>(sql`
+    insert into order_sequences (business_date, counter)
+    values (
+      ${businessDate},
+      coalesce(
+        (select max(cast(substr(order_id, 9) as integer))
+         from orders where order_id like ${businessDate} || '%'),
+        0
+      ) + 1
+    )
+    on conflict (business_date) do update set counter = counter + 1
+    returning counter
+  `)
+  if (!row) {
+    throw new Error(`核發訂單序號失敗（businessDate=${businessDate}）`)
+  }
+  return row.counter
+}
+
+/**
  * 訂單層級折價券（P5）：用戶端只送「套用了哪張」，實際折抵金額查真正
  * 的折價券資料重算——不相信用戶端算好的數字，這是 D-01／D-02 修復
  * 方式的延伸。折抵後金額不會是負的（money 折價券面額超過訂單金額時，
@@ -158,14 +201,11 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json(toOrderResponse(existing, lines), 200)
     }
 
-    // 序號：同一個營業日內的訂單數 + 1（單店單機情境，見重構規劃書
-    // §3「門市規模」的前提）。多終端情境下的序號分配是 P6 的範圍。
-    const sameDayOrders = await db
-      .select()
-      .from(orders)
-      .where(like(orders.orderId, `${input.businessDate}%`))
-      .all()
-    const orderId = `${input.businessDate}${sameDayOrders.length + 1}`
+    // 序號核發之後，如果下面的 insert 因為其他原因失敗，這個序號就浪費
+    // 掉了（不會被回收重用）——序號中間有空隙是可以接受的，序號撞號
+    // （見 nextOrderSequence 的說明）不行。
+    const sequence = await nextOrderSequence(db, input.businessDate)
+    const orderId = `${input.businessDate}${sequence}`
 
     const oftenUseRatesNow = await loadOftenUseRates(db)
     const pricedLines = input.lines.map((line) => {
