@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { constantRoutes } from './routes'
 import { useLoginStore } from '@/stores/login'
 import { usePageStore } from '@/stores/page'
-import { ElMessage } from 'element-plus'
+import { showToast } from '@/composables/useToast'
 import { fromSelection } from '@/utils/selection'
 
 /**
@@ -62,7 +62,7 @@ export function createAppRouter() {
     const capability = to.meta.capability
     if (capability && fromSelection(loginStore.userInfo)?.[capability] !== 'O') {
       next(false)
-      ElMessage.error('您沒有權限訪問該頁面, 請聯繫管理員')
+      showToast('您沒有權限訪問該頁面, 請聯繫管理員', 'error')
       return
     }
 

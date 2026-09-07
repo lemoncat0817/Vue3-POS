@@ -44,8 +44,8 @@ function buildStaff(overrides: Partial<Record<AuthorityKey, 'O' | 'X'>> = {}): S
   }
 }
 
-vi.mock('element-plus', () => ({
-  ElMessage: { error: vi.fn() },
+vi.mock('@/composables/useToast', () => ({
+  showToast: vi.fn(),
 }))
 
 describe('router guard', () => {
@@ -73,7 +73,7 @@ describe('router guard', () => {
   })
 
   it('D-11：欄位不是 O 時，受保護路由會被擋下並提示錯誤', async () => {
-    const { ElMessage } = await import('element-plus')
+    const { showToast } = await import('@/composables/useToast')
     const router = createAppRouter()
     const loginStore = useLoginStore()
     loginStore.isLogin = true
@@ -81,7 +81,7 @@ describe('router guard', () => {
 
     await router.push('/dataAnalysis')
     expect(router.currentRoute.value.path).not.toBe('/dataAnalysis')
-    expect(ElMessage.error).toHaveBeenCalledWith('您沒有權限訪問該頁面, 請聯繫管理員')
+    expect(showToast).toHaveBeenCalledWith('您沒有權限訪問該頁面, 請聯繫管理員', 'error')
   })
 
   it('D-11：欄位是 O 時可以正常進入受保護路由', async () => {
