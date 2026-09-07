@@ -59,24 +59,44 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
    ```sh
    pnpm --filter @pos/api run db:migrate:remote
    ```
-4. **設定裝置憑證**（見下方「權限檢查」說明）：
+4. **設定核發密鑰**（見下方「裝置憑證」說明）：
    ```sh
-   pnpm exec wrangler secret put DEVICE_TOKEN
+   pnpm exec wrangler secret put PROVISIONING_SECRET
    ```
    本機開發（`wrangler dev`）用 `.dev.vars` 檔案設定同一個變數，例如
-   `DEVICE_TOKEN=dev-secret`（`.dev.vars` 已加進 .gitignore，不會被提交）。
+   `PROVISIONING_SECRET=dev-provisioning-secret`（`.dev.vars` 已加進
+   .gitignore，不會被提交）。
 5. **部署**：
    ```sh
    pnpm --filter @pos/api run deploy
    ```
+6. **核發第一台裝置的憑證**（部署完成、拿到正式 API 網址之後）：
+   ```sh
+   curl -X POST https://<你的 Workers 網址>/api/devices \
+     -H "Content-Type: application/json" \
+     -H "X-Provisioning-Secret: <上面設定的 PROVISIONING_SECRET>" \
+     -d '{"name":"前台收銀機"}'
+   ```
+   回應裡的 `token` 只會出現這一次，之後即使是資料庫本身也還原不出來
+   （只存雜湊值，見 `src/auth/hash.ts`），要記得馬上存到 apps/pos 建置
+   時用的 `VITE_DEVICE_TOKEN` 環境變數。弄丟了沒關係，用
+   `POST /api/devices/:id/revoke` 撤銷這台、重新核發一台新的即可。
 
-## 權限檢查（P2 的最小可行版本）
+## 身分系統（P4：規劃書 §9）
 
-異動性的端點（目前是 `POST /api/staff`）要求 `X-Device-Token` 標頭與
-`DEVICE_TOKEN` 這個 secret 相符，見 `src/middleware/require-device-token.ts`。
-這不是重構規劃書 §9 規劃的完整身分系統（裝置憑證＋操作員 PIN 授權包）
-——那是 P4 的範圍。這裡先用單一固定字串，只為了讓「有動作會被拒絕」
-在 P2 就是可以測試、真實存在的行為。P4 會直接取代這個中介層。
+裝置憑證取代了 P2 的單一固定字串：`devices` 資料表存每台終端機的憑證
+雜湊值＋鹽（`src/auth/hash.ts` 的 PBKDF2-SHA256），核發／清單／撤銷見
+`src/routes/devices.ts`。異動性的端點（`POST /api/orders`、
+`POST /api/staff`）都要求 `X-Device-Token` 標頭能對應到一台「還沒被
+撤銷」的裝置，見 `src/middleware/require-device-token.ts`。
+
+核發本身（`POST /api/devices`）用另一把獨立的密鑰
+（`PROVISIONING_SECRET`）防護，不能用裝置憑證保護「核發裝置憑證」這件
+事本身——你要核發的正是還沒有憑證的那台新終端機，用裝置憑證會是先有
+雞還是先有蛋的問題。這把密鑰只在建置初期使用，日常營運用不到。
+
+操作員 PIN（辨識「現在是哪位員工在操作」，跟裝置憑證是分開的兩件事）
+尚未實作，是這個階段接下來的範圍。
 
 ## 免費額度是否夠用（§12 效能預算）
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { staff } from '../src/db/schema'
-import { createTestApp, TEST_DEVICE_TOKEN } from './helpers/app'
+import { createTestApp, createTestAppWithDevice } from './helpers/app'
 import { createTestDb } from './helpers/db'
 
 const newStaffInput = {
@@ -45,10 +45,10 @@ describe('POST /api/staff（權限拒絕案例，見重構規劃書 §14 P2 退�
 
   it('裝置憑證正確時允許建立員工', async () => {
     const db = createTestDb()
-    const app = createTestApp(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/staff', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': TEST_DEVICE_TOKEN },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify(newStaffInput),
     })
     expect(res.status).toBe(201)
@@ -56,5 +56,25 @@ describe('POST /api/staff（權限拒絕案例，見重構規劃書 §14 P2 退�
     const list = (await (await app.request('/api/staff')).json()) as unknown[]
     expect(list).toHaveLength(1)
     expect(list[0]).toMatchObject(newStaffInput)
+  })
+
+  it('裝置憑證被撤銷後就不再能通過檢查', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    const list = (await (
+      await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken } })
+    ).json()) as Array<{ id: string }>
+    await app.request(`/api/devices/${list[0]!.id}/revoke`, {
+      method: 'POST',
+      headers: { 'X-Device-Token': deviceToken },
+    })
+
+    const res = await app.request('/api/staff', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(newStaffInput),
+    })
+    expect(res.status).toBe(401)
   })
 })

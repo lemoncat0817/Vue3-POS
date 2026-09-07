@@ -1,18 +1,32 @@
 import { createMiddleware } from 'hono/factory'
+import { isNull } from 'drizzle-orm'
+import { verifySecret } from '../auth/hash'
+import { devices } from '../db/schema'
 import type { AppEnv } from '../types'
 
 /**
- * 最小可行的裝置層級防護：比對 `X-Device-Token` 標頭與設定值是否相符。
+ * 裝置層級防護（P4：規劃書 §9 的身分系統）。
  *
- * 這不是重構規劃書 §9 規劃的完整身分系統（裝置憑證＋操作員 PIN 授權包）
- * ——那是 P4 的範圍。這裡先用單一固定字串，只為了讓「有動作會被拒絕」
- * 在 P2 就是可以測試、真實存在的行為，而不是等 P4 才第一次出現權限
- * 檢查。之後 P4 會直接取代這個中介層，不會疊加在上面。
+ * P2 版本比對單一固定字串（環境變數），P4 改成真的查 devices 表：
+ * 逐一用 verifySecret() 跟每一台「還沒被撤銷」的裝置比對雜湊值——裝置
+ * 數量在單店單機情境下很小（見規劃書 §3 的部署前提），逐筆比對不是
+ * 效能問題；換來的是每台裝置可以個別核發、個別撤銷，不再是全店共用
+ * 一把、永遠無法單獨作廢的密鑰。
  */
 export const requireDeviceToken = createMiddleware<AppEnv>(async (c, next) => {
   const provided = c.req.header('X-Device-Token')
-  if (!provided || provided !== c.get('deviceToken')) {
+  if (!provided) {
     return c.json({ error: '裝置憑證無效或缺漏' }, 401)
   }
-  await next()
+
+  const db = c.get('db')
+  const activeDevices = await db.select().from(devices).where(isNull(devices.revokedAt)).all()
+  for (const device of activeDevices) {
+    if (await verifySecret(provided, device.tokenHash, device.tokenSalt)) {
+      await next()
+      return
+    }
+  }
+
+  return c.json({ error: '裝置憑證無效或缺漏' }, 401)
 })

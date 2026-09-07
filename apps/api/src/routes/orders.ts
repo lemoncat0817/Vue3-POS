@@ -4,6 +4,7 @@ import { createOrderRequestSchema, orderSchema } from '@pos/contract'
 import { priceLine } from '@pos/domain'
 import { orderLines, orders } from '../db/schema'
 import { CURRENT_OFTEN_USE_RATES } from '../config/often-use-rates'
+import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
 /**
@@ -11,10 +12,15 @@ import type { AppEnv } from '../types'
  * 重新計算——用戶端送來的數字不被信任，這是 D-01／D-02 修復方式在
  * 伺服端的延伸（見重構規劃書 §6、packages/pos-contract/src/order.ts
  * 的說明）。
+ *
+ * P4 之前這個端點沒有掛任何裝置憑證檢查——任何打得到這個 API 的人都能
+ * 建立訂單，是身分系統落地前的一個真實缺口。掛上 requireDeviceToken
+ * 之後，apps/pos 送單時要記得帶 X-Device-Token（見 src/api/http.ts）。
  */
 const createOrderRoute = createRoute({
   method: 'post',
   path: '/',
+  middleware: [requireDeviceToken] as const,
   request: {
     body: {
       content: { 'application/json': { schema: createOrderRequestSchema } },
@@ -28,6 +34,10 @@ const createOrderRoute = createRoute({
     201: {
       description: '訂單建立成功',
       content: { 'application/json': { schema: orderSchema } },
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } },
     },
   },
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createTestApp } from './helpers/app'
+import { createTestApp, createTestAppWithDevice } from './helpers/app'
 import { createTestDb } from './helpers/db'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 測試只做屬性斷言，不需要完整型別
@@ -36,12 +36,24 @@ function buildRequest(overrides: Record<string, unknown> = {}) {
   }
 }
 
-describe('POST /api/orders', () => {
-  it('金額由伺服端用 priceLine() 重算，不信任用戶端送來的數字（用戶端送的請求本來就不含金額）', async () => {
+describe('POST /api/orders（裝置憑證檢查，見 P4）', () => {
+  it('沒有帶裝置憑證標頭時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildRequest()),
+    })
+    expect(res.status).toBe(401)
+  })
+})
+
+describe('POST /api/orders', () => {
+  it('金額由伺服端用 priceLine() 重算，不信任用戶端送來的數字（用戶端送的請求本來就不含金額）', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify(
         buildRequest({
           lines: [{ ...validLine, ecoDiscount: true }], // 80*2 - 5*2 = 150
@@ -59,15 +71,15 @@ describe('POST /api/orders', () => {
 
   it('同一營業日內連續建立訂單，編號依序遞增', async () => {
     const db = createTestDb()
-    const app = createTestApp(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
     await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FAV' })),
     })
     const res2 = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FAW' })),
     })
     const body2 = await readJson(res2)
@@ -76,10 +88,10 @@ describe('POST /api/orders', () => {
 
   it('重送同一個 idempotencyKey 回傳原本那筆訂單，不會建立第二筆（冪等）', async () => {
     const db = createTestDb()
-    const app = createTestApp(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
     const first = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify(buildRequest()),
     })
     const firstBody = await readJson(first)
@@ -87,7 +99,7 @@ describe('POST /api/orders', () => {
 
     const second = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify(buildRequest()),
     })
     const secondBody = await readJson(second)
@@ -99,10 +111,10 @@ describe('POST /api/orders', () => {
   })
 
   it('拒絕不合法的請求（Zod 驗證失敗，例如空的品項清單）', async () => {
-    const app = createTestApp(createTestDb())
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify(buildRequest({ lines: [] })),
     })
     expect(res.status).toBe(400)

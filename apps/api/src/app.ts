@@ -30,7 +30,7 @@ const healthRoute = createRoute({
  * 傳入 D1 還是 better-sqlite3 版本的 Drizzle 實例——路由本身不需要知道
  * 底層是哪個 driver（見 db/client.ts 的說明）。
  */
-export function createApp(db: AnyDb, config: { deviceToken: string; provisioningSecret: string }) {
+export function createApp(db: AnyDb, config: { provisioningSecret: string }) {
   const app = new OpenAPIHono<AppEnv>()
 
   // 單店單機使用（見規劃書 §1 的部署前提），前端（apps/pos）跟這個 API
@@ -45,7 +45,6 @@ export function createApp(db: AnyDb, config: { deviceToken: string; provisioning
 
   app.use('*', async (c, next) => {
     c.set('db', db)
-    c.set('deviceToken', config.deviceToken)
     c.set('provisioningSecret', config.provisioningSecret)
     await next()
   })

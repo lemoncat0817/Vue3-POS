@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { devices } from '../src/db/schema'
-import { createTestApp, TEST_DEVICE_TOKEN, TEST_PROVISIONING_SECRET } from './helpers/app'
+import { createTestApp, createTestAppWithDevice, TEST_PROVISIONING_SECRET } from './helpers/app'
 import { createTestDb } from './helpers/db'
 
 describe('POST /api/devices（核發裝置憑證）', () => {
@@ -52,18 +52,13 @@ describe('GET /api/devices（裝置清單，需要裝置憑證）', () => {
   })
 
   it('有裝置憑證時回傳清單，不含憑證本身', async () => {
-    const db = createTestDb()
-    const app = createTestApp(db)
-    await app.request('/api/devices', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Provisioning-Secret': TEST_PROVISIONING_SECRET },
-      body: JSON.stringify({ name: '前台收銀機' }),
-    })
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb(), '前台收銀機')
 
-    const res = await app.request('/api/devices', { headers: { 'X-Device-Token': TEST_DEVICE_TOKEN } })
+    const res = await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken } })
     expect(res.status).toBe(200)
     const body = (await res.json()) as Array<Record<string, unknown>>
     expect(body).toHaveLength(1)
+    expect(body[0]).toMatchObject({ name: '前台收銀機' })
     expect(body[0]).not.toHaveProperty('token')
     expect(body[0]).not.toHaveProperty('tokenHash')
   })
@@ -72,28 +67,30 @@ describe('GET /api/devices（裝置清單，需要裝置憑證）', () => {
 describe('POST /api/devices/:id/revoke（撤銷）', () => {
   it('只撤銷指定的那一台，不影響其他裝置', async () => {
     const db = createTestDb()
-    const app = createTestApp(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db, '前台收銀機')
 
-    const createOne = async (name: string) => {
-      const res = await app.request('/api/devices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Provisioning-Secret': TEST_PROVISIONING_SECRET },
-        body: JSON.stringify({ name }),
-      })
-      return (await res.json()) as { id: string }
-    }
+    const secondRes = await app.request('/api/devices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Provisioning-Secret': TEST_PROVISIONING_SECRET },
+      body: JSON.stringify({ name: '後台備用機' }),
+    })
+    const deviceB = (await secondRes.json()) as { id: string; token: string }
 
-    const deviceA = await createOne('前台收銀機')
-    const deviceB = await createOne('後台備用機')
+    const listBefore = (await (
+      await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken } })
+    ).json()) as Array<{ id: string; name: string }>
+    const deviceA = listBefore.find((d) => d.name === '前台收銀機')!
 
     const revokeRes = await app.request(`/api/devices/${deviceA.id}/revoke`, {
       method: 'POST',
-      headers: { 'X-Device-Token': TEST_DEVICE_TOKEN },
+      headers: { 'X-Device-Token': deviceToken },
     })
     expect(revokeRes.status).toBe(200)
 
+    // 用「還沒被撤銷」的裝置 B 的憑證來查清單——裝置 A 的憑證這時已經
+    // 撤銷，不能再拿它自己來驗證撤銷後的結果。
     const list = (await (
-      await app.request('/api/devices', { headers: { 'X-Device-Token': TEST_DEVICE_TOKEN } })
+      await app.request('/api/devices', { headers: { 'X-Device-Token': deviceB.token } })
     ).json()) as Array<{ id: string; revokedAt: string | null }>
     const a = list.find((d) => d.id === deviceA.id)
     const b = list.find((d) => d.id === deviceB.id)
@@ -102,10 +99,10 @@ describe('POST /api/devices/:id/revoke（撤銷）', () => {
   })
 
   it('找不到裝置時回傳 404', async () => {
-    const app = createTestApp(createTestDb())
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/devices/does-not-exist/revoke', {
       method: 'POST',
-      headers: { 'X-Device-Token': TEST_DEVICE_TOKEN },
+      headers: { 'X-Device-Token': deviceToken },
     })
     expect(res.status).toBe(404)
   })
