@@ -59,14 +59,20 @@ v-if="drinkStore.drinkMenu === 1"
         class="xl:w-1/2 lg:w-[45%] w-[70%] grid grid-cols-3 gap-x-2 place-items-center">
         <p class="text-blue-800 xl:text-base lg:text-sm md:text-[10px] sm:text-[7.5px] text-[7px]">{{ `共
           ${drinkStore.drinkAdd.length} 樣` }}</p>
-        <div class="h-full flex items-center">
-          <el-pagination
-v-model:current-page="currentPage" small background layout="prev, next"
-            :total="drinkStore.drinkAdd.length" :page-size="10" @current-change="handleCurrentChange" />
+        <!-- P8：el-pagination 只用了 prev/next 兩顆按鈕，改用原生按鈕，
+             取代 el-pagination（見 home/index.vue 的說明，同一輪組件庫
+             替換）。 -->
+        <div class="h-full flex items-center gap-1">
+          <button
+            type="button" class="rounded border border-surface-400 px-1 text-blue-800 disabled:opacity-40"
+            :disabled="currentPage <= 1" @click="handleCurrentChange(currentPage - 1)">‹</button>
+          <button
+            type="button" class="rounded border border-surface-400 px-1 text-blue-800 disabled:opacity-40"
+            :disabled="currentPage >= pageCount" @click="handleCurrentChange(currentPage + 1)">›</button>
         </div>
         <p class="text-blue-800 xl:text-base lg:text-sm md:text-[10px] sm:text-[7.5px] text-[7px]">{{
           `${drinkStore.drinkAdd.length > 0
-            ? currentPage : 0}/${Math.ceil(drinkStore.drinkAdd.length / 10)}頁` }}</p>
+            ? currentPage : 0}/${pageCount}頁` }}</p>
       </div>
       <div class="h-full flex justify-center items-center lg:w-[55%] w-[80%]">
         <div
@@ -99,7 +105,8 @@ class="h-[85%] text-blue-800 bg-red-400 border-solid border-2 rounded-lg border-
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
 import { ref, computed } from 'vue'
-import { ElMessageBox, ElMessage } from 'element-plus';
+import { confirm } from '@/composables/useConfirm'
+import { showToast } from '@/composables/useToast'
 import type { DrinkAddOnOption } from '@/types'
 import { fromSelection } from '@/utils/selection'
 
@@ -158,34 +165,25 @@ const currentPage = ref(1)
 const sliceAddMenu = computed(() => {
   return drinkStore.drinkAdd.slice((currentPage.value - 1) * 10, currentPage.value * 10)
 })
+const pageCount = computed(() => Math.max(Math.ceil(drinkStore.drinkAdd.length / 10), 1))
 
 // 重置所有已選擇項目的相關功能
 // 重置所有選項
-const resetAll = () => {
-  ElMessageBox.confirm(
-    '是否要重置上面所有選項?',
-    '警告',
-    {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  )
-    .then(() => {
-      reset()
-      ElMessage.success('重置成功')
-    })
-    .catch(() => {
-      ElMessage.error('取消操作')
-    })
-  const reset = () => {
-    drinkStore.drinkTypeMenu = ''
-    drinkStore.drinkItem = []
-    drinkStore.drinkSetSugar = ''
-    drinkStore.drinkSetIce = ''
-    drinkStore.drinkSetSize = ''
-    drinkStore.drinkAddList = []
-  }
+// P8：ElMessageBox.confirm／ElMessage 改用 composables/useConfirm.ts／
+// useToast.ts（見 views/order/index.vue 的說明，同一套基礎設施）。
+const resetAll = async () => {
+  const result = await confirm({
+    title: '警告',
+    description: '是否要重置上面所有選項?',
+  })
+  if (result !== 'confirm') return
+  drinkStore.drinkTypeMenu = ''
+  drinkStore.drinkItem = []
+  drinkStore.drinkSetSugar = ''
+  drinkStore.drinkSetIce = ''
+  drinkStore.drinkSetSize = ''
+  drinkStore.drinkAddList = []
+  showToast('重置成功', 'success')
 }
 </script>
 

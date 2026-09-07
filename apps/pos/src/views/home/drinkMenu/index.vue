@@ -10,14 +10,19 @@ v-for="item in sliceDrinkMenu" :key="item.id" class="2xl:w-28 2xl:h-28 xl:w-24 x
       </div>
     </div>
     <!-- 飲料品項下半部 -->
+    <!-- P8：el-pagination 只用了 prev/next 兩顆按鈕，改用原生按鈕，取代
+         el-pagination（見 home/index.vue 的說明，同一輪組件庫替換）。 -->
     <div class="w-full h-10 bg-gray-400 shadow-xl rounded-lg flex justify-around items-center">
       <p class="text-blue-800">{{ `共 ${currentDrinks.length} 樣` }}</p>
-      <div class="h-full flex items-center">
-        <el-pagination
-v-model:current-page="currentPage" small background layout="prev, next"
-          :total="currentDrinks.length" @current-change="handleCurrentChange" />
+      <div class="h-full flex items-center gap-2">
+        <button
+          type="button" class="rounded border border-surface-400 px-2 text-blue-800 disabled:opacity-40"
+          :disabled="currentPage <= 1" @click="handleCurrentChange(currentPage - 1)">‹</button>
+        <button
+          type="button" class="rounded border border-surface-400 px-2 text-blue-800 disabled:opacity-40"
+          :disabled="currentPage >= pageCount" @click="handleCurrentChange(currentPage + 1)">›</button>
       </div>
-      <p class="text-blue-800">{{ `${currentDrinks.length > 0 ? currentPage : 0}/${Math.ceil(currentDrinks.length / 10)}頁`
+      <p class="text-blue-800">{{ `${currentDrinks.length > 0 ? currentPage : 0}/${pageCount}頁`
         }}</p>
     </div>
   </div>
@@ -59,6 +64,7 @@ const currentPage = ref(1)
 const sliceDrinkMenu = computed(() => {
   return currentDrinks.value.slice((currentPage.value - 1) * 10, currentPage.value * 10)
 })
+const pageCount = computed(() => Math.max(Math.ceil(currentDrinks.value.length / 10), 1))
 </script>
 
 <style lang="scss" scoped></style>
