@@ -122,9 +122,16 @@ export const orders = sqliteTable(
     orderBagCount: integer('order_bag_count').notNull(),
     orderCupCount: integer('order_cup_count').notNull(),
     orderTotalPrice: integer('order_total_price').notNull(),
+    // 顯示用的付款方式摘要（多筆 tender 以頓號連接），實際明細見
+    // order_tenders 表——這個欄位不是計算來源，只是列表頁不用另外
+    // join 就能顯示付款方式的捷徑，跟 discountName 是同樣的取捨。
     orderPayment: text('order_payment').notNull(),
     orderDiscount: integer('order_discount').notNull(),
     orderPaymentPrice: integer('order_payment_price').notNull(),
+    // 找零總額（P6：規劃書 §10 P0「混合支付」）。從 order_tenders 的
+    // receivedAmount 算出後存一份在這裡，理由跟 orderPayment 一樣：
+    // 列表頁與收據不用為了一個數字另外 join 明細表。
+    changeDue: integer('change_due').notNull().default(0),
     discountName: text('discount_name').notNull(),
     // 冪等鍵：同一個 idempotencyKey 重送不會建立第二筆訂單（見 §8）。
     idempotencyKey: text('idempotency_key').notNull(),
@@ -177,6 +184,28 @@ export const orderLines = sqliteTable('order_lines', {
   oftenUseDiscount3: integer('often_use_discount_3', { mode: 'boolean' }).notNull(),
 })
 
+/**
+ * 一筆訂單實際收到的每一筆支付（P6：規劃書 §10 P0「混合支付」）。
+ *
+ * 取代舊的 orders.orderPayment 單一字串——那個欄位只能表達「這筆訂單
+ * 用一種方式付清」，無法表達「現金 300 元 + 行動支付找零」這種真實
+ * 收銀情境，而班別結算、退款、發票全部都要知道「實際收了哪些支付、
+ * 各多少」才對得起帳（見規劃書 §10 P0 表格「混合支付必須最先」的
+ * 說明）。receivedAmount 只在需要找零時才有值（主要是現金），為
+ * null 代表「這筆 tender 剛好付清分擔的金額，沒有找零」。
+ */
+export const orderTenders = sqliteTable('order_tenders', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  orderId: text('order_id')
+    .notNull()
+    .references(() => orders.orderId),
+  // 顯示順序（對應使用者在付款面板上加入 tender 的順序），不是主鍵。
+  seq: integer('seq').notNull(),
+  method: text('method').notNull(),
+  amount: integer('amount').notNull(),
+  receivedAmount: integer('received_amount'),
+})
+
 export const schema = {
   catalogGroups,
   catalogItems,
@@ -188,5 +217,6 @@ export const schema = {
   staff,
   orders,
   orderLines,
+  orderTenders,
   orderSequences,
 }

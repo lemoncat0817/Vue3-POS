@@ -21,10 +21,12 @@ test('訂單編號篩選輸入正規表示式特殊字元不會讓頁面出錯�
   await page.getByText('楊枝甘露2.0', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
-  await page.getByRole('button', { name: '送出訂單' }).click()
-  await page.getByRole('button', { name: '確定' }).click()
-  // 預設付款方式為「紙鈔」現金，送出後彈出「應收取現金…」提示。
-  await page.getByRole('button', { name: '收取現金' }).click()
+  // P6：組件庫替換示範頁「送出訂單」單一按鈕＋兩層確認框，改成
+  // 「結帳」開啟 PaymentPanel（見 components/checkout/PaymentPanel.vue）。
+  await page.getByTestId('checkout-button').click()
+  await page.getByRole('button', { name: '現金', exact: true }).click()
+  await page.getByRole('button', { name: '加入', exact: true }).click()
+  await page.getByRole('button', { name: '確認送出', exact: true }).click()
   // P8：ElMessage 改用 Reka Toast（見 components/ui/ToastHost.vue 的
   // 說明），畫面上這則訊息用 testid 定位，避免跟 Reka 另外渲染的
   // aria-live 隱藏播報文字撞在一起。

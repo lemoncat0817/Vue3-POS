@@ -38,6 +38,44 @@ export const paymentUseMethodSchema = z.enum(['紙鈔', '感應', '掃描'])
 export type PaymentUseMethod = z.infer<typeof paymentUseMethodSchema>
 
 /**
+ * 混合支付（重構規劃書 §10 P0「混合支付」，也是這一整組功能裡最先要
+ * 做的一項——班別結算、退款、發票都要靠 tenders 才對得起帳）。
+ *
+ * 用戶端只送「這筆 tender 用什麼方式支付、分擔多少應付金額」，`amount`
+ * 的總和必須剛好等於伺服端重算出的應付金額（見 orders.ts 的
+ * validateTenders），不吃用戶端自己算的合計，理由跟品項金額不信任
+ * 用戶端一致。`receivedAmount` 只用在需要找零的支付方式（主要是現金）
+ * ——「實收」跟「這筆帳單分擔的金額」是兩件事：客人給 500 元付一筆
+ * 88 元的單，`amount` 是 88，`receivedAmount` 是 500，差額 412 由伺服端
+ * 算成 changeDue 找零，不需要用戶端自己算。
+ *
+ * `amount` 允許 0（不是 `positive()`）：現金折價券／折數折價券把應付
+ * 金額折到 0 元時（見 orders.ts 的 resolveOrderPayment），這筆訂單
+ * 仍然需要一筆 tender 才能結案（tenders 陣列至少 1 筆），只是分擔的
+ * 金額是 0——這比另外為「完全免費的訂單」設計一套跳過付款畫面的特例
+ * 簡單。
+ */
+export const tenderInputSchema = z
+  .object({
+    method: z.string().min(1),
+    amount: z.number().int().nonnegative(),
+    receivedAmount: z.number().int().positive().optional(),
+  })
+  .refine((tender) => tender.receivedAmount === undefined || tender.receivedAmount >= tender.amount, {
+    message: '實收金額不能小於這筆支付分擔的金額',
+    path: ['receivedAmount'],
+  })
+export type TenderInput = z.infer<typeof tenderInputSchema>
+
+/** 伺服端回傳的 tender：跟輸入同形狀，沒有額外衍生欄位。 */
+export const tenderSchema = z.object({
+  method: z.string().min(1),
+  amount: z.number().int().nonnegative(),
+  receivedAmount: z.number().int().positive().optional(),
+})
+export type Tender = z.infer<typeof tenderSchema>
+
+/**
  * 送出訂單的請求。appliedCoupon 只是「套用了哪張折價券」的意圖（P5：
  * 促銷引擎），實際折抵金額（orderDiscount）與名稱（discountName）由
  * 伺服端查真正的折價券資料重算——這是 D-01／D-02 修復方式在訂單層級
@@ -51,7 +89,7 @@ export const createOrderRequestSchema = z.object({
   staff: z.string().min(1),
   lines: z.array(orderLineInputSchema).min(1),
   bagCount: z.number().int().nonnegative(),
-  payment: z.string().min(1),
+  tenders: z.array(tenderInputSchema).min(1),
   appliedCoupon: appliedCouponSchema,
 })
 export type CreateOrderRequest = z.infer<typeof createOrderRequestSchema>
@@ -81,9 +119,14 @@ export const orderSchema = z.object({
   orderBagCount: z.number().int().nonnegative(),
   orderCupCount: z.number().int().nonnegative(),
   orderTotalPrice: z.number().int().nonnegative(),
+  /** 顯示用的付款方式摘要（多筆 tender 時以頓號連接），非計算來源。 */
   orderPayment: z.string(),
   orderDiscount: z.number().int().nonnegative(),
   orderPaymentPrice: z.number().int().nonnegative(),
   discountName: z.string(),
+  /** 這筆訂單實際收到的每一筆支付，見 tenderSchema 的說明。 */
+  tenders: z.array(tenderSchema).min(1),
+  /** 找零總額——由伺服端從 tenders 的 receivedAmount 算出，見 orders.ts。 */
+  changeDue: z.number().int().nonnegative(),
 })
 export type Order = z.infer<typeof orderSchema>

@@ -30,7 +30,7 @@ function buildRequest(overrides: Record<string, unknown> = {}) {
     staff: '店長 - Lemon',
     lines: [validLine],
     bagCount: 0,
-    payment: '現金',
+    tenders: [{ method: '現金', amount: 160 }],
     appliedCoupon: { type: 'none' },
     ...overrides,
   }
@@ -88,6 +88,7 @@ describe('GET /api/reports/sales', () => {
             validLine,
             { ...validLine, name: '珍珠奶茶', count: 1, addList: ['珍珠', '椰果'] },
           ],
+          tenders: [{ method: '現金', amount: 240 }], // 160 + 80
         }),
       ),
     })

@@ -41,11 +41,6 @@
                 <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">{{ drinkStore.currentDrinkCount
                   }} 杯</p>
               </div>
-              <!-- 當前付款方式 -->
-              <div class="flex mr-2">
-                <p class="text-blue-500 mr-2 font-bold  xl:text-base lg:text-sm text-xs">當前付款方式</p>
-                <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">{{ orderStore.payment }}</p>
-              </div>
             </div>
             <div class="flex-col">
               <!-- 目前累積金額 -->
@@ -104,45 +99,19 @@ class="bg-red-300 text-blue-800 md:text-[10px] text-[8px] font-bold border-solid
               <button
 class="bg-red-300 text-blue-800 md:text-[10px] text-[8px] font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300 2xl:text-base xl:text-sm lg:text-xs"
                 @click="clearNotPay">清空全部品項</button>
-              <!-- 修改付款方式 -->
+              <!-- 結帳／付款 -->
+              <!-- P6（規劃書 §10 P0「混合支付」）：原本「先選一種付款
+                   方式→再按送出訂單→彈出一次性確認框」的三步流程，改成
+                   單一按鈕直接開啟結帳面板（PaymentPanel），面板裡才是
+                   真正組出這筆訂單要用哪些付款方式、各分擔多少的地方。
+                   結帳前不再需要先「修改付款方式」——這件事本身就是每次
+                   結帳當下才決定的，不是需要事先設定的持久狀態。 -->
               <button
 class="bg-red-300 text-blue-800 md:text-[10px] text-[8px] font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300 2xl:text-base xl:text-sm lg:text-xs"
-                @click="openPayMethodMenu">修改付款方式</button>
-              <!-- 付款方式選單 -->
-              <!-- P8：組件庫替換——el-dialog 改用 ModalDialog（Reka UI
-                   Dialog），el-pagination（只用 prev/next）改用原生按鈕，
-                   跟其餘 P8 已遷移頁面一致。 -->
-              <ModalDialog v-model:open="dialogPayMethod" title="選擇付款方式">
-                <div class="grid h-[112px] w-full grid-cols-4 grid-rows-3 gap-2">
-                  <div
-v-for="item in slicePayMethod" :key="item.id" class="w-28 h-8 border-2 border-solid border-black rounded-lg text-center px-2 bg-red-300 cursor-pointer"
-                    :class="{ 'bg-yellow-400': orderStore.currentSelectingPayment === item.name, 'pointer-events-none': item.disabled, 'opacity-50': item.disabled }"
-                    @click="selectPayMethod(item)">
-                    <p class="text-blue-800 font-bold text-xl">{{ item.name }}</p>
-                  </div>
-                </div>
-                <!-- 付款方式分頁器 -->
-                <div class="mt-6 flex w-full items-center justify-around rounded-lg bg-surface-100 px-2 py-2 text-sm text-surface-600">
-                  <p>{{ `共 ${orderStore.paymentList.length} 樣` }}</p>
-                  <div class="flex items-center gap-2">
-                    <button
-                      type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
-                      :disabled="payMethodCurrentPage <= 1" @click="handlePayMethodCurrentChange(payMethodCurrentPage - 1)">‹</button>
-                    <button
-                      type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
-                      :disabled="payMethodCurrentPage >= payMethodPageCount" @click="handlePayMethodCurrentChange(payMethodCurrentPage + 1)">›</button>
-                  </div>
-                  <p>{{ `${orderStore.paymentList.length > 0 ? payMethodCurrentPage : 0}/${payMethodPageCount}頁` }}</p>
-                </div>
-                <div class="mt-4 flex justify-end gap-2">
-                  <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closePayMethod">取消</button>
-                  <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="changePayMethod">確定</button>
-                </div>
-              </ModalDialog>
-              <!-- 送出訂單 -->
-              <button
-class="bg-red-300 text-blue-800 md:text-[10px] text-[8px] font-bold border-solid border-2 border-black rounded-lg mr-2 px-1 select-none active:bg-yellow-300 2xl:text-base xl:text-sm lg:text-xs"
-                @click="sendOrder">送出訂單</button>
+                data-testid="checkout-button" @click="openPaymentPanel">結帳</button>
+              <PaymentPanel
+                :open="dialogPayment" :due-amount="drinkStore.drinkPayPrice" :payment-methods="orderStore.paymentList"
+                @cancel="cancelPayment" @submit="submitPayment" />
             </div>
           </div>
         </div>
@@ -445,6 +414,7 @@ import DrinkMenu from './drinkMenu/index.vue'
 import DrinkCustomized from './drinkCustomized/index.vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
+import PaymentPanel, { type TenderDraft } from '@/components/checkout/PaymentPanel.vue'
 import { alert, confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useDrinkStore } from '@/stores/drink'
@@ -455,7 +425,7 @@ import { useOrderStore } from '@/stores/order'
 const orderStore = useOrderStore()
 import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
-import type { CartLineItem, FormNumeric, OrderRecord, PaymentMethod } from '@/types'
+import type { CartLineItem, FormNumeric, OrderRecord } from '@/types'
 import { fromSelection } from '@/utils/selection'
 import { getBusinessDate, priceLine, toggleContainer, toggleFree, toggleRate, type LineDiscountFlags, type OftenUseRates } from '@pos/domain'
 import type { AppliedCoupon } from '@pos/contract'
@@ -894,60 +864,32 @@ const useDiscount = () => {
 }
 
 // 送出訂單相關功能
-// 初始化送單資料格式
-// 控制付款方式視窗開關
-const dialogPayMethod = ref(false)
-// 打開付款方式菜單
-const openPayMethodMenu = () => {
-  dialogPayMethod.value = true
-  orderStore.currentSelectingPayment = orderStore.payment
-}
-// 取消編輯付款方式
-const closePayMethod = () => {
-  dialogPayMethod.value = false
-}
-// 付款方式分頁器
-// 定義付款方式頁面當前頁數
-const payMethodCurrentPage = ref(1)
-// 控制當前所選的頁數
-const handlePayMethodCurrentChange = (page: number) => {
-  payMethodCurrentPage.value = page
-}
-// 計算並切換當前付款方式頁面內容
-const slicePayMethod = computed(() => {
-  return orderStore.paymentList.slice((payMethodCurrentPage.value - 1) * 12, payMethodCurrentPage.value * 12)
-})
-const payMethodPageCount = computed(() => Math.max(Math.ceil(orderStore.paymentList.length / 12), 1))
-// 選擇付款方式
-const selectPayMethod = (item: PaymentMethod) => {
-  orderStore.currentSelectingPayment = item.name
-  orderStore.currentSelectingUseMethod = item.useMethod
-}
-// 更改付款方式
-const changePayMethod = () => {
-  orderStore.payment = orderStore.currentSelectingPayment
-  orderStore.useMethod = orderStore.currentSelectingUseMethod
-  dialogPayMethod.value = false
-  showToast('付款方式更改成功', 'success')
-}
-// 送出訂單
-const sendOrder = async () => {
+//
+// P6（規劃書 §10 P0「混合支付」）：原本「送出訂單」是單一按鈕——先跳
+// 一次「確定要送出訂單嗎?」的通用確認框，再跳一次依 useMethod 而定
+// 的「應支付…」提示，兩次都跟實際付款方式無關，純粹是操作確認。現在
+// 改用 PaymentPanel（見 components/checkout/PaymentPanel.vue）取代
+// 這兩層確認：面板本身要求「湊到剩餘應付為 0 才能按確認送出」，這件
+// 事本身就是不可能誤觸的確認動作，不需要額外再包一層通用確認框。
+const dialogPayment = ref(false)
+// 打開結帳面板（先擋掉購物車是空的情況，這是舊版「送出訂單」按鈕
+// 原本就有的檢查，行為不變）
+const openPaymentPanel = () => {
   if (drinkStore.drinkNotPay.length <= 0 && drinkStore.currentBagCount <= 0) {
     void alert({ title: '通知', description: '訂單內沒有品項無法送單', confirmText: '繼續添加品項' })
     return
   }
-  const result = await confirm({ title: '警告', description: '確定要送出訂單嗎?' })
-  if (result !== 'confirm') return
+  dialogPayment.value = true
+}
+const cancelPayment = () => {
+  dialogPayment.value = false
+}
+// 結帳面板確認送出：這裡才是真正組出訂單、送進離線佇列的地方。
+const submitPayment = async (tenders: TenderDraft[]) => {
+  dialogPayment.value = false
 
-  if (orderStore.useMethod === '感應') {
-    await alert({ title: '通知', description: `應支付$${drinkStore.drinkPayPrice}元,請感應${orderStore.payment}`, confirmText: '感應完成' })
-  } else if (orderStore.useMethod === '紙鈔') {
-    await alert({ title: '通知', description: `應收取現金$${drinkStore.drinkPayPrice}元`, confirmText: '收取現金' })
-  } else {
-    await alert({ title: '通知', description: `應支付$${drinkStore.drinkPayPrice}元,請掃描${orderStore.payment}條碼`, confirmText: '掃描完成' })
-  }
-
-  // 送出訂單的格式
+  // 送出訂單的格式；orderPayment 是顯示用摘要（多筆 tender 用頓號
+  // 連接），跟伺服端 orders.ts 算出來的摘要規則一致。
   const toPayOrder: OrderRecord = {
     orderId: orderStore.issueOrderId(),
     orderTime: `${getDate()} ${getTime()}`,
@@ -957,7 +899,7 @@ const sendOrder = async () => {
     orderBagCount: drinkStore.currentBagCount,
     orderCupCount: drinkStore.currentDrinkCount,
     orderTotalPrice: drinkStore.drinkTotalMoney,
-    orderPayment: orderStore.payment,
+    orderPayment: tenders.map((tender) => tender.method).join('、'),
     orderDiscount: drinkStore.useDiscountPrice,
     orderPaymentPrice: drinkStore.drinkPayPrice,
     discountName: discountStore.currentDiscountName === '' ? '無' : discountStore.currentDiscountName,
@@ -989,15 +931,12 @@ const sendOrder = async () => {
     staff: toPayOrder.staff,
     lines: toPayOrder.orderData,
     bagCount: toPayOrder.orderBagCount,
-    payment: toPayOrder.orderPayment,
+    tenders,
     appliedCoupon,
   })
   void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
 
-  orderStore.currentSelectingUseMethod = '紙鈔'
-  orderStore.useMethod = '紙鈔'
   drinkStore.drinkNotPay = []
-  orderStore.payment = '現金'
 }
 </script>
 

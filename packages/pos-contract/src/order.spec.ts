@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createOrderRequestSchema } from './order'
+import { createOrderRequestSchema, tenderInputSchema } from './order'
 
 const validLine = {
   name: '楊枝甘露2.0',
@@ -22,7 +22,7 @@ const validRequest = {
   staff: '店長 - Lemon',
   lines: [validLine],
   bagCount: 0,
-  payment: '現金',
+  tenders: [{ method: '現金', amount: 80 }],
   appliedCoupon: { type: 'none' as const },
 }
 
@@ -72,6 +72,22 @@ describe('createOrderRequestSchema', () => {
     )
   })
 
+  it('拒絕空的 tenders', () => {
+    const result = createOrderRequestSchema.safeParse({ ...validRequest, tenders: [] })
+    expect(result.success).toBe(false)
+  })
+
+  it('接受多筆混合支付', () => {
+    const result = createOrderRequestSchema.safeParse({
+      ...validRequest,
+      tenders: [
+        { method: '現金', amount: 30, receivedAmount: 50 },
+        { method: '信用卡', amount: 50 },
+      ],
+    })
+    expect(result.success).toBe(true)
+  })
+
   it('addList 可以是字面值或字串陣列兩種形狀', () => {
     expect(
       createOrderRequestSchema.safeParse({
@@ -85,5 +101,28 @@ describe('createOrderRequestSchema', () => {
         lines: [{ ...validLine, addList: '其他字串' }],
       }).success,
     ).toBe(false)
+  })
+})
+
+describe('tenderInputSchema', () => {
+  it('接受沒有 receivedAmount 的非現金支付', () => {
+    expect(tenderInputSchema.safeParse({ method: '信用卡', amount: 100 }).success).toBe(true)
+  })
+
+  it('接受 receivedAmount 大於等於 amount', () => {
+    expect(tenderInputSchema.safeParse({ method: '現金', amount: 88, receivedAmount: 100 }).success).toBe(true)
+    expect(tenderInputSchema.safeParse({ method: '現金', amount: 88, receivedAmount: 88 }).success).toBe(true)
+  })
+
+  it('拒絕 receivedAmount 小於 amount（不可能找出負的零錢）', () => {
+    expect(tenderInputSchema.safeParse({ method: '現金', amount: 88, receivedAmount: 50 }).success).toBe(false)
+  })
+
+  it('接受 amount 為 0（折抵到 0 元的訂單仍需要一筆 tender 結案，見 order.ts 的說明）', () => {
+    expect(tenderInputSchema.safeParse({ method: '現金', amount: 0 }).success).toBe(true)
+  })
+
+  it('拒絕負數的 amount', () => {
+    expect(tenderInputSchema.safeParse({ method: '現金', amount: -10 }).success).toBe(false)
   })
 })

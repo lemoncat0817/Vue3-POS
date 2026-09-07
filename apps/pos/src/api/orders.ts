@@ -1,4 +1,4 @@
-import { createOrderRequestSchema, orderSchema, type AppliedCoupon, type CreateOrderRequest, type Order, type OrderStatus } from '@pos/contract'
+import { createOrderRequestSchema, orderSchema, type AppliedCoupon, type CreateOrderRequest, type Order, type OrderStatus, type TenderInput } from '@pos/contract'
 import { ulid } from '@pos/domain'
 import type { CartLineItem } from '@/types'
 import { fetchJson } from './http'
@@ -62,7 +62,7 @@ export function buildCreateOrderRequest(params: {
   staff: string
   lines: CartLineItem[]
   bagCount: number
-  payment: string
+  tenders: TenderInput[]
   appliedCoupon: AppliedCoupon
 }): CreateOrderRequest {
   return createOrderRequestSchema.parse({
@@ -84,7 +84,7 @@ export function buildCreateOrderRequest(params: {
       oftenUseDiscount3: line.oftenUseDiscount3,
     })),
     bagCount: params.bagCount,
-    payment: params.payment,
+    tenders: params.tenders,
     appliedCoupon: params.appliedCoupon,
   })
 }

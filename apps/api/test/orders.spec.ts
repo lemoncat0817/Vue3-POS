@@ -23,6 +23,10 @@ const validLine = {
   oftenUseDiscount3: false,
 }
 
+// 預設品項（validLine，2 杯 80 元）在沒有任何折扣／折價券時應付 160 元
+// ——buildRequest() 沒有另外指定 tenders 的測試都假設這個金額，改動
+// lines 或 appliedCoupon 而不跟著調整 tenders 的測試，見各自呼叫處
+// 另外指定的 tenders override。
 function buildRequest(overrides: Record<string, unknown> = {}) {
   return {
     idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
@@ -30,7 +34,7 @@ function buildRequest(overrides: Record<string, unknown> = {}) {
     staff: '店長 - Lemon',
     lines: [validLine],
     bagCount: 0,
-    payment: '現金',
+    tenders: [{ method: '現金', amount: 160 }],
     appliedCoupon: { type: 'none' },
     ...overrides,
   }
@@ -59,6 +63,7 @@ describe('POST /api/orders', () => {
       body: JSON.stringify(
         buildRequest({
           lines: [{ ...validLine, ecoDiscount: true }], // 80*2 - 5*2 = 150
+          tenders: [{ method: '現金', amount: 150 }],
         }),
       ),
     })
@@ -170,7 +175,12 @@ describe('POST /api/orders（P5：訂單層級折價券，伺服端重算折抵�
     const res = await app.request('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify(buildRequest({ appliedCoupon: { type: 'money', couponId: 'money-1' } })), // 160 - 50
+      body: JSON.stringify(
+        buildRequest({
+          appliedCoupon: { type: 'money', couponId: 'money-1' }, // 160 - 50
+          tenders: [{ method: '現金', amount: 110 }],
+        }),
+      ),
     })
     expect(res.status).toBe(201)
     const body = await readJson(res)
@@ -187,7 +197,12 @@ describe('POST /api/orders（P5：訂單層級折價券，伺服端重算折抵�
     const res = await app.request('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify(buildRequest({ appliedCoupon: { type: 'percent', couponId: 'percent-1' } })), // round(160*0.95)
+      body: JSON.stringify(
+        buildRequest({
+          appliedCoupon: { type: 'percent', couponId: 'percent-1' }, // round(160*0.95)
+          tenders: [{ method: '現金', amount: 152 }],
+        }),
+      ),
     })
     expect(res.status).toBe(201)
     const body = await readJson(res)
@@ -207,6 +222,7 @@ describe('POST /api/orders（P5：訂單層級折價券，伺服端重算折抵�
         buildRequest({
           lines: [{ ...validLine, count: 1 }], // 80 元
           appliedCoupon: { type: 'money', couponId: 'money-2' }, // 折 100 元
+          tenders: [{ method: '現金', amount: 0 }],
         }),
       ),
     })
@@ -235,6 +251,101 @@ describe('GET /api/orders', () => {
     const res = await app.request('/api/orders')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([])
+  })
+})
+
+describe('POST /api/orders（P6：混合支付，見 @pos/contract 的 tenderInputSchema 說明）', () => {
+  it('單一 tender 剛好付清：changeDue 為 0，orderPayment 是該方式的名稱', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ tenders: [{ method: '信用卡', amount: 160 }] })),
+    })
+    expect(res.status).toBe(201)
+    const body = await readJson(res)
+    expect(body.tenders).toEqual([{ method: '信用卡', amount: 160 }])
+    expect(body.changeDue).toBe(0)
+    expect(body.orderPayment).toBe('信用卡')
+  })
+
+  it('現金 tender 帶 receivedAmount：伺服端算出找零，不信任用戶端', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ tenders: [{ method: '現金', amount: 160, receivedAmount: 500 }] })),
+    })
+    expect(res.status).toBe(201)
+    const body = await readJson(res)
+    expect(body.tenders).toEqual([{ method: '現金', amount: 160, receivedAmount: 500 }])
+    expect(body.changeDue).toBe(340)
+  })
+
+  it('多筆混合支付：現金找零 + 信用卡各分擔一部分，摘要用頓號連接', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(
+        buildRequest({
+          tenders: [
+            { method: '現金', amount: 60, receivedAmount: 100 },
+            { method: '信用卡', amount: 100 },
+          ],
+        }),
+      ),
+    })
+    expect(res.status).toBe(201)
+    const body = await readJson(res)
+    expect(body.tenders).toEqual([
+      { method: '現金', amount: 60, receivedAmount: 100 },
+      { method: '信用卡', amount: 100 },
+    ])
+    expect(body.changeDue).toBe(40)
+    expect(body.orderPayment).toBe('現金、信用卡')
+  })
+
+  it('tenders 金額總和跟應付金額不符時拒絕，回傳 400', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ tenders: [{ method: '現金', amount: 100 }] })), // 應付 160
+    })
+    expect(res.status).toBe(400)
+    const body = await readJson(res)
+    expect(body.error).toContain('付款金額總和')
+  })
+
+  it('折抵到 0 元的訂單仍可用單一 amount:0 的 tender 結案', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(
+        buildRequest({
+          lines: [{ ...validLine, count: 1 }], // 80 元
+          appliedCoupon: { type: 'money', couponId: 'money-2' }, // 折 100 元 → 應付 0
+          tenders: [{ method: '現金', amount: 0 }],
+        }),
+      ),
+    })
+    expect(res.status).toBe(201)
+    const body = await readJson(res)
+    expect(body.orderPaymentPrice).toBe(0)
+    expect(body.tenders).toEqual([{ method: '現金', amount: 0 }])
+    expect(body.changeDue).toBe(0)
   })
 })
 

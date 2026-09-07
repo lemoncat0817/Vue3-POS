@@ -102,6 +102,13 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       order by count desc
       limit ${TOP_RANKING_LIMIT}
     `),
+    // 已知簡化（P6：混合支付）：這裡分組用的是 orders.order_payment，
+    // 一筆訂單的多筆 tender 顯示用摘要（例如「現金、信用卡」），混合
+    // 支付的訂單會落在自己獨立的一個分類，不會拆成「現金」「信用卡」
+    // 兩筆各自累計次數。要拆開需要改成 join order_tenders 表按 method
+    // 分組，且「一筆訂單算幾次」在混合支付下的定義本身也要重新界定
+    // （依訂單算一次，還是依 tender 筆數算）——這屬於報表口徑的產品
+    // 決策，不是單純的技術修改，這裡先保留舊行為。
     db.all<{ name: string; count: number }>(sql`
       select order_payment as name, count(*) as count
       from orders

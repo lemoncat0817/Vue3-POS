@@ -1,8 +1,15 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq, sql } from 'drizzle-orm'
-import { createOrderRequestSchema, orderSchema, orderStatusSchema, type AppliedCoupon } from '@pos/contract'
+import { createOrderRequestSchema, orderSchema, orderStatusSchema, type AppliedCoupon, type TenderInput } from '@pos/contract'
 import { priceLine, type OftenUseRates } from '@pos/domain'
-import { moneyCoupons, orderLines, orders, oftenUseRates as oftenUseRatesTable, percentCoupons } from '../db/schema'
+import {
+  moneyCoupons,
+  orderLines,
+  orders,
+  orderTenders,
+  oftenUseRates as oftenUseRatesTable,
+  percentCoupons,
+} from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
@@ -36,7 +43,7 @@ const createOrderRoute = createRoute({
       content: { 'application/json': { schema: orderSchema } },
     },
     400: {
-      description: '套用的折價券不存在',
+      description: '套用的折價券不存在，或 tenders 金額總和跟應付金額不符',
       content: { 'application/json': { schema: z.object({ error: z.string() }) } },
     },
     401: {
@@ -104,8 +111,9 @@ const deleteOrderRoute = createRoute({
 
 type OrderRow = typeof orders.$inferSelect
 type OrderLineRow = typeof orderLines.$inferSelect
+type OrderTenderRow = typeof orderTenders.$inferSelect
 
-function toOrderResponse(order: OrderRow, lines: OrderLineRow[]) {
+function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderTenderRow[]) {
   return orderSchema.parse({
     orderId: order.orderId,
     orderTime: order.orderTime,
@@ -118,6 +126,14 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[]) {
     orderDiscount: order.orderDiscount,
     orderPaymentPrice: order.orderPaymentPrice,
     discountName: order.discountName,
+    changeDue: order.changeDue,
+    tenders: [...tenders]
+      .sort((a, b) => a.seq - b.seq)
+      .map((tender) => ({
+        method: tender.method,
+        amount: tender.amount,
+        ...(tender.receivedAmount === null ? {} : { receivedAmount: tender.receivedAmount }),
+      })),
     orderData: lines.map((line) => ({
       name: line.name,
       price: line.price,
@@ -235,6 +251,24 @@ async function resolveOrderPayment(
   }
 }
 
+/**
+ * 驗證混合支付的金額總和，並算出找零總額（P6：規劃書 §10 P0
+ * 「混合支付」）。用戶端只送每筆 tender 分擔多少、實收多少——不相信
+ * 用戶端自己算的合計是否等於應付金額，這是 D-01／D-02 修復方式（金額
+ * 只能由伺服端算）在混合支付上的延伸。
+ */
+function validateTenders(
+  tenders: readonly TenderInput[],
+  orderPaymentPrice: number,
+): { changeDue: number } | { error: string } {
+  const totalTendered = tenders.reduce((sum, tender) => sum + tender.amount, 0)
+  if (totalTendered !== orderPaymentPrice) {
+    return { error: `付款金額總和（${totalTendered}）與應付金額（${orderPaymentPrice}）不符` }
+  }
+  const changeDue = tenders.reduce((sum, tender) => sum + ((tender.receivedAmount ?? tender.amount) - tender.amount), 0)
+  return { changeDue }
+}
+
 export const orderRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createOrderRoute, async (c) => {
     const input = c.req.valid('json')
@@ -243,7 +277,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const existing = await db.select().from(orders).where(eq(orders.idempotencyKey, input.idempotencyKey)).get()
     if (existing) {
       const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, existing.orderId)).all()
-      return c.json(toOrderResponse(existing, lines), 200)
+      const existingTenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, existing.orderId)).all()
+      return c.json(toOrderResponse(existing, lines, existingTenders), 200)
     }
 
     // 序號核發之後，如果下面的 insert 因為其他原因失敗，這個序號就浪費
@@ -268,9 +303,20 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: payment.error }, 400)
     }
     const { orderPaymentPrice, discountName } = payment
+
+    const tenderResult = validateTenders(input.tenders, orderPaymentPrice)
+    if ('error' in tenderResult) {
+      return c.json({ error: tenderResult.error }, 400)
+    }
+    const { changeDue } = tenderResult
+
     const orderDiscount = orderTotalPrice - orderPaymentPrice
     const orderCupCount = pricedLines.reduce((sum, line) => sum + line.count, 0)
     const orderTime = new Date().toISOString()
+    // 顯示用摘要：多筆 tender 用頓號連接（見 db/schema.ts 的
+    // orders.orderPayment 說明），單筆時就是那個方式的名稱，跟舊版
+    // 行為一致，不影響既有畫面。
+    const orderPayment = input.tenders.map((tender) => tender.method).join('、')
 
     const newOrder: OrderRow = {
       orderId,
@@ -280,29 +326,40 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       orderBagCount: input.bagCount,
       orderCupCount,
       orderTotalPrice,
-      orderPayment: input.payment,
+      orderPayment,
       orderDiscount,
       orderPaymentPrice,
+      changeDue,
       discountName,
       idempotencyKey: input.idempotencyKey,
       createdAt: orderTime,
     }
+    const newTenders: Omit<OrderTenderRow, 'id'>[] = input.tenders.map((tender, seq) => ({
+      orderId,
+      seq,
+      method: tender.method,
+      amount: tender.amount,
+      receivedAmount: tender.receivedAmount ?? null,
+    }))
 
     // 這裡刻意不用 db.transaction()：better-sqlite3 的交易回呼要求同步
     // 函式，D1 的 batch() 則要求非同步、且兩者簽章不同，無法用同一段
-    // 程式碼透過 AnyDb 泛型介面統一呼叫。這兩個 insert 因此不是原子的
+    // 程式碼透過 AnyDb 泛型介面統一呼叫。這幾個 insert 因此不是原子的
     // ——之後若要在 D1 上補回真正的原子性，走 D1 專屬的 db.batch()，
     // 屬於 route 邏輯要對 driver 分流處理的範圍，目前先接受這個落差。
     await db.insert(orders).values(newOrder)
     await db.insert(orderLines).values(pricedLines.map((line) => ({ ...line, orderId })))
+    await db.insert(orderTenders).values(newTenders)
 
     const insertedLines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
-    return c.json(toOrderResponse(newOrder, insertedLines), 201)
+    const insertedTenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
+    return c.json(toOrderResponse(newOrder, insertedLines, insertedTenders), 201)
   })
   .openapi(listOrdersRoute, async (c) => {
     const db = c.get('db')
     const allOrders = await db.select().from(orders).all()
     const allLines = await db.select().from(orderLines).all()
+    const allTenders = await db.select().from(orderTenders).all()
 
     const linesByOrder = new Map<string, OrderLineRow[]>()
     for (const line of allLines) {
@@ -310,9 +367,17 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       list.push(line)
       linesByOrder.set(line.orderId, list)
     }
+    const tendersByOrder = new Map<string, OrderTenderRow[]>()
+    for (const tender of allTenders) {
+      const list = tendersByOrder.get(tender.orderId) ?? []
+      list.push(tender)
+      tendersByOrder.set(tender.orderId, list)
+    }
 
     return c.json(
-      allOrders.map((order) => toOrderResponse(order, linesByOrder.get(order.orderId) ?? [])),
+      allOrders.map((order) =>
+        toOrderResponse(order, linesByOrder.get(order.orderId) ?? [], tendersByOrder.get(order.orderId) ?? []),
+      ),
       200,
     )
   })
@@ -328,7 +393,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
 
     await db.update(orders).set({ orderStatus }).where(eq(orders.orderId, orderId))
     const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
-    return c.json(toOrderResponse({ ...existing, orderStatus }, lines), 200)
+    const tenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
+    return c.json(toOrderResponse({ ...existing, orderStatus }, lines, tenders), 200)
   })
   .openapi(deleteOrderRoute, async (c) => {
     const { orderId } = c.req.valid('param')
@@ -339,9 +405,10 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '找不到這筆訂單' }, 404)
     }
 
-    // 先刪明細再刪主檔（order_lines.order_id 參照 orders.order_id，見
-    // db/schema.ts），順序反過來會違反外鍵約束。
+    // 先刪明細再刪主檔（order_lines／order_tenders 的 order_id 都參照
+    // orders.order_id，見 db/schema.ts），順序反過來會違反外鍵約束。
     await db.delete(orderLines).where(eq(orderLines.orderId, orderId))
+    await db.delete(orderTenders).where(eq(orderTenders.orderId, orderId))
     await db.delete(orders).where(eq(orders.orderId, orderId))
     return c.body(null, 204)
   })

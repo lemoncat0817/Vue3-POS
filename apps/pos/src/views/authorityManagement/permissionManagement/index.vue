@@ -701,10 +701,13 @@ const openEditPayMethodDialog = () => {
     showToast('不可編輯現金支付', 'error')
     return
   }
+  // P6：這裡原本會順手把 orderStore.payment／currentSelectingUseMethod／
+  // useMethod 重置成現金——那是點餐頁「目前選取的付款方式」單選狀態，
+  // 跟這裡編輯付款方式清單的表單完全無關，看起來是防禦性地清掉點餐頁
+  // 可能殘留的選取狀態。結帳流程改用 PaymentPanel（見
+  // views/home/index.vue）之後，那組單選狀態已經整個移除，這裡的重置
+  // 也就沒有對象可重置，直接拿掉。
   if (currentPayMethod.value.name) {
-    orderStore.payment = '現金'
-    orderStore.currentSelectingUseMethod = '紙鈔'
-    orderStore.useMethod = '紙鈔'
     currentEditInputPayMethodId.value = currentPayMethod.value.id!
     currentEditInputPayMethodName.value = currentPayMethod.value.name
     currentSelectEditPayMethod.value = currentPayMethod.value.useMethod!

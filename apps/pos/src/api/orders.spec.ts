@@ -32,7 +32,7 @@ describe('buildCreateOrderRequest', () => {
       staff: '店長 - Lemon',
       lines: [sampleLine],
       bagCount: 0,
-      payment: '現金',
+      tenders: [{ method: '現金', amount: 80 }],
       appliedCoupon: { type: 'none' },
     })
 
@@ -46,7 +46,7 @@ describe('buildCreateOrderRequest', () => {
       staff: '店長 - Lemon',
       lines: [sampleLine],
       bagCount: 0,
-      payment: '現金',
+      tenders: [{ method: '現金', amount: 80 }],
       appliedCoupon: { type: 'none' },
     })
     const b = buildCreateOrderRequest({
@@ -54,7 +54,7 @@ describe('buildCreateOrderRequest', () => {
       staff: '店長 - Lemon',
       lines: [sampleLine],
       bagCount: 0,
-      payment: '現金',
+      tenders: [{ method: '現金', amount: 80 }],
       appliedCoupon: { type: 'none' },
     })
 
@@ -68,7 +68,7 @@ describe('buildCreateOrderRequest', () => {
       staff: '店長 - Lemon',
       lines: [sampleLine],
       bagCount: 0,
-      payment: '現金',
+      tenders: [{ method: '現金', amount: 80 }],
       appliedCoupon: { type: 'money', couponId: 'money-1' },
     })
     expect(money.appliedCoupon).toEqual({ type: 'money', couponId: 'money-1' })
@@ -78,7 +78,7 @@ describe('buildCreateOrderRequest', () => {
       staff: '店長 - Lemon',
       lines: [sampleLine],
       bagCount: 0,
-      payment: '現金',
+      tenders: [{ method: '現金', amount: 80 }],
       appliedCoupon: { type: 'percent', couponId: 'percent-1' },
     })
     expect(percent.appliedCoupon).toEqual({ type: 'percent', couponId: 'percent-1' })

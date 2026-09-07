@@ -1,19 +1,19 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { GOLDEN_ORDERS, getBusinessDate } from '@pos/domain'
-import type { OrderRecord, PaymentMethod, PaymentUseMethod } from '@/types'
+import type { OrderRecord, PaymentMethod } from '@/types'
 
 export const useOrderStore = defineStore('order', () => {
   // 當前訂單編號
   const currentOrderNumber = ref(1)
-  // 當前選擇的付款方式
-  const currentSelectingPayment = ref('現金')
-  // 當前選擇的付款方式的支付方法
-  const currentSelectingUseMethod = ref<PaymentUseMethod>('紙鈔')
-  // 付款方式的支付方法
-  const useMethod = ref<PaymentUseMethod>('紙鈔')
-  // 付款方式
-  const payment = ref('現金')
+  // P6（規劃書 §10 P0「混合支付」）：原本這裡的 payment／
+  // currentSelectingPayment／currentSelectingUseMethod／useMethod 四個
+  // ref 是「整張訂單只能選一種付款方式」的單選狀態——結帳流程改用
+  // components/checkout/PaymentPanel.vue 之後，「這次結帳用了哪些付款
+  // 方式、各分擔多少」變成每次結帳當下組出來的一組 tenders（見
+  // views/home/index.vue 的 submitPayment()），不再是需要跨元件共用、
+  // 需要長期持有的 store 狀態，四個 ref 直接刪除。paymentList（可選用
+  // 的付款方式清單本身）仍是要跨頁面共用的設定資料，保留。
   // 定義全部付款方式清單
   const paymentList = ref<PaymentMethod[]>([{
     "id": 1,
@@ -117,7 +117,7 @@ export const useOrderStore = defineStore('order', () => {
   }
 
   return {
-    currentOrderNumber, order, payment, paymentList, currentSelectingPayment, currentSelectingUseMethod, useMethod,
+    currentOrderNumber, order, paymentList,
     nextOrderId, issueOrderId, reconcileOrderId,
   }
 }, {

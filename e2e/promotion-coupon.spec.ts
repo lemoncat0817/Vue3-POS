@@ -30,9 +30,12 @@ test('套用現金折價券後，畫面顯示與伺服端回應的折抵金額�
   const orderResponse = page.waitForResponse(
     (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
   )
-  await page.getByRole('button', { name: '送出訂單' }).click()
-  await page.getByRole('button', { name: '確定' }).click()
-  await page.getByRole('button', { name: '收取現金' }).click()
+  // P6：組件庫替換示範頁「送出訂單」單一按鈕＋兩層確認框，改成
+  // 「結帳」開啟 PaymentPanel（見 components/checkout/PaymentPanel.vue）。
+  await page.getByTestId('checkout-button').click()
+  await page.getByRole('button', { name: '現金', exact: true }).click()
+  await page.getByRole('button', { name: '加入', exact: true }).click()
+  await page.getByRole('button', { name: '確認送出', exact: true }).click()
   // P8：ElMessage 改用 Reka Toast（見 components/ui/ToastHost.vue 的
   // 說明），畫面上這則訊息用 testid 定位，避免跟 Reka 另外渲染的
   // aria-live 隱藏播報文字撞在一起。
