@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import type { AnyDb } from './db/types'
 import type { AppEnv } from './types'
 import { catalogRoutes } from './routes/catalog'
+import { orderRoutes } from './routes/orders'
 
 export type { AppEnv }
 
@@ -37,6 +38,7 @@ export function createApp(db: AnyDb) {
   app.openapi(healthRoute, (c) => c.json({ ok: true as const }))
 
   app.route('/api/catalog', catalogRoutes)
+  app.route('/api/orders', orderRoutes)
 
   app.doc('/openapi.json', {
     openapi: '3.1.0',
