@@ -79,6 +79,50 @@ describe('DELETE /api/promotions/money-coupons/:id', () => {
   })
 })
 
+describe('PUT /api/promotions/money-coupons/:id', () => {
+  it('更新存在的折價券', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    const res = await app.request('/api/promotions/money-coupons/money-1', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ name: '$80折價券', discountMoney: 80 }),
+    })
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { id: string; name: string; discountMoney: number }
+    expect(body).toMatchObject({ id: 'money-1', name: '$80折價券', discountMoney: 80 })
+  })
+
+  it('更新不存在的折價券回傳 404', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/promotions/money-coupons/does-not-exist', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ name: 'x', discountMoney: 1 }),
+    })
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('PUT /api/promotions/percent-coupons/:id', () => {
+  it('更新存在的折價券', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    const res = await app.request('/api/promotions/percent-coupons/percent-1', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ name: '整單9折', discountPercent: 0.9 }),
+    })
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { id: string; name: string; discountPercent: number }
+    expect(body).toMatchObject({ id: 'percent-1', name: '整單9折', discountPercent: 0.9 })
+  })
+})
+
 describe('PUT /api/promotions/often-use-rates/:slot', () => {
   it('更新指定 slot 的內容，不影響其他 slot', async () => {
     const db = createTestDb()

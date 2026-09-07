@@ -49,6 +49,21 @@ const deleteMoneyCouponRoute = createRoute({
   },
 })
 
+const updateMoneyCouponRoute = createRoute({
+  method: 'put',
+  path: '/money-coupons/{id}',
+  middleware: [requireDeviceToken] as const,
+  request: {
+    params: z.object({ id: z.string().min(1) }),
+    body: { content: { 'application/json': { schema: createMoneyCouponRequestSchema } } },
+  },
+  responses: {
+    200: { description: '現金折價券更新成功', content: { 'application/json': { schema: moneyCouponSchema } } },
+    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這張折價券', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
 const createPercentCouponRoute = createRoute({
   method: 'post',
   path: '/percent-coupons',
@@ -67,6 +82,21 @@ const deletePercentCouponRoute = createRoute({
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '折數折價券已刪除' },
+    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這張折價券', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+const updatePercentCouponRoute = createRoute({
+  method: 'put',
+  path: '/percent-coupons/{id}',
+  middleware: [requireDeviceToken] as const,
+  request: {
+    params: z.object({ id: z.string().min(1) }),
+    body: { content: { 'application/json': { schema: createPercentCouponRequestSchema } } },
+  },
+  responses: {
+    200: { description: '折數折價券更新成功', content: { 'application/json': { schema: percentCouponSchema } } },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
     404: { description: '找不到這張折價券', content: { 'application/json': { schema: errorSchema } } },
   },
@@ -128,6 +158,15 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
     await db.delete(moneyCoupons).where(eq(moneyCoupons.id, id))
     return c.body(null, 204)
   })
+  .openapi(updateMoneyCouponRoute, async (c) => {
+    const { id } = c.req.valid('param')
+    const input = c.req.valid('json')
+    const db = c.get('db')
+    const existing = await db.select().from(moneyCoupons).where(eq(moneyCoupons.id, id)).get()
+    if (!existing) return c.json({ error: '找不到這張折價券' }, 404)
+    await db.update(moneyCoupons).set(input).where(eq(moneyCoupons.id, id))
+    return c.json(moneyCouponSchema.parse({ id, ...input }), 200)
+  })
   .openapi(createPercentCouponRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
@@ -142,6 +181,15 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
     if (!existing) return c.json({ error: '找不到這張折價券' }, 404)
     await db.delete(percentCoupons).where(eq(percentCoupons.id, id))
     return c.body(null, 204)
+  })
+  .openapi(updatePercentCouponRoute, async (c) => {
+    const { id } = c.req.valid('param')
+    const input = c.req.valid('json')
+    const db = c.get('db')
+    const existing = await db.select().from(percentCoupons).where(eq(percentCoupons.id, id)).get()
+    if (!existing) return c.json({ error: '找不到這張折價券' }, 404)
+    await db.update(percentCoupons).set(input).where(eq(percentCoupons.id, id))
+    return c.json(percentCouponSchema.parse({ id, ...input }), 200)
   })
   .openapi(updateOftenUseRateRoute, async (c) => {
     const { slot } = c.req.valid('param')
