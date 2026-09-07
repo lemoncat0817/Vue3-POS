@@ -7,3 +7,4 @@
  */
 export { GOLDEN_ORDERS } from './fixtures/golden-orders'
 export * from './money'
+export * from './pricing'
