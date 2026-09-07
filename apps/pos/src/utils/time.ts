@@ -7,19 +7,11 @@ export const getDate = () => {
   return `${year}/${format(month)}/${format(day)}`;
 }
 
-export const getMoment = () => {
-  const now = new Date();
-  const hour = now.getHours();
-  if (hour >= 8 && hour < 12) {
-    return "早班"
-  } else if (hour >= 12 && hour < 18) {
-    return "中班"
-  } else if (hour >= 18 && hour <= 22) {
-    return "晚班"
-  } else {
-    return "休息中"
-  }
-}
+// P6：原本這裡的 getMoment() 依現在幾點回傳「早班／中班／晚班／休息中」
+// 這種純裝飾性文字，跟真正的營運狀態無關，唯一的呼叫點（home/index.vue
+// 的「班別」欄位）已經改用真正有開帳零用金、收班點鈔算帳差的班別結帳
+// 功能（見 components/checkout/ShiftPanel.vue），這個函式沒有其他呼叫
+// 點，直接刪除。
 
 export const getTime = () => {
   const now = new Date();

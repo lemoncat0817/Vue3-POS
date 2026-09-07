@@ -206,6 +206,47 @@ export const orderTenders = sqliteTable('order_tenders', {
   receivedAmount: integer('received_amount'),
 })
 
+/**
+ * 班別（P6：規劃書 §10 P0「班別結帳」）。單店單機情境下同一時間全店
+ * 只允許一筆 status='open' 的班別，這條規則在 routes/shifts.ts 裡用
+ * 查詢檢查，不是資料庫層級的 constraint（SQLite 沒有方便表達「這個
+ * 欄位值最多有一列符合某個條件」的部分唯一索引語法能跨 D1／
+ * better-sqlite3 兩種 driver 都可靠運作，查詢層檢查已經足夠——單店
+ * 單機下開帳頻率低，不構成效能疑慮）。
+ *
+ * id 由用戶端在開帳當下用 ULID 產生並送入（見 @pos/contract 的
+ * openShiftRequestSchema），理由跟訂單的 idempotencyKey 一致：同一個
+ * id 重送會拿回同一筆班別，不會重複開帳。
+ */
+export const shifts = sqliteTable('shifts', {
+  id: text('id').primaryKey(),
+  status: text('status').$type<'open' | 'closed'>().notNull(),
+  openedBy: text('opened_by').notNull(),
+  openedAt: text('opened_at').notNull(),
+  openingFloat: integer('opening_float').notNull(),
+  closedBy: text('closed_by'),
+  closedAt: text('closed_at'),
+  // 以下四個欄位只有收班當下才算得出來，開帳時一律是 null（見
+  // @pos/contract 的 shiftSchema 說明）。
+  cashSales: integer('cash_sales'),
+  expectedCash: integer('expected_cash'),
+  actualCash: integer('actual_cash'),
+  variance: integer('variance'),
+})
+
+/** 班別期間的現金異動（中途提現／存入），見 @pos/domain 的 summarizeShiftCash()。 */
+export const cashMovements = sqliteTable('cash_movements', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  shiftId: text('shift_id')
+    .notNull()
+    .references(() => shifts.id),
+  type: text('type').$type<'in' | 'out'>().notNull(),
+  amount: integer('amount').notNull(),
+  reason: text('reason').notNull(),
+  operator: text('operator').notNull(),
+  at: text('at').notNull(),
+})
+
 export const schema = {
   catalogGroups,
   catalogItems,
@@ -219,4 +260,6 @@ export const schema = {
   orderLines,
   orderTenders,
   orderSequences,
+  shifts,
+  cashMovements,
 }

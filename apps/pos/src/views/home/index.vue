@@ -20,8 +20,7 @@
               <p class="text-center font-bold xl:text-lg lg:text-base md:text-sm text-xs">A</p>
             </div>
             <div class=" flex md:flex-row flex-col items-start justify-center">
-              <p class="text-blue-500 mr-2 font-bold xl:text-lg lg:text-base md:text-sm text-xs">班別</p>
-              <p class="text-center font-bold xl:text-lg lg:text-base md:text-sm text-xs">{{ getMoment() }}</p>
+              <ShiftPanel :operator="`${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`" />
             </div>
           </div>
         </div>
@@ -407,7 +406,7 @@ class="w-[20%]  bg-red-400 text-blue-800 border-solid border-2 border-black xl:r
 </template>
 
 <script setup lang="ts">
-import { getDate, getMoment, getTime } from '@/utils/time'
+import { getDate, getTime } from '@/utils/time'
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import DrinkType from './drinkType/index.vue'
 import DrinkMenu from './drinkMenu/index.vue'
@@ -415,6 +414,7 @@ import DrinkCustomized from './drinkCustomized/index.vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import PaymentPanel, { type TenderDraft } from '@/components/checkout/PaymentPanel.vue'
+import ShiftPanel from '@/components/checkout/ShiftPanel.vue'
 import { alert, confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useDrinkStore } from '@/stores/drink'
