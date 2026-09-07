@@ -26,6 +26,10 @@ coverage
 # 各 workspace 套件的暫存編譯輸出
 **/node_modules/.tmp/
 
+# wrangler（apps/api 本機開發狀態，含本機 D1 SQLite 檔案）
+.wrangler/
+.dev.vars
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
