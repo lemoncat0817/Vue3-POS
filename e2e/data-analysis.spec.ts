@@ -38,20 +38,19 @@ test('數據分析頁會向伺服端要報表資料，切換分頁與日期會�
   await page.getByText('熱門飲料', { exact: true }).click()
   await expect(page.locator('canvas')).toBeVisible()
 
-  // 切換到跨日期區間會帶新的 from／to 重新呼叫 API。el-date-picker 的
-  // daterange 一次顯示左右兩個月曆面板（見面板的 ARIA 快照），左邊選開始
-  // 日、右邊選結束日即完成選取，不像單日 picker 有「確定」按鈕。
+  // 切換到跨日期區間會帶新的 from／to 重新呼叫 API。原生
+  // <input type="date"> 直接 fill 一個 'YYYY-MM-DD' 字串即可，不像
+  // el-date-picker 需要點開月曆面板逐格點選。先改開始時間（改成當月 1
+  // 號，必定 <= 今天）再改結束時間（改成當月 28 號，必定 >= 開始時間），
+  // 確保兩次 fill 之間的中繼狀態也一直是合法的 from <= to，不受「今天」
+  // 實際是幾號影響。
   const rangeReportResponse = page.waitForResponse(
     (res) => res.url().includes('/api/reports/sales') && res.request().method() === 'GET',
   )
-  await page.getByPlaceholder('開始時間').click()
-  const monthPanels = page.getByRole('grid')
-  // 排除 .next-month／.prev-month（月曆面板前後補位、屬於相鄰月份的
-  // 日期格），避免同一個面板裡出現兩個文字一樣的 "10"。
-  const availableDay = (panel: typeof monthPanels, day: string) =>
-    panel.locator('td.available:not(.next-month):not(.prev-month)').filter({ hasText: new RegExp(`^${day}$`) })
-  await availableDay(monthPanels.nth(0), '10').click()
-  await availableDay(monthPanels.nth(1), '20').click()
+  const now = new Date()
+  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  await page.getByLabel('開始時間').fill(`${yearMonth}-01`)
+  await page.getByLabel('結束時間').fill(`${yearMonth}-28`)
 
   const rangeRes = await rangeReportResponse
   expect(rangeRes.status()).toBe(200)

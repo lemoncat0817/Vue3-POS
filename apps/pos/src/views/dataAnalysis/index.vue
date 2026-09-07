@@ -25,10 +25,17 @@ class="px-2 border-2 border-solid border-black text-center lg:mx-3 md:mx-1 mx-0.
           :class="{ 'bg-yellow-400': dataAnalysisStore.currentDataAnalysis === 3 }"
           @click="dataAnalysisStore.currentDataAnalysis = 3">
           常用付款方式</div>
-        <el-date-picker
-v-model="selectTime"
-          class="border-2 border-solid border-black mx-3 font-bold text-2xl select-none" type="daterange" range-separator="到" start-placeholder="開始時間" end-placeholder="結束時間"
-          format="YYYY/MM/DD" value-format="YYYY/MM/DD" />
+        <div class="flex items-center gap-2 mx-3">
+          <input
+type="date" aria-label="開始時間" :value="toNativeDate(selectTime[0])"
+            class="border-2 border-solid border-black rounded-lg px-2 py-1 font-bold lg:text-lg text-sm bg-[#f8f8dc] text-[#560710]"
+            @change="(e) => selectTime = [fromNativeDate((e.target as HTMLInputElement).value), selectTime[1]]">
+          <span class="text-white font-bold lg:text-2xl text-sm">到</span>
+          <input
+type="date" aria-label="結束時間" :value="toNativeDate(selectTime[1])"
+            class="border-2 border-solid border-black rounded-lg px-2 py-1 font-bold lg:text-lg text-sm bg-[#f8f8dc] text-[#560710]"
+            @change="(e) => selectTime = [selectTime[0], fromNativeDate((e.target as HTMLInputElement).value)]">
+        </div>
       </div>
       <div class="w-4/5 mt-10 ">
         <div
@@ -61,7 +68,7 @@ echarts.use([LineChart, PieChart, GridComponent, LegendComponent, TitleComponent
 import { useQuery } from '@tanstack/vue-query'
 import { useDataAnalysisStore } from "@/stores/dataAnalysis"
 const dataAnalysisStore = useDataAnalysisStore()
-import { getDate, formatBusinessDate, toBusinessDate } from '@/utils/time'
+import { getDate, formatBusinessDate, toBusinessDate, toNativeDate, fromNativeDate } from '@/utils/time'
 import { fetchSalesReport } from '@/api/reports'
 import type { RankedCount } from '@pos/contract'
 
@@ -72,7 +79,7 @@ import type { RankedCount } from '@pos/contract'
 // 做 SQL 聚合，一次回應涵蓋這個頁面四個分頁全部需要的資料。
 
 // 當前選擇的時間預設為當天
-// el-date-picker 的 daterange 固定回傳 [開始日期, 結束日期] 兩個元素，
+// 固定是 [開始日期, 結束日期] 兩個元素（見下方兩個 <input type="date">），
 // 標成 tuple 讓 selectTime.value[0]/[1] 不必因 noUncheckedIndexedAccess
 // 而多包一層 undefined 判斷。
 const selectTime = ref<[string, string]>([getDate(), getDate()])

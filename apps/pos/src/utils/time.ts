@@ -41,3 +41,13 @@ export const toBusinessDate = (pickerDate: string): string => pickerDate.replace
 /** YYYYMMDD 營業日格式轉回畫面顯示用的 'YYYY/MM/DD'。 */
 export const formatBusinessDate = (businessDate: string): string =>
   `${businessDate.slice(0, 4)}/${businessDate.slice(4, 6)}/${businessDate.slice(6, 8)}`
+
+// P8：組件庫替換——dataAnalysis/index.vue 的 el-date-picker 改用原生
+// <input type="date">，原生輸入框固定用 'YYYY-MM-DD'（連字號），跟畫面
+// 內部沿用的 'YYYY/MM/DD'（斜線）不同，需要在兩者間轉換。
+
+/** 畫面內部的 'YYYY/MM/DD' 轉成 <input type="date"> 用的 'YYYY-MM-DD'。 */
+export const toNativeDate = (slashDate: string): string => slashDate.replaceAll('/', '-')
+
+/** <input type="date"> 的 'YYYY-MM-DD' 轉回畫面內部用的 'YYYY/MM/DD'。 */
+export const fromNativeDate = (nativeDate: string): string => nativeDate.replaceAll('-', '/')
