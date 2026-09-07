@@ -10,13 +10,6 @@
           @click="openAddMoneyDiscountDialog">新增</button>
         <!-- 新增現金折扣券 -->
         <el-dialog v-model="addMoneyDiscountDialog" title="新增現金折扣券" width="500">
-          <!-- 現金折扣券的Id -->
-          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
-            折扣券的Id:<input
-v-model="currentInputId" type="number" min="1" step="1"
-              class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
-              placeholder="純數字,例如:1,2,3..." />
-          </div>
           <!-- 現金折扣券名稱 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             折扣券名稱:<input
@@ -41,7 +34,7 @@ v-model="currentInputMoneyDiscount" type="number" min="1" step="1"
         </el-dialog>
         <!-- 刪除功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetMoneyDiscount === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetMoneyDiscount === 'X' }" class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md text-sm text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300" 
+:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetMoneyDiscount === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetMoneyDiscount === 'X' }" class="lg:px-2 px-0.5 border-2 border-solid border-black rounded-lg mx-1 lg:text-md text-sm text-blue-800 font-bold bg-red-500 select-none active:bg-yellow-300"
           @click="deleteDrinkMoneyDiscount">刪除</button>
         <!-- 編輯功能 -->
         <button
@@ -49,12 +42,6 @@ v-model="currentInputMoneyDiscount" type="number" min="1" step="1"
           @click="openEditMoneyDiscountDialog">編輯</button>
         <!-- 編輯現金折扣券 -->
         <el-dialog v-model="editMoneyDiscountDialog" title="編輯現金折扣券" width="500">
-          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
-            折扣券的Id:<input
-v-model="currentEditInputId" type="number" min="1" step="1"
-              class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
-              placeholder="純數字,例如:1,2,3..." />
-          </div>
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             折扣券名稱:<input
 v-model="currentEditInputName"
@@ -108,13 +95,6 @@ v-model:current-page="moneyDiscountCurrentPage" small background layout="prev, n
           @click="openAddPercentDiscountDialog">新增</button>
         <!-- 新增折數折扣券 -->
         <el-dialog v-model="addPercentDiscountDialog" title="新增折數折扣券" width="500">
-          <!-- 折數折扣券的Id -->
-          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
-            折扣券的Id:<input
-v-model="currentPercentDiscountInputId" type="number" min="1" step="1"
-              class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
-              placeholder="純數字,例如:1,2,3..." />
-          </div>
           <!-- 折數折扣券名稱 -->
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             折扣券名稱:<input
@@ -147,12 +127,6 @@ v-model="currentInputPercentDiscount" type="number" min="0" step="0.01"
           @click="openEditPercentDiscountDialog">編輯</button>
         <!-- 編輯折數折扣券 -->
         <el-dialog v-model="editPercentDiscountDialog" title="編輯折數折扣券" width="500">
-          <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
-            折扣券的Id:<input
-v-model="currentEditPercentDiscountInputId" type="number" min="1" step="1"
-              class="border-2 border-solid border-black rounded-lg ml-2 text-center px-2"
-              placeholder="純數字,例如:1,2,3..." />
-          </div>
           <div class="w-4/5 flex justify-between items-center text-blue-800 text-lg font-bold my-2">
             折扣券名稱:<input
 v-model="currentEditPercentDiscountInputName"
@@ -265,6 +239,25 @@ import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
 import type { FormNumeric, MaybeSelected, MoneyDiscount, OftenUseDiscount, PercentDiscount } from '@/types'
 import { fromSelection } from '@/utils/selection'
+import { ApiError } from '@/api/http'
+import {
+  createMoneyCoupon,
+  createPercentCoupon,
+  deleteMoneyCoupon,
+  deletePercentCoupon,
+  updateMoneyCoupon,
+  updateOftenUseRate,
+  updatePercentCoupon,
+} from '@/api/promotions'
+
+// P5：這個頁面的新增／刪除／編輯改成真的呼叫 apps/api 的促銷寫入端點
+// （見 api/promotions.ts），不再只是本機陣列操作。Id 因此不再是這裡
+// 手動輸入的欄位——新增時由伺服端配發（見 apps/api/src/routes/
+// promotions.ts），編輯只能改名稱／金額，不能改 Id。
+function apiErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) return `操作失敗：${err.message}`
+  return '連不上伺服端，請確認網路連線'
+}
 
 // 現金折扣券相關功能
 // 存放當前已選現金折扣券
@@ -273,8 +266,6 @@ const currentMoneyDiscount = ref<MaybeSelected<MoneyDiscount>>({})
 const handleCurrentChange = (row: MoneyDiscount) => {
   currentMoneyDiscount.value = row
 }
-// 存放當前輸入的Id
-const currentInputId = ref<FormNumeric>('')
 // 存放當前輸入的現金折扣券名稱
 const currentInputName = ref('')
 // 存放當前輸入的折扣金額
@@ -283,7 +274,6 @@ const currentInputMoneyDiscount = ref<FormNumeric>('')
 const addMoneyDiscountDialog = ref(false)
 // 開啟新增dialog視窗
 const openAddMoneyDiscountDialog = () => {
-  currentInputId.value = ''
   currentInputName.value = ''
   currentInputMoneyDiscount.value = ''
   addMoneyDiscountDialog.value = true
@@ -294,35 +284,30 @@ const closeAddMoneyDiscountDialog = () => {
   ElMessage.error('取消操作')
 }
 // 新增現金折扣券
-const addDrinkMoneyDiscount = () => {
-  if (currentInputId.value === '' || currentInputName.value === '' || currentInputMoneyDiscount.value === '') {
+const addDrinkMoneyDiscount = async () => {
+  if (currentInputName.value === '' || currentInputMoneyDiscount.value === '') {
     ElMessage.error('請輸入完整資訊')
-    return
-  }
-  if (discountStore.moneyDiscount.find((item) => item.id == currentInputId.value)) {
-    ElMessage.error('此Id已存在,請重新輸入')
     return
   }
   if (discountStore.moneyDiscount.find((item) => item.name == currentInputName.value)) {
     ElMessage.error('此折扣券名稱已存在,請重新輸入')
     return
   }
-  if (Number(currentInputId.value) <= 0) {
-    ElMessage.error('Id不可為負數且需大於0,請重新輸入')
-    return
-  }
   if (Number(currentInputMoneyDiscount.value) <= 0) {
     ElMessage.error('折抵金額不可為負數且需大於0,請重新輸入')
     return
   }
-  const newDrinkMoneyDiscount: MoneyDiscount = {
-    id: currentInputId.value,
-    name: currentInputName.value,
-    discountMoney: currentInputMoneyDiscount.value,
+  try {
+    const created = await createMoneyCoupon({
+      name: currentInputName.value,
+      discountMoney: Number(currentInputMoneyDiscount.value),
+    })
+    discountStore.moneyDiscount.push(created)
+    addMoneyDiscountDialog.value = false
+    ElMessage.success('新增成功')
+  } catch (err) {
+    ElMessage.error(apiErrorMessage(err))
   }
-  discountStore.moneyDiscount.push(newDrinkMoneyDiscount)
-  addMoneyDiscountDialog.value = false
-  ElMessage.success('新增成功')
 }
 // 存放當前現金折扣券當前的頁數
 const moneyDiscountCurrentPage = ref(1)
@@ -346,9 +331,14 @@ const deleteDrinkMoneyDiscount = () => {
         type: 'warning',
       }
     )
-      .then(() => {
-        discountStore.moneyDiscount = discountStore.moneyDiscount.filter((item) => item.id !== currentMoneyDiscount.value.id);
-        ElMessage.success('刪除成功')
+      .then(async () => {
+        try {
+          await deleteMoneyCoupon(String(currentMoneyDiscount.value.id))
+          discountStore.moneyDiscount = discountStore.moneyDiscount.filter((item) => item.id !== currentMoneyDiscount.value.id)
+          ElMessage.success('刪除成功')
+        } catch (err) {
+          ElMessage.error(apiErrorMessage(err))
+        }
       })
       .catch(() => {
         ElMessage.error('取消操作');
@@ -362,8 +352,6 @@ const deleteDrinkMoneyDiscount = () => {
 }
 // 控制編輯dialog視窗開關
 const editMoneyDiscountDialog = ref(false)
-// 存放當前編輯輸入的Id
-const currentEditInputId = ref<FormNumeric>('')
 // 存放當前編輯輸入的折扣券名稱
 const currentEditInputName = ref('')
 // 存放當前編輯輸入的折扣金額
@@ -371,7 +359,6 @@ const currentEditInputMoneyDiscount = ref<FormNumeric>('')
 // 開啟編輯dialog視窗
 const openEditMoneyDiscountDialog = () => {
   if (currentMoneyDiscount.value.name) {
-    currentEditInputId.value = currentMoneyDiscount.value.id!
     currentEditInputName.value = currentMoneyDiscount.value.name
     currentEditInputMoneyDiscount.value = currentMoneyDiscount.value.discountMoney!
     editMoneyDiscountDialog.value = true
@@ -388,40 +375,37 @@ const closeEditMoneyDiscountDialog = () => {
   ElMessage.error('取消操作')
 }
 // 編輯現金折價券
-const editDrinkMoneyDiscount = () => {
-  if (currentEditInputId.value === '' || currentEditInputName.value === '' || currentEditInputMoneyDiscount.value === '') {
+const editDrinkMoneyDiscount = async () => {
+  if (currentEditInputName.value === '' || currentEditInputMoneyDiscount.value === '') {
     ElMessage.error('請輸入完整資訊')
     return
   }
-  if (currentEditInputId.value == currentMoneyDiscount.value.id && currentEditInputName.value == currentMoneyDiscount.value.name && currentEditInputMoneyDiscount.value == (undefined as unknown as FormNumeric)) {
+  if (currentEditInputName.value == currentMoneyDiscount.value.name && currentEditInputMoneyDiscount.value == currentMoneyDiscount.value.discountMoney) {
     editMoneyDiscountDialog.value = false
     ElMessage.success('保存成功')
     return
-  } else {
-    const anotherId = discountStore.moneyDiscount.filter(item => item.id != currentMoneyDiscount.value.id)
-    if (anotherId.some(item => item.id == currentEditInputId.value)) {
-      ElMessage.error('此Id已存在,請重新輸入')
-      return
-    }
-    const anotherName = discountStore.moneyDiscount.filter(item => item.name != currentMoneyDiscount.value.name)
-    if (anotherName.some(item => item.name == currentEditInputName.value)) {
-      ElMessage.error('此折價券名稱已存在,請重新輸入')
-      return
-    }
-    if (Number(currentEditInputId.value) <= 0) {
-      ElMessage.error('Id不可為負數且需大於0,請重新輸入')
-      return
-    }
-    if (Number(currentEditInputMoneyDiscount.value) <= 0) {
-      ElMessage.error('折抵金額不可為負數且需大於0,請重新輸入')
-      return
-    }
   }
-  currentMoneyDiscount.value.id = currentEditInputId.value
-  currentMoneyDiscount.value.name = currentEditInputName.value
-  currentMoneyDiscount.value.discountMoney = currentEditInputMoneyDiscount.value
-  editMoneyDiscountDialog.value = false
-  ElMessage.success('保存成功')
+  const anotherName = discountStore.moneyDiscount.filter(item => item.id != currentMoneyDiscount.value.id)
+  if (anotherName.some(item => item.name == currentEditInputName.value)) {
+    ElMessage.error('此折價券名稱已存在,請重新輸入')
+    return
+  }
+  if (Number(currentEditInputMoneyDiscount.value) <= 0) {
+    ElMessage.error('折抵金額不可為負數且需大於0,請重新輸入')
+    return
+  }
+  try {
+    const updated = await updateMoneyCoupon(String(currentMoneyDiscount.value.id), {
+      name: currentEditInputName.value,
+      discountMoney: Number(currentEditInputMoneyDiscount.value),
+    })
+    currentMoneyDiscount.value.name = updated.name
+    currentMoneyDiscount.value.discountMoney = updated.discountMoney
+    editMoneyDiscountDialog.value = false
+    ElMessage.success('保存成功')
+  } catch (err) {
+    ElMessage.error(apiErrorMessage(err))
+  }
 }
 
 // 折數折扣券相關功能
@@ -431,8 +415,6 @@ const currentPercentDiscount = ref<MaybeSelected<PercentDiscount>>({})
 const handleCurrentPercentDiscountChange = (row: PercentDiscount) => {
   currentPercentDiscount.value = row
 }
-// 存放當前輸入的Id
-const currentPercentDiscountInputId = ref<FormNumeric>('')
 // 存放當前輸入的折數折扣券名稱
 const currentPercentDiscountInputName = ref('')
 // 存放當前輸入的折扣金額
@@ -441,7 +423,6 @@ const currentInputPercentDiscount = ref<FormNumeric>('')
 const addPercentDiscountDialog = ref(false)
 // 開啟新增dialog視窗
 const openAddPercentDiscountDialog = () => {
-  currentPercentDiscountInputId.value = ''
   currentPercentDiscountInputName.value = ''
   currentInputPercentDiscount.value = ''
   addPercentDiscountDialog.value = true
@@ -452,21 +433,13 @@ const closeAddPercentDiscountDialog = () => {
   ElMessage.error('取消操作')
 }
 // 新增折數折扣券
-const addDrinkPercentDiscount = () => {
-  if (currentPercentDiscountInputId.value === '' || currentPercentDiscountInputName.value === '' || currentInputPercentDiscount.value === '') {
+const addDrinkPercentDiscount = async () => {
+  if (currentPercentDiscountInputName.value === '' || currentInputPercentDiscount.value === '') {
     ElMessage.error('請輸入完整資訊')
-    return
-  }
-  if (discountStore.percentDiscount.find((item) => item.id == currentPercentDiscountInputId.value)) {
-    ElMessage.error('此Id已存在,請重新輸入')
     return
   }
   if (discountStore.percentDiscount.find((item) => item.name == currentPercentDiscountInputName.value)) {
     ElMessage.error('此折扣券名稱已存在,請重新輸入')
-    return
-  }
-  if (Number(currentPercentDiscountInputId.value) <= 0) {
-    ElMessage.error('Id不可為負數且需大於0,請重新輸入')
     return
   }
   if (Number(currentInputPercentDiscount.value) < 0) {
@@ -476,14 +449,17 @@ const addDrinkPercentDiscount = () => {
     ElMessage.error('折抵折數不可大於等於1,請重新輸入')
     return
   }
-  const newDrinkPercentDiscount: PercentDiscount = {
-    id: currentPercentDiscountInputId.value,
-    name: currentPercentDiscountInputName.value,
-    discountMoney: currentInputPercentDiscount.value,
+  try {
+    const created = await createPercentCoupon({
+      name: currentPercentDiscountInputName.value,
+      discountPercent: Number(currentInputPercentDiscount.value),
+    })
+    discountStore.percentDiscount.push({ id: created.id, name: created.name, discountMoney: created.discountPercent })
+    addPercentDiscountDialog.value = false
+    ElMessage.success('新增成功')
+  } catch (err) {
+    ElMessage.error(apiErrorMessage(err))
   }
-  discountStore.percentDiscount.push(newDrinkPercentDiscount)
-  addPercentDiscountDialog.value = false
-  ElMessage.success('新增成功')
 }
 // 存放當前折數折扣券當前的頁數
 const percentDiscountCurrentPage = ref(1)
@@ -507,9 +483,14 @@ const deleteDrinkPercentDiscount = () => {
         type: 'warning',
       }
     )
-      .then(() => {
-        discountStore.percentDiscount = discountStore.percentDiscount.filter((item) => item.id !== currentPercentDiscount.value.id);
-        ElMessage.success('刪除成功')
+      .then(async () => {
+        try {
+          await deletePercentCoupon(String(currentPercentDiscount.value.id))
+          discountStore.percentDiscount = discountStore.percentDiscount.filter((item) => item.id !== currentPercentDiscount.value.id)
+          ElMessage.success('刪除成功')
+        } catch (err) {
+          ElMessage.error(apiErrorMessage(err))
+        }
       })
       .catch(() => {
         ElMessage.error('取消操作');
@@ -523,8 +504,6 @@ const deleteDrinkPercentDiscount = () => {
 }
 // 控制編輯dialog視窗開關
 const editPercentDiscountDialog = ref(false)
-// 存放當前編輯輸入的Id
-const currentEditPercentDiscountInputId = ref<FormNumeric>('')
 // 存放當前編輯輸入的折扣券名稱
 const currentEditPercentDiscountInputName = ref('')
 // 存放當前編輯輸入的折扣金額
@@ -532,7 +511,6 @@ const currentEditInputPercentDiscount = ref<FormNumeric>('')
 // 開啟編輯dialog視窗
 const openEditPercentDiscountDialog = () => {
   if (currentPercentDiscount.value.name) {
-    currentEditPercentDiscountInputId.value = currentPercentDiscount.value.id!
     currentEditPercentDiscountInputName.value = currentPercentDiscount.value.name
     currentEditInputPercentDiscount.value = currentPercentDiscount.value.discountMoney!
     editPercentDiscountDialog.value = true
@@ -549,43 +527,40 @@ const closeEditPercentDiscountDialog = () => {
   ElMessage.error('取消操作')
 }
 // 編輯折數折扣券
-const editDrinkPercentDiscount = () => {
-  if (currentEditPercentDiscountInputId.value === '' || currentEditPercentDiscountInputName.value === '' || currentEditInputPercentDiscount.value === '') {
+const editDrinkPercentDiscount = async () => {
+  if (currentEditPercentDiscountInputName.value === '' || currentEditInputPercentDiscount.value === '') {
     ElMessage.error('請輸入完整資訊')
     return
   }
-  if (currentEditPercentDiscountInputId.value == currentPercentDiscount.value.id && currentEditPercentDiscountInputName.value == currentPercentDiscount.value.name && currentEditInputPercentDiscount.value == (undefined as unknown as FormNumeric)) {
+  if (currentEditPercentDiscountInputName.value == currentPercentDiscount.value.name && currentEditInputPercentDiscount.value == currentPercentDiscount.value.discountMoney) {
     editPercentDiscountDialog.value = false
     ElMessage.success('保存成功')
     return
-  } else {
-    const anotherId = discountStore.percentDiscount.filter(item => item.id != currentPercentDiscount.value.id)
-    if (anotherId.some(item => item.id == currentEditPercentDiscountInputId.value)) {
-      ElMessage.error('此Id已存在,請重新輸入')
-      return
-    }
-    const anotherName = discountStore.percentDiscount.filter(item => item.name != currentPercentDiscount.value.name)
-    if (anotherName.some(item => item.name == currentEditPercentDiscountInputName.value)) {
-      ElMessage.error('此折價券名稱已存在,請重新輸入')
-      return
-    }
-    if (Number(currentEditPercentDiscountInputId.value) <= 0) {
-      ElMessage.error('Id不可為負數且需大於0,請重新輸入')
-      return
-    }
-    if (Number(currentEditInputPercentDiscount.value) < 0) {
-      ElMessage.error('折抵折數不可為負數,請重新輸入')
-      return
-    } else if (Number(currentEditInputPercentDiscount.value) >= 1) {
-      ElMessage.error('折抵折數不可大於等於1,請重新輸入')
-      return
-    }
   }
-  currentPercentDiscount.value.id = currentEditPercentDiscountInputId.value
-  currentPercentDiscount.value.name = currentEditPercentDiscountInputName.value
-  currentPercentDiscount.value.discountMoney = currentEditInputPercentDiscount.value
-  editPercentDiscountDialog.value = false
-  ElMessage.success('保存成功')
+  const anotherName = discountStore.percentDiscount.filter(item => item.id != currentPercentDiscount.value.id)
+  if (anotherName.some(item => item.name == currentEditPercentDiscountInputName.value)) {
+    ElMessage.error('此折價券名稱已存在,請重新輸入')
+    return
+  }
+  if (Number(currentEditInputPercentDiscount.value) < 0) {
+    ElMessage.error('折抵折數不可為負數,請重新輸入')
+    return
+  } else if (Number(currentEditInputPercentDiscount.value) >= 1) {
+    ElMessage.error('折抵折數不可大於等於1,請重新輸入')
+    return
+  }
+  try {
+    const updated = await updatePercentCoupon(String(currentPercentDiscount.value.id), {
+      name: currentEditPercentDiscountInputName.value,
+      discountPercent: Number(currentEditInputPercentDiscount.value),
+    })
+    currentPercentDiscount.value.name = updated.name
+    currentPercentDiscount.value.discountMoney = updated.discountPercent
+    editPercentDiscountDialog.value = false
+    ElMessage.success('保存成功')
+  } catch (err) {
+    ElMessage.error(apiErrorMessage(err))
+  }
 }
 
 // 常用優惠相關功能
@@ -610,19 +585,25 @@ const isEditMoneyDiscount = ref(false)
 // 是否可以編輯折扣折數
 const isEditPercentDiscount = ref(false)
 // 開啟編輯dialog視窗
+//
+// P5：oftenUseDiscount[].id 現在對應伺服端的 slot（0～4，見 api/
+// promotions.ts 的 toOftenUseDiscountList()），不再是舊種子資料的
+// 1～5——這裡的分組邊界因此從 <=2／>=3 改成 <=1／>=2（slot 0、1 是
+// 環保／瓶裝容器群組，2～4 是三個折數群組），對照 @pos/domain 的
+// OftenUseRates 型別說明。
 const openEditOftenUseDiscountDialog = () => {
   if (currentOftenUseDiscount.value.name) {
     currentEditOftenUseDiscountInputName.value = currentOftenUseDiscount.value.name
     currentEditInputEditOftenUseMoneyDiscount.value = currentOftenUseDiscount.value.discountMoney!
     currentEditInputOftenUsePercentDiscount.value = currentOftenUseDiscount.value.discountPercent!
-    if (Number(currentOftenUseDiscount.value.id) <= 2) {
+    if (Number(currentOftenUseDiscount.value.id) <= 1) {
       isEditName.value = true
       isEditPercentDiscount.value = true
     } else {
       isEditName.value = false
       isEditPercentDiscount.value = false
     }
-    if (Number(currentOftenUseDiscount.value.id) >= 3) {
+    if (Number(currentOftenUseDiscount.value.id) >= 2) {
       isEditMoneyDiscount.value = true
     } else {
       isEditMoneyDiscount.value = false
@@ -641,7 +622,7 @@ const closeEditOftenUseDiscountDialog = () => {
   ElMessage.error('取消操作')
 }
 // 編輯常用優惠
-const editDrinkOftenUseDiscount = () => {
+const editDrinkOftenUseDiscount = async () => {
   if (currentEditOftenUseDiscountInputName.value === '' || currentEditInputEditOftenUseMoneyDiscount.value === '' || currentEditInputOftenUsePercentDiscount.value === '') {
     ElMessage.error('請輸入完整資訊')
     return
@@ -650,29 +631,37 @@ const editDrinkOftenUseDiscount = () => {
     editOftenUseDiscountDialog.value = false
     ElMessage.success('保存成功')
     return
-  } else {
-    const anotherName = discountStore.oftenUseDiscount.filter(item => item.name != currentOftenUseDiscount.value.name)
-    if (anotherName.some(item => item.name == currentEditOftenUseDiscountInputName.value)) {
-      ElMessage.error('此優惠名稱已存在,請重新輸入')
-      return
-    }
-    if (Number(currentEditInputEditOftenUseMoneyDiscount.value) <= 0 && !isEditMoneyDiscount.value) {
-      ElMessage.error('折抵金額不可為負數且需大於0,請重新輸入')
-      return
-    }
-    if (Number(currentEditInputOftenUsePercentDiscount.value) < 0 && !isEditPercentDiscount.value) {
-      ElMessage.error('折抵折數不可為負數,請重新輸入')
-      return
-    } else if (Number(currentEditInputOftenUsePercentDiscount.value) >= 1 && !isEditPercentDiscount.value) {
-      ElMessage.error('折抵折數不可大於等於1,請重新輸入')
-      return
-    }
   }
-  currentOftenUseDiscount.value.name = currentEditOftenUseDiscountInputName.value
-  currentOftenUseDiscount.value.discountMoney = currentEditInputEditOftenUseMoneyDiscount.value
-  currentOftenUseDiscount.value.discountPercent = currentEditInputOftenUsePercentDiscount.value
-  editOftenUseDiscountDialog.value = false
-  ElMessage.success('保存成功')
+  const anotherName = discountStore.oftenUseDiscount.filter(item => item.id != currentOftenUseDiscount.value.id)
+  if (anotherName.some(item => item.name == currentEditOftenUseDiscountInputName.value)) {
+    ElMessage.error('此優惠名稱已存在,請重新輸入')
+    return
+  }
+  if (Number(currentEditInputEditOftenUseMoneyDiscount.value) <= 0 && !isEditMoneyDiscount.value) {
+    ElMessage.error('折抵金額不可為負數且需大於0,請重新輸入')
+    return
+  }
+  if (Number(currentEditInputOftenUsePercentDiscount.value) < 0 && !isEditPercentDiscount.value) {
+    ElMessage.error('折抵折數不可為負數,請重新輸入')
+    return
+  } else if (Number(currentEditInputOftenUsePercentDiscount.value) >= 1 && !isEditPercentDiscount.value) {
+    ElMessage.error('折抵折數不可大於等於1,請重新輸入')
+    return
+  }
+  try {
+    const updated = await updateOftenUseRate(Number(currentOftenUseDiscount.value.id), {
+      name: currentEditOftenUseDiscountInputName.value,
+      discountMoney: Number(currentEditInputEditOftenUseMoneyDiscount.value),
+      discountPercent: Number(currentEditInputOftenUsePercentDiscount.value),
+    })
+    currentOftenUseDiscount.value.name = updated.name
+    currentOftenUseDiscount.value.discountMoney = updated.discountMoney
+    currentOftenUseDiscount.value.discountPercent = updated.discountPercent
+    editOftenUseDiscountDialog.value = false
+    ElMessage.success('保存成功')
+  } catch (err) {
+    ElMessage.error(apiErrorMessage(err))
+  }
 }
 </script>
 
