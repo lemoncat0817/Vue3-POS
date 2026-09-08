@@ -1,7 +1,7 @@
 <template>
-  <div class="w-screen min-h-full">
-    <Header class="w-screen h-20 "></Header>
-    <Main class="w-screen h-full "></Main>
+  <div class="w-screen h-screen flex flex-col overflow-hidden bg-surface-50 dark:bg-surface-950">
+    <Header class="w-full h-16 shrink-0" />
+    <Main class="w-full flex-1 min-h-0 overflow-hidden" />
   </div>
 </template>
 
