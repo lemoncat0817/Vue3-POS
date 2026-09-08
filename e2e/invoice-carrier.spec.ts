@@ -5,6 +5,11 @@ import { expect, test } from '@playwright/test'
  * 載具（無載具／手機條碼／統一編號），送出的訂單會帶上這次選擇，
  * 伺服端一律核發發票號碼；訂單列表看得到發票號碼與載具。這裡用真正的
  * wrangler dev + 本機 D1 驗證，不 mock 任何請求。
+ *
+ * 發票號碼只驗證格式（2 碼大寫英文字母字軌代號＋8 碼數字），不假設
+ * 固定是哪個字軌——P23（規劃書 §10 P23「電子發票平台串接」）之後
+ * 字軌是後台可以新增切換的設定資料，不再是寫死的單一前綴，見
+ * e2e/invoice-tracks.spec.ts。
  */
 test('選擇手機條碼載具後送單，伺服端記錄的載具與發票號碼都正確，畫面上看得到', async ({ page }) => {
   await page.goto('login')
@@ -45,7 +50,7 @@ test('選擇手機條碼載具後送單，伺服端記錄的載具與發票號�
     invoiceNumber: string
     invoiceCarrier: { type: string; value?: string }
   }
-  expect(createBody.invoiceNumber).toMatch(/^AA\d{8}$/)
+  expect(createBody.invoiceNumber).toMatch(/^[A-Z]{2}\d{8}$/)
   expect(createBody.invoiceCarrier).toEqual({ type: '手機條碼', value: '/ABC1234' })
 
   // 送單後載具應該重置回無載具，不影響下一位客人。

@@ -1,6 +1,15 @@
 import { sql } from 'drizzle-orm'
 import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
-import type { AuditLogAction, AuthorityKey, DrinkCustomized, InvoiceCarrierType, OrderChannel, OrderStatus, PaymentUseMethod } from '@pos/contract'
+import type {
+  AuditLogAction,
+  AuthorityKey,
+  DrinkCustomized,
+  InvoiceCarrierType,
+  InvoiceStatus,
+  OrderChannel,
+  OrderStatus,
+  PaymentUseMethod,
+} from '@pos/contract'
 
 /**
  * D1（SQLite 方言）的資料表定義。
@@ -180,6 +189,13 @@ export const orders = sqliteTable(
     // 沒有掛會員是 null——見 members 表、routes/orders.ts 的
     // accrueMemberPoints 說明。
     memberId: text('member_id').references(() => members.id),
+    // 發票上傳狀態（P23：規劃書 §10 P23「電子發票平台串接」）。開立
+    // 時一律是 'issued'，模擬批次上傳後變成 'submitted'（見 routes/
+    // invoices.ts 的 submitInvoices），訂單作廢時變成 'voided'——見
+    // @pos/contract 的 invoiceStatusSchema 說明。既有歷史訂單（這個
+    // 功能上線前建立的）預設也是 'issued'，不影響既有資料。
+    invoiceStatus: text('invoice_status').$type<InvoiceStatus>().notNull().default('issued'),
+    invoiceSubmittedAt: text('invoice_submitted_at'),
   },
   (table) => [uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey)],
 )
@@ -226,16 +242,33 @@ export const orderSequences = sqliteTable('order_sequences', {
 })
 
 /**
- * 發票號碼的原子計數器（P15：規劃書 §10 P0「發票」）。真正的統一發票
- * 號碼由財政部按「字軌」（兩碼英文字母前綴）配發、每兩個月一期，
- * 字軌會輪替——單店單機情境下，這裡簡化成單一固定前綴＋全域遞增的
- * 8 位數流水號（見 routes/orders.ts 的 nextInvoiceNumber()），不做
- * 期別輪替。這是刻意的簡化，不是想模擬財政部的配號規則，跟
- * order_sequences 用營業日分段、這裡不分段是同一種務實取捨。
+ * 發票號碼的原子計數器（P15：規劃書 §10 P0「發票」）。這是 P15 當時的
+ * 簡化版本：單一固定前綴＋全域遞增的 8 位數流水號，不做字軌輪替
+ * ——P23（規劃書 §10 P23「電子發票平台串接」）用下面的 invoiceTracks
+ * 表補上真正的字軌／期別管理，取代這裡的角色。這張表留著不刪（見
+ * apps/api/README.md「migration 只往前加」的說明），只是新的
+ * nextInvoiceNumber() 不再讀寫它。
  */
 export const invoiceSequences = sqliteTable('invoice_sequences', {
   id: text('id').primaryKey(),
   counter: integer('counter').notNull(),
+})
+
+/**
+ * 電子發票字軌（P23：規劃書 §10 P23「電子發票平台串接」）。真正的
+ * 字軌（兩碼英文字母前綴＋號碼區間）由財政部每兩個月配發一次，商家
+ * 要先申請——這裡設計成後台手動輸入的設定資料，不是系統自己產生，
+ * 見 @pos/contract 的 invoiceTrackSchema 說明。同時間只會有一個字軌
+ * `isActive`，見 routes/orders.ts 的 nextInvoiceNumber()。
+ */
+export const invoiceTracks = sqliteTable('invoice_tracks', {
+  id: text('id').primaryKey(),
+  trackCode: text('track_code').notNull(),
+  periodLabel: text('period_label').notNull(),
+  rangeStart: integer('range_start').notNull(),
+  rangeEnd: integer('range_end').notNull(),
+  currentNumber: integer('current_number').notNull(),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull(),
 })
 
 export const orderLines = sqliteTable('order_lines', {
@@ -404,4 +437,5 @@ export const schema = {
   rateLimitCounters,
   auditLogs,
   members,
+  invoiceTracks,
 }

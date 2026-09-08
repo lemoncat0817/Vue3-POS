@@ -7,6 +7,7 @@ import {
   refundInputSchema,
   type AppliedCoupon,
   type InvoiceCarrier,
+  type InvoiceStatus,
   type OrderLineInput,
   type TenderInput,
 } from '@pos/contract'
@@ -56,7 +57,7 @@ const createOrderRoute = createRoute({
       content: { 'application/json': { schema: orderSchema } },
     },
     400: {
-      description: '套用的折價券不存在，或 tenders 金額總和跟應付金額不符',
+      description: '套用的折價券不存在、tenders 金額總和跟應付金額不符，或沒有可用的發票字軌（P23）',
       content: { 'application/json': { schema: z.object({ error: z.string() }) } },
     },
     401: {
@@ -200,6 +201,8 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderT
     invoiceNumber: order.invoiceNumber,
     invoiceCarrier: toInvoiceCarrier(order.invoiceCarrierType, order.invoiceCarrierValue),
     memberId: order.memberId,
+    invoiceStatus: order.invoiceStatus,
+    invoiceSubmittedAt: order.invoiceSubmittedAt,
     tenders: [...tenders]
       .sort((a, b) => a.seq - b.seq)
       .map((tender) => ({
@@ -296,30 +299,28 @@ async function nextOrderSequence(db: AnyDb, businessDate: string): Promise<numbe
   return row.counter
 }
 
-// 單一固定字軌前綴（P15：規劃書 §10 P0「發票」）。真正的統一發票字軌
-// 由財政部按期配發、會輪替，見 db/schema.ts 的 invoiceSequences 說明
-// ——單店單機情境下簡化成固定前綴，不做期別輪替。
-const INVOICE_PREFIX = 'AA'
-const INVOICE_SEQUENCE_ID = 'default'
-
 /**
- * 原子核發下一個發票號碼，寫法跟 nextOrderSequence() 同一套模式
- * （INSERT ... ON CONFLICT DO UPDATE ... RETURNING，單一陳述式保證
- * 原子性）。發票號碼全域遞增、不分業務日——這是統一發票本身的規則
- * （同一字軌期別內連續，不因為換日重新歸零），跟訂單序號刻意按營業日
- * 分段是不同的需求。
+ * 原子核發下一個發票號碼（P23：規劃書 §10 P23「電子發票平台串接」，
+ * 取代 P15 當時單一固定前綴的簡化版本）。從目前啟用的字軌（見
+ * db/schema.ts 的 invoiceTracks 說明）取下一個號碼，寫法跟
+ * nextOrderSequence() 同一套模式（UPDATE ... RETURNING，單一陳述式
+ * 保證原子性，不會有兩張訂單同時搶到同一個號碼）。
+ *
+ * 找不到啟用中的字軌、或字軌的號碼區間已經用完，直接丟錯讓這筆訂單
+ * 送單失敗——這是真實情境下真的會發生、也真的該擋下來的狀況（字軌
+ * 用完卻繼續開發票是違法的），不是可以悄悄跳過或補一個假號碼的地方。
  */
 async function nextInvoiceNumber(db: AnyDb): Promise<string> {
-  const row = await db.get<{ counter: number }>(sql`
-    insert into invoice_sequences (id, counter)
-    values (${INVOICE_SEQUENCE_ID}, 1)
-    on conflict (id) do update set counter = counter + 1
-    returning counter
+  const row = await db.get<{ trackCode: string; currentNumber: number }>(sql`
+    update invoice_tracks
+    set current_number = current_number + 1
+    where is_active = 1 and current_number < range_end
+    returning track_code as trackCode, current_number as currentNumber
   `)
   if (!row) {
-    throw new Error('核發發票號碼失敗')
+    throw new Error('沒有可用的發票字軌（沒有啟用中的字軌，或號碼已用完），請先在後台設定電子發票字軌')
   }
-  return `${INVOICE_PREFIX}${String(row.counter).padStart(8, '0')}`
+  return `${row.trackCode}${String(row.currentNumber).padStart(8, '0')}`
 }
 
 /** DB 的 invoiceCarrierType／invoiceCarrierValue 兩欄組回 @pos/contract 的 InvoiceCarrier 判別聯集。 */
@@ -481,7 +482,15 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
 
     // 每一筆訂單一律開立發票（P15：規劃書 §10 P0「發票」），不管有沒有
     // 帶載具——這是統一發票本身的規則（有交易就要開立），不是可選項。
-    const invoiceNumber = await nextInvoiceNumber(db)
+    // P23：字軌用完或沒有啟用中的字軌是可預期的商業狀況（店家剛開幕
+    // 忘記設定、或這期字軌真的賣完了），回 400 讓前端顯示清楚的錯誤
+    // 訊息，不是讓它變成沒說明原因的 500。
+    let invoiceNumber: string
+    try {
+      invoiceNumber = await nextInvoiceNumber(db)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : '核發發票號碼失敗' }, 400)
+    }
     // P22：找不到對應會員就當成沒有掛會員，見 resolveMemberId 的說明。
     const memberId = await resolveMemberId(db, input.memberId)
 
@@ -508,6 +517,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       invoiceCarrierType: input.invoiceCarrier.type,
       invoiceCarrierValue: input.invoiceCarrier.type === '無載具' ? null : input.invoiceCarrier.value,
       memberId,
+      invoiceStatus: 'issued',
+      invoiceSubmittedAt: null,
     }
     const newTenders: Omit<OrderTenderRow, 'id'>[] = input.tenders.map((tender, seq) => ({
       orderId,
@@ -590,11 +601,19 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
         ? { voidReason: reason ?? null, voidedBy: operator, voidedAt: new Date().toISOString() }
         : { voidReason: null, voidedBy: null, voidedAt: null }
 
-    await db.update(orders).set({ orderStatus, ...voidFields }).where(eq(orders.orderId, orderId))
+    // P23：訂單作廢時，這張發票也一併標成作廢——真正的統一發票作廢
+    // 是另一個要跟財政部平台申報的動作（不是本專案模擬範圍），但至少
+    // 讓後台看得出「這張發票對應的訂單已經作廢」，不會誤以為還是有效
+    // 交易。撤銷作廢（改回已完成）則回到 'issued'，等下一次模擬批次
+    // 上傳（見 routes/invoices.ts 的 submitInvoices）。
+    const invoiceStatusField: { invoiceStatus?: InvoiceStatus } =
+      orderStatus === '已取消' ? { invoiceStatus: 'voided' } : { invoiceStatus: 'issued' }
+
+    await db.update(orders).set({ orderStatus, ...voidFields, ...invoiceStatusField }).where(eq(orders.orderId, orderId))
     const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
     const tenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
     const refunds = await db.select().from(orderRefunds).where(eq(orderRefunds.orderId, orderId)).all()
-    return c.json(toOrderResponse({ ...existing, orderStatus, ...voidFields }, lines, tenders, refunds), 200)
+    return c.json(toOrderResponse({ ...existing, orderStatus, ...voidFields, ...invoiceStatusField }, lines, tenders, refunds), 200)
   })
   .openapi(createRefundRoute, async (c) => {
     const { orderId } = c.req.valid('param')

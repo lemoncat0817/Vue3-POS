@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { businessDateSchema, ulidSchema } from './common'
+import { invoiceStatusSchema } from './invoice'
 import { appliedCouponSchema } from './promotion'
 
 /**
@@ -217,5 +218,8 @@ export const orderSchema = z.object({
   invoiceCarrier: invoiceCarrierSchema,
   /** 這筆訂單掛在哪個會員名下，見 createOrderRequestSchema.memberId 的說明；沒有掛會員是 null。 */
   memberId: z.string().nullable(),
+  /** 發票上傳狀態（P23：規劃書 §10 P23「電子發票平台串接」），見 invoice.ts 的 invoiceStatusSchema 說明。 */
+  invoiceStatus: invoiceStatusSchema,
+  invoiceSubmittedAt: z.string().nullable(),
 })
 export type Order = z.infer<typeof orderSchema>
