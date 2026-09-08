@@ -83,17 +83,18 @@
               <DollarSign class="h-4 w-4" />
             </div>
           </div>
-          <div class="mt-3">
+          <div class="mt-3 flex items-baseline gap-2 flex-wrap">
             <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
               NT$ {{ totalRevenue.toLocaleString() }}
             </span>
-            <p v-if="peakHourInfo" class="text-[11px] font-medium text-success-600 dark:text-success-400 mt-1 flex items-center gap-1">
-              <Flame class="h-3 w-3" /> 尖峰時段：{{ peakHourInfo }}
-            </p>
-            <p v-else class="text-[11px] text-surface-400 mt-1">
-              跨日區間累計總營收
-            </p>
+            <TrendBadge :trend="revenueTrend" />
           </div>
+          <p v-if="peakHourInfo" class="text-[11px] font-medium text-success-600 dark:text-success-400 mt-1 flex items-center gap-1">
+            <Flame class="h-3 w-3" /> 尖峰時段：{{ peakHourInfo }}
+          </p>
+          <p v-else class="text-[11px] text-surface-400 mt-1">
+            {{ previousSalesReport ? `vs 前期（${previousPeriod[0]}${previousPeriod[0] === previousPeriod[1] ? '' : ' ~ ' + previousPeriod[1]}）` : '跨日區間累計總營收' }}
+          </p>
         </div>
 
         <!-- 總銷售杯數 -->
@@ -104,14 +105,15 @@
               <Coffee class="h-4 w-4" />
             </div>
           </div>
-          <div class="mt-3">
+          <div class="mt-3 flex items-baseline gap-2 flex-wrap">
             <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
               {{ totalCups.toLocaleString() }} <span class="text-sm font-bold text-surface-500">杯</span>
             </span>
-            <p class="text-[11px] text-surface-400 mt-1">
-              榜首：{{ salesReport?.topDrinks[0]?.name || '暫無資料' }} ({{ salesReport?.topDrinks[0]?.count || 0 }}杯)
-            </p>
+            <TrendBadge :trend="cupsTrend" />
           </div>
+          <p class="text-[11px] text-surface-400 mt-1">
+            榜首：{{ salesReport?.topDrinks[0]?.name || '暫無資料' }} ({{ salesReport?.topDrinks[0]?.count || 0 }}杯)
+          </p>
         </div>
 
         <!-- 訂單交易筆數 -->
@@ -122,14 +124,15 @@
               <ShoppingBag class="h-4 w-4" />
             </div>
           </div>
-          <div class="mt-3">
+          <div class="mt-3 flex items-baseline gap-2 flex-wrap">
             <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
               {{ totalOrders.toLocaleString() }} <span class="text-sm font-bold text-surface-500">筆</span>
             </span>
-            <p class="text-[11px] text-surface-400 mt-1">
-              以多元支付管道累計結算
-            </p>
+            <TrendBadge :trend="ordersTrend" />
           </div>
+          <p class="text-[11px] text-surface-400 mt-1">
+            以多元支付管道累計結算
+          </p>
         </div>
 
         <!-- 平均客單價 (AOV) -->
@@ -140,14 +143,15 @@
               <TrendingUp class="h-4 w-4" />
             </div>
           </div>
-          <div class="mt-3">
+          <div class="mt-3 flex items-baseline gap-2 flex-wrap">
             <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
               NT$ {{ averageOrderValue.toLocaleString() }}
             </span>
-            <p class="text-[11px] text-surface-400 mt-1">
-              每筆訂單平均消費額
-            </p>
+            <TrendBadge :trend="aovTrend" />
           </div>
+          <p class="text-[11px] text-surface-400 mt-1">
+            每筆訂單平均消費額
+          </p>
         </div>
       </div>
 
@@ -333,6 +337,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { getDate, getTime, formatBusinessDate, toBusinessDate, toNativeDate, fromNativeDate } from '@/utils/time'
 import { fetchSalesReport } from '@/api/reports'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
+import TrendBadge from '@/components/ui/TrendBadge.vue'
 import { showToast } from '@/composables/useToast'
 import { useTheme } from '@/composables/useTheme'
 
@@ -341,35 +346,76 @@ const dialogSettlement = ref(false)
 
 const selectTime = ref<[string, string]>([getDate(), getDate()])
 
+// 'YYYY/MM/DD' ⇄ Date 的共用轉換——原本 setDatePreset／isPresetActive
+// 各自重複定義一份一模一樣的 format()，這裡收斂成模組層級的兩個函式，
+// previousPeriod（下方新增的『vs 前期』比較）也共用同一份。
+function formatSlashDate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}/${m}/${day}`
+}
+function parseSlashDate(s: string): Date {
+  const [y, m, d] = s.split('/').map(Number)
+  return new Date(y ?? 0, (m ?? 1) - 1, d ?? 1)
+}
+
 const { data: salesReport } = useQuery({
   queryKey: computed(() => ['salesReport', selectTime.value[0], selectTime.value[1]] as const),
   queryFn: () => fetchSalesReport(toBusinessDate(selectTime.value[0]), toBusinessDate(selectTime.value[1])),
 })
 
-// KPI 統計計算
-const totalRevenue = computed(() => {
-  if (!salesReport.value) return 0
-  if (selectTime.value[0] === selectTime.value[1]) {
-    return salesReport.value.hourlyRevenue.reduce((sum, p) => sum + p.revenue, 0)
-  }
-  return salesReport.value.dailyRevenue.reduce((sum, p) => sum + p.revenue, 0)
+// UI-7（規劃書 §5.3「數據分析」）：KPI 卡「vs 前期」比較——緊接在目前
+// 區間之前、長度相同的一段區間（單日比昨日，7 天比再往前 7 天，以此
+// 類推），不需要後端另外提供聚合端點，直接對同一個 /api/reports/sales
+// 端點再查一次不同的 from/to。
+const previousPeriod = computed<[string, string]>(() => {
+  const start = parseSlashDate(selectTime.value[0])
+  const end = parseSlashDate(selectTime.value[1])
+  const spanDays = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1
+  const prevEnd = new Date(start)
+  prevEnd.setDate(prevEnd.getDate() - 1)
+  const prevStart = new Date(prevEnd)
+  prevStart.setDate(prevStart.getDate() - (spanDays - 1))
+  return [formatSlashDate(prevStart), formatSlashDate(prevEnd)]
+})
+const { data: previousSalesReport } = useQuery({
+  queryKey: computed(() => ['salesReport', previousPeriod.value[0], previousPeriod.value[1]] as const),
+  queryFn: () => fetchSalesReport(toBusinessDate(previousPeriod.value[0]), toBusinessDate(previousPeriod.value[1])),
 })
 
-const totalCups = computed(() => {
-  if (!salesReport.value) return 0
-  return salesReport.value.topDrinks.reduce((sum, d) => sum + d.count, 0)
-})
+// KPI 統計計算：目前區間與前期各自套用同一套算法，避免兩份計算邏輯
+// 各自維護、悄悄產生不一致。
+function computeTotals(report: typeof salesReport.value, singleDay: boolean) {
+  if (!report) return { totalRevenue: 0, totalCups: 0, totalOrders: 0, averageOrderValue: 0 }
+  const totalRevenue = singleDay
+    ? report.hourlyRevenue.reduce((sum, p) => sum + p.revenue, 0)
+    : report.dailyRevenue.reduce((sum, p) => sum + p.revenue, 0)
+  const totalCups = report.topDrinks.reduce((sum, d) => sum + d.count, 0)
+  const paymentCount = report.topPaymentMethods.reduce((sum, p) => sum + p.count, 0)
+  const totalOrders = paymentCount > 0 ? paymentCount : (totalRevenue > 0 ? Math.ceil(totalRevenue / 180) : 0)
+  const averageOrderValue = totalOrders === 0 ? 0 : Math.round(totalRevenue / totalOrders)
+  return { totalRevenue, totalCups, totalOrders, averageOrderValue }
+}
+const isSingleDay = computed(() => selectTime.value[0] === selectTime.value[1])
+const current = computed(() => computeTotals(salesReport.value, isSingleDay.value))
+const previous = computed(() => computeTotals(previousSalesReport.value, previousPeriod.value[0] === previousPeriod.value[1]))
 
-const totalOrders = computed(() => {
-  if (!salesReport.value) return 0
-  const count = salesReport.value.topPaymentMethods.reduce((sum, p) => sum + p.count, 0)
-  return count > 0 ? count : (totalRevenue.value > 0 ? Math.ceil(totalRevenue.value / 180) : 0)
-})
+const totalRevenue = computed(() => current.value.totalRevenue)
+const totalCups = computed(() => current.value.totalCups)
+const totalOrders = computed(() => current.value.totalOrders)
+const averageOrderValue = computed(() => current.value.averageOrderValue)
 
-const averageOrderValue = computed(() => {
-  if (totalOrders.value === 0) return 0
-  return Math.round(totalRevenue.value / totalOrders.value)
-})
+/** 跟前期比的變動百分比與方向；前期是 0 時視為「無法比較」（避免除以 0 產生 Infinity/NaN）。 */
+function trendOf(currentValue: number, previousValue: number): { pct: number; up: boolean } | null {
+  if (!previousSalesReport.value || previousValue === 0) return null
+  const pct = Math.round(((currentValue - previousValue) / previousValue) * 100)
+  return { pct, up: pct >= 0 }
+}
+const revenueTrend = computed(() => trendOf(current.value.totalRevenue, previous.value.totalRevenue))
+const cupsTrend = computed(() => trendOf(current.value.totalCups, previous.value.totalCups))
+const ordersTrend = computed(() => trendOf(current.value.totalOrders, previous.value.totalOrders))
+const aovTrend = computed(() => trendOf(current.value.averageOrderValue, previous.value.averageOrderValue))
 
 const peakHourInfo = computed(() => {
   if (!salesReport.value || selectTime.value[0] !== selectTime.value[1]) return null
@@ -388,40 +434,26 @@ const peakHourInfo = computed(() => {
 // 時間快捷鍵
 const setDatePreset = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
   const now = new Date()
-  const format = (d: Date) => {
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}/${m}/${day}`
-  }
-
   if (preset === 'today') {
-    const t = format(now)
+    const t = formatSlashDate(now)
     selectTime.value = [t, t]
   } else if (preset === 'yesterday') {
     const y = new Date(now)
     y.setDate(y.getDate() - 1)
-    const yStr = format(y)
+    const yStr = formatSlashDate(y)
     selectTime.value = [yStr, yStr]
   } else if (preset === 'week') {
     const w = new Date(now)
     w.setDate(w.getDate() - 6)
-    selectTime.value = [format(w), format(now)]
+    selectTime.value = [formatSlashDate(w), formatSlashDate(now)]
   } else if (preset === 'month') {
     const m = new Date(now.getFullYear(), now.getMonth(), 1)
-    selectTime.value = [format(m), format(now)]
+    selectTime.value = [formatSlashDate(m), formatSlashDate(now)]
   }
 }
 
 const isPresetActive = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
-  const now = new Date()
-  const format = (d: Date) => {
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}/${m}/${day}`
-  }
-  const todayStr = format(now)
+  const todayStr = formatSlashDate(new Date())
   if (preset === 'today') return selectTime.value[0] === todayStr && selectTime.value[1] === todayStr
   return false
 }
