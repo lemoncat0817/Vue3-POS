@@ -40,8 +40,8 @@ width="560" height="315" src="https://www.youtube.com/embed/4ELxt64heEs?si=V5_55
             class="rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-center text-lg font-bold tracking-[0.3em] text-surface-900 outline-none transition-colors focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-50">
         </label>
         <label class="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-400">
-          <input v-model="loginStore.isRememberPin" type="checkbox" class="h-4 w-4 rounded border-surface-300">
-          記住 PIN
+          <input v-model="loginStore.rememberAccount" type="checkbox" class="h-4 w-4 rounded border-surface-300">
+          記住帳號
         </label>
         <button
           type="submit"

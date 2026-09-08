@@ -23,9 +23,23 @@ export const useLoginStore = defineStore('login', () => {
   const isLogin = ref(false)
   // 登入者的資訊
   const userInfo = ref<CurrentUser>([])
-  const isRememberPin = ref(false)
+  // D-04 修復：原本叫 isRememberPin，勾選後會讓明碼 PIN 隨整個 store
+  // 一起被 persist:true 存進 localStorage、無限期留在那裡（見下方
+  // persist 設定的說明）——這是「記住 PIN」這個功能唯一的實作方式，
+  // 也正是 D-04 本身。改成只記住帳號名稱：帳號不是秘密，記住它單純
+  // 是少打幾個字的方便，不需要（也不應該）為了同一個方便把明碼登入
+  // 憑證留在使用者裝置上。
+  const rememberAccount = ref(false)
 
-  return { account, pin, isLogin, userInfo, isRememberPin }
+  return { account, pin, isLogin, userInfo, rememberAccount }
 }, {
-  persist: true,
+  persist: {
+    // D-04 修復：pin 永遠不進 localStorage，不管使用者有沒有勾選
+    // 「記住帳號」——這是唯一的明碼登入憑證，跟 account（不是秘密，
+    // 純粹省得重打）、isLogin／userInfo（維持重新整理後仍是登入狀態，
+    // 這是一般 SPA 常見的 session 行為，不是這裡要修的問題）不是
+    // 同一類資料，見 views/login/index.vue、layout/header/index.vue
+    // 登出時的清除邏輯說明。
+    omit: ['pin'],
+  },
 })

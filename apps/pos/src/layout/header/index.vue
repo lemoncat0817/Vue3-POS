@@ -111,8 +111,14 @@ const logout = async () => {
   router.push('/login')
   loginStore.isLogin = false
   loginStore.userInfo = []
-  if (loginStore.isRememberPin === false) {
-    loginStore.pin = ''
+  // D-04 修復：pin 不管有沒有勾選「記住帳號」都要清空——它本來就不會
+  // 被存進 localStorage（見 stores/login.ts 的 persist.omit 說明），
+  // 這裡只是確保登出後記憶體裡也不留著上一位操作員的明碼 PIN，換下一
+  // 個人登入時不會不小心看到或用到。帳號名稱才是「記住帳號」實際
+  // 影響的欄位。
+  loginStore.pin = ''
+  if (loginStore.rememberAccount === false) {
+    loginStore.account = ''
   }
   showToast('登出成功', 'success')
 }
