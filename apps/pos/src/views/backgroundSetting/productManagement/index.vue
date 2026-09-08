@@ -11,17 +11,17 @@
           <div class="flex items-center gap-1.5">
             <button
               type="button"
-              class="rounded-lg border border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-950/40 px-2.5 py-1 text-xs font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 transition-all select-none shadow-sm"
+              class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
               :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
               @click="openAddTypeDialog">新增</button>
             <button
               type="button"
-              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 transition-all select-none shadow-sm"
+              class="pos-btn pos-btn-primary px-2.5 py-1 text-xs"
               :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
               @click="openEditTypeDialog">編輯</button>
             <button
               type="button"
-              class="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition-all select-none shadow-sm"
+              class="pos-btn pos-btn-danger px-2.5 py-1 text-xs"
               :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
               @click="deleteDrinkType">刪除</button>
           </div>
@@ -128,17 +128,17 @@
           <div class="flex items-center gap-1.5">
             <button
               type="button"
-              class="rounded-lg border border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-950/40 px-2.5 py-1 text-xs font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 transition-all select-none shadow-sm"
+              class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
               :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
               @click="openAddDrinkDialog">新增</button>
             <button
               type="button"
-              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 transition-all select-none shadow-sm"
+              class="pos-btn pos-btn-primary px-2.5 py-1 text-xs"
               :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
               @click="openEditDrinkDialog">編輯</button>
             <button
               type="button"
-              class="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition-all select-none shadow-sm"
+              class="pos-btn pos-btn-danger px-2.5 py-1 text-xs"
               :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
               @click="deleteDrink">刪除</button>
           </div>
@@ -371,17 +371,17 @@
           <div class="flex items-center gap-1.5">
             <button
               type="button"
-              class="rounded-lg border border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-950/40 px-2.5 py-1 text-xs font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 transition-all select-none shadow-sm"
+              class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
               :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
               @click="openAddIngredientsDialog">新增</button>
             <button
               type="button"
-              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 transition-all select-none shadow-sm"
+              class="pos-btn pos-btn-primary px-2.5 py-1 text-xs"
               :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
               @click="openEditIngredientsDialog">編輯</button>
             <button
               type="button"
-              class="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition-all select-none shadow-sm"
+              class="pos-btn pos-btn-danger px-2.5 py-1 text-xs"
               :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
               @click="deleteDrinkIngredients">刪除</button>
           </div>

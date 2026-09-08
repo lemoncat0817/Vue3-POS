@@ -1,51 +1,67 @@
 <template>
-  <div class="w-full p-4 flex flex-col gap-4">
-    <div class="flex items-center justify-between">
-      <div class="text-lg font-bold text-surface-900 dark:text-surface-100">電子發票字軌</div>
-      <div class="flex gap-2">
-        <button
-          type="button"
-          class="rounded-lg border border-surface-300 px-3 py-1.5 text-sm font-bold text-surface-700 transition-colors hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
-          @click="submitBatch">模擬上傳未上傳的發票</button>
-        <button
-          type="button"
-          class="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-primary-700"
-          @click="addDialog = true">新增字軌（換下一期）</button>
+  <!-- UI-5（規劃書 §5.2「後台設定」）：這個子頁原本是三個子頁裡唯一
+       沒有卡片外框、沒有圖示標題、表格沒有邊框、也沒有分頁footer的
+       一個——跟商品管理／優惠設定的視覺語言完全對不上。改用跟另外
+       兩個子頁一致的 card-panel ＋ 圖示標題列 ＋ 表格外框 ＋ 統計列，
+       按鈕也統一改用 pos-btn。 -->
+  <div class="w-full p-4">
+    <div class="card-panel p-5 flex flex-col gap-3.5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-surface-200 dark:border-surface-800">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-info-50 text-info-600 dark:bg-info-950/50 dark:text-info-400 border border-info-200/50 dark:border-info-800/40">
+            <Receipt class="h-4 w-4" />
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-surface-900 dark:text-surface-100 tracking-tight">電子發票字軌</h3>
+            <p class="text-[11px] text-surface-400">財政部配發字軌與上傳狀態管理</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" class="pos-btn pos-btn-secondary px-3 py-1.5 text-xs font-bold" @click="submitBatch">模擬上傳未上傳的發票</button>
+          <button type="button" class="pos-btn pos-btn-primary px-3 py-1.5 text-xs font-bold" @click="addDialog = true">新增字軌（換下一期）</button>
+        </div>
+      </div>
+
+      <p class="text-xs text-surface-500 dark:text-surface-400">
+        真正的統一發票字軌由財政部每兩個月配發一次，商家要先申請——新增字軌代表換成下一期，會自動停用目前這一期。上傳到財政部電子發票整合服務平台目前是模擬（沒有真正的介接憑證），只是把「已開立」的發票標成「已上傳」。
+      </p>
+
+      <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+        <table class="w-full text-center text-xs sm:text-sm">
+          <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+            <tr>
+              <th class="px-2 py-2.5">字軌</th>
+              <th class="px-2 py-2.5">期別</th>
+              <th class="px-2 py-2.5">號碼區間</th>
+              <th class="px-2 py-2.5">目前號碼</th>
+              <th class="px-2 py-2.5">狀態</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+            <tr v-if="tracks.length === 0">
+              <td colspan="5" class="px-2 py-8 text-surface-400 dark:text-surface-500">還沒有設定任何字軌</td>
+            </tr>
+            <tr v-for="track in tracks" :key="track.id" class="transition-colors hover:bg-surface-50 dark:hover:bg-surface-950">
+              <td class="px-2 py-2.5 font-bold text-surface-900 dark:text-surface-100">{{ track.trackCode }}</td>
+              <td class="px-2 py-2.5">{{ track.periodLabel }}</td>
+              <td class="px-2 py-2.5 font-mono text-surface-500">{{ track.rangeStart }} ～ {{ track.rangeEnd }}</td>
+              <td class="px-2 py-2.5 font-mono">{{ track.currentNumber }}</td>
+              <td class="px-2 py-2.5">
+                <span
+                  class="rounded-full px-2 py-0.5 text-xs font-bold"
+                  :class="track.isActive ? 'bg-success-100 text-success-700 dark:bg-success-950 dark:text-success-300' : 'bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400'">
+                  {{ track.isActive ? '啟用中' : '已停用' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
+        <p>共 {{ tracks.length }} 筆</p>
       </div>
     </div>
-    <p class="text-xs text-surface-500 dark:text-surface-400">
-      真正的統一發票字軌由財政部每兩個月配發一次，商家要先申請——新增字軌代表換成下一期，會自動停用目前這一期。上傳到財政部電子發票整合服務平台目前是模擬（沒有真正的介接憑證），只是把「已開立」的發票標成「已上傳」。
-    </p>
-
-    <table class="w-full text-center text-sm">
-      <thead class="bg-surface-100 text-xs font-bold text-surface-500 dark:bg-surface-800 dark:text-surface-400">
-        <tr>
-          <th class="px-2 py-2">字軌</th>
-          <th class="px-2 py-2">期別</th>
-          <th class="px-2 py-2">號碼區間</th>
-          <th class="px-2 py-2">目前號碼</th>
-          <th class="px-2 py-2">狀態</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-        <tr v-if="tracks.length === 0">
-          <td colspan="5" class="px-2 py-8 text-surface-400 dark:text-surface-500">還沒有設定任何字軌</td>
-        </tr>
-        <tr v-for="track in tracks" :key="track.id" class="hover:bg-surface-50 dark:hover:bg-surface-950">
-          <td class="px-2 py-2 font-bold">{{ track.trackCode }}</td>
-          <td class="px-2 py-2">{{ track.periodLabel }}</td>
-          <td class="px-2 py-2">{{ track.rangeStart }} ～ {{ track.rangeEnd }}</td>
-          <td class="px-2 py-2">{{ track.currentNumber }}</td>
-          <td class="px-2 py-2">
-            <span
-              class="rounded-full px-2 py-0.5 text-xs font-bold"
-              :class="track.isActive ? 'bg-success-100 text-success-700 dark:bg-success-950 dark:text-success-300' : 'bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400'">
-              {{ track.isActive ? '啟用中' : '已停用' }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
 
     <ModalDialog v-model:open="addDialog" title="新增字軌">
       <Form v-slot="{ isSubmitting }" :validation-schema="toTypedSchema(trackSchema)" :initial-values="{ trackCode: '', periodLabel: '', rangeStart: 1, rangeEnd: 50000000 }" @submit="onSubmit">
@@ -54,8 +70,8 @@
         <FormField name="rangeStart" label="起始號碼" type="number" step="1" :disabled="isSubmitting" placeholder="例如: 1" />
         <FormField name="rangeEnd" label="結束號碼" type="number" step="1" :disabled="isSubmitting" placeholder="例如: 50000000" />
         <div class="mt-2 flex justify-end gap-2">
-          <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="addDialog = false">取消</button>
-          <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">新增並啟用</button>
+          <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-sm" @click="addDialog = false">取消</button>
+          <button type="submit" :disabled="isSubmitting" class="pos-btn pos-btn-primary px-4 py-2 text-sm disabled:opacity-50">新增並啟用</button>
         </div>
       </Form>
     </ModalDialog>
@@ -70,6 +86,7 @@ import { onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form } from 'vee-validate'
+import { Receipt } from 'lucide-vue-next'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import FormField from '@/components/ui/FormField.vue'
 import { ApiError } from '@/api/http'
