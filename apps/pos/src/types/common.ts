@@ -14,9 +14,6 @@
  */
 export type FormNumeric = number | string
 
-/** 後台以 `'O' | 'X'` 表示的權限開關字面值。 */
-export type PermissionFlag = 'O' | 'X'
-
 /**
  * 後台管理頁「目前選取列」的既有慣例：`ref({})` 起始（尚未選取任何一列），
  * 使用者從 `el-table` 選取後才被指派成完整的列物件，並以

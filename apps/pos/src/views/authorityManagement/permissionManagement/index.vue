@@ -6,7 +6,7 @@
       <div class="flex mr-2">
         <!-- 新增功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetAuthority === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetAuthority === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetAuthority'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
           class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="openAddStaffDialog">新增</button>
         <!-- 新增人員 -->
@@ -61,12 +61,12 @@ v-model="currentInputStaffPassword"
         </ModalDialog>
         <!-- 刪除功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetAuthority === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetAuthority === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetAuthority'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
           class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="deleteStaff">刪除</button>
         <!-- 編輯功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetAuthority === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetAuthority === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetAuthority'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
           class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="openEditStaffDialog">編輯</button>
         <!-- 編輯人員 -->
@@ -146,7 +146,13 @@ v-model="currentEditInputStaffPassword"
             <td class="px-2 py-2">{{ row.account }}</td>
             <td class="px-2 py-2">{{ row.password }}</td>
             <td v-for="field in authorityFields" :key="field.value" class="px-2 py-2">
-              <span :class="row[field.value] === 'O' ? 'text-emerald-600' : 'text-red-600'">{{ row[field.value] }}</span>
+              <!-- D-10 修復：這裡以前直接讀 row[field.value]（16 個獨立
+                   O/X 欄位裡的其中一個），現在 authorityCheckList 是
+                   唯一來源，這一格的 O/X 是不是有這個權限的直接呈現，
+                   不是另外存了一份。 -->
+              <span :class="row.authorityCheckList.includes(field.value) ? 'text-emerald-600' : 'text-red-600'">
+                {{ row.authorityCheckList.includes(field.value) ? 'O' : 'X' }}
+              </span>
             </td>
           </tr>
         </tbody>
@@ -168,7 +174,7 @@ v-model="currentEditInputStaffPassword"
       <div class="flex mr-2">
         <!-- 新增功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetPayMethod === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetPayMethod === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetPayMethod'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
           class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="openAddPayMethodDialog">新增</button>
         <!-- 新增付款方式 -->
@@ -221,12 +227,12 @@ v-model="currentInputPayMethodName"
         </ModalDialog>
         <!-- 刪除功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetPayMethod === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetPayMethod === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetPayMethod'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
           class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="deletePayMethod">刪除</button>
         <!-- 編輯功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetPayMethod === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetPayMethod === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetPayMethod'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
           class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="openEditPayMethodDialog">編輯</button>
         <!-- 編輯付款方式 -->
@@ -346,7 +352,7 @@ const orderStore = useOrderStore()
 import { useLoginStore } from '@/stores/login';
 const loginStore = useLoginStore()
 import type { AuthorityKey, FormNumeric, MaybeSelected, PaymentMethod, PaymentUseMethod, StaffMember } from '@/types'
-import { fromSelection } from '@/utils/selection'
+import { fromSelection, hasCapability } from '@/utils/selection'
 
 // 人員名單相關的功能
 // 存放當前選擇的人員
@@ -451,7 +457,8 @@ const addStaff = () => {
     showToast('Id不可為負數且需大於0,請重新輸入', 'error')
     return
   }
-  // 送出新增人員的表單格式
+  // 送出新增人員的表單格式。D-10 修復：authorityCheckList 是唯一的
+  // 權限來源，不用再另外算 16 個衍生欄位。
   const addStaffForm: StaffMember = {
     id: currentInputStaffId.value,
     name: currentInputStaffName.value,
@@ -459,22 +466,6 @@ const addStaff = () => {
     account: currentInputStaffAccount.value,
     password: currentInputStaffPassword.value,
     authorityCheckList: authorityCheckList.value,
-    canFreeDrink: authorityCheckList.value.some(item => item.includes('canFreeDrink')) ? 'O' : 'X',
-    canOpenCashier: authorityCheckList.value.some(item => item.includes('canOpenCashier')) ? 'O' : 'X',
-    canCheckOrder: authorityCheckList.value.some(item => item.includes('canCheckOrder')) ? 'O' : 'X',
-    canEditOrderStatus: authorityCheckList.value.some(item => item.includes('canEditOrderStatus')) ? 'O' : 'X',
-    canDeleteOrder: authorityCheckList.value.some(item => item.includes('canDeleteOrder')) ? 'O' : 'X',
-    canCheckBackgroundSetting: authorityCheckList.value.some(item => item.includes('canCheckBackgroundSetting')) ? 'O' : 'X',
-    canSetDrinkType: authorityCheckList.value.some(item => item.includes('canSetDrinkType')) ? 'O' : 'X',
-    canSetDrink: authorityCheckList.value.some(item => item.includes('canSetDrink')) ? 'O' : 'X',
-    canSetIngredients: authorityCheckList.value.some(item => item.includes('canSetIngredients')) ? 'O' : 'X',
-    canSetMoneyDiscount: authorityCheckList.value.some(item => item.includes('canSetMoneyDiscount')) ? 'O' : 'X',
-    canSetPercentDiscount: authorityCheckList.value.some(item => item.includes('canSetPercentDiscount')) ? 'O' : 'X',
-    canSetOftenUseDiscount: authorityCheckList.value.some(item => item.includes('canSetOftenUseDiscount')) ? 'O' : 'X',
-    canCheckDataAnalysis: authorityCheckList.value.some(item => item.includes('canCheckDataAnalysis')) ? 'O' : 'X',
-    canCheckAuthority: authorityCheckList.value.some(item => item.includes('canCheckAuthority')) ? 'O' : 'X',
-    canSetAuthority: authorityCheckList.value.some(item => item.includes('canSetAuthority')) ? 'O' : 'X',
-    canSetPayMethod: authorityCheckList.value.some(item => item.includes('canSetPayMethod')) ? 'O' : 'X',
   }
   authorityManagementStore.staffList.push(addStaffForm)
   showToast('新增人員成功', 'success')
@@ -569,23 +560,9 @@ const editStaff = () => {
   currentStaff.value.jobTitle = currentEditInputStaffJobTitle.value
   currentStaff.value.account = currentEditInputStaffAccount.value
   currentStaff.value.password = currentEditInputStaffPassword.value
+  // D-10 修復：authorityCheckList 是唯一的權限來源，不用再另外算 16
+  // 個衍生欄位（那 16 個欄位已經從 StaffMember 拿掉，見 types/staff.ts）。
   currentStaff.value.authorityCheckList = editAuthorityCheckList.value
-  currentStaff.value.canFreeDrink = editAuthorityCheckList.value.some(item => item.includes('canFreeDrink')) ? 'O' : 'X'
-  currentStaff.value.canOpenCashier = editAuthorityCheckList.value.some(item => item.includes('canOpenCashier')) ? 'O' : 'X'
-  currentStaff.value.canCheckOrder = editAuthorityCheckList.value.some(item => item.includes('canCheckOrder')) ? 'O' : 'X'
-  currentStaff.value.canEditOrderStatus = editAuthorityCheckList.value.some(item => item.includes('canEditOrderStatus')) ? 'O' : 'X'
-  currentStaff.value.canDeleteOrder = editAuthorityCheckList.value.some(item => item.includes('canDeleteOrder')) ? 'O' : 'X'
-  currentStaff.value.canCheckBackgroundSetting = editAuthorityCheckList.value.some(item => item.includes('canCheckBackgroundSetting')) ? 'O' : 'X'
-  currentStaff.value.canSetDrinkType = editAuthorityCheckList.value.some(item => item.includes('canSetDrinkType')) ? 'O' : 'X'
-  currentStaff.value.canSetDrink = editAuthorityCheckList.value.some(item => item.includes('canSetDrink')) ? 'O' : 'X'
-  currentStaff.value.canSetIngredients = editAuthorityCheckList.value.some(item => item.includes('canSetIngredients')) ? 'O' : 'X'
-  currentStaff.value.canSetMoneyDiscount = editAuthorityCheckList.value.some(item => item.includes('canSetMoneyDiscount')) ? 'O' : 'X'
-  currentStaff.value.canSetPercentDiscount = editAuthorityCheckList.value.some(item => item.includes('canSetPercentDiscount')) ? 'O' : 'X'
-  currentStaff.value.canSetOftenUseDiscount = editAuthorityCheckList.value.some(item => item.includes('canSetOftenUseDiscount')) ? 'O' : 'X'
-  currentStaff.value.canCheckDataAnalysis = editAuthorityCheckList.value.some(item => item.includes('canCheckDataAnalysis')) ? 'O' : 'X'
-  currentStaff.value.canCheckAuthority = editAuthorityCheckList.value.some(item => item.includes('canCheckAuthority')) ? 'O' : 'X'
-  currentStaff.value.canSetAuthority = editAuthorityCheckList.value.some(item => item.includes('canSetAuthority')) ? 'O' : 'X'
-  currentStaff.value.canSetPayMethod = editAuthorityCheckList.value.some(item => item.includes('canSetPayMethod')) ? 'O' : 'X'
   editStaffDialog.value = false
   showToast('保存成功', 'success')
 }

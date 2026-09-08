@@ -217,7 +217,7 @@ import { useOrderStore } from "@/stores/order"
 const orderStore = useOrderStore()
 import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
-import { fromSelection } from '@/utils/selection'
+import { fromSelection, hasCapability } from '@/utils/selection'
 import { deleteOrder as deleteOrderRequest, refundOrder as refundOrderRequest, updateOrderStatus } from '@/api/orders'
 import { ApiError } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
@@ -328,8 +328,8 @@ const columns = [
     header: '操作',
     cell: (info) => {
       const order = info.row.original
-      const canEditStatus = fromSelection(loginStore.userInfo)?.canEditOrderStatus === 'O'
-      const canDelete = fromSelection(loginStore.userInfo)?.canDeleteOrder === 'O'
+      const canEditStatus = hasCapability(loginStore.userInfo, 'canEditOrderStatus')
+      const canDelete = hasCapability(loginStore.userInfo, 'canDeleteOrder')
       // 退款沒有另外開一個授權欄位（見 types/staff.ts 的 AuthorityKey
       // 說明），沿用「編輯訂單狀態」這一格權限——能改訂單狀態的人，
       // 業務上本來就該有權限處理退款，兩者是同一個信任層級。

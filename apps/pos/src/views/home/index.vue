@@ -234,7 +234,7 @@ class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-
           <!-- 免費招待 -->
           <button
 class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            :class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canFreeDrink === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canFreeDrink === 'X' }"
+            :class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canFreeDrink'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canFreeDrink') }"
             @click="freeDiscount">免費招待</button>
           <!-- 環保折扣 -->
           <button
@@ -249,7 +249,7 @@ class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-
           <!-- 開收銀機 -->
           <button
 class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            :class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canOpenCashier === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canOpenCashier === 'X' }"
+            :class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canOpenCashier'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canOpenCashier') }"
             @click="openCashier">開收銀機</button>
           <!-- 優惠券 -->
           <button
@@ -456,7 +456,7 @@ const orderStore = useOrderStore()
 import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { CartLineItem, FormNumeric, OrderChannel, OrderRecord } from '@/types'
-import { fromSelection } from '@/utils/selection'
+import { fromSelection, hasCapability } from '@/utils/selection'
 import { getBusinessDate, priceLine, toggleContainer, toggleFree, toggleRate, type LineDiscountFlags, type OftenUseRates } from '@pos/domain'
 import type { AppliedCoupon, InvoiceCarrier } from '@pos/contract'
 import { buildCreateOrderRequest } from '@/api/orders'

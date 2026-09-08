@@ -239,7 +239,7 @@ const discountStore = useDiscountStore()
 import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
 import type { MaybeSelected, MoneyDiscount, OftenUseDiscount, PercentDiscount } from '@/types'
-import { fromSelection } from '@/utils/selection'
+import { hasCapability } from '@/utils/selection'
 import { ApiError } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
@@ -297,9 +297,9 @@ function apiErrorMessage(err: unknown): string {
   return '連不上伺服端，請確認網路連線'
 }
 
-const canSetMoneyDiscount = computed(() => fromSelection(loginStore.userInfo)?.canSetMoneyDiscount === 'O')
-const canSetPercentDiscount = computed(() => fromSelection(loginStore.userInfo)?.canSetPercentDiscount === 'O')
-const canSetOftenUseDiscount = computed(() => fromSelection(loginStore.userInfo)?.canSetOftenUseDiscount === 'O')
+const canSetMoneyDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetMoneyDiscount'))
+const canSetPercentDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetPercentDiscount'))
+const canSetOftenUseDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetOftenUseDiscount'))
 
 // ---------- 現金折扣券 ----------
 const currentMoneyDiscount = ref<MaybeSelected<MoneyDiscount>>({})

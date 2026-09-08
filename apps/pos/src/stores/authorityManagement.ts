@@ -11,6 +11,10 @@ import type { StaffMember } from '@/types'
  * 人員異動不會同步到伺服端的 staff 表，也不影響誰能實際登入——這是
  * 跟 P3 對 productManagement 菜單 CRUD 一樣的已知限制，見那邊
  * catalogSource 的說明；等權限管理也接上伺服端寫入 API 才會統一。
+ *
+ * D-10 修復：每筆資料以前還要多帶 16 個獨立的 `'O'/'X'` 欄位，跟
+ * authorityCheckList 陣列並存——見 types/staff.ts 的說明，現在只留
+ * authorityCheckList 這一份來源。
  */
 export const useAuthorityManagementStore = defineStore('authorityManagement', () => {
   // 當前的查看的資料類型
@@ -25,22 +29,6 @@ export const useAuthorityManagementStore = defineStore('authorityManagement', ()
     authorityCheckList: ['canFreeDrink', 'canOpenCashier', 'canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder',
       'canCheckBackgroundSetting', 'canSetDrinkType', 'canSetDrink', 'canSetIngredients', 'canSetMoneyDiscount', 'canSetPercentDiscount',
       'canSetOftenUseDiscount', 'canCheckDataAnalysis', 'canCheckAuthority', 'canSetAuthority', 'canSetPayMethod'],
-    canFreeDrink: 'O',
-    canOpenCashier: 'O',
-    canCheckOrder: 'O',
-    canEditOrderStatus: 'O',
-    canDeleteOrder: 'O',
-    canCheckBackgroundSetting: 'O',
-    canSetDrinkType: 'O',
-    canSetDrink: 'O',
-    canSetIngredients: 'O',
-    canSetMoneyDiscount: 'O',
-    canSetPercentDiscount: 'O',
-    canSetOftenUseDiscount: 'O',
-    canCheckDataAnalysis: 'O',
-    canCheckAuthority: 'O',
-    canSetAuthority: 'O',
-    canSetPayMethod: 'O',
   }, {
     id: 2,
     name: 'James',
@@ -49,22 +37,6 @@ export const useAuthorityManagementStore = defineStore('authorityManagement', ()
     password: 'james123',
     authorityCheckList: ['canFreeDrink', 'canOpenCashier', 'canCheckOrder', 'canEditOrderStatus',
       'canCheckBackgroundSetting', 'canSetDrinkType', 'canSetDrink', 'canSetIngredients', 'canCheckDataAnalysis'],
-    canFreeDrink: 'O',
-    canOpenCashier: 'O',
-    canCheckOrder: 'O',
-    canEditOrderStatus: 'O',
-    canDeleteOrder: 'X',
-    canCheckBackgroundSetting: 'O',
-    canSetDrinkType: 'O',
-    canSetDrink: 'O',
-    canSetIngredients: 'O',
-    canSetMoneyDiscount: 'X',
-    canSetPercentDiscount: 'X',
-    canSetOftenUseDiscount: 'X',
-    canCheckDataAnalysis: 'O',
-    canCheckAuthority: 'X',
-    canSetAuthority: 'X',
-    canSetPayMethod: 'X',
   },
   {
     id: 3,
@@ -73,22 +45,6 @@ export const useAuthorityManagementStore = defineStore('authorityManagement', ()
     account: 'emily',
     password: 'emily123',
     authorityCheckList: ['canCheckOrder', 'canEditOrderStatus', 'canCheckBackgroundSetting'],
-    canFreeDrink: 'X',
-    canOpenCashier: 'X',
-    canCheckOrder: 'O',
-    canEditOrderStatus: 'O',
-    canDeleteOrder: 'X',
-    canCheckBackgroundSetting: 'O',
-    canSetDrinkType: 'X',
-    canSetDrink: 'X',
-    canSetIngredients: 'X',
-    canSetMoneyDiscount: 'X',
-    canSetPercentDiscount: 'X',
-    canSetOftenUseDiscount: 'X',
-    canCheckDataAnalysis: 'X',
-    canCheckAuthority: 'X',
-    canSetAuthority: 'X',
-    canSetPayMethod: 'X',
   }])
 
   return { currentAuthorityManagementPage, staffList }

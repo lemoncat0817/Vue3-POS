@@ -7,7 +7,7 @@
         <!-- 新增功能 -->
         <button
 class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          :class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetDrinkType === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetDrinkType === 'X' }"
+          :class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrinkType'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
           @click="openAddTypeDialog">新增</button>
         <!-- 新增飲品類型 -->
         <!-- P8：組件庫替換——el-dialog 改用 ModalDialog（Reka UI
@@ -44,12 +44,12 @@ v-model="currentInputType"
         </ModalDialog>
         <!-- 刪除功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetDrinkType === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetDrinkType === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrinkType'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
           class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="deleteDrinkType">刪除</button>
         <!-- 編輯功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetDrinkType === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetDrinkType === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrinkType'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
           class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="openEditTypeDialog">編輯</button>
         <!-- 編輯飲品類型 -->
@@ -123,7 +123,7 @@ v-model="currentEditInputType"
       <div class="flex mr-2">
         <!-- 新增功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetDrink === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetDrink === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrink'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
           class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="openAddDrinkDialog">新增</button>
         <!-- 新增飲料品項 -->
@@ -202,12 +202,12 @@ v-if="setPriceBottle" v-model="currentDrinkInputPriceBottle" type="number" min="
         </ModalDialog>
         <!-- 刪除功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetDrink === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetDrink === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrink'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
           class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="deleteDrink">刪除</button>
         <!-- 編輯功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetDrink === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetDrink === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrink'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
           class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="openEditDrinkDialog">編輯</button>
         <!-- 編輯飲料品項 -->
@@ -330,7 +330,7 @@ v-if="setEditPriceBottle" v-model="currentEditDrinkInputPriceBottle" type="numbe
       <div class="flex mr-2">
         <!-- 新增功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetIngredients === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetIngredients === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetIngredients'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
           class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="openAddIngredientsDialog">新增</button>
         <!-- 新增配料 -->
@@ -359,12 +359,12 @@ v-model="currentIngredientsInputPrice" type="number" min="1" step="1"
         </ModalDialog>
         <!-- 刪除功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetIngredients === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetIngredients === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetIngredients'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
           class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="deleteDrinkIngredients">刪除</button>
         <!-- 編輯功能 -->
         <button
-:class="{ 'opacity-50': fromSelection(loginStore.userInfo)?.canSetIngredients === 'X', 'pointer-events-none': fromSelection(loginStore.userInfo)?.canSetIngredients === 'X' }"
+:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetIngredients'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
           class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
           @click="openEditIngredientsDialog">編輯</button>
         <!-- 編輯配料 -->
@@ -451,7 +451,7 @@ const drinkStore = useDrinkStore()
 import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
 import type { DrinkAddOnOption, DrinkCustomized, DrinkListItem, DrinkTypeGroup, FormNumeric, MaybeSelected } from '@/types'
-import { fromSelection } from '@/utils/selection'
+import { hasCapability } from '@/utils/selection'
 
 // 飲品類型相關功能
 // 存放當前已選類型

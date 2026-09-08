@@ -29,18 +29,18 @@ const ALL_CAPABILITIES: AuthorityKey[] = [
   'canCheckDataAnalysis', 'canCheckAuthority', 'canSetAuthority', 'canSetPayMethod',
 ]
 
-function buildStaff(overrides: Partial<Record<AuthorityKey, 'O' | 'X'>> = {}): StaffMember {
-  const capabilities = Object.fromEntries(
-    ALL_CAPABILITIES.map((key) => [key, overrides[key] ?? 'O']),
-  ) as Record<AuthorityKey, 'O' | 'X'>
+// D-10 修復：StaffMember 只剩 authorityCheckList 這一份權限來源（見
+// types/staff.ts 的說明），overrides 直接表達「這個權限有沒有」，不再
+// 是先組一份 'O'/'X' 欄位再跟陣列一起塞進物件。
+function buildStaff(overrides: Partial<Record<AuthorityKey, boolean>> = {}): StaffMember {
+  const authorityCheckList = ALL_CAPABILITIES.filter((key) => overrides[key] ?? true)
   return {
     id: 1,
     name: '測試店員',
     jobTitle: '店長',
     account: 'tester',
     password: '',
-    authorityCheckList: ALL_CAPABILITIES,
-    ...capabilities,
+    authorityCheckList,
   }
 }
 
@@ -72,23 +72,23 @@ describe('router guard', () => {
     expect(router.currentRoute.value.path).toBe('/home')
   })
 
-  it('D-11：欄位不是 O 時，受保護路由會被擋下並提示錯誤', async () => {
+  it('D-11：沒有對應權限時，受保護路由會被擋下並提示錯誤', async () => {
     const { showToast } = await import('@/composables/useToast')
     const router = createAppRouter()
     const loginStore = useLoginStore()
     loginStore.isLogin = true
-    loginStore.userInfo = buildStaff({ canCheckDataAnalysis: 'X' })
+    loginStore.userInfo = buildStaff({ canCheckDataAnalysis: false })
 
     await router.push('/dataAnalysis')
     expect(router.currentRoute.value.path).not.toBe('/dataAnalysis')
     expect(showToast).toHaveBeenCalledWith('您沒有權限訪問該頁面, 請聯繫管理員', 'error')
   })
 
-  it('D-11：欄位是 O 時可以正常進入受保護路由', async () => {
+  it('D-11：有對應權限時可以正常進入受保護路由', async () => {
     const router = createAppRouter()
     const loginStore = useLoginStore()
     loginStore.isLogin = true
-    loginStore.userInfo = buildStaff({ canCheckAuthority: 'O' })
+    loginStore.userInfo = buildStaff({ canCheckAuthority: true })
 
     await router.push('/authorityManagement')
     expect(router.currentRoute.value.path).toBe('/authorityManagement')
@@ -120,7 +120,7 @@ describe('router guard', () => {
     const router = createAppRouter()
     const loginStore = useLoginStore()
     loginStore.isLogin = true
-    loginStore.userInfo = buildStaff({ canCheckAuthority: 'X' })
+    loginStore.userInfo = buildStaff({ canCheckAuthority: false })
 
     await router.push('/home')
     expect(router.currentRoute.value.path).not.toBe('/authorityManagement')

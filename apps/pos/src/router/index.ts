@@ -3,7 +3,7 @@ import { constantRoutes } from './routes'
 import { useLoginStore } from '@/stores/login'
 import { usePageStore } from '@/stores/page'
 import { showToast } from '@/composables/useToast'
-import { fromSelection } from '@/utils/selection'
+import { hasCapability } from '@/utils/selection'
 
 /**
  * 建立掛好導航守衛的 router 實例。拆成獨立工廠函式（而不是直接在模組
@@ -60,7 +60,7 @@ export function createAppRouter() {
     }
 
     const capability = to.meta.capability
-    if (capability && fromSelection(loginStore.userInfo)?.[capability] !== 'O') {
+    if (capability && !hasCapability(loginStore.userInfo, capability)) {
       next(false)
       showToast('您沒有權限訪問該頁面, 請聯繫管理員', 'error')
       return
