@@ -111,7 +111,7 @@
           class="relative flex flex-col items-center justify-between p-2 rounded-xl border text-center transition-all select-none cursor-pointer"
           :class="{
             'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 ring-2 ring-primary-500/20': drinkStore.drinkAddList.some(addItem => addItem.name === item.name),
-            'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:bg-white dark:hover:bg-surface-750': !drinkStore.drinkAddList.some(addItem => addItem.name === item.name),
+            'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:bg-white dark:hover:bg-surface-700': !drinkStore.drinkAddList.some(addItem => addItem.name === item.name),
             'cursor-not-allowed opacity-40 pointer-events-none': isAddOnSoldOut(item),
           }"
           @click="changeAdd(item)">

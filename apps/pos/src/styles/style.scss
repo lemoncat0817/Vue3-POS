@@ -11,3 +11,37 @@
 body {
   @apply bg-white text-surface-900 dark:bg-surface-950 dark:text-surface-100;
 }
+
+/* UI-0／UI-1（規劃書「共用元件清單」）：按鈕與卡片的共用樣式類別。
+   backgroundSetting/offerSetting 與 authorityManagement/
+   permissionManagement 這兩個檔案原本就已經在用 .pos-btn / .card-panel
+   這幾個類別名稱，但專案裡從來沒有任何地方定義過它們——按鈕與卡片
+   長期沒有邊框、底色、圓角、hover 效果，是全域找不到定義的死類別
+   （規劃書 B-1）。這裡補上定義，其餘頁面重複的按鈕／卡片 class 字串
+   也逐步收斂到這裡，取代各自重複貼上一整串 Tailwind 工具類。 */
+@layer components {
+  .pos-btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg font-bold
+      transition-all select-none active:scale-95
+      disabled:pointer-events-none disabled:opacity-40;
+  }
+  .pos-btn-primary {
+    @apply bg-primary-600 text-white shadow-sm hover:bg-primary-700;
+  }
+  .pos-btn-secondary {
+    @apply border border-surface-300 bg-white text-surface-700 hover:bg-surface-100
+      dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700;
+  }
+  .pos-btn-danger {
+    @apply border border-danger-200/80 bg-danger-50 text-danger-600 hover:bg-danger-100
+      dark:border-danger-800 dark:bg-danger-950/40 dark:text-danger-400;
+  }
+  .pos-btn-ghost {
+    @apply text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800;
+  }
+
+  .card-panel {
+    @apply rounded-2xl border border-surface-200 bg-white shadow-sm
+      dark:border-surface-800 dark:bg-surface-900;
+  }
+}

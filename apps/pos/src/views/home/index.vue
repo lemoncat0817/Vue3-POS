@@ -467,42 +467,12 @@ watch(() => drinkStore.cartClearedNotice, () => {
   })
 })
 
-// 杯數相關功能
-// 新增飲料杯數
-const addCount = (num: string) => {
-  // 如果按刪除鍵刪除最右側的數字
-  // 如果刪除後只剩一個數字，則重置為0
-  if (num === 'delete') {
-    if (drinkStore.drinkCount === '' || drinkStore.drinkCount.length === 1) {
-      drinkStore.drinkCount = '0'
-      return
-    } else {
-      drinkStore.drinkCount = drinkStore.drinkCount.slice(0, -1)
-      return
-    }
-  }
-  // 防止杯數超出5位數
-  if (num === '00') {
-    if (drinkStore.drinkCount.length >= 4) {
-      return
-    }
-  } else {
-    if (drinkStore.drinkCount.length >= 5) {
-      return
-    }
-  }
-  // 如果當前杯數為0，則新增杯數時將預設的0清除
-  if (drinkStore.drinkCount === '0') {
-    drinkStore.drinkCount = ''
-    // 如果杯數為0，則不允許按0  
-    if (num === '0' || num === '00') {
-      drinkStore.drinkCount = '0'
-      return
-    }
-  }
-  // 新增選擇的數字在杯數上
-  drinkStore.drinkCount += num
-}
+// UI-0（規劃書 B-4 同類死碼）：addCount 原本是手刻計算機數字鍵盤的
+// 輸入處理（0-9／00／delete 鍵），P7（07cca00）移除手刻計算機、改用
+// drinkCustomized/index.vue 的加減按鈕操作杯數後，這個函式沒有任何
+// 呼叫端，是純粹的殘留死碼——已移除。杯數的加減／直接輸入邏輯見
+// drinkCustomized/index.vue 的 changeCount／incrementCount／
+// decrementCount。
 
 // 添加至待付款區相關功能
 // 添加飲料的資訊進入store

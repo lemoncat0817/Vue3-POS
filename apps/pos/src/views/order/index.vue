@@ -200,7 +200,7 @@
       <div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-850 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">
+            <thead class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">
               <tr>
                 <th class="w-12 px-3 py-3.5 text-center" />
                 <th v-for="header in leafHeaders" :key="header.id" class="px-4 py-3.5">

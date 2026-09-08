@@ -134,6 +134,23 @@ table {
   border-spacing: 0;
 }
 
+/* UI-0（規劃書 B-6）：原本把捲軸寬度設成 0，全站徹底隱藏捲軸。後台
+   是重度捲動的介面（三欄表格、橫向很寬的表格、對話框），使用者完全
+   看不到「這裡還有內容可以捲」的視覺提示。改成細窄、跟 surface 色階
+   同色系的捲軸——維持不搶眼，但至少看得見、抓得到。 */
 ::-webkit-scrollbar {
-  width: 0px; /* 滾動條寬度 */
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgb(168 162 158 / 0.5); /* surface-400 */
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(120 113 108 / 0.7); /* surface-500 */
 }
