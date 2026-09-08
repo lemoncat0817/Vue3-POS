@@ -414,7 +414,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, ref } from 'vue'
+import { computed, h, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   FlexRender,
   createColumnHelper,
@@ -488,11 +489,33 @@ const orderStats = computed(() => {
 })
 
 // 訂單資料處理相關功能
-const filterOrderId = ref('')
-const filterOrderTime = ref('')
-const filterOrderStaff = ref('')
-const filterOrderStatus = ref('')
-const filterOrderPayMethod = ref('')
+//
+// UI-4（規劃書 §3.3「篩選：常用外露、進階收合、已套用以 chip 呈現」）：
+// 篩選條件原本只存在元件內的 ref，重新整理、返回上一頁、分享連結都會
+// 讓篩選條件整組消失。改成初始值讀自 URL query，並且每次變動都同步
+// 寫回去（router.replace，不是 push，不會每打一個字就多一筆瀏覽紀錄）
+// ——網址列本身就是這組篩選條件唯一需要的「持久化」。
+const route = useRoute()
+const router = useRouter()
+function queryString(key: string): string {
+  const value = route.query[key]
+  return typeof value === 'string' ? value : ''
+}
+const filterOrderId = ref(queryString('orderId'))
+const filterOrderTime = ref(queryString('orderTime'))
+const filterOrderStaff = ref(queryString('staff'))
+const filterOrderStatus = ref(queryString('status'))
+const filterOrderPayMethod = ref(queryString('payMethod'))
+
+watch([filterOrderId, filterOrderTime, filterOrderStaff, filterOrderStatus, filterOrderPayMethod], () => {
+  const query: Record<string, string> = {}
+  if (filterOrderId.value) query.orderId = filterOrderId.value
+  if (filterOrderTime.value) query.orderTime = filterOrderTime.value
+  if (filterOrderStaff.value) query.staff = filterOrderStaff.value
+  if (filterOrderStatus.value) query.status = filterOrderStatus.value
+  if (filterOrderPayMethod.value) query.payMethod = filterOrderPayMethod.value
+  void router.replace({ query })
+})
 
 const hasActiveFilter = computed(() => {
   return Boolean(
