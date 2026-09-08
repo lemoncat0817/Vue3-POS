@@ -18,7 +18,6 @@ width="560" height="315" src="https://www.youtube.com/embed/4ELxt64heEs?si=V5_55
 
     <div v-else class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-overlay dark:bg-surface-900">
       <div class="mb-8 flex flex-col items-center gap-3">
-        <img src="@/assets/logo.png" alt="MAJI Tea logo" class="h-16 w-16 rounded-xl">
         <h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-50">MAJI Tea POS</h1>
         <button
           type="button" class="text-sm font-bold text-primary-600 hover:underline dark:text-primary-400"

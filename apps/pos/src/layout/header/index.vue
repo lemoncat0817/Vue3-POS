@@ -3,7 +3,6 @@
     class="flex h-16 w-screen items-center gap-2 border-b border-surface-200 bg-white/95 px-4 backdrop-blur-md dark:border-surface-800 dark:bg-surface-950/95 shadow-sm transition-colors sticky top-0 z-40">
     <!-- 品牌識別 -->
     <div class="flex items-center gap-2.5 mr-2">
-      <img src="@/assets/logo.png" alt="MAJI Tea logo" class="h-10 w-10 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10">
       <div class="hidden 2xl:flex flex-col">
         <span class="text-sm font-black tracking-tight text-surface-900 dark:text-surface-50 leading-none">MAJI TEA</span>
         <span class="text-[10px] font-bold text-primary-600 dark:text-primary-400 tracking-wider">COMMERCIAL POS</span>
