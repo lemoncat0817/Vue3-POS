@@ -38,8 +38,13 @@ test('新增電子發票字軌後自動啟用，送單用新字軌配號；模�
   const trackBody = (await (await createResponse).json()) as { id: string; trackCode: string; isActive: boolean }
   expect(trackBody).toMatchObject({ trackCode, isActive: true })
   await expect(page.getByTestId('toast-message')).toHaveText('新增成功')
-  // 表格上這一列應該顯示「啟用中」。
-  const row = page.getByRole('row').filter({ hasText: trackCode })
+  // 表格上這一列應該顯示「啟用中」——這裡同時用字軌代號＋「啟用中」
+  // 兩個條件篩選，不能只用字軌代號：trackCode 只有 2 碼英文字母，
+  // 空間有限（見產生 trackCode 的說明），reuse 同一台本機 D1 多次
+  // 執行這個測試，歷史（已停用）字軌可能剛好用過同一個代號；同一時間
+  // 只會有一個字軌是啟用中的（見 routes/invoices.ts 的說明），加上這個
+  // 條件永遠只會篩到剛剛新增的這一列。
+  const row = page.getByRole('row').filter({ hasText: trackCode }).filter({ hasText: '啟用中' })
   await expect(row).toContainText('啟用中')
 
   // 點餐、送單，發票號碼應該用新字軌開頭。

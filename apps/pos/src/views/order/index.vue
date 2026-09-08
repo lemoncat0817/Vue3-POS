@@ -117,6 +117,11 @@
                       </template>
                     </span>
                     <span
+v-if="row.original.tableNumber"
+                      class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
+                      內用桌號：<span class="text-primary-600 dark:text-primary-400">{{ row.original.tableNumber }}</span>
+                    </span>
+                    <span
 v-if="(row.original.refundedAmount ?? 0) > 0"
                       class="rounded-full bg-warning-50 dark:bg-warning-950 px-3 py-1 text-xs font-bold text-warning-700 dark:text-warning-300 shadow-sm">
                       已退款：${{ row.original.refundedAmount }}

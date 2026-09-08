@@ -71,6 +71,7 @@ const navItems = [
   { path: '/dataAnalysis', label: '數據分析' },
   { path: '/authorityManagement', label: '權限管理' },
   { path: '/members', label: '會員管理' },
+  { path: '/tables', label: '桌況管理' },
 ]
 
 // 切換頁面

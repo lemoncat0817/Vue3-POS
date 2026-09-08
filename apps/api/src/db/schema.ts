@@ -9,6 +9,7 @@ import type {
   OrderChannel,
   OrderStatus,
   PaymentUseMethod,
+  TableStatus,
 } from '@pos/contract'
 
 /**
@@ -196,6 +197,11 @@ export const orders = sqliteTable(
     // 功能上線前建立的）預設也是 'issued'，不影響既有資料。
     invoiceStatus: text('invoice_status').$type<InvoiceStatus>().notNull().default('issued'),
     invoiceSubmittedAt: text('invoice_submitted_at'),
+    // 內用桌號（P24：規劃書 §10 P24「真實硬體整合與桌況管理」），見
+    // @pos/contract 的 createOrderRequestSchema.tableNumber 說明——
+    // 純紀錄用途，故意不設外鍵指到 dining_tables，桌況跟訂單各自
+    // 獨立維護。
+    tableNumber: text('table_number'),
   },
   (table) => [uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey)],
 )
@@ -416,6 +422,23 @@ export const auditLogs = sqliteTable('audit_logs', {
   createdAt: text('created_at').notNull(),
 })
 
+// ---------- 桌況管理（P24：規劃書 §10 P24「真實硬體整合與桌況管理」） ----------
+
+/**
+ * 內用桌況。狀態由店員手動維護（帶位／清空／預約），不是由訂單狀態
+ * 推導——見 @pos/contract 的 table.ts 說明。tableNumber 不設唯一索引：
+ * 允許同名桌號重複這件事本身不合理，但比起用資料庫限制擋住，更適合
+ * 讓後台自己決定命名規則（例如可能有「戶外 A」「戶外 B」這種前台自訂
+ * 的命名習慣），跟 catalogGroups.name 目前也沒有唯一索引是同樣的考量。
+ */
+export const diningTables = sqliteTable('dining_tables', {
+  id: text('id').primaryKey(),
+  tableNumber: text('table_number').notNull(),
+  seats: integer('seats').notNull(),
+  status: text('status').$type<TableStatus>().notNull().default('empty'),
+  note: text('note').notNull().default(''),
+})
+
 export const schema = {
   catalogGroups,
   catalogItems,
@@ -438,4 +461,5 @@ export const schema = {
   auditLogs,
   members,
   invoiceTracks,
+  diningTables,
 }

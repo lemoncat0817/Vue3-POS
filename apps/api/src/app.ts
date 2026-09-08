@@ -15,6 +15,7 @@ import { promotionRoutes } from './routes/promotions'
 import { reportRoutes } from './routes/reports'
 import { shiftRoutes } from './routes/shifts'
 import { staffRoutes } from './routes/staff'
+import { tableRoutes } from './routes/tables'
 
 export type { AppEnv }
 
@@ -84,6 +85,7 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string; allow
   app.route('/api/reports', reportRoutes)
   app.route('/api/shifts', shiftRoutes)
   app.route('/api/staff', staffRoutes)
+  app.route('/api/tables', tableRoutes)
 
   app.doc('/openapi.json', {
     openapi: '3.1.0',

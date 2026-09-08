@@ -43,4 +43,10 @@ export interface OrderRecord {
    * @pos/contract 的 orderSchema）。
    */
   memberId?: string | null
+  /**
+   * 內用桌號（P24：規劃書 §10 P24「真實硬體整合與桌況管理」）——選填，
+   * 理由跟 memberId 一致（GOLDEN_ORDERS 沒有這個概念）；伺服端回應
+   * 一律會帶這個欄位。
+   */
+  tableNumber?: string | null
 }

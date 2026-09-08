@@ -203,6 +203,7 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderT
     memberId: order.memberId,
     invoiceStatus: order.invoiceStatus,
     invoiceSubmittedAt: order.invoiceSubmittedAt,
+    tableNumber: order.tableNumber,
     tenders: [...tenders]
       .sort((a, b) => a.seq - b.seq)
       .map((tender) => ({
@@ -519,6 +520,10 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       memberId,
       invoiceStatus: 'issued',
       invoiceSubmittedAt: null,
+      // P24：純紀錄用途的內用桌號，見 @pos/contract 的
+      // createOrderRequestSchema.tableNumber 說明——沒帶就是 null，
+      // 不像 memberId 需要驗證存在性（不是外鍵，只是字串）。
+      tableNumber: input.tableNumber ?? null,
     }
     const newTenders: Omit<OrderTenderRow, 'id'>[] = input.tenders.map((tender, seq) => ({
       orderId,

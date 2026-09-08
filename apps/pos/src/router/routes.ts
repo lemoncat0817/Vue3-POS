@@ -79,6 +79,15 @@ export const constantRoutes: RouteRecordRaw[] = [
           title: '會員管理',
           capability: 'canCheckMembers'
         }
+      },
+      {
+        path: '/tables',
+        name: 'tables',
+        component: () => import('@/views/tables/index.vue'),
+        meta: {
+          title: '桌況管理',
+          capability: 'canManageTables'
+        }
       }
     ]
   }

@@ -97,6 +97,32 @@ describe('POST /api/orders', () => {
     expect(list.find((o: { orderId: string }) => o.orderId === body.orderId).orderChannel).toBe('內用')
   })
 
+  it('內用桌號原封不動存回並回傳，純紀錄用途（P24：規劃書 §10 P24「真實硬體整合與桌況管理」）', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ orderChannel: '內用', tableNumber: 'A1' })),
+    })
+    expect(res.status).toBe(201)
+    expect((await readJson(res)).tableNumber).toBe('A1')
+  })
+
+  it('沒有帶桌號時，tableNumber 是 null', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest()),
+    })
+    expect(res.status).toBe(201)
+    expect((await readJson(res)).tableNumber).toBeNull()
+  })
+
   it('沒有帶 orderChannel 時拒絕，回傳 400', async () => {
     const db = createTestDb()
     await seedPromotions(db)

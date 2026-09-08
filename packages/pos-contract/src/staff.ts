@@ -26,6 +26,9 @@ export const authorityKeySchema = z.enum([
   // canCheckDataAnalysis／canCheckAuthority 是同樣的「一個分頁一個
   // 權限鍵」慣例）。
   'canCheckMembers',
+  // P24（規劃書 §10 P24「真實硬體整合與桌況管理」）：桌況管理也是
+  // 新的一個分頁，同樣的「一個分頁一個權限鍵」慣例。
+  'canManageTables',
 ])
 export type AuthorityKey = z.infer<typeof authorityKeySchema>
 

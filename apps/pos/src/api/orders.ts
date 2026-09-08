@@ -93,6 +93,8 @@ export function buildCreateOrderRequest(params: {
   invoiceCarrier: InvoiceCarrier
   /** P22（規劃書 §10 P22「會員與顧客經營」）：這筆訂單掛在哪個會員名下，沒有選會員就不帶這個欄位。 */
   memberId?: string | null
+  /** P24（規劃書 §10 P24「真實硬體整合與桌況管理」）：內用桌號，純紀錄用途，沒有輸入就不帶這個欄位。 */
+  tableNumber?: string | null
 }): CreateOrderRequest {
   return createOrderRequestSchema.parse({
     idempotencyKey: ulid(),
@@ -118,5 +120,6 @@ export function buildCreateOrderRequest(params: {
     orderChannel: params.orderChannel,
     invoiceCarrier: params.invoiceCarrier,
     ...(params.memberId ? { memberId: params.memberId } : {}),
+    ...(params.tableNumber ? { tableNumber: params.tableNumber } : {}),
   })
 }

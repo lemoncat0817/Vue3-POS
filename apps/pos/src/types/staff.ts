@@ -19,6 +19,7 @@ export type AuthorityKey =
   | 'canSetAuthority'
   | 'canSetPayMethod'
   | 'canCheckMembers'
+  | 'canManageTables'
 
 /**
  * 員工資料。

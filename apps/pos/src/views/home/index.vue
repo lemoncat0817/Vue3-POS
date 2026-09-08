@@ -41,6 +41,15 @@ type="button"
                   : 'border border-surface-300 text-surface-600 hover:bg-surface-50 dark:border-surface-700 dark:text-surface-400 dark:hover:bg-surface-800'"
                 @click="orderChannel = '外帶'">外帶</button>
             </div>
+            <!-- 內用桌號（P24：規劃書 §10 P24「真實硬體整合與桌況
+                 管理」）：只有選「內用」時才有意義，見 tableNumberInput
+                 的說明。 -->
+            <div v-if="orderChannel === '內用'" class="ml-2 flex items-center">
+              <input
+                v-model="tableNumberInput" type="text" placeholder="桌號"
+                data-testid="table-number-input"
+                class="w-16 rounded-lg border border-surface-300 bg-white px-2 py-1 text-xs font-bold text-surface-700 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 xl:text-sm" />
+            </div>
           </div>
         </div>
         <!-- 資訊顯示欄右半部 -->
@@ -677,6 +686,14 @@ const invoiceCarrier = ref<InvoiceCarrier>({ type: '無載具' })
 // 預設值（null），不會延續給下一位客人。
 const currentOrderMember = ref<Member | null>(null)
 
+// 內用桌號（P24：規劃書 §10 P24「真實硬體整合與桌況管理」）。純文字
+// 輸入，不是從 dining_tables 挑選——見 @pos/contract 的
+// createOrderRequestSchema.tableNumber 說明：這只是訂單上的紀錄用途，
+// 刻意不跟桌況資料綁外鍵，所以這裡不需要另外拉一份桌位清單，只在
+// 選了「內用」時顯示。跟 invoiceCarrier／currentOrderMember 一樣，
+// 送單後重置回空字串。
+const tableNumberInput = ref('')
+
 // 控制袋子數量相關功能
 // 控制加購袋子視窗
 const dialogBag = ref(false)
@@ -994,6 +1011,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     invoiceNumber: '',
     invoiceCarrier: invoiceCarrier.value,
     memberId: currentOrderMember.value?.id ?? null,
+    tableNumber: orderChannel.value === '內用' ? tableNumberInput.value.trim() || null : null,
   }
   orderStore.order.push(toPayOrder)
   showToast('訂單送出成功', 'success')
@@ -1048,6 +1066,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     orderChannel: toPayOrder.orderChannel,
     invoiceCarrier: toPayOrder.invoiceCarrier,
     memberId: toPayOrder.memberId ?? null,
+    tableNumber: toPayOrder.tableNumber ?? null,
   })
   void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
   // 載具、會員都是這一次交易的個別需求，下一位客人多半不會延續同一個
@@ -1055,6 +1074,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
   // 回預設值。
   invoiceCarrier.value = { type: '無載具' }
   currentOrderMember.value = null
+  tableNumberInput.value = ''
 
   drinkStore.drinkNotPay = []
 }

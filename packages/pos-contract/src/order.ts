@@ -138,6 +138,14 @@ export const createOrderRequestSchema = z.object({
    * accrueMemberPoints）。
    */
   memberId: z.string().min(1).optional(),
+  /**
+   * 內用桌號（P24：規劃書 §10 P24「真實硬體整合與桌況管理」）——選填，
+   * 純粹是這筆訂單的紀錄用途（出餐、對帳時知道送去哪一桌），不是桌況
+   * 的外鍵：桌況（見 table.ts 的 diningTableSchema）是店員手動維護的
+   * 狀態，不由訂單生命週期推導，訂單刪除或作廢也不需要牽動桌況，兩者
+   * 刻意不用外鍵綁死。
+   */
+  tableNumber: z.string().min(1).optional(),
 })
 export type CreateOrderRequest = z.infer<typeof createOrderRequestSchema>
 
@@ -218,6 +226,8 @@ export const orderSchema = z.object({
   invoiceCarrier: invoiceCarrierSchema,
   /** 這筆訂單掛在哪個會員名下，見 createOrderRequestSchema.memberId 的說明；沒有掛會員是 null。 */
   memberId: z.string().nullable(),
+  /** 內用桌號，見 createOrderRequestSchema.tableNumber 的說明；沒有指定是 null。 */
+  tableNumber: z.string().nullable(),
   /** 發票上傳狀態（P23：規劃書 §10 P23「電子發票平台串接」），見 invoice.ts 的 invoiceStatusSchema 說明。 */
   invoiceStatus: invoiceStatusSchema,
   invoiceSubmittedAt: z.string().nullable(),
