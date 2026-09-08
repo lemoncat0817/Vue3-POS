@@ -1,208 +1,371 @@
 <template>
-  <div class="flex w-full flex-col items-center overflow-y-auto bg-surface-50 dark:bg-surface-950 px-4 pb-10">
-    <div class="mt-10 flex w-full max-w-6xl flex-col items-center">
-      <h1 class="text-3xl font-black text-surface-900 dark:text-surface-100">訂單</h1>
-      <p class="mt-1 text-sm text-surface-500 dark:text-surface-400">查看、篩選、管理已送出的訂單</p>
+  <div class="flex w-full flex-col items-center overflow-y-auto bg-surface-50 dark:bg-surface-950 px-4 py-8">
+    <div class="flex w-full max-w-7xl flex-col gap-6">
+      
+      <!-- Top Title & Quick Overview Banner -->
+      <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-primary-100 dark:bg-primary-950/60 px-3 py-1 text-xs font-semibold text-primary-700 dark:text-primary-300 border border-primary-200/50 dark:border-primary-800/40">
+              <Receipt class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+              ORDER MANAGEMENT
+            </span>
+            <span class="inline-flex items-center gap-1 rounded-full bg-success-100 dark:bg-success-950/60 px-2.5 py-0.5 text-[11px] font-semibold text-success-700 dark:text-success-400 border border-success-200/50 dark:border-success-800/40">
+              <span class="h-1.5 w-1.5 rounded-full bg-success-500 animate-pulse"></span>
+              雲端連線同步中
+            </span>
+          </div>
+          <h1 class="mt-2 text-2xl sm:text-3xl font-black tracking-tight text-surface-900 dark:text-surface-100">訂單</h1>
+          <p class="mt-1 text-sm text-surface-500 dark:text-surface-400">查看、篩選、管理已送出的訂單</p>
+        </div>
 
-      <!-- 篩選功能：P8 重新設計——原本 5 個 el-popover，點按鈕才彈出「只有
-           一個輸入框」的小面板，多按一次才能看到／改掉篩選內容。改成一次
-           全部顯示在同一張卡片上，不需要額外的彈出層。 -->
-      <div class="mt-6 grid w-full grid-cols-2 gap-3 rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm sm:grid-cols-3 lg:grid-cols-6">
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500 dark:text-surface-400">
-          訂單編號
-          <input
-            v-model="filterOrderId"
-            class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-            placeholder="輸入訂單編號" />
-        </label>
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500 dark:text-surface-400">
-          訂單時間
-          <input
-            v-model="filterOrderTime"
-            class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-            placeholder="輸入訂單時間" />
-        </label>
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500 dark:text-surface-400">
-          服務人員
-          <input
-            v-model="filterOrderStaff"
-            class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-            placeholder="輸入服務人員" />
-        </label>
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500 dark:text-surface-400">
-          訂單狀態
-          <input
-            v-model="filterOrderStatus"
-            class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-            placeholder="輸入訂單狀態" />
-        </label>
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-500 dark:text-surface-400">
-          付款方式
-          <input
-            v-model="filterOrderPayMethod"
-            class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-            placeholder="輸入付款方式" />
-        </label>
-        <div class="flex items-end">
+        <!-- Quick Status Chips Filter -->
+        <div class="flex flex-wrap items-center gap-1.5 bg-surface-100 dark:bg-surface-900 p-1.5 rounded-xl border border-surface-200 dark:border-surface-800 text-xs font-semibold">
           <button
             type="button"
-            class="w-full rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1.5 text-sm font-bold text-surface-600 dark:text-surface-400 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800"
+            class="rounded-lg px-3 py-1.5 transition-all"
+            :class="!filterOrderStatus && !filterOrderPayMethod ? 'bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 shadow-sm font-bold' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'"
             @click="resetFilter">
-            重置篩選
+            全部訂單
           </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 訂單資料表格：P8 改用 TanStack Table（headless）取代 el-table，
-         畫面本身用這個專案自己的 Tailwind token 從頭寫。 -->
-    <div class="mt-6 w-full max-w-6xl overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
-            <tr>
-              <th class="w-10 px-3 py-3" />
-              <th v-for="header in leafHeaders" :key="header.id" class="px-3 py-3">
-                {{ header.isPlaceholder ? '' : header.column.columnDef.header }}
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-            <template v-if="table.getRowModel().rows.length === 0">
-              <tr>
-                <td :colspan="leafHeaders.length + 1" class="px-3 py-10 text-center text-surface-400 dark:text-surface-500">目前無訂單</td>
-              </tr>
-            </template>
-            <template v-for="row in table.getRowModel().rows" :key="row.id">
-              <tr data-testid="order-row" class="transition-colors hover:bg-surface-50 dark:hover:bg-surface-950">
-                <td class="px-3 py-3">
-                  <button
-                    type="button"
-                    class="flex h-6 w-6 items-center justify-center rounded-full text-surface-500 dark:text-surface-400 transition-transform hover:bg-surface-100 dark:hover:bg-surface-800"
-                    :class="{ 'rotate-90': expandedOrderId === row.original.orderId }"
-                    :aria-label="expandedOrderId === row.original.orderId ? '收合明細' : '展開明細'"
-                    @click="toggleExpand(row.original.orderId)">
-                    ›
-                  </button>
-                </td>
-                <td v-for="cell in row.getVisibleCells()" :key="cell.id" class="px-3 py-3 align-middle">
-                  <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-                </td>
-              </tr>
-              <tr v-if="expandedOrderId === row.original.orderId" class="bg-surface-50 dark:bg-surface-950">
-                <td :colspan="leafHeaders.length + 1" class="px-4 py-4">
-                  <div class="mb-3 flex flex-wrap gap-2">
-                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
-                      已買袋子數量：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderBagCount }}</span> 個
-                    </span>
-                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
-                      飲料杯數：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderCupCount }}</span> 杯
-                    </span>
-                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
-                      訂單原始金額：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderTotalPrice }}</span>
-                    </span>
-                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
-                      已使用的優惠券：<span class="text-primary-600 dark:text-primary-400">{{ row.original.discountName }}</span>
-                    </span>
-                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
-                      優惠券折抵：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderDiscount }}</span>
-                    </span>
-                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
-                      顧客應付金額：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderPaymentPrice }}</span>
-                    </span>
-                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
-                      發票號碼：<span class="text-primary-600 dark:text-primary-400">{{ row.original.invoiceNumber || '（無，此功能上線前建立）' }}</span>
-                      <template v-if="row.original.invoiceCarrier && row.original.invoiceCarrier.type !== '無載具'">
-                        ．{{ row.original.invoiceCarrier.type }} {{ row.original.invoiceCarrier.value }}
-                      </template>
-                    </span>
-                    <span
-v-if="row.original.tableNumber"
-                      class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
-                      內用桌號：<span class="text-primary-600 dark:text-primary-400">{{ row.original.tableNumber }}</span>
-                    </span>
-                    <span
-v-if="(row.original.refundedAmount ?? 0) > 0"
-                      class="rounded-full bg-warning-50 dark:bg-warning-950 px-3 py-1 text-xs font-bold text-warning-700 dark:text-warning-300 shadow-sm">
-                      已退款：${{ row.original.refundedAmount }}
-                    </span>
-                    <span
-v-if="row.original.voidReason"
-                      class="rounded-full bg-danger-50 dark:bg-danger-950 px-3 py-1 text-xs font-bold text-danger-700 dark:text-danger-300 shadow-sm">
-                      作廢原因：{{ row.original.voidReason }}（{{ row.original.voidedBy }}）
-                    </span>
-                  </div>
-                  <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900">
-                    <table class="w-full text-center text-xs">
-                      <thead class="bg-surface-100 dark:bg-surface-800 font-bold text-surface-500 dark:text-surface-400">
-                        <tr>
-                          <th class="px-2 py-2">序號</th>
-                          <th class="px-2 py-2">商品</th>
-                          <th class="px-2 py-2">單價</th>
-                          <th class="px-2 py-2">加料</th>
-                          <th class="px-2 py-2">配料金額</th>
-                          <th class="px-2 py-2">數量</th>
-                          <th class="px-2 py-2">折扣金額</th>
-                          <th class="px-2 py-2">使用的折扣</th>
-                          <th class="px-2 py-2">小計</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-                        <tr v-for="(line, index) in row.original.orderData" :key="index">
-                          <td class="px-2 py-2">{{ index + 1 }}</td>
-                          <td class="px-2 py-2">{{ line.name }}</td>
-                          <td class="px-2 py-2">{{ line.price }} 元</td>
-                          <td class="px-2 py-2">{{ line.addList }}</td>
-                          <td class="px-2 py-2">{{ line.addListPrice }} 元</td>
-                          <td class="px-2 py-2">{{ line.count }} 杯</td>
-                          <td class="px-2 py-2">{{ line.discount }} 元</td>
-                          <td class="px-2 py-2">
-                            <div v-if="line.useDiscountPercent === '' && line.useDiscountMoney === '' && line.useDiscountFree === ''">
-                              目前無使用折扣
-                            </div>
-                            <div v-else class="flex flex-wrap justify-center gap-1">
-                              <span v-if="line.useDiscountFree != ''" class="rounded-full bg-info-100 px-2 py-0.5 text-info-700 dark:bg-info-950 dark:text-info-300">{{ line.useDiscountFree }}</span>
-                              <span v-if="line.useDiscountPercent != ''" class="rounded-full bg-danger-100 px-2 py-0.5 text-danger-700 dark:bg-danger-950 dark:text-danger-300">{{ line.useDiscountPercent }}</span>
-                              <span v-if="line.useDiscountMoney != ''" class="rounded-full bg-warning-100 px-2 py-0.5 text-warning-700 dark:bg-warning-950 dark:text-warning-300">{{ line.useDiscountMoney }}</span>
-                            </div>
-                          </td>
-                          <td class="px-2 py-2 font-bold">{{ line.totalPrice }} 元</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- 分頁器：P8 改用 TanStack Table 內建的分頁 row model，取代原本
-           手動 slice 的分頁邏輯。 -->
-      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-surface-200 dark:border-surface-800 px-4 py-3">
-        <div class="text-sm text-surface-500 dark:text-surface-400">
-          總共有 <span class="font-bold text-primary-600 dark:text-primary-400">{{ filterOrder.length }}</span> 筆訂單，
-          當前頁面有 <span class="font-bold text-primary-600 dark:text-primary-400">{{ table.getRowModel().rows.length }}</span> 筆訂單
-        </div>
-        <div class="flex items-center gap-1">
           <button
             type="button"
-            class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-600 dark:text-surface-400 disabled:cursor-not-allowed disabled:opacity-40"
-            :disabled="!table.getCanPreviousPage()"
-            @click="table.previousPage()">
-            上一頁
+            class="rounded-lg px-3 py-1.5 transition-all flex items-center gap-1"
+            :class="filterOrderStatus === '已完成' ? 'bg-success-500 text-white shadow-sm font-bold' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'"
+            @click="quickFilterStatus('已完成')">
+            <CheckCircle2 class="h-3.5 w-3.5" />
+            已完成
           </button>
-          <span class="px-2 text-sm font-bold text-surface-700 dark:text-surface-300">
-            {{ table.getState().pagination.pageIndex + 1 }} / {{ Math.max(table.getPageCount(), 1) }}
+          <button
+            type="button"
+            class="rounded-lg px-3 py-1.5 transition-all flex items-center gap-1"
+            :class="filterOrderStatus === '已取消' ? 'bg-danger-500 text-white shadow-sm font-bold' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'"
+            @click="quickFilterStatus('已取消')">
+            <AlertTriangle class="h-3.5 w-3.5" />
+            已取消 / 作廢
+          </button>
+          <button
+            type="button"
+            class="rounded-lg px-3 py-1.5 transition-all flex items-center gap-1"
+            :class="filterOrderPayMethod === '現金' ? 'bg-primary-500 text-white shadow-sm font-bold' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'"
+            @click="quickFilterPayment('現金')">
+            <DollarSign class="h-3.5 w-3.5" />
+            現金付款
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards Banner -->
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
+        <!-- Card 1: 訂單總量 -->
+        <div class="relative overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm transition-all hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">總訂單筆數</span>
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 border border-primary-200/50 dark:border-primary-800/40">
+              <ShoppingBag class="h-4.5 w-4.5" />
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl font-black text-surface-900 dark:text-surface-100">{{ orderStats.totalCount }}</span>
+            <span class="text-xs font-semibold text-surface-500 dark:text-surface-400">筆</span>
+          </div>
+          <p class="mt-1 text-xs text-surface-400 dark:text-surface-500">累計建立的所有訂單</p>
+        </div>
+
+        <!-- Card 2: 營收淨額 -->
+        <div class="relative overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm transition-all hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">營收淨額</span>
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-success-50 dark:bg-success-950/60 text-success-600 dark:text-success-400 border border-success-200/50 dark:border-success-800/40">
+              <DollarSign class="h-4.5 w-4.5" />
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline gap-1">
+            <span class="text-xs font-bold text-success-600 dark:text-success-400">$</span>
+            <span class="text-2xl font-black text-surface-900 dark:text-surface-100">{{ orderStats.totalRevenue.toLocaleString() }}</span>
+            <span class="text-xs font-semibold text-surface-500 dark:text-surface-400">元</span>
+          </div>
+          <p class="mt-1 text-xs text-surface-400 dark:text-surface-500">已扣除退款與作廢</p>
+        </div>
+
+        <!-- Card 3: 訂單完成率 -->
+        <div class="relative overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm transition-all hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">有效完成</span>
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-info-50 dark:bg-info-950/60 text-info-600 dark:text-info-400 border border-info-200/50 dark:border-info-800/40">
+              <CheckCircle2 class="h-4.5 w-4.5" />
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl font-black text-surface-900 dark:text-surface-100">{{ orderStats.completedCount }}</span>
+            <span class="text-xs font-bold text-success-600 dark:text-success-400">({{ orderStats.completeRate }}%)</span>
+          </div>
+          <p class="mt-1 text-xs text-surface-400 dark:text-surface-500">正常出餐結單筆數</p>
+        </div>
+
+        <!-- Card 4: 異常紀錄 -->
+        <div class="relative overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm transition-all hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">異常流向</span>
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-warning-50 dark:bg-warning-950/60 text-warning-600 dark:text-warning-400 border border-warning-200/50 dark:border-warning-800/40">
+              <RotateCcw class="h-4.5 w-4.5" />
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline gap-1">
+            <span class="text-2xl font-black text-surface-900 dark:text-surface-100">{{ orderStats.voidCount }}</span>
+            <span class="text-xs font-semibold text-danger-500">作廢</span>
+            <span class="mx-1 text-surface-300 dark:text-surface-700">/</span>
+            <span class="text-2xl font-black text-surface-900 dark:text-surface-100">{{ orderStats.refundCount }}</span>
+            <span class="text-xs font-semibold text-warning-500">退款</span>
+          </div>
+          <p class="mt-1 text-xs text-surface-400 dark:text-surface-500">主管授權與客訴處理</p>
+        </div>
+      </div>
+
+      <!-- Filter Card -->
+      <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm">
+        <div class="mb-3 flex items-center justify-between">
+          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">
+            <Filter class="h-3.5 w-3.5 text-primary-500" />
+            進階條件篩選
+          </div>
+          <span v-if="hasActiveFilter" class="rounded-md bg-primary-50 dark:bg-primary-950/50 px-2 py-0.5 text-[11px] font-semibold text-primary-600 dark:text-primary-400">
+            篩選中
           </span>
-          <button
-            type="button"
-            class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-600 dark:text-surface-400 disabled:cursor-not-allowed disabled:opacity-40"
-            :disabled="!table.getCanNextPage()"
-            @click="table.nextPage()">
-            下一頁
-          </button>
+        </div>
+        <div class="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
+              <Search class="h-3 w-3" />
+              訂單編號
+            </span>
+            <input
+              v-model="filterOrderId"
+              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
+              placeholder="輸入訂單編號" />
+          </label>
+          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
+              <Clock class="h-3 w-3" />
+              訂單時間
+            </span>
+            <input
+              v-model="filterOrderTime"
+              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
+              placeholder="輸入訂單時間" />
+          </label>
+          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
+              <User class="h-3 w-3" />
+              服務人員
+            </span>
+            <input
+              v-model="filterOrderStaff"
+              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
+              placeholder="輸入服務人員" />
+          </label>
+          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
+              <Tag class="h-3 w-3" />
+              訂單狀態
+            </span>
+            <input
+              v-model="filterOrderStatus"
+              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
+              placeholder="輸入訂單狀態" />
+          </label>
+          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
+              <CreditCard class="h-3 w-3" />
+              付款方式
+            </span>
+            <input
+              v-model="filterOrderPayMethod"
+              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
+              placeholder="輸入付款方式" />
+          </label>
+          <div class="flex items-end">
+            <button
+              type="button"
+              class="flex w-full items-center justify-center gap-1.5 rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 px-3 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 transition-all hover:bg-surface-200 dark:hover:bg-surface-700 active:scale-95"
+              @click="resetFilter">
+              <RotateCcw class="h-3.5 w-3.5" />
+              重置篩選
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Order Table Card -->
+      <div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-850 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">
+              <tr>
+                <th class="w-12 px-3 py-3.5 text-center" />
+                <th v-for="header in leafHeaders" :key="header.id" class="px-4 py-3.5">
+                  {{ header.isPlaceholder ? '' : header.column.columnDef.header }}
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              :key="tableRenderKey"
+              class="divide-y divide-surface-100 dark:divide-surface-800">
+              <template v-if="table.getRowModel().rows.length === 0">
+                <tr>
+                  <td :colspan="leafHeaders.length + 1" class="px-3 py-16 text-center text-surface-400 dark:text-surface-500">
+                    <div class="flex flex-col items-center justify-center gap-2">
+                      <Receipt class="h-10 w-10 text-surface-300 dark:text-surface-700" />
+                      <span class="text-base font-semibold">目前無訂單</span>
+                      <span class="text-xs text-surface-400">找不到符合篩選條件的交易資料</span>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+              <template v-for="row in table.getRowModel().rows" :key="row.id">
+                <tr
+                  data-testid="order-row"
+                  class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
+                  :class="{ 'bg-primary-50/30 dark:bg-primary-950/20': expandedOrderId === row.original.orderId }">
+                  <td class="px-3 py-3 text-center">
+                    <button
+                      type="button"
+                      class="flex h-7 w-7 items-center justify-center rounded-lg text-surface-500 dark:text-surface-400 transition-all hover:bg-surface-200/60 dark:hover:bg-surface-700/60"
+                      :class="{ 'rotate-90 bg-primary-100 dark:bg-primary-900/60 text-primary-600 dark:text-primary-300': expandedOrderId === row.original.orderId }"
+                      :aria-label="expandedOrderId === row.original.orderId ? '收合明細' : '展開明細'"
+                      @click="toggleExpand(row.original.orderId)">
+                      <ChevronRight class="h-4 w-4" />
+                    </button>
+                  </td>
+                  <td v-for="cell in row.getVisibleCells()" :key="cell.id" class="px-4 py-3.5 align-middle">
+                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                  </td>
+                </tr>
+                
+                <!-- Expanded Detail Drawer -->
+                <tr v-if="expandedOrderId === row.original.orderId" class="bg-surface-50/60 dark:bg-surface-950/50">
+                  <td :colspan="leafHeaders.length + 1" class="px-6 py-5">
+                    <div class="rounded-2xl border border-surface-200/80 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm">
+                      
+                      <!-- Order Key Information Badges -->
+                      <div class="mb-4 flex flex-wrap items-center gap-2 border-b border-surface-100 dark:border-surface-800 pb-4">
+                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
+                          已買袋子數量：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderBagCount }}</span> 個
+                        </span>
+                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
+                          飲料杯數：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderCupCount }}</span> 杯
+                        </span>
+                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
+                          訂單原始金額：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderTotalPrice }}</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
+                          已使用的優惠券：<span class="text-primary-600 dark:text-primary-400">{{ row.original.discountName }}</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
+                          優惠券折抵：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderDiscount }}</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
+                          顧客應付金額：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderPaymentPrice }}</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
+                          發票號碼：<span class="text-primary-600 dark:text-primary-400">{{ row.original.invoiceNumber || '（無，此功能上線前建立）' }}</span>
+                          <template v-if="row.original.invoiceCarrier && row.original.invoiceCarrier.type !== '無載具'">
+                            ．{{ row.original.invoiceCarrier.type }} {{ row.original.invoiceCarrier.value }}
+                          </template>
+                        </span>
+                        <span
+                          v-if="row.original.tableNumber"
+                          class="inline-flex items-center gap-1 rounded-lg bg-info-50 dark:bg-info-950/60 px-3 py-1.5 text-xs font-bold text-info-700 dark:text-info-300 border border-info-200/50">
+                          內用桌號：<span class="text-info-600 dark:text-info-400">{{ row.original.tableNumber }}</span>
+                        </span>
+                        <span
+                          v-if="(row.original.refundedAmount ?? 0) > 0"
+                          class="inline-flex items-center gap-1 rounded-lg bg-warning-50 dark:bg-warning-950/60 px-3 py-1.5 text-xs font-bold text-warning-700 dark:text-warning-300 border border-warning-200/50">
+                          已退款：${{ row.original.refundedAmount }}
+                        </span>
+                        <span
+                          v-if="row.original.voidReason"
+                          class="inline-flex items-center gap-1 rounded-lg bg-danger-50 dark:bg-danger-950/60 px-3 py-1.5 text-xs font-bold text-danger-700 dark:text-danger-300 border border-danger-200/50">
+                          作廢原因：{{ row.original.voidReason }}（{{ row.original.voidedBy }}）
+                        </span>
+                      </div>
+
+                      <!-- Sub-table for Order Items -->
+                      <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+                        <table class="w-full text-center text-xs">
+                          <thead class="bg-surface-100 dark:bg-surface-800 font-bold text-surface-600 dark:text-surface-300">
+                            <tr>
+                              <th class="px-3 py-2.5">序號</th>
+                              <th class="px-3 py-2.5 text-left">商品</th>
+                              <th class="px-3 py-2.5">單價</th>
+                              <th class="px-3 py-2.5">加料</th>
+                              <th class="px-3 py-2.5">配料金額</th>
+                              <th class="px-3 py-2.5">數量</th>
+                              <th class="px-3 py-2.5">折扣金額</th>
+                              <th class="px-3 py-2.5">使用的折扣</th>
+                              <th class="px-3 py-2.5 text-right font-black">小計</th>
+                            </tr>
+                          </thead>
+                          <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+                            <tr
+                              v-for="(line, index) in row.original.orderData"
+                              :key="index"
+                              class="hover:bg-surface-50 dark:hover:bg-surface-800/40">
+                              <td class="px-3 py-2.5 text-surface-400 font-mono">{{ index + 1 }}</td>
+                              <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ line.name }}</td>
+                              <td class="px-3 py-2.5 text-surface-600 dark:text-surface-400">{{ line.price }} 元</td>
+                              <td class="px-3 py-2.5 text-surface-600 dark:text-surface-400">{{ line.addList || '-' }}</td>
+                              <td class="px-3 py-2.5 text-surface-600 dark:text-surface-400">{{ line.addListPrice }} 元</td>
+                              <td class="px-3 py-2.5 font-bold text-surface-800 dark:text-surface-200">{{ line.count }} 杯</td>
+                              <td class="px-3 py-2.5 text-surface-600 dark:text-surface-400">{{ line.discount }} 元</td>
+                              <td class="px-3 py-2.5">
+                                <div v-if="line.useDiscountPercent === '' && line.useDiscountMoney === '' && line.useDiscountFree === ''" class="text-surface-400">
+                                  目前無使用折扣
+                                </div>
+                                <div v-else class="flex flex-wrap justify-center gap-1">
+                                  <span v-if="line.useDiscountFree != ''" class="rounded-md bg-info-100 px-2 py-0.5 text-[11px] font-bold text-info-700 dark:bg-info-950 dark:text-info-300 border border-info-200 dark:border-info-800">{{ line.useDiscountFree }}</span>
+                                  <span v-if="line.useDiscountPercent != ''" class="rounded-md bg-danger-100 px-2 py-0.5 text-[11px] font-bold text-danger-700 dark:bg-danger-950 dark:text-danger-300 border border-danger-200 dark:border-danger-800">{{ line.useDiscountPercent }}</span>
+                                  <span v-if="line.useDiscountMoney != ''" class="rounded-md bg-warning-100 px-2 py-0.5 text-[11px] font-bold text-warning-700 dark:bg-warning-950 dark:text-warning-300 border border-warning-200 dark:border-warning-800">{{ line.useDiscountMoney }}</span>
+                                </div>
+                              </td>
+                              <td class="px-3 py-2.5 text-right font-black text-primary-600 dark:text-primary-400 font-mono">{{ line.totalPrice }} 元</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-surface-200 dark:border-surface-800 px-6 py-4 bg-surface-50/50 dark:bg-surface-900">
+          <div class="text-sm text-surface-500 dark:text-surface-400">
+            總共有 <span class="font-bold text-primary-600 dark:text-primary-400">{{ filterOrder.length }}</span> 筆訂單，
+            當前頁面有 <span class="font-bold text-primary-600 dark:text-primary-400">{{ table.getRowModel().rows.length }}</span> 筆訂單
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3.5 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-300 shadow-sm transition-all hover:bg-surface-50 dark:hover:bg-surface-700 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
+              :disabled="!table.getCanPreviousPage()"
+              @click="table.previousPage()">
+              上一頁
+            </button>
+            <span class="px-3 text-sm font-bold text-surface-700 dark:text-surface-300 font-mono">
+              {{ table.getState().pagination.pageIndex + 1 }} / {{ Math.max(table.getPageCount(), 1) }}
+            </span>
+            <button
+              type="button"
+              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3.5 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-300 shadow-sm transition-all hover:bg-surface-50 dark:hover:bg-surface-700 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
+              :disabled="!table.getCanNextPage()"
+              @click="table.nextPage()">
+              下一頁
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -218,6 +381,21 @@ import {
   getPaginationRowModel,
   useVueTable,
 } from '@tanstack/vue-table'
+import {
+  Receipt,
+  DollarSign,
+  CheckCircle2,
+  AlertTriangle,
+  ShoppingBag,
+  RotateCcw,
+  Filter,
+  Search,
+  Clock,
+  User,
+  Tag,
+  CreditCard,
+  ChevronRight,
+} from 'lucide-vue-next'
 import { useOrderStore } from "@/stores/order"
 const orderStore = useOrderStore()
 import { useLoginStore } from "@/stores/login"
@@ -248,12 +426,42 @@ function orderApiErrorMessage(err: unknown): string {
   return '連不上伺服端，請確認網路連線'
 }
 
+// 訂單統計數據
+const orderStats = computed(() => {
+  const all = orderStore.order
+  const totalCount = all.length
+  const completedOrders = all.filter(o => o.orderStatus === '已完成')
+  const totalRevenue = completedOrders.reduce((sum, o) => sum + (o.orderPaymentPrice || 0) - (o.refundedAmount || 0), 0)
+  const voidCount = all.filter(o => o.orderStatus === '已取消').length
+  const refundCount = all.filter(o => (o.refundedAmount ?? 0) > 0).length
+  const completeRate = totalCount > 0 ? Math.round((completedOrders.length / totalCount) * 100) : 100
+  return {
+    totalCount,
+    totalRevenue,
+    completedCount: completedOrders.length,
+    voidCount,
+    refundCount,
+    completeRate,
+  }
+})
+
 // 訂單資料處理相關功能
 const filterOrderId = ref('')
 const filterOrderTime = ref('')
 const filterOrderStaff = ref('')
 const filterOrderStatus = ref('')
 const filterOrderPayMethod = ref('')
+
+const hasActiveFilter = computed(() => {
+  return Boolean(
+    filterOrderId.value ||
+    filterOrderTime.value ||
+    filterOrderStaff.value ||
+    filterOrderStatus.value ||
+    filterOrderPayMethod.value,
+  )
+})
+
 // D-05：篩選字串含正規表示式特殊字元（如 "("）時，String.match() 會把它當
 // pattern 編譯，丟出 SyntaxError 讓整頁掛掉。這裡只需要單純的子字串比對，
 // 改用 includes() 就不會誤把使用者輸入當成正規表示式解析。
@@ -266,12 +474,29 @@ const filterOrder = computed(() => {
       item.orderPayment.includes(filterOrderPayMethod.value)
   })
 })
+
 const resetFilter = () => {
   filterOrderId.value = ''
   filterOrderTime.value = ''
   filterOrderStaff.value = ''
   filterOrderStatus.value = ''
   filterOrderPayMethod.value = ''
+}
+
+const quickFilterStatus = (status: string) => {
+  if (filterOrderStatus.value === status) {
+    filterOrderStatus.value = ''
+  } else {
+    filterOrderStatus.value = status
+  }
+}
+
+const quickFilterPayment = (payment: string) => {
+  if (filterOrderPayMethod.value === payment) {
+    filterOrderPayMethod.value = ''
+  } else {
+    filterOrderPayMethod.value = payment
+  }
 }
 
 // 展開／收合明細：跟 TanStack Table 的 row model 分開管理（用 orderId
@@ -283,8 +508,8 @@ function toggleExpand(orderId: string) {
 
 const statusBadgeClass = (status: OrderRecord['orderStatus']) =>
   status === '已完成'
-    ? 'rounded-full bg-success-100 px-2 py-0.5 text-xs font-bold text-success-700 dark:bg-success-950 dark:text-success-300'
-    : 'rounded-full bg-surface-200 dark:bg-surface-800 px-2 py-0.5 text-xs font-bold text-surface-600 dark:text-surface-400'
+    ? 'rounded-full bg-success-100 px-2.5 py-1 text-xs font-bold text-success-700 dark:bg-success-950 dark:text-success-300 border border-success-200/60 dark:border-success-800/40'
+    : 'rounded-full bg-danger-100 px-2.5 py-1 text-xs font-bold text-danger-700 dark:bg-danger-950 dark:text-danger-300 border border-danger-200/60 dark:border-danger-800/40'
 
 // P12（規劃書 §10 P0「退款／作廢」）：refundedAmount 只有伺服端算過
 // 一次才有真正的值（見 api/orders.ts 的 refundOrder 說明），golden
@@ -295,20 +520,37 @@ const remainingRefundableOf = (order: OrderRecord) => Math.max(0, order.orderPay
 
 const columnHelper = createColumnHelper<OrderRecord>()
 const columns = [
-  columnHelper.accessor('orderId', { header: '訂單編號' }),
-  columnHelper.accessor('orderTime', { header: '訂單時間' }),
-  columnHelper.accessor('staff', { header: '服務人員' }),
+  columnHelper.accessor('orderId', {
+    header: '訂單編號',
+    cell: (info) => h('span', { class: 'font-mono font-bold text-surface-900 dark:text-surface-100' }, info.getValue()),
+  }),
+  columnHelper.accessor('orderTime', {
+    header: '訂單時間',
+    cell: (info) => h('span', { class: 'text-surface-600 dark:text-surface-400 font-mono text-xs' }, info.getValue()),
+  }),
+  columnHelper.accessor('staff', {
+    header: '服務人員',
+    cell: (info) => h('span', { class: 'font-medium text-surface-800 dark:text-surface-200' }, info.getValue()),
+  }),
   // P13（規劃書 §10 P0「內用外帶」）：golden orders 這類舊資料沒有這
   // 個欄位（見 stores/order.ts 的 GOLDEN_ORDERS 說明），用 `?? '外帶'`
   // 兜底，理由跟 refundedAmountOf() 一致。
   columnHelper.accessor((row) => row.orderChannel ?? '外帶', {
     id: 'orderChannel',
     header: '內用／外帶',
-    cell: (info) => h(
-      'span',
-      { class: 'rounded-full bg-info-100 px-2 py-0.5 text-xs font-bold text-info-700 dark:bg-info-950 dark:text-info-300' },
-      info.getValue(),
-    ),
+    cell: (info) => {
+      const channel = info.getValue()
+      const isDineIn = channel === '內用'
+      return h(
+        'span',
+        {
+          class: isDineIn
+            ? 'rounded-full bg-teal-100 px-2.5 py-0.5 text-xs font-bold text-teal-700 dark:bg-teal-950 dark:text-teal-300 border border-teal-200 dark:border-teal-800'
+            : 'rounded-full bg-info-100 px-2.5 py-0.5 text-xs font-bold text-info-700 dark:bg-info-950 dark:text-info-300 border border-info-200 dark:border-info-800',
+        },
+        channel,
+      )
+    },
   }),
   columnHelper.accessor('orderStatus', {
     header: '訂單狀態',
@@ -318,18 +560,21 @@ const columns = [
       if (refundedAmountOf(order) > 0) {
         badges.push(h(
           'span',
-          { class: 'rounded-full bg-warning-100 px-2 py-0.5 text-xs font-bold text-warning-700 dark:bg-warning-950 dark:text-warning-300' },
+          { class: 'rounded-full bg-warning-100 px-2.5 py-0.5 text-xs font-bold text-warning-700 dark:bg-warning-950 dark:text-warning-300 border border-warning-200 dark:border-warning-800' },
           `已退款 $${refundedAmountOf(order)}`,
         ))
       }
-      return h('div', { class: 'flex flex-wrap items-center gap-1' }, badges)
+      return h('div', { class: 'flex flex-wrap items-center gap-1.5' }, badges)
     },
   }),
   columnHelper.accessor('orderPaymentPrice', {
     header: '訂單金額',
-    cell: (info) => `${info.getValue()} 元`,
+    cell: (info) => h('span', { class: 'font-mono font-bold text-surface-900 dark:text-surface-100' }, `${info.getValue()} 元`),
   }),
-  columnHelper.accessor('orderPayment', { header: '付款方式' }),
+  columnHelper.accessor('orderPayment', {
+    header: '付款方式',
+    cell: (info) => h('span', { class: 'rounded-md bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-xs font-semibold text-surface-700 dark:text-surface-300' }, info.getValue()),
+  }),
   columnHelper.display({
     id: 'actions',
     header: '操作',
@@ -341,16 +586,16 @@ const columns = [
       // 說明），沿用「編輯訂單狀態」這一格權限——能改訂單狀態的人，
       // 業務上本來就該有權限處理退款，兩者是同一個信任層級。
       const canRefund = canEditStatus && order.orderStatus === '已完成' && remainingRefundableOf(order) > 0
-      return h('div', { class: 'flex flex-wrap justify-end gap-2' }, [
+      return h('div', { class: 'flex flex-wrap justify-end gap-1.5' }, [
         h('button', {
           type: 'button',
-          class: 'rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-300 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800',
+          class: 'rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1 text-xs font-bold text-surface-700 dark:text-surface-300 shadow-sm transition-all hover:bg-surface-50 dark:hover:bg-surface-700 active:scale-95',
           onClick: () => showReceipt(order),
         }, '收據'),
         h('button', {
           type: 'button',
           class: [
-            'rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-300 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800',
+            'rounded-lg border border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-950/40 px-2.5 py-1 text-xs font-bold text-primary-700 dark:text-primary-300 transition-all hover:bg-primary-100 dark:hover:bg-primary-900/60 active:scale-95',
             canEditStatus ? '' : 'pointer-events-none opacity-40',
           ],
           onClick: () => editOrderStatus(order.orderId),
@@ -358,7 +603,7 @@ const columns = [
         h('button', {
           type: 'button',
           class: [
-            'rounded-lg border border-warning-200 px-2 py-1 text-xs font-bold text-warning-700 transition-colors hover:bg-warning-50 dark:border-warning-800 dark:text-warning-400 dark:hover:bg-warning-950',
+            'rounded-lg border border-warning-200 px-2.5 py-1 text-xs font-bold text-warning-700 transition-all hover:bg-warning-50 dark:border-warning-800 dark:text-warning-400 dark:hover:bg-warning-950 active:scale-95',
             canRefund ? '' : 'pointer-events-none opacity-40',
           ],
           onClick: () => refundOrder(order),
@@ -366,7 +611,7 @@ const columns = [
         h('button', {
           type: 'button',
           class: [
-            'rounded-lg border border-danger-200 px-2 py-1 text-xs font-bold text-danger-600 transition-colors hover:bg-danger-50 dark:border-danger-800 dark:text-danger-400 dark:hover:bg-danger-950',
+            'rounded-lg border border-danger-200 px-2.5 py-1 text-xs font-bold text-danger-600 transition-all hover:bg-danger-50 dark:border-danger-800 dark:text-danger-400 dark:hover:bg-danger-950 active:scale-95',
             canDelete ? '' : 'pointer-events-none opacity-40',
           ],
           onClick: () => deleteOrder(order.orderId),
@@ -377,35 +622,25 @@ const columns = [
 ]
 
 const table = useVueTable({
-  get data() { return filterOrder.value },
+  data: filterOrder,
   columns,
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
   initialState: { pagination: { pageSize: 10 } },
 })
+
 // 表頭只有一層（沒有分組欄位），直接取第一個 header group 的 leaf headers。
 const leafHeaders = computed(() => table.getHeaderGroups()[0]?.headers ?? [])
 
+// 緩存失效 key：當訂單狀態或退款金額變動時，保證 tbody 刷新
+const tableRenderKey = computed(() => {
+  return orderStore.order.map(o => `${o.orderId}_${o.orderStatus}_${o.refundedAmount}`).join('|')
+})
+
 // 訂單操作相關功能
-// 編輯訂單狀態（P6：改成真的呼叫伺服端，見 api/orders.ts 的說明；P8：
-// 確認框改用 composables/useConfirm.ts，見該檔案對「確定／取消」語意的
-// 說明——這裡是它存在的原因：這個對話框其實不是單純的「確定要做嗎」，
-// 而是拿confirm／cancel兩個按鈕代表「已完成」／「已取消」兩個真正的
-// 業務選項，ESC／點外面關閉則代表「兩個都不選」）。
-// 目前登入操作員的顯示字串，跟 ShiftPanel.vue 的 operator prop、
-// home/index.vue 的 staff 欄位用同一種組法（「職稱 - 姓名」），保持
-// 一致——伺服端的 voidedBy／operator 這類欄位只是顯示用的自由文字，
-// 不是要對應到某個帳號 id。
 const currentOperator = () => `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`
 
-// P19（規劃書 §10 P19「退款／作廢主管二次授權」）：退款、作廢除了
-// 「目前登入操作員本身有沒有 canEditOrderStatus 這個權限」（見上方
-// columns 定義裡 canRefund／canDelete 的說明）之外，執行當下還要再
-// 現場輸入一次有這個權限的人（操作員自己或值班主管）的帳號＋PIN 核可
-// ——見 composables/useManagerAuth.ts 的完整說明。回傳核可人員的顯示
-// 字串（跟 currentOperator() 同一種「職稱 - 姓名」格式），失敗（取消
-// 輸入、帳號或 PIN 錯誤、這個帳號沒有對應權限）一律回傳 null，呼叫端
-// 收到 null 就整個操作取消，不送出任何退款／作廢請求。
+// P19（規劃書 §10 P19「退款／作廢主管二次授權」）
 async function requestRefundOrVoidApproval(title: string, description: string): Promise<string | null> {
   const credentials = await requestManagerAuth({ title, description })
   if (credentials === null) return null
@@ -426,12 +661,7 @@ async function requestRefundOrVoidApproval(title: string, description: string): 
   }
 }
 
-// P12（規劃書 §10 P0「退款／作廢」）：改成「已取消」現在是真正的
-// 作廢操作，一定要交代原因——選了「已取消」之後，再彈一次
-// PromptDialogHost（見 composables/usePrompt.ts）要求輸入理由，使用者
-// 在這一步按取消／不填就整個操作取消，不會送出任何請求（不會出現
-// 「已經選了已取消、但沒有理由」這種中間狀態）。改成「已完成」則不需要
-// 理由，直接送出。
+// 編輯訂單狀態
 const editOrderStatus = async (id: string) => {
   const result = await confirm({
     title: '修改訂單狀態',
@@ -445,9 +675,6 @@ const editOrderStatus = async (id: string) => {
   let reason: string | undefined
   let voidApprover: string | null = null
   if (nextStatus === '已取消') {
-    // P19：作廢會直接影響班別結算的現金收入，需要主管二次授權，見
-    // requestRefundOrVoidApproval 的說明；先核可再問理由，沒通過就不用
-    // 浪費時間打理由。
     voidApprover = await requestRefundOrVoidApproval('作廢需要主管授權', '這筆訂單即將被標記為作廢，請輸入有權限核可的帳號與 PIN')
     if (voidApprover === null) return
 
@@ -464,24 +691,24 @@ const editOrderStatus = async (id: string) => {
 
   try {
     const updated = await updateOrderStatus(id, nextStatus, voidApprover ?? currentOperator(), reason)
-    const local = orderStore.order.find(item => item.orderId === id)!
-    local.orderStatus = updated.orderStatus
-    local.voidReason = updated.voidReason
-    local.voidedBy = updated.voidedBy
-    local.voidedAt = updated.voidedAt
+    const local = orderStore.order.find(item => item.orderId === id)
+    if (local) {
+      local.orderStatus = updated.orderStatus
+      local.voidReason = updated.voidReason
+      local.voidedBy = updated.voidedBy
+      local.voidedAt = updated.voidedAt
+      orderStore.order = [...orderStore.order]
+    }
     showToast(`訂單狀態已設定為${nextStatus}`, 'success')
   } catch (err) {
     showToast(orderApiErrorMessage(err), 'error')
   }
 }
-// 退款（P12：規劃書 §10 P0「退款／作廢」）。跟作廢不同，退款不改變
-// 訂單狀態——訂單仍是「已完成」，只是多記一筆退款紀錄，見 api/orders.ts
-// 的 refundOrder 說明。
+
+// 退款
 const refundOrder = async (order: OrderRecord) => {
   const max = remainingRefundableOf(order)
   if (max <= 0) return
-  // P19：跟作廢一樣，先核可再問退款金額／原因，見
-  // requestRefundOrVoidApproval 的說明。
   const approver = await requestRefundOrVoidApproval('退款需要主管授權', '這筆訂單即將辦理退款，請輸入有權限核可的帳號與 PIN')
   if (approver === null) return
 
@@ -494,14 +721,18 @@ const refundOrder = async (order: OrderRecord) => {
       reason: result.reason,
       operator: approver,
     })
-    const local = orderStore.order.find(item => item.orderId === order.orderId)!
-    local.refundedAmount = updated.refundedAmount
+    const local = orderStore.order.find(item => item.orderId === order.orderId)
+    if (local) {
+      local.refundedAmount = updated.refundedAmount
+      orderStore.order = [...orderStore.order]
+    }
     showToast(`退款成功，已退 $${result.amount}`, 'success')
   } catch (err) {
     showToast(orderApiErrorMessage(err), 'error')
   }
 }
-// 刪除訂單（P6：改成真的呼叫伺服端，見 api/orders.ts 的說明）
+
+// 刪除訂單
 const deleteOrder = async (id: string) => {
   const result = await confirm({
     title: '警告',
