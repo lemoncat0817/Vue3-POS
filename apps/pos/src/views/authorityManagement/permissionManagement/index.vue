@@ -1,297 +1,399 @@
 <template>
-  <!-- 人員名單 -->
-  <div class="2xl:flex-[2] xl:w-[70%] w-[60%] border-r-2 border-solid border-surface-200 dark:border-surface-800 rounded-lg">
-    <div class="flex justify-between mt-2">
-      <div class="ml-2 md:text-lg sm:text-sm text-xs text-surface-900 dark:text-surface-100 font-bold border-b-2 border-solid border-surface-300 dark:border-surface-700">人員名單</div>
-      <div class="flex mr-2">
-        <!-- 新增功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetAuthority'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
-          class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="openAddStaffDialog">新增</button>
-        <!-- 新增人員 -->
-        <!-- P8：組件庫替換——el-dialog 改用 ModalDialog（Reka UI
-             Dialog）；el-checkbox-group 改用一份資料驅動的欄位清單
-             （authorityFields，見 script 的說明）配上原生 checkbox，
-             取代新增／編輯各自重複 16 個幾乎一樣的 el-checkbox。 -->
-        <ModalDialog v-model:open="addStaffDialog" title="新增人員">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            人員的名稱:<input
-v-model="currentInputStaffName"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center px-2"
-              placeholder="例如: Jensen、Jacky..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            人員的職稱:<input
-v-model="currentInputStaffJobTitle"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center px-2" placeholder="例如: 襄理、工讀生..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            人員的帳號:<input
-v-model="currentInputStaffAccount"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center px-2" placeholder="請輸入帳號" />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            登入用PIN:<input
-v-model="currentInputStaffPin" type="password" inputmode="numeric" maxlength="6"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center px-2" placeholder="4~6碼數字" />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            權限管理:
-            <div class="ml-2 grid w-[265px] grid-cols-2 gap-0.5 rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1">
-              <label v-for="field in authorityFields" :key="field.value" class="flex items-center gap-1 text-sm">
-                <input
-                  type="checkbox" :checked="authorityCheckList.includes(field.value)"
-                  :disabled="!!field.dependsOn && !authorityCheckList.includes(field.dependsOn)"
-                  @change="toggleAuthorityCheck(authorityCheckList, field.value, ($event.target as HTMLInputElement).checked, (v) => authorityCheckList = v)">
-                {{ field.label }}
-              </label>
+  <div class="w-full flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-surface-200 dark:divide-surface-800 min-h-[640px]">
+    <!-- 人員名單 -->
+    <div class="xl:w-[68%] 2xl:w-[70%] p-5 flex flex-col justify-between overflow-hidden">
+      <div>
+        <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
+          <div class="flex items-center gap-2.5">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-950/50 dark:text-primary-400 border border-primary-200/50 dark:border-primary-800/40">
+              <UserCheck class="h-4 w-4" />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-surface-900 dark:text-surface-100 tracking-tight">人員名單</h3>
+              <p class="text-[11px] text-surface-400">門市各崗位人員與 18 項系統操作權限明細</p>
             </div>
           </div>
-          <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeAddStaffDialog">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addStaff">新增</button>
+          <div class="flex items-center gap-1.5">
+            <!-- 新增功能 -->
+            <button
+              type="button"
+              class="pos-btn pos-btn-secondary px-3 py-1.5 text-xs font-bold"
+              :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
+              @click="openAddStaffDialog">新增</button>
+            <!-- 刪除功能 -->
+            <button
+              type="button"
+              class="pos-btn bg-danger-50 text-danger-600 border border-danger-200/80 hover:bg-danger-100 dark:bg-danger-950/40 dark:text-danger-400 dark:border-danger-800 px-3 py-1.5 text-xs font-bold"
+              :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
+              @click="deleteStaff">刪除</button>
+            <!-- 編輯功能 -->
+            <button
+              type="button"
+              class="pos-btn pos-btn-primary px-3 py-1.5 text-xs font-bold"
+              :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
+              @click="openEditStaffDialog">編輯</button>
           </div>
-        </ModalDialog>
-        <!-- 刪除功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetAuthority'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
-          class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="deleteStaff">刪除</button>
-        <!-- 編輯功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetAuthority'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
-          class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="openEditStaffDialog">編輯</button>
-        <!-- 編輯人員 -->
-        <ModalDialog v-model:open="editStaffDialog" title="編輯人員">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            人員的名稱:<input
-v-model="currentEditInputStaffName"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center px-2"
-              placeholder="例如: Jensen、Jacky..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            人員的職稱:<input
-v-model="currentEditInputStaffJobTitle"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center px-2" placeholder="例如: 襄理、工讀生..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            人員的帳號:<input
-v-model="currentEditInputStaffAccount"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center px-2" placeholder="請輸入帳號" />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            登入用PIN:<input
-v-model="currentEditInputStaffPin" type="password" inputmode="numeric" maxlength="6"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center px-2" placeholder="留空則不變更" />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            權限管理:
-            <div class="ml-2 grid w-[265px] grid-cols-2 gap-0.5 rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1">
-              <label v-for="field in authorityFields" :key="field.value" class="flex items-center gap-1 text-sm">
-                <input
-                  type="checkbox" :checked="editAuthorityCheckList.includes(field.value)"
-                  :disabled="!!field.dependsOn && !editAuthorityCheckList.includes(field.dependsOn)"
-                  @change="toggleAuthorityCheck(editAuthorityCheckList, field.value, ($event.target as HTMLInputElement).checked, (v) => editAuthorityCheckList = v)">
-                {{ field.label }}
-              </label>
-            </div>
-          </div>
-          <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeEditStaffDialog">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editStaff">保存</button>
-          </div>
-        </ModalDialog>
+        </div>
+
+        <div class="mt-4 overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800">
+          <table class="w-full text-center text-xs whitespace-nowrap">
+            <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
+              <tr>
+                <th class="px-3 py-2.5 text-left">人員名稱</th>
+                <th class="px-3 py-2.5">Id</th>
+                <th class="px-3 py-2.5">職稱</th>
+                <th class="px-3 py-2.5">帳號</th>
+                <th v-for="field in authorityFields" :key="field.value" class="whitespace-nowrap px-2.5 py-2.5 font-medium">{{ field.label }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr v-if="sliceStaffList.length === 0">
+                <td :colspan="4 + authorityFields.length" class="px-3 py-8 text-surface-400 dark:text-surface-500">人員名單是空的</td>
+              </tr>
+              <tr
+                v-for="row in sliceStaffList" :key="row.id"
+                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
+                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 font-bold': currentStaff.id === row.id }"
+                @click="currentStaff = row">
+                <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
+                <td class="px-3 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
+                <td class="px-3 py-2.5">
+                  <span
+                    class="rounded-lg px-2 py-0.5 text-[11px] font-bold"
+                    :class="row.jobTitle === '店長' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800' : 'bg-surface-100 text-surface-600 dark:bg-surface-800 dark:text-surface-300'">
+                    {{ row.jobTitle }}
+                  </span>
+                </td>
+                <td class="px-3 py-2.5 font-mono text-surface-500">{{ row.account }}</td>
+                <td v-for="field in authorityFields" :key="field.value" class="px-2 py-2">
+                  <span
+                    class="inline-flex h-6 w-6 items-center justify-center rounded-lg text-xs font-black"
+                    :class="row.authorityCheckList.includes(field.value) ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40' : 'bg-surface-100 text-surface-400 dark:bg-surface-800 dark:text-surface-600'">
+                    {{ row.authorityCheckList.includes(field.value) ? 'O' : 'X' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-    <div class="overflow-x-auto w-full">
-      <!-- P8：組件庫替換——el-table 改用純 HTML table。原本 17 個
-           el-table-column 裡有 16 個是幾乎一樣的「O 是綠字、X 是紅字」
-           權限欄位，改成用同一份 authorityFields 資料驅動渲染，不再
-           一個欄位一段重複的模板。 -->
-      <table class="mt-2 w-full text-center text-sm">
-        <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold text-surface-500 dark:text-surface-400">
-          <tr>
-            <th class="px-2 py-2">人員名稱</th>
-            <th class="px-2 py-2">Id</th>
-            <th class="px-2 py-2">職稱</th>
-            <th class="px-2 py-2">帳號</th>
-            <th v-for="field in authorityFields" :key="field.value" class="whitespace-nowrap px-2 py-2">{{ field.label }}</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-          <tr v-if="sliceStaffList.length === 0">
-            <td :colspan="4 + authorityFields.length" class="px-2 py-8 text-surface-400 dark:text-surface-500">人員名單是空的</td>
-          </tr>
-          <tr
-            v-for="row in sliceStaffList" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-            :class="{ 'bg-primary-50 dark:bg-primary-950/40': currentStaff.id === row.id }" @click="currentStaff = row">
-            <td class="px-2 py-2">{{ row.name }}</td>
-            <td class="px-2 py-2">{{ row.id }}</td>
-            <td class="px-2 py-2">{{ row.jobTitle }}</td>
-            <td class="px-2 py-2">{{ row.account }}</td>
-            <td v-for="field in authorityFields" :key="field.value" class="px-2 py-2">
-              <!-- D-10 修復：這裡以前直接讀 row[field.value]（16 個獨立
-                   O/X 欄位裡的其中一個），現在 authorityCheckList 是
-                   唯一來源，這一格的 O/X 是不是有這個權限的直接呈現，
-                   不是另外存了一份。 -->
-              <span :class="row.authorityCheckList.includes(field.value) ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'">
-                {{ row.authorityCheckList.includes(field.value) ? 'O' : 'X' }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="mt-4 flex items-center justify-around rounded-lg bg-surface-100 dark:bg-surface-800 px-2 py-2 text-sm text-surface-600 dark:text-surface-400">
+
+      <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
         <p>{{ `共 ${authorityManagementStore.staffList.length} 樣` }}</p>
-        <div class="flex items-center gap-2">
-          <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="staffCurrentPage <= 1" @click="handleStaffCurrentChange(staffCurrentPage - 1)">‹</button>
-          <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="staffCurrentPage >= staffPageCount" @click="handleStaffCurrentChange(staffCurrentPage + 1)">›</button>
+        <div class="flex items-center gap-1.5">
+          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="staffCurrentPage <= 1" @click="handleStaffCurrentChange(staffCurrentPage - 1)">
+            <ChevronLeft class="h-3.5 w-3.5" />
+          </button>
+          <span class="px-1 font-mono text-[11px]">{{ authorityManagementStore.staffList.length > 0 ? staffCurrentPage : 0 }} / {{ staffPageCount }}</span>
+          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="staffCurrentPage >= staffPageCount" @click="handleStaffCurrentChange(staffCurrentPage + 1)">
+            <ChevronRight class="h-3.5 w-3.5" />
+          </button>
         </div>
-        <p>{{ `${authorityManagementStore.staffList.length > 0 ? staffCurrentPage : 0}/${staffPageCount}頁` }}</p>
       </div>
     </div>
-  </div>
-  <!-- 付款方式 -->
-  <div class="2xl:flex-[1] xl:w-[30%] w-[40%]">
-    <div class="flex justify-between mt-2">
-      <div class="ml-2 md:text-lg sm:text-sm text-xs text-surface-900 dark:text-surface-100 font-bold border-b-2 border-solid border-surface-300 dark:border-surface-700">付款方式</div>
-      <div class="flex mr-2">
-        <!-- 新增功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetPayMethod'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
-          class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="openAddPayMethodDialog">新增</button>
-        <!-- 新增付款方式 -->
-        <!-- P8：組件庫替換——el-select／el-option 改用 Reka UI 的
-             Select 原語，el-switch 改用 Reka UI 的 Switch 原語，跟
-             backgroundSetting/productManagement/index.vue 的做法一致。 -->
-        <ModalDialog v-model:open="addPayMethodDialog" title="新增付款方式">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            付款方式的名稱:<input
-v-model="currentInputPayMethodName"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center px-2"
-              placeholder="例如: 現金、LinePay..." />
+
+    <!-- 付款方式 -->
+    <div class="xl:w-[32%] 2xl:w-[30%] p-5 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
+          <div class="flex items-center gap-2.5">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40">
+              <CreditCard class="h-4 w-4" />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-surface-900 dark:text-surface-100 tracking-tight">付款方式</h3>
+              <p class="text-[11px] text-surface-400">收銀結帳通道管理</p>
+            </div>
           </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            支付方式:
-            <SelectRoot v-model="currentSelectPayMethod">
-              <SelectTrigger class="flex w-[235px] items-center justify-between rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-left text-surface-900 dark:text-surface-100">
-                <SelectValue placeholder="選擇支付方式" />
-                <span aria-hidden="true">▾</span>
-              </SelectTrigger>
-              <SelectPortal>
-                <SelectContent class="z-50 w-[235px] rounded-lg border border-surface-200 dark:border-surface-800 bg-white shadow-lg" position="popper">
-                  <SelectViewport class="p-1">
-                    <SelectItem
-                      v-for="item in payMethodOptions" :key="item.value" :value="item.value"
-                      class="cursor-pointer rounded px-2 py-1 text-center outline-none hover:bg-surface-100 dark:hover:bg-surface-800 data-[state=checked]:bg-primary-50 dark:data-[state=checked]:bg-primary-950/40">
-                      <SelectItemText>{{ item.label }}</SelectItemText>
-                    </SelectItem>
-                  </SelectViewport>
-                </SelectContent>
-              </SelectPortal>
-            </SelectRoot>
+          <div class="flex items-center gap-1.5">
+            <!-- 新增功能 -->
+            <button
+              type="button"
+              class="pos-btn pos-btn-secondary px-3 py-1.5 text-xs font-bold"
+              :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
+              @click="openAddPayMethodDialog">新增</button>
+            <!-- 刪除功能 -->
+            <button
+              type="button"
+              class="pos-btn bg-danger-50 text-danger-600 border border-danger-200/80 hover:bg-danger-100 dark:bg-danger-950/40 dark:text-danger-400 dark:border-danger-800 px-3 py-1.5 text-xs font-bold"
+              :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
+              @click="deletePayMethod">刪除</button>
+            <!-- 編輯功能 -->
+            <button
+              type="button"
+              class="pos-btn pos-btn-primary px-3 py-1.5 text-xs font-bold"
+              :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
+              @click="openEditPayMethodDialog">編輯</button>
           </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            是否啟用:
-            <SwitchRoot v-model="isUsePayMethod" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500">
-              <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
-            </SwitchRoot>
-          </div>
-          <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeAddPayMethodDialog">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addPayMethod">新增</button>
-          </div>
-        </ModalDialog>
-        <!-- 刪除功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetPayMethod'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
-          class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="deletePayMethod">刪除</button>
-        <!-- 編輯功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetPayMethod'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
-          class="px-2 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 md:text-md text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="openEditPayMethodDialog">編輯</button>
-        <!-- 編輯付款方式 -->
-        <ModalDialog v-model:open="editPayMethodDialog" title="編輯付款方式">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            付款方式的名稱:<input
-v-model="currentEditInputPayMethodName"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center px-2"
-              placeholder="例如: 現金、LinePay..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            支付方式:
-            <SelectRoot v-model="currentSelectEditPayMethod">
-              <SelectTrigger class="flex w-[235px] items-center justify-between rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-left text-surface-900 dark:text-surface-100">
-                <SelectValue placeholder="選擇支付方式" />
-                <span aria-hidden="true">▾</span>
-              </SelectTrigger>
-              <SelectPortal>
-                <SelectContent class="z-50 w-[235px] rounded-lg border border-surface-200 dark:border-surface-800 bg-white shadow-lg" position="popper">
-                  <SelectViewport class="p-1">
-                    <SelectItem
-                      v-for="item in payMethodOptions" :key="item.value" :value="item.value"
-                      class="cursor-pointer rounded px-2 py-1 text-center outline-none hover:bg-surface-100 dark:hover:bg-surface-800 data-[state=checked]:bg-primary-50 dark:data-[state=checked]:bg-primary-950/40">
-                      <SelectItemText>{{ item.label }}</SelectItemText>
-                    </SelectItem>
-                  </SelectViewport>
-                </SelectContent>
-              </SelectPortal>
-            </SelectRoot>
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            是否啟用:
-            <SwitchRoot v-model="isUseEditPayMethod" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500">
-              <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
-            </SwitchRoot>
-          </div>
-          <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeEditPayMethodDialog">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editPayMethod">保存</button>
-          </div>
-        </ModalDialog>
+        </div>
+
+        <div class="mt-4 overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800">
+          <table class="w-full text-center text-xs">
+            <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
+              <tr>
+                <th class="px-3 py-2.5">序號</th>
+                <th class="px-3 py-2.5">Id</th>
+                <th class="px-3 py-2.5 text-left">付款方式</th>
+                <th class="px-3 py-2.5">支付方式</th>
+                <th class="px-3 py-2.5">使用</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr v-if="slicePayMethodList.length === 0">
+                <td colspan="5" class="px-3 py-8 text-surface-400 dark:text-surface-500">沒有付款方式</td>
+              </tr>
+              <tr
+                v-for="(row, index) in slicePayMethodList" :key="row.id"
+                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
+                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 font-bold': currentPayMethod.id === row.id }"
+                @click="currentPayMethod = row">
+                <td class="px-3 py-2.5 font-mono text-surface-400">{{ index + 1 }}</td>
+                <td class="px-3 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
+                <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
+                <td class="px-3 py-2.5">
+                  <span class="rounded-md bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[11px] font-mono font-medium text-surface-600 dark:text-surface-300">
+                    {{ row.useMethod }}
+                  </span>
+                </td>
+                <td class="px-3 py-2.5">
+                  <span
+                    class="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                    :class="row.disabled == false ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-surface-100 text-surface-400 dark:bg-surface-800 dark:text-surface-500'">
+                    {{ row.disabled == false ? '是' : '否' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-    <div>
-      <table class="mt-2 w-full text-center text-sm">
-        <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold text-surface-500 dark:text-surface-400">
-          <tr>
-            <th class="px-2 py-2">序號</th>
-            <th class="px-2 py-2">Id</th>
-            <th class="px-2 py-2">付款方式</th>
-            <th class="px-2 py-2">支付方式</th>
-            <th class="px-2 py-2">使用</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-          <tr v-if="slicePayMethodList.length === 0">
-            <td colspan="5" class="px-2 py-8 text-surface-400 dark:text-surface-500">沒有付款方式</td>
-          </tr>
-          <tr
-            v-for="(row, index) in slicePayMethodList" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-            :class="{ 'bg-primary-50 dark:bg-primary-950/40': currentPayMethod.id === row.id }" @click="currentPayMethod = row">
-            <td class="px-2 py-2">{{ index + 1 }}</td>
-            <td class="px-2 py-2">{{ row.id }}</td>
-            <td class="px-2 py-2">{{ row.name }}</td>
-            <td class="px-2 py-2">{{ row.useMethod }}</td>
-            <td class="px-2 py-2">{{ row.disabled == false ? '是' : '否' }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="mt-4 flex items-center justify-around rounded-lg bg-surface-100 dark:bg-surface-800 px-2 py-2 text-sm text-surface-600 dark:text-surface-400">
+
+      <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
         <p>{{ `共 ${orderStore.paymentList.length} 樣` }}</p>
-        <div class="flex items-center gap-2">
-          <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="payMethodCurrentPage <= 1" @click="handlePayMethodCurrentChange(payMethodCurrentPage - 1)">‹</button>
-          <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="payMethodCurrentPage >= payMethodPageCount" @click="handlePayMethodCurrentChange(payMethodCurrentPage + 1)">›</button>
+        <div class="flex items-center gap-1.5">
+          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="payMethodCurrentPage <= 1" @click="handlePayMethodCurrentChange(payMethodCurrentPage - 1)">
+            <ChevronLeft class="h-3.5 w-3.5" />
+          </button>
+          <span class="px-1 font-mono text-[11px]">{{ orderStore.paymentList.length > 0 ? payMethodCurrentPage : 0 }} / {{ payMethodPageCount }}</span>
+          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="payMethodCurrentPage >= payMethodPageCount" @click="handlePayMethodCurrentChange(payMethodCurrentPage + 1)">
+            <ChevronRight class="h-3.5 w-3.5" />
+          </button>
         </div>
-        <p>{{ `${orderStore.paymentList.length > 0 ? payMethodCurrentPage : 0}/${payMethodPageCount}頁` }}</p>
       </div>
     </div>
   </div>
+
+  <!-- 新增人員 -->
+  <ModalDialog v-model:open="addStaffDialog" title="新增人員">
+    <div class="space-y-3.5 py-1">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">人員的名稱</label>
+          <input
+            v-model="currentInputStaffName"
+            class="w-full rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+            placeholder="例如: Jensen、Jacky..." />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">人員的職稱</label>
+          <input
+            v-model="currentInputStaffJobTitle"
+            class="w-full rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+            placeholder="例如: 襄理、工讀生..." />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">人員的帳號</label>
+          <input
+            v-model="currentInputStaffAccount"
+            class="w-full rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+            placeholder="請輸入帳號" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">登入用PIN</label>
+          <input
+            v-model="currentInputStaffPin" type="password" inputmode="numeric" maxlength="6"
+            class="w-full rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+            placeholder="4~6碼數字" />
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-xs font-bold text-surface-700 dark:text-surface-300">權限管理</label>
+          <span class="text-[11px] text-surface-400">依門市職責勾選授權</span>
+        </div>
+        <div class="max-h-56 overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-800/40 p-2.5 grid grid-cols-2 gap-1.5">
+          <label
+            v-for="field in authorityFields" :key="field.value"
+            class="flex items-center gap-2 rounded-lg p-1.5 text-xs font-medium cursor-pointer transition-colors hover:bg-white dark:hover:bg-surface-700"
+            :class="{ 'opacity-40 cursor-not-allowed': !!field.dependsOn && !authorityCheckList.includes(field.dependsOn) }">
+            <input
+              type="checkbox" :checked="authorityCheckList.includes(field.value)"
+              :disabled="!!field.dependsOn && !authorityCheckList.includes(field.dependsOn)"
+              class="h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500/20"
+              @change="toggleAuthorityCheck(authorityCheckList, field.value, ($event.target as HTMLInputElement).checked, (v) => authorityCheckList = v)">
+            <span class="text-surface-800 dark:text-surface-200">{{ field.label }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2.5">
+      <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="closeAddStaffDialog">取消</button>
+      <button type="button" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold" @click="addStaff">新增</button>
+    </div>
+  </ModalDialog>
+
+  <!-- 編輯人員 -->
+  <ModalDialog v-model:open="editStaffDialog" title="編輯人員">
+    <div class="space-y-3.5 py-1">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">人員的名稱</label>
+          <input
+            v-model="currentEditInputStaffName"
+            class="w-full rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+            placeholder="例如: Jensen、Jacky..." />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">人員的職稱</label>
+          <input
+            v-model="currentEditInputStaffJobTitle"
+            class="w-full rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+            placeholder="例如: 襄理、工讀生..." />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">人員的帳號</label>
+          <input
+            v-model="currentEditInputStaffAccount"
+            class="w-full rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+            placeholder="請輸入帳號" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">登入用PIN</label>
+          <input
+            v-model="currentEditInputStaffPin" type="password" inputmode="numeric" maxlength="6"
+            class="w-full rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+            placeholder="留空則不變更" />
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-xs font-bold text-surface-700 dark:text-surface-300">權限管理</label>
+          <span class="text-[11px] text-surface-400">依門市職責勾選授權</span>
+        </div>
+        <div class="max-h-56 overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-800/40 p-2.5 grid grid-cols-2 gap-1.5">
+          <label
+            v-for="field in authorityFields" :key="field.value"
+            class="flex items-center gap-2 rounded-lg p-1.5 text-xs font-medium cursor-pointer transition-colors hover:bg-white dark:hover:bg-surface-700"
+            :class="{ 'opacity-40 cursor-not-allowed': !!field.dependsOn && !editAuthorityCheckList.includes(field.dependsOn) }">
+            <input
+              type="checkbox" :checked="editAuthorityCheckList.includes(field.value)"
+              :disabled="!!field.dependsOn && !editAuthorityCheckList.includes(field.dependsOn)"
+              class="h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500/20"
+              @change="toggleAuthorityCheck(editAuthorityCheckList, field.value, ($event.target as HTMLInputElement).checked, (v) => editAuthorityCheckList = v)">
+            <span class="text-surface-800 dark:text-surface-200">{{ field.label }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2.5">
+      <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="closeEditStaffDialog">取消</button>
+      <button type="button" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold" @click="editStaff">保存</button>
+    </div>
+  </ModalDialog>
+
+  <!-- 新增付款方式 -->
+  <ModalDialog v-model:open="addPayMethodDialog" title="新增付款方式">
+    <div class="space-y-4 py-1">
+      <div>
+        <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">付款方式的名稱</label>
+        <input
+          v-model="currentInputPayMethodName"
+          class="w-full rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+          placeholder="例如: 現金、LinePay..." />
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">支付方式</label>
+        <SelectRoot v-model="currentSelectPayMethod">
+          <SelectTrigger class="flex w-full items-center justify-between rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
+            <SelectValue placeholder="選擇支付方式" />
+            <span aria-hidden="true" class="text-surface-400">▾</span>
+          </SelectTrigger>
+          <SelectPortal>
+            <SelectContent class="z-50 min-w-[200px] rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-1 shadow-lg" position="popper">
+              <SelectViewport class="p-1">
+                <SelectItem
+                  v-for="item in payMethodOptions" :key="item.value" :value="item.value"
+                  class="cursor-pointer rounded-lg px-3 py-2 text-xs font-bold text-surface-700 dark:text-surface-300 outline-none hover:bg-surface-100 dark:hover:bg-surface-800 data-[state=checked]:bg-primary-50 data-[state=checked]:text-primary-600 dark:data-[state=checked]:bg-primary-950/40 dark:data-[state=checked]:text-primary-400">
+                  <SelectItemText>{{ item.label }}</SelectItemText>
+                </SelectItem>
+              </SelectViewport>
+            </SelectContent>
+          </SelectPortal>
+        </SelectRoot>
+      </div>
+      <div class="flex items-center justify-between rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-800/40 p-3">
+        <div>
+          <label class="block text-xs font-bold text-surface-900 dark:text-surface-100">是否啟用</label>
+          <span class="text-[11px] text-surface-400">啟用後將於結帳收銀面板中顯示</span>
+        </div>
+        <SwitchRoot v-model="isUsePayMethod" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500">
+          <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+        </SwitchRoot>
+      </div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2.5">
+      <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="closeAddPayMethodDialog">取消</button>
+      <button type="button" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold" @click="addPayMethod">新增</button>
+    </div>
+  </ModalDialog>
+
+  <!-- 編輯付款方式 -->
+  <ModalDialog v-model:open="editPayMethodDialog" title="編輯付款方式">
+    <div class="space-y-4 py-1">
+      <div>
+        <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">付款方式的名稱</label>
+        <input
+          v-model="currentEditInputPayMethodName"
+          class="w-full rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+          placeholder="例如: 現金、LinePay..." />
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-surface-700 dark:text-surface-300 mb-1">支付方式</label>
+        <SelectRoot v-model="currentSelectEditPayMethod">
+          <SelectTrigger class="flex w-full items-center justify-between rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
+            <SelectValue placeholder="選擇支付方式" />
+            <span aria-hidden="true" class="text-surface-400">▾</span>
+          </SelectTrigger>
+          <SelectPortal>
+            <SelectContent class="z-50 min-w-[200px] rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-1 shadow-lg" position="popper">
+              <SelectViewport class="p-1">
+                <SelectItem
+                  v-for="item in payMethodOptions" :key="item.value" :value="item.value"
+                  class="cursor-pointer rounded-lg px-3 py-2 text-xs font-bold text-surface-700 dark:text-surface-300 outline-none hover:bg-surface-100 dark:hover:bg-surface-800 data-[state=checked]:bg-primary-50 data-[state=checked]:text-primary-600 dark:data-[state=checked]:bg-primary-950/40 dark:data-[state=checked]:text-primary-400">
+                  <SelectItemText>{{ item.label }}</SelectItemText>
+                </SelectItem>
+              </SelectViewport>
+            </SelectContent>
+          </SelectPortal>
+        </SelectRoot>
+      </div>
+      <div class="flex items-center justify-between rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-800/40 p-3">
+        <div>
+          <label class="block text-xs font-bold text-surface-900 dark:text-surface-100">是否啟用</label>
+          <span class="text-[11px] text-surface-400">啟用後將於結帳收銀面板中顯示</span>
+        </div>
+        <SwitchRoot v-model="isUseEditPayMethod" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500">
+          <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+        </SwitchRoot>
+      </div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2.5">
+      <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="closeEditPayMethodDialog">取消</button>
+      <button type="button" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold" @click="editPayMethod">保存</button>
+    </div>
+  </ModalDialog>
 </template>
 
 <script setup lang="ts">
@@ -313,6 +415,7 @@ v-model="currentEditInputPayMethodName"
 // 寫法，改成用業務含意本身（職稱是店長／名稱是現金）判斷——伺服端的
 // id 是 UUID，不會再有「第一筆一定是 1」這件事。
 import { ref, computed } from 'vue'
+import { UserCheck, CreditCard, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import {
   SelectContent,
   SelectItem,

@@ -1,19 +1,38 @@
 <template>
-  <div class="w-full flex items-center flex-col overflow-y-auto">
-    <div class="w-4/5 mt-10 flex flex-col items-center">
-      <h1 class="text-3xl font-black text-surface-900 dark:text-surface-100">會員管理</h1>
-    </div>
-    <div class="w-[90%] mt-6 rounded-lg border border-surface-200 bg-white p-4 dark:border-surface-700 dark:bg-surface-900">
-      <div class="flex items-center justify-between">
-        <div class="text-lg font-bold text-surface-900 dark:text-surface-100">會員名單</div>
-        <div class="flex gap-2">
+  <div class="w-full flex flex-col items-center overflow-y-auto bg-surface-50/50 dark:bg-surface-950 px-4 py-6 min-h-[calc(100vh-64px)]">
+    <div class="w-full max-w-7xl flex flex-col gap-5">
+      <!-- 頂部標題卡片 -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h1 class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight">會員管理</h1>
+            <span class="rounded-full bg-primary-50 dark:bg-primary-950/50 px-2.5 py-0.5 text-xs font-bold text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
+              顧客名冊
+            </span>
+          </div>
+          <p class="mt-1 text-xs lg:text-sm text-surface-500 dark:text-surface-400">
+            查詢顧客消費歷程、管理會員集點與維護顧客資料庫
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3">
           <button
             type="button"
-            class="rounded-lg border border-surface-300 px-3 py-1.5 text-sm font-bold text-surface-700 transition-colors hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
+            class="flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2 text-xs lg:text-sm font-bold text-white transition-all hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 select-none"
             :class="{ 'pointer-events-none opacity-40': !canManage }"
-            @click="openAddDialog">新增會員</button>
+            @click="openAddDialog">
+            <UserPlus class="h-4 w-4" />
+            <span>新增會員</span>
+          </button>
         </div>
       </div>
+
+      <!-- 會員名單卡片 -->
+      <div class="w-full rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm p-4 overflow-hidden">
+        <div class="flex items-center justify-between pb-3 border-b border-surface-100 dark:border-surface-800">
+          <div class="text-sm font-black text-surface-800 dark:text-surface-200">會員名單</div>
+          <span class="text-xs font-bold text-surface-500">共 {{ members.length }} 位會員</span>
+        </div>
 
       <table class="mt-4 w-full text-center text-sm">
         <thead class="bg-surface-100 text-xs font-bold text-surface-500 dark:bg-surface-800 dark:text-surface-400">
@@ -114,10 +133,12 @@
         </tbody>
       </table>
     </ModalDialog>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { UserPlus } from 'lucide-vue-next'
 // P22（規劃書 §10 P22「會員與顧客經營」）：新增／編輯用 VeeValidate +
 // Zod 的 <Form> 元件，跟 backgroundSetting/offerSetting/index.vue 是
 // 同一套模式（見該檔案關於「多個獨立表單各自用一個 <Form> 元件實例」

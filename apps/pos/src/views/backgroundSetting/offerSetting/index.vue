@@ -1,167 +1,226 @@
 <template>
-  <!-- 現金折扣券 -->
-  <div class="lg:flex-[1] w-[33%] px-2">
-    <div class="mt-2 flex items-center justify-between">
-      <div class="border-b-2 border-solid border-surface-900 dark:border-surface-100 text-lg font-bold text-surface-900 dark:text-surface-100">現金折扣券</div>
-      <div class="flex gap-1">
-        <button
-          type="button"
-          class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-300 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800"
-          :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
-          @click="openAddMoneyDiscountDialog">新增</button>
-        <button
-          type="button"
-          class="rounded-lg border border-danger-200 px-2 py-1 text-xs font-bold text-danger-600 transition-colors hover:bg-danger-50 dark:border-danger-800 dark:text-danger-400 dark:hover:bg-danger-950"
-          :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
-          @click="deleteDrinkMoneyDiscount">刪除</button>
-        <button
-          type="button"
-          class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-300 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800"
-          :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
-          @click="openEditMoneyDiscountDialog">編輯</button>
+  <div class="flex flex-col xl:flex-row gap-5 items-stretch min-h-[600px] w-full">
+    <!-- 現金折扣券 -->
+    <div class="card-panel p-5 flex flex-col justify-between flex-1">
+      <div>
+        <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
+          <div class="flex items-center gap-2.5">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40">
+              <Ticket class="h-4 w-4" />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-surface-900 dark:text-surface-100 tracking-tight">現金折扣券</h3>
+              <p class="text-[11px] text-surface-400">固定金額折抵券設定</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              class="pos-btn pos-btn-secondary px-2.5 py-1.5 text-xs font-bold"
+              :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
+              @click="openAddMoneyDiscountDialog">新增</button>
+            <button
+              type="button"
+              class="pos-btn bg-danger-50 text-danger-600 border border-danger-200/80 hover:bg-danger-100 dark:bg-danger-950/40 dark:text-danger-400 dark:border-danger-800 px-2.5 py-1.5 text-xs font-bold"
+              :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
+              @click="deleteDrinkMoneyDiscount">刪除</button>
+            <button
+              type="button"
+              class="pos-btn pos-btn-primary px-2.5 py-1.5 text-xs font-bold"
+              :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
+              @click="openEditMoneyDiscountDialog">編輯</button>
+          </div>
+        </div>
+
+        <div class="mt-3.5 overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800">
+          <table class="w-full text-center text-xs">
+            <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
+              <tr>
+                <th class="px-3 py-2.5">序號</th>
+                <th class="px-3 py-2.5">Id</th>
+                <th class="px-3 py-2.5 text-left">折價券名稱</th>
+                <th class="px-3 py-2.5 text-right">折價金額</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr v-if="sliceMoneyDiscount.length === 0">
+                <td colspan="4" class="px-3 py-8 text-surface-400 dark:text-surface-500">無現金折價券</td>
+              </tr>
+              <tr
+                v-for="(row, index) in sliceMoneyDiscount" :key="row.id"
+                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
+                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentMoneyDiscount.id === row.id }"
+                @click="currentMoneyDiscount = row">
+                <td class="px-3 py-2.5 font-mono text-surface-400">{{ index + 1 }}</td>
+                <td class="px-3 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
+                <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
+                <td class="px-3 py-2.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">-${{ row.discountMoney }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
+        <p>{{ `共 ${discountStore.moneyDiscount.length} 樣` }}</p>
+        <div class="flex items-center gap-1.5">
+          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="moneyDiscountCurrentPage <= 1" @click="moneyDiscountCurrentPage--">
+            <ChevronLeft class="h-3.5 w-3.5" />
+          </button>
+          <span class="px-1 font-mono text-[11px]">{{ discountStore.moneyDiscount.length > 0 ? moneyDiscountCurrentPage : 0 }} / {{ moneyDiscountPageCount }}</span>
+          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="moneyDiscountCurrentPage >= moneyDiscountPageCount" @click="moneyDiscountCurrentPage++">
+            <ChevronRight class="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
     </div>
 
-    <table class="mt-2 w-full text-center text-sm">
-      <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold text-surface-500 dark:text-surface-400">
-        <tr>
-          <th class="px-2 py-2">序號</th>
-          <th class="px-2 py-2">Id</th>
-          <th class="px-2 py-2">折價券名稱</th>
-          <th class="px-2 py-2">折價金額</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-        <tr v-if="sliceMoneyDiscount.length === 0">
-          <td colspan="4" class="px-2 py-8 text-surface-400 dark:text-surface-500">無現金折價券</td>
-        </tr>
-        <tr
-          v-for="(row, index) in sliceMoneyDiscount" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-          :class="{ 'bg-primary-50 dark:bg-primary-950/40': currentMoneyDiscount.id === row.id }"
-          @click="currentMoneyDiscount = row">
-          <td class="px-2 py-2">{{ index + 1 }}</td>
-          <td class="px-2 py-2">{{ row.id }}</td>
-          <td class="px-2 py-2">{{ row.name }}</td>
-          <td class="px-2 py-2">{{ row.discountMoney }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <div class="mt-4 flex items-center justify-around rounded-lg bg-surface-100 dark:bg-surface-800 px-2 py-2 text-sm text-surface-600 dark:text-surface-400">
-      <p>共 {{ discountStore.moneyDiscount.length }} 樣</p>
-      <div class="flex items-center gap-2">
-        <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="moneyDiscountCurrentPage <= 1" @click="moneyDiscountCurrentPage--">‹</button>
-        <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="moneyDiscountCurrentPage >= moneyDiscountPageCount" @click="moneyDiscountCurrentPage++">›</button>
+    <!-- 折數折扣券 -->
+    <div class="card-panel p-5 flex flex-col justify-between flex-1">
+      <div>
+        <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
+          <div class="flex items-center gap-2.5">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40">
+              <Percent class="h-4 w-4" />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-surface-900 dark:text-surface-100 tracking-tight">折數折扣券</h3>
+              <p class="text-[11px] text-surface-400">百分比/折扣折數設定</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              class="pos-btn pos-btn-secondary px-2.5 py-1.5 text-xs font-bold"
+              :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
+              @click="openAddPercentDiscountDialog">新增</button>
+            <button
+              type="button"
+              class="pos-btn bg-danger-50 text-danger-600 border border-danger-200/80 hover:bg-danger-100 dark:bg-danger-950/40 dark:text-danger-400 dark:border-danger-800 px-2.5 py-1.5 text-xs font-bold"
+              :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
+              @click="deleteDrinkPercentDiscount">刪除</button>
+            <button
+              type="button"
+              class="pos-btn pos-btn-primary px-2.5 py-1.5 text-xs font-bold"
+              :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
+              @click="openEditPercentDiscountDialog">編輯</button>
+          </div>
+        </div>
+
+        <div class="mt-3.5 overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800">
+          <table class="w-full text-center text-xs">
+            <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
+              <tr>
+                <th class="px-3 py-2.5">序號</th>
+                <th class="px-3 py-2.5">Id</th>
+                <th class="px-3 py-2.5 text-left">折價券名稱</th>
+                <th class="px-3 py-2.5 text-right">折價折數</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr v-if="slicePercentDiscount.length === 0">
+                <td colspan="4" class="px-3 py-8 text-surface-400 dark:text-surface-500">無折數折價券</td>
+              </tr>
+              <tr
+                v-for="(row, index) in slicePercentDiscount" :key="row.id"
+                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
+                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentPercentDiscount.id === row.id }"
+                @click="currentPercentDiscount = row">
+                <td class="px-3 py-2.5 font-mono text-surface-400">{{ index + 1 }}</td>
+                <td class="px-3 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
+                <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
+                <td class="px-3 py-2.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.discountMoney }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <p>{{ discountStore.moneyDiscount.length > 0 ? moneyDiscountCurrentPage : 0 }}/{{ moneyDiscountPageCount }}頁</p>
-    </div>
-  </div>
 
-  <!-- 折數折扣券 -->
-  <div class="lg:flex-[1] w-[34%] border-x-2 border-solid border-surface-200 dark:border-surface-800 px-2">
-    <div class="mt-2 flex items-center justify-between">
-      <div class="border-b-2 border-solid border-surface-900 dark:border-surface-100 text-lg font-bold text-surface-900 dark:text-surface-100">折數折扣券</div>
-      <div class="flex gap-1">
-        <button
-          type="button"
-          class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-300 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800"
-          :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
-          @click="openAddPercentDiscountDialog">新增</button>
-        <button
-          type="button"
-          class="rounded-lg border border-danger-200 px-2 py-1 text-xs font-bold text-danger-600 transition-colors hover:bg-danger-50 dark:border-danger-800 dark:text-danger-400 dark:hover:bg-danger-950"
-          :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
-          @click="deleteDrinkPercentDiscount">刪除</button>
-        <button
-          type="button"
-          class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-300 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800"
-          :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
-          @click="openEditPercentDiscountDialog">編輯</button>
+      <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
+        <p>{{ `共 ${discountStore.percentDiscount.length} 樣` }}</p>
+        <div class="flex items-center gap-1.5">
+          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="percentDiscountCurrentPage <= 1" @click="percentDiscountCurrentPage--">
+            <ChevronLeft class="h-3.5 w-3.5" />
+          </button>
+          <span class="px-1 font-mono text-[11px]">{{ discountStore.percentDiscount.length > 0 ? percentDiscountCurrentPage : 0 }} / {{ percentDiscountPageCount }}</span>
+          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="percentDiscountCurrentPage >= percentDiscountPageCount" @click="percentDiscountCurrentPage++">
+            <ChevronRight class="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
     </div>
 
-    <table class="mt-2 w-full text-center text-sm">
-      <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold text-surface-500 dark:text-surface-400">
-        <tr>
-          <th class="px-2 py-2">序號</th>
-          <th class="px-2 py-2">Id</th>
-          <th class="px-2 py-2">折價券名稱</th>
-          <th class="px-2 py-2">折價折數</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-        <tr v-if="slicePercentDiscount.length === 0">
-          <td colspan="4" class="px-2 py-8 text-surface-400 dark:text-surface-500">無折數折價券</td>
-        </tr>
-        <tr
-          v-for="(row, index) in slicePercentDiscount" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-          :class="{ 'bg-primary-50 dark:bg-primary-950/40': currentPercentDiscount.id === row.id }"
-          @click="currentPercentDiscount = row">
-          <td class="px-2 py-2">{{ index + 1 }}</td>
-          <td class="px-2 py-2">{{ row.id }}</td>
-          <td class="px-2 py-2">{{ row.name }}</td>
-          <td class="px-2 py-2">{{ row.discountMoney }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <div class="mt-4 flex items-center justify-around rounded-lg bg-surface-100 dark:bg-surface-800 px-2 py-2 text-sm text-surface-600 dark:text-surface-400">
-      <p>共 {{ discountStore.percentDiscount.length }} 樣</p>
-      <div class="flex items-center gap-2">
-        <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="percentDiscountCurrentPage <= 1" @click="percentDiscountCurrentPage--">‹</button>
-        <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="percentDiscountCurrentPage >= percentDiscountPageCount" @click="percentDiscountCurrentPage++">›</button>
+    <!-- 常用優惠 -->
+    <div class="card-panel p-5 flex flex-col justify-between flex-1">
+      <div>
+        <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
+          <div class="flex items-center gap-2.5">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/40">
+              <Sparkles class="h-4 w-4" />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-surface-900 dark:text-surface-100 tracking-tight">常用優惠</h3>
+              <p class="text-[11px] text-surface-400">收銀台快捷優惠按鈕對應</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs font-bold"
+            :class="{ 'pointer-events-none opacity-40': !canSetOftenUseDiscount }"
+            @click="openEditOftenUseDiscountDialog">編輯</button>
+        </div>
+
+        <div class="mt-3.5 overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800">
+          <table class="w-full text-center text-xs">
+            <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
+              <tr>
+                <th class="px-3 py-2.5">序號</th>
+                <th class="px-3 py-2.5 text-left">優惠名稱</th>
+                <th class="px-3 py-2.5 text-right">折價金額</th>
+                <th class="px-3 py-2.5 text-right">折價折數</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr
+                v-for="(row, index) in discountStore.oftenUseDiscount" :key="row.id"
+                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
+                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentOftenUseDiscount.id === row.id }"
+                @click="currentOftenUseDiscount = row">
+                <td class="px-3 py-2.5 font-mono text-surface-400">{{ index + 1 }}</td>
+                <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
+                <td class="px-3 py-2.5 text-right font-mono font-bold" :class="Number(row.discountMoney) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-surface-400'">
+                  {{ Number(row.discountMoney) > 0 ? `-$${row.discountMoney}` : '-' }}
+                </td>
+                <td class="px-3 py-2.5 text-right font-mono font-bold" :class="Number(row.discountPercent) > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-surface-400'">
+                  {{ Number(row.discountPercent) > 0 ? `${row.discountPercent}` : '-' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <p>{{ discountStore.percentDiscount.length > 0 ? percentDiscountCurrentPage : 0 }}/{{ percentDiscountPageCount }}頁</p>
-    </div>
-  </div>
 
-  <!-- 常用優惠 -->
-  <div class="lg:flex-[1] w-[33%] px-2">
-    <div class="mt-2 flex items-center justify-between">
-      <div class="border-b-2 border-solid border-surface-900 dark:border-surface-100 text-lg font-bold text-surface-900 dark:text-surface-100">常用優惠</div>
-      <button
-        type="button"
-        class="rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-300 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800"
-        :class="{ 'pointer-events-none opacity-40': !canSetOftenUseDiscount }"
-        @click="openEditOftenUseDiscountDialog">編輯</button>
-    </div>
-
-    <table class="mt-2 w-full text-center text-sm">
-      <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold text-surface-500 dark:text-surface-400">
-        <tr>
-          <th class="px-2 py-2">序號</th>
-          <th class="px-2 py-2">優惠名稱</th>
-          <th class="px-2 py-2">折價金額</th>
-          <th class="px-2 py-2">折價折數</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-        <tr
-          v-for="(row, index) in discountStore.oftenUseDiscount" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-          :class="{ 'bg-primary-50 dark:bg-primary-950/40': currentOftenUseDiscount.id === row.id }"
-          @click="currentOftenUseDiscount = row">
-          <td class="px-2 py-2">{{ index + 1 }}</td>
-          <td class="px-2 py-2">{{ row.name }}</td>
-          <td class="px-2 py-2">{{ row.discountMoney }}</td>
-          <td class="px-2 py-2">{{ row.discountPercent }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <div class="mt-4 flex items-center justify-around rounded-lg bg-surface-100 dark:bg-surface-800 px-2 py-2 text-sm text-surface-600 dark:text-surface-400">
-      <p>共 5 樣</p>
-      <p>1/1頁</p>
+      <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
+        <p>共 {{ discountStore.oftenUseDiscount.length }} 樣</p>
+        <span class="font-mono text-[11px]">1 / 1</span>
+      </div>
     </div>
   </div>
 
   <!-- 新增現金折扣券 -->
   <ModalDialog v-model:open="addMoneyDiscountDialog" title="新增現金折扣券">
     <Form v-slot="{ isSubmitting }" :validation-schema="toTypedSchema(moneyCouponSchema())" :initial-values="{ name: '' }" @submit="onSubmitAddMoneyDiscount">
-      <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: $50折價券..." />
-      <FormField name="discountMoney" label="折扣的金額" type="number" step="1" :disabled="isSubmitting" placeholder="純數字,例如:1,2,3..." />
-      <div class="mt-2 flex justify-end gap-2">
-        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="addMoneyDiscountDialog = false">取消</button>
-        <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">新增</button>
+      <div class="space-y-4 py-2">
+        <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: $50折價券..." />
+        <FormField name="discountMoney" label="折扣的金額" type="number" step="1" :disabled="isSubmitting" placeholder="純數字,例如:1,2,3..." />
+      </div>
+      <div class="mt-6 flex justify-end gap-2.5">
+        <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="addMoneyDiscountDialog = false">取消</button>
+        <button type="submit" :disabled="isSubmitting" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold">新增</button>
       </div>
     </Form>
   </ModalDialog>
+
   <!-- 編輯現金折扣券 -->
   <ModalDialog v-model:open="editMoneyDiscountDialog" title="編輯現金折扣券">
     <Form
@@ -169,11 +228,13 @@
       :validation-schema="toTypedSchema(moneyCouponSchema(currentMoneyDiscount.id))"
       :initial-values="{ name: currentMoneyDiscount.name, discountMoney: Number(currentMoneyDiscount.discountMoney) }"
       @submit="onSubmitEditMoneyDiscount">
-      <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: $50折價券..." />
-      <FormField name="discountMoney" label="折扣的金額" type="number" step="1" :disabled="isSubmitting" placeholder="純數字,例如:1,2,3..." />
-      <div class="mt-2 flex justify-end gap-2">
-        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="editMoneyDiscountDialog = false">取消</button>
-        <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">保存</button>
+      <div class="space-y-4 py-2">
+        <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: $50折價券..." />
+        <FormField name="discountMoney" label="折扣的金額" type="number" step="1" :disabled="isSubmitting" placeholder="純數字,例如:1,2,3..." />
+      </div>
+      <div class="mt-6 flex justify-end gap-2.5">
+        <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="editMoneyDiscountDialog = false">取消</button>
+        <button type="submit" :disabled="isSubmitting" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold">保存</button>
       </div>
     </Form>
   </ModalDialog>
@@ -181,14 +242,17 @@
   <!-- 新增折數折扣券 -->
   <ModalDialog v-model:open="addPercentDiscountDialog" title="新增折數折扣券">
     <Form v-slot="{ isSubmitting }" :validation-schema="toTypedSchema(percentCouponSchema())" :initial-values="{ name: '' }" @submit="onSubmitAddPercentDiscount">
-      <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: 九折折價券..." />
-      <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="isSubmitting" placeholder="純數字,例如:0.9,0.75..." />
-      <div class="mt-2 flex justify-end gap-2">
-        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="addPercentDiscountDialog = false">取消</button>
-        <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">新增</button>
+      <div class="space-y-4 py-2">
+        <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: 九折折價券..." />
+        <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="isSubmitting" placeholder="純數字,例如:0.9,0.75..." />
+      </div>
+      <div class="mt-6 flex justify-end gap-2.5">
+        <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="addPercentDiscountDialog = false">取消</button>
+        <button type="submit" :disabled="isSubmitting" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold">新增</button>
       </div>
     </Form>
   </ModalDialog>
+
   <!-- 編輯折數折扣券 -->
   <ModalDialog v-model:open="editPercentDiscountDialog" title="編輯折數折扣券">
     <Form
@@ -196,11 +260,13 @@
       :validation-schema="toTypedSchema(percentCouponSchema(currentPercentDiscount.id))"
       :initial-values="{ name: currentPercentDiscount.name, discountPercent: Number(currentPercentDiscount.discountMoney) }"
       @submit="onSubmitEditPercentDiscount">
-      <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: 九折折價券..." />
-      <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="isSubmitting" placeholder="純數字,例如:0.9,0.75..." />
-      <div class="mt-2 flex justify-end gap-2">
-        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="editPercentDiscountDialog = false">取消</button>
-        <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">保存</button>
+      <div class="space-y-4 py-2">
+        <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: 九折折價券..." />
+        <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="isSubmitting" placeholder="純數字,例如:0.9,0.75..." />
+      </div>
+      <div class="mt-6 flex justify-end gap-2.5">
+        <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="editPercentDiscountDialog = false">取消</button>
+        <button type="submit" :disabled="isSubmitting" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold">保存</button>
       </div>
     </Form>
   </ModalDialog>
@@ -216,12 +282,14 @@
         discountPercent: Number(currentOftenUseDiscount.discountPercent),
       }"
       @submit="onSubmitEditOftenUseDiscount">
-      <FormField name="name" label="優惠名稱" :disabled="nameDisabled || isSubmitting" placeholder="例如: 九折,員工八折..." />
-      <FormField name="discountMoney" label="折扣的金額" type="number" step="1" :disabled="moneyDisabled || isSubmitting" placeholder="純數字,例如:1,2,3..." />
-      <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="percentDisabled || isSubmitting" placeholder="純數字,例如:0.95,0.85..." />
-      <div class="mt-2 flex justify-end gap-2">
-        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="editOftenUseDiscountDialog = false">取消</button>
-        <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">保存</button>
+      <div class="space-y-4 py-2">
+        <FormField name="name" label="優惠名稱" :disabled="nameDisabled || isSubmitting" placeholder="例如: 九折,員工八折..." />
+        <FormField name="discountMoney" label="折扣的金額" type="number" step="1" :disabled="moneyDisabled || isSubmitting" placeholder="純數字,例如:1,2,3..." />
+        <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="percentDisabled || isSubmitting" placeholder="純數字,例如:0.95,0.85..." />
+      </div>
+      <div class="mt-6 flex justify-end gap-2.5">
+        <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="editOftenUseDiscountDialog = false">取消</button>
+        <button type="submit" :disabled="isSubmitting" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold">保存</button>
       </div>
     </Form>
   </ModalDialog>
@@ -229,6 +297,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { Ticket, Percent, Sparkles, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form } from 'vee-validate'

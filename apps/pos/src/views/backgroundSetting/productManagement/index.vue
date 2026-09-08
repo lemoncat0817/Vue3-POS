@@ -1,418 +1,497 @@
 <template>
-  <!-- 飲品類型 -->
-  <div class="xl:flex-[1] md:w-[30%] w-[33%]">
-    <div class="flex justify-between mt-2">
-      <div class="ml-2 lg:text-lg md:text-sm text-xs text-surface-900 dark:text-surface-100 font-bold border-b-2 border-solid border-surface-300 dark:border-surface-700">飲品類型</div>
-      <div class="flex mr-2">
-        <!-- 新增功能 -->
-        <button
-class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          :class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrinkType'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
-          @click="openAddTypeDialog">新增</button>
-        <!-- 新增飲品類型 -->
-        <!-- P8：組件庫替換——el-dialog 改用 ModalDialog（Reka UI
-             Dialog）。這個頁面的資料本來就完全是本機陣列操作（見
-             stores/drink.ts 的說明，從沒接過 API），驗證邏輯維持原本
-             的一連串 if/else，只是把 ElMessage／ElMessageBox 換成
-             showToast／confirm／alert，不改成 VeeValidate + Zod——這裡
-             欄位之間有大量互相牽動的邏輯（例如客製化選「無」會連動關掉
-             瓶裝開關、清空瓶裝價格），改成 schema 驅動反而容易在沒有
-             e2e 覆蓋的情況下悄悄改變行為。 -->
-        <ModalDialog v-model:open="addTypeDialog" title="新增飲品類型">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            飲品類型:<input
-v-model="currentInputName"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="例如: 原味茶,芝芝系列..." />
+  <div class="w-full flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-surface-200 dark:divide-surface-800">
+    <!-- 1. 飲品類型 -->
+    <div class="w-full xl:w-[28%] p-4 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-black text-surface-900 dark:text-surface-100">飲品類型</span>
+            <span class="rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[10px] font-bold text-surface-600 dark:text-surface-300">共 {{ drinkStore.drinkType.length }} 樣</span>
           </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            飲品類型的代號:<input
-v-model="currentInputType"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="例如: drinkMilk..." />
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              class="rounded-lg border border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-950/40 px-2.5 py-1 text-xs font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 transition-all select-none shadow-sm"
+              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
+              @click="openAddTypeDialog">新增</button>
+            <button
+              type="button"
+              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 transition-all select-none shadow-sm"
+              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
+              @click="openEditTypeDialog">編輯</button>
+            <button
+              type="button"
+              class="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition-all select-none shadow-sm"
+              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
+              @click="deleteDrinkType">刪除</button>
+          </div>
+        </div>
+
+        <!-- 新增飲品類型 Modal -->
+        <ModalDialog v-model:open="addTypeDialog" title="新增飲品類型">
+          <div class="flex flex-col gap-3 py-2">
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              飲品類型
+              <input
+                v-model="currentInputName"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
+                placeholder="例如: 原味茶,芝芝系列..." />
+            </label>
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              飲品類型的代號
+              <input
+                v-model="currentInputType"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
+                placeholder="例如: drinkMilk..." />
+            </label>
           </div>
           <div class="mt-4 flex justify-end gap-2">
             <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeAddTypeDialog">取消</button>
             <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addDrinkType">新增</button>
           </div>
         </ModalDialog>
-        <!-- 刪除功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrinkType'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
-          class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="deleteDrinkType">刪除</button>
-        <!-- 編輯功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrinkType'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
-          class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="openEditTypeDialog">編輯</button>
-        <!-- 編輯飲品類型 -->
+
+        <!-- 編輯飲品類型 Modal -->
         <ModalDialog v-model:open="editTypeDialog" title="編輯飲品類型">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            飲品類型:<input
-v-model="currentEditInputName"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="例如: 原味茶,芝芝系列..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            飲品類型的代號:<input
-v-model="currentEditInputType"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="例如: drinkMilk..." />
+          <div class="flex flex-col gap-3 py-2">
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              飲品類型
+              <input
+                v-model="currentEditInputName"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
+                placeholder="例如: 原味茶,芝芝系列..." />
+            </label>
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              飲品類型的代號
+              <input
+                v-model="currentEditInputType"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
+                placeholder="例如: drinkMilk..." />
+            </label>
           </div>
           <div class="mt-4 flex justify-end gap-2">
             <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeEditTypeDialog">取消</button>
             <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editDrinkType">保存</button>
           </div>
         </ModalDialog>
-      </div>
-    </div>
-    <div>
-      <!-- P8：組件庫替換——el-table 改用純 HTML table，跟其餘 P8 已
-           遷移頁面一致；highlight-current-row 改成點列時比對 id 加
-           class，el-pagination（只用 prev/next）改用原生按鈕。 -->
-      <table class="mt-2 w-full text-center text-sm">
-        <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold text-surface-500 dark:text-surface-400">
-          <tr>
-            <th class="px-2 py-2">序號</th>
-            <th class="px-2 py-2">Id</th>
-            <th class="px-2 py-2">類型</th>
-            <th class="px-2 py-2">類型代號</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-          <tr v-if="sliceDrinkType.length === 0">
-            <td colspan="4" class="px-2 py-8 text-surface-400 dark:text-surface-500">無飲品類型</td>
-          </tr>
-          <tr
-            v-for="(row, index) in sliceDrinkType" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-            :class="{ 'bg-primary-50 dark:bg-primary-950/40': currentType.id === row.id }" @click="currentType = row">
-            <td class="px-2 py-2">{{ index + 1 }}</td>
-            <td class="px-2 py-2">{{ row.id }}</td>
-            <td class="px-2 py-2">{{ row.name }}</td>
-            <td class="px-2 py-2">{{ row.type }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="mt-4 flex items-center justify-around rounded-lg bg-surface-100 dark:bg-surface-800 px-2 py-2 text-sm text-surface-600 dark:text-surface-400">
-        <p>{{ `共 ${drinkStore.drinkType.length} 樣` }}</p>
-        <div class="flex items-center gap-2">
-          <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="drinkTypeCurrentPage <= 1" @click="handleDrinkTypeCurrentChange(drinkTypeCurrentPage - 1)">‹</button>
-          <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="drinkTypeCurrentPage >= drinkTypePageCount" @click="handleDrinkTypeCurrentChange(drinkTypeCurrentPage + 1)">›</button>
+
+        <!-- 飲品類型 Table -->
+        <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
+          <table class="w-full text-center text-xs sm:text-sm">
+            <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+              <tr>
+                <th class="px-2 py-2.5">序號</th>
+                <th class="px-2 py-2.5">Id</th>
+                <th class="px-2 py-2.5">類型</th>
+                <th class="px-2 py-2.5">類型代號</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr v-if="sliceDrinkType.length === 0">
+                <td colspan="4" class="px-2 py-8 text-surface-400 dark:text-surface-500">無飲品類型</td>
+              </tr>
+              <tr
+                v-for="(row, index) in sliceDrinkType" :key="row.id"
+                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
+                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentType.id === row.id }"
+                @click="currentType = row">
+                <td class="px-2 py-2.5 font-mono text-surface-500">{{ index + 1 }}</td>
+                <td class="px-2 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
+                <td class="px-2 py-2.5 font-bold">{{ row.name }}</td>
+                <td class="px-2 py-2.5 font-mono text-xs text-surface-500">{{ row.type }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <p>{{ `${drinkStore.drinkType.length > 0 ? drinkTypeCurrentPage : 0}/${drinkTypePageCount}頁` }}</p>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
+        <p>{{ `共 ${drinkStore.drinkType.length} 樣` }}</p>
+        <div class="flex items-center gap-1.5">
+          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 flex items-center justify-center disabled:opacity-30 shadow-sm" :disabled="drinkTypeCurrentPage <= 1" @click="handleDrinkTypeCurrentChange(drinkTypeCurrentPage - 1)">‹</button>
+          <span>{{ `${drinkStore.drinkType.length > 0 ? drinkTypeCurrentPage : 0}/${drinkTypePageCount}頁` }}</span>
+          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 flex items-center justify-center disabled:opacity-30 shadow-sm" :disabled="drinkTypeCurrentPage >= drinkTypePageCount" @click="handleDrinkTypeCurrentChange(drinkTypeCurrentPage + 1)">›</button>
+        </div>
       </div>
     </div>
-  </div>
-  <!-- 飲料品項 -->
-  <div class="xl:flex-[1] md:w-[40%] w-[34%] border-x-2 border-solid border-surface-200 dark:border-surface-800 rounded-lg">
-    <div class="flex justify-between mt-2">
-      <div class="ml-2 lg:text-lg md:text-sm text-xs text-surface-900 dark:text-surface-100 font-bold border-b-2 border-solid border-surface-300 dark:border-surface-700">飲料品項</div>
-      <div class="flex mr-2">
-        <!-- 新增功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrink'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
-          class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="openAddDrinkDialog">新增</button>
-        <!-- 新增飲料品項 -->
-        <!-- P8：組件庫替換——el-switch 改用 Reka UI 的 Switch 原語，
-             el-select／el-option 改用 Reka UI 的 Select 原語。 -->
+
+    <!-- 2. 飲料品項 -->
+    <div class="w-full xl:w-[44%] p-4 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-black text-surface-900 dark:text-surface-100">飲料品項</span>
+            <span class="rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[10px] font-bold text-surface-600 dark:text-surface-300">
+              共 {{ currentType.drinkList ? currentType.drinkList.length : 0 }} 樣
+            </span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              class="rounded-lg border border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-950/40 px-2.5 py-1 text-xs font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 transition-all select-none shadow-sm"
+              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
+              @click="openAddDrinkDialog">新增</button>
+            <button
+              type="button"
+              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 transition-all select-none shadow-sm"
+              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
+              @click="openEditDrinkDialog">編輯</button>
+            <button
+              type="button"
+              class="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition-all select-none shadow-sm"
+              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
+              @click="deleteDrink">刪除</button>
+          </div>
+        </div>
+
+        <!-- 新增飲料品項 Modal -->
         <ModalDialog v-model:open="addDrinkDialog" title="新增飲料品項">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            飲料名稱:<input
-v-model="currentDrinkInputName"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="例如: 芝芝金萱,金萱雙Q..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            大杯價格:
-            <div class="flex items-center">
-              <SwitchRoot
-                v-model="setPriceL" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500"
-                @update:model-value="checkPriceLSwitch">
-                <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
-              </SwitchRoot>
+          <div class="flex flex-col gap-3.5 py-2">
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              飲料名稱
               <input
-v-if="setPriceL" v-model="currentDrinkInputPriceL" type="number" min="1" step="1"
-                class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="無此容器，請關左側開關" />
-              <div v-else class="w-[235px] border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100">
-                none
+                v-model="currentDrinkInputName"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
+                placeholder="例如: 芝芝金萱,金萱雙Q..." />
+            </label>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+                <span>大杯價格</span>
+                <div class="flex items-center gap-2">
+                  <SwitchRoot
+                    v-model="setPriceL" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500 shrink-0"
+                    @update:model-value="checkPriceLSwitch">
+                    <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+                  </SwitchRoot>
+                  <input
+                    v-if="setPriceL" v-model="currentDrinkInputPriceL" type="number" min="1" step="1"
+                    class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100" placeholder="無此容器，請關左側開關" />
+                  <div v-else class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-400 text-center font-mono">
+                    none
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+                <span>瓶裝價格</span>
+                <div class="flex items-center gap-2">
+                  <SwitchRoot
+                    v-model="setPriceBottle" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500 shrink-0"
+                    @update:model-value="checkPriceBottleSwitch">
+                    <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+                  </SwitchRoot>
+                  <input
+                    v-if="setPriceBottle" v-model="currentDrinkInputPriceBottle" type="number" min="1" step="1"
+                    class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100" placeholder="無此容器，請關左側開關" />
+                  <div v-else class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-400 text-center font-mono">
+                    none
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            瓶裝價格:
-            <div class="flex items-center">
-              <SwitchRoot
-                v-model="setPriceBottle" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500"
-                @update:model-value="checkPriceBottleSwitch">
-                <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
-              </SwitchRoot>
-              <input
-v-if="setPriceBottle" v-model="currentDrinkInputPriceBottle" type="number" min="1" step="1"
-                class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="無此容器，請關左側開關" />
-              <div v-else class="w-[235px] border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100">
-                none
-              </div>
+
+            <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              <span>客製化</span>
+              <SelectRoot v-model="currentDrinkSelectCustomized" @update:model-value="checkAddDrinkSelectCustomized">
+                <SelectTrigger class="flex w-full items-center justify-between rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-left text-sm text-surface-900 dark:text-surface-100">
+                  <SelectValue placeholder="請選擇飲料的客製化設定" />
+                  <span aria-hidden="true">▾</span>
+                </SelectTrigger>
+                <SelectPortal>
+                  <SelectContent class="z-50 w-[280px] rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-800 shadow-xl" position="popper">
+                    <SelectViewport class="p-1">
+                      <SelectItem
+                        v-for="item in customized" :key="item.value" :value="item.value"
+                        class="flex cursor-pointer justify-between rounded-lg px-3 py-2 text-sm outline-none hover:bg-surface-100 dark:hover:bg-surface-700 data-[state=checked]:bg-primary-50 dark:data-[state=checked]:bg-primary-950/40">
+                        <SelectItemText>{{ item.label }}</SelectItemText>
+                        <span class="text-xs text-surface-400 dark:text-surface-500">{{ item.value }}</span>
+                      </SelectItem>
+                    </SelectViewport>
+                  </SelectContent>
+                </SelectPortal>
+              </SelectRoot>
             </div>
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            客製化:
-            <SelectRoot v-model="currentDrinkSelectCustomized" @update:model-value="checkAddDrinkSelectCustomized">
-              <SelectTrigger class="flex w-[235px] items-center justify-between rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-left text-surface-900 dark:text-surface-100">
-                <SelectValue placeholder="請選擇飲料的客製化設定" />
-                <span aria-hidden="true">▾</span>
-              </SelectTrigger>
-              <SelectPortal>
-                <SelectContent class="z-50 w-[235px] rounded-lg border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-800 shadow-lg" position="popper">
-                  <SelectViewport class="p-1">
-                    <SelectItem
-                      v-for="item in customized" :key="item.value" :value="item.value"
-                      class="flex cursor-pointer justify-between rounded px-2 py-1 outline-none hover:bg-surface-100 dark:hover:bg-surface-800 data-[state=checked]:bg-primary-50 dark:data-[state=checked]:bg-primary-950/40">
-                      <SelectItemText>{{ item.label }}</SelectItemText>
-                      <span class="text-xs text-surface-400 dark:text-surface-500">{{ item.value }}</span>
-                    </SelectItem>
-                  </SelectViewport>
-                </SelectContent>
-              </SelectPortal>
-            </SelectRoot>
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            庫存:<input
-v-model="currentDrinkInputStock" type="number" min="0" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="留空代表不追蹤庫存" />
+
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              庫存
+              <input
+                v-model="currentDrinkInputStock" type="number" min="0" step="1"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
+                placeholder="留空代表不追蹤庫存" />
+            </label>
           </div>
           <div class="mt-4 flex justify-end gap-2">
             <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeAddDrinkDialog">取消</button>
             <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addDrink">新增</button>
           </div>
         </ModalDialog>
-        <!-- 刪除功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrink'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
-          class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="deleteDrink">刪除</button>
-        <!-- 編輯功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetDrink'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
-          class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="openEditDrinkDialog">編輯</button>
-        <!-- 編輯飲料品項 -->
+
+        <!-- 編輯飲料品項 Modal -->
         <ModalDialog v-model:open="editDrinkDialog" title="編輯飲料品項">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            飲料名稱:<input
-v-model="currentEditDrinkInputName"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="例如: 芝芝金萱,金萱雙Q..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            大杯價格:
-            <div class="flex items-center">
-              <SwitchRoot
-                v-model="setEditPriceL" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500"
-                @update:model-value="checkEditPriceLSwitch">
-                <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
-              </SwitchRoot>
+          <div class="flex flex-col gap-3.5 py-2">
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              飲料名稱
               <input
-v-if="setEditPriceL" v-model="currentEditDrinkInputPriceL" type="number" min="1" step="1"
-                class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="無此容器，請關左側開關" />
-              <div v-else class="w-[235px] border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100">
-                none
+                v-model="currentEditDrinkInputName"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
+                placeholder="例如: 芝芝金萱,金萱雙Q..." />
+            </label>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+                <span>大杯價格</span>
+                <div class="flex items-center gap-2">
+                  <SwitchRoot
+                    v-model="setEditPriceL" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500 shrink-0"
+                    @update:model-value="checkEditPriceLSwitch">
+                    <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+                  </SwitchRoot>
+                  <input
+                    v-if="setEditPriceL" v-model="currentEditDrinkInputPriceL" type="number" min="1" step="1"
+                    class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100" placeholder="無此容器，請關左側開關" />
+                  <div v-else class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-400 text-center font-mono">
+                    none
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+                <span>瓶裝價格</span>
+                <div class="flex items-center gap-2">
+                  <SwitchRoot
+                    v-model="setEditPriceBottle" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500 shrink-0"
+                    @update:model-value="checkEditPriceBottleSwitch">
+                    <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+                  </SwitchRoot>
+                  <input
+                    v-if="setEditPriceBottle" v-model="currentEditDrinkInputPriceBottle" type="number" min="1" step="1"
+                    class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100" placeholder="純數字,例如:1,2,3..." />
+                  <div v-else class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-400 text-center font-mono">
+                    none
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            瓶裝價格:
-            <div class="flex items-center">
-              <SwitchRoot
-                v-model="setEditPriceBottle" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500"
-                @update:model-value="checkEditPriceBottleSwitch">
-                <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
-              </SwitchRoot>
-              <input
-v-if="setEditPriceBottle" v-model="currentEditDrinkInputPriceBottle" type="number" min="1" step="1"
-                class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-                placeholder="純數字,例如:1,2,3..." />
-              <div v-else class="w-[235px] border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100">
-                none
-              </div>
+
+            <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              <span>客製化</span>
+              <SelectRoot v-model="currentEditDrinkSelectCustomized" @update:model-value="checkEditDrinkSelectCustomized">
+                <SelectTrigger class="flex w-full items-center justify-between rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-left text-sm text-surface-900 dark:text-surface-100">
+                  <SelectValue placeholder="請選擇飲料的客製化設定" />
+                  <span aria-hidden="true">▾</span>
+                </SelectTrigger>
+                <SelectPortal>
+                  <SelectContent class="z-50 w-[280px] rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-800 shadow-xl" position="popper">
+                    <SelectViewport class="p-1">
+                      <SelectItem
+                        v-for="item in customized" :key="item.value" :value="item.value"
+                        class="flex cursor-pointer justify-between rounded-lg px-3 py-2 text-sm outline-none hover:bg-surface-100 dark:hover:bg-surface-700 data-[state=checked]:bg-primary-50 dark:data-[state=checked]:bg-primary-950/40">
+                        <SelectItemText>{{ item.label }}</SelectItemText>
+                        <span class="text-xs text-surface-400 dark:text-surface-500">{{ item.value }}</span>
+                      </SelectItem>
+                    </SelectViewport>
+                  </SelectContent>
+                </SelectPortal>
+              </SelectRoot>
             </div>
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            客製化:
-            <SelectRoot v-model="currentEditDrinkSelectCustomized" @update:model-value="checkEditDrinkSelectCustomized">
-              <SelectTrigger class="flex w-[235px] items-center justify-between rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-left text-surface-900 dark:text-surface-100">
-                <SelectValue placeholder="請選擇飲料的客製化設定" />
-                <span aria-hidden="true">▾</span>
-              </SelectTrigger>
-              <SelectPortal>
-                <SelectContent class="z-50 w-[235px] rounded-lg border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-800 shadow-lg" position="popper">
-                  <SelectViewport class="p-1">
-                    <SelectItem
-                      v-for="item in customized" :key="item.value" :value="item.value"
-                      class="flex cursor-pointer justify-between rounded px-2 py-1 outline-none hover:bg-surface-100 dark:hover:bg-surface-800 data-[state=checked]:bg-primary-50 dark:data-[state=checked]:bg-primary-950/40">
-                      <SelectItemText>{{ item.label }}</SelectItemText>
-                      <span class="text-xs text-surface-400 dark:text-surface-500">{{ item.value }}</span>
-                    </SelectItem>
-                  </SelectViewport>
-                </SelectContent>
-              </SelectPortal>
-            </SelectRoot>
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            庫存:<input
-v-model="currentEditDrinkInputStock" type="number" min="0" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="留空代表不追蹤庫存" />
+
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              庫存
+              <input
+                v-model="currentEditDrinkInputStock" type="number" min="0" step="1"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
+                placeholder="留空代表不追蹤庫存" />
+            </label>
           </div>
           <div class="mt-4 flex justify-end gap-2">
             <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeEditDrinkDialog">取消</button>
             <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editDrink">保存</button>
           </div>
         </ModalDialog>
-      </div>
-    </div>
-    <div>
-      <table class="mt-2 w-full text-center text-sm">
-        <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold text-surface-500 dark:text-surface-400">
-          <tr>
-            <th class="px-2 py-2">序號</th>
-            <th class="px-2 py-2">Id</th>
-            <th class="px-2 py-2">飲料名稱</th>
-            <th class="px-2 py-2">大杯價格</th>
-            <th class="px-2 py-2">瓶裝價格</th>
-            <th class="px-2 py-2">客製化</th>
-            <th class="px-2 py-2">庫存</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-          <tr v-if="sliceDrink.length === 0">
-            <td colspan="7" class="px-2 py-8 text-surface-400 dark:text-surface-500">請先選擇飲品類型</td>
-          </tr>
-          <tr
-            v-for="(row, index) in sliceDrink" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-            :class="{ 'bg-primary-50 dark:bg-primary-950/40': currentDrink.id === row.id }" @click="currentDrink = row">
-            <td class="px-2 py-2">{{ index + 1 }}</td>
-            <td class="px-2 py-2">{{ row.id }}</td>
-            <td class="px-2 py-2">{{ row.name }}</td>
-            <td class="px-2 py-2">{{ row.priceL }}</td>
-            <td class="px-2 py-2">{{ row.priceBottle }}</td>
-            <td class="px-2 py-2">{{ row.customized }}</td>
-            <td class="px-2 py-2" :class="stockClass(row.stock)">{{ stockLabel(row.stock) }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="mt-4 flex items-center justify-around rounded-lg bg-surface-100 dark:bg-surface-800 px-2 py-2 text-sm text-surface-600 dark:text-surface-400">
-        <p>{{ `共 ${currentType.drinkList ? currentType.drinkList.length : 0} 樣` }}</p>
-        <div class="flex items-center gap-2">
-          <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="drinkCurrentPage <= 1" @click="handleDrinkCurrentChange(drinkCurrentPage - 1)">‹</button>
-          <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="drinkCurrentPage >= drinkPageCount" @click="handleDrinkCurrentChange(drinkCurrentPage + 1)">›</button>
+
+        <!-- 飲料品項 Table -->
+        <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
+          <table class="w-full text-center text-xs sm:text-sm">
+            <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+              <tr>
+                <th class="px-2 py-2.5">序號</th>
+                <th class="px-2 py-2.5">Id</th>
+                <th class="px-2 py-2.5">飲料名稱</th>
+                <th class="px-2 py-2.5">大杯價格</th>
+                <th class="px-2 py-2.5">瓶裝價格</th>
+                <th class="px-2 py-2.5">客製化</th>
+                <th class="px-2 py-2.5">庫存</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr v-if="sliceDrink.length === 0">
+                <td colspan="7" class="px-2 py-8 text-surface-400 dark:text-surface-500">請先選擇飲品類型</td>
+              </tr>
+              <tr
+                v-for="(row, index) in sliceDrink" :key="row.id"
+                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
+                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentDrink.id === row.id }"
+                @click="currentDrink = row">
+                <td class="px-2 py-2.5 font-mono text-surface-500">{{ index + 1 }}</td>
+                <td class="px-2 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
+                <td class="px-2 py-2.5 font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
+                <td class="px-2 py-2.5 font-mono">${{ row.priceL }}</td>
+                <td class="px-2 py-2.5 font-mono">{{ row.priceBottle === 'none' ? '-' : `$${row.priceBottle}` }}</td>
+                <td class="px-2 py-2.5">
+                  <span class="rounded-md px-1.5 py-0.5 text-[10px] font-bold" :class="row.customized === 'none' ? 'bg-surface-100 text-surface-500 dark:bg-surface-800' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'">
+                    {{ row.customized }}
+                  </span>
+                </td>
+                <td class="px-2 py-2.5" :class="stockClass(row.stock)">{{ stockLabel(row.stock) }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <p v-if="currentType.drinkList">{{ `${drinkCurrentPage}/${drinkPageCount}頁` }}</p>
-        <p v-else>0/0頁</p>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
+        <p>{{ `共 ${currentType.drinkList ? currentType.drinkList.length : 0} 樣` }}</p>
+        <div class="flex items-center gap-1.5">
+          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 flex items-center justify-center disabled:opacity-30 shadow-sm" :disabled="drinkCurrentPage <= 1" @click="handleDrinkCurrentChange(drinkCurrentPage - 1)">‹</button>
+          <span>{{ currentType.drinkList ? `${drinkCurrentPage}/${drinkPageCount}頁` : '0/0頁' }}</span>
+          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 flex items-center justify-center disabled:opacity-30 shadow-sm" :disabled="drinkCurrentPage >= drinkPageCount" @click="handleDrinkCurrentChange(drinkCurrentPage + 1)">›</button>
+        </div>
       </div>
     </div>
-  </div>
-  <!-- 配料 -->
-  <div class="xl:flex-[1] md:w-[30%] w-[33%]">
-    <div class="flex justify-between mt-2">
-      <div class="ml-2 lg:text-lg md:text-sm text-xs text-surface-900 dark:text-surface-100 font-bold border-b-2 border-solid border-surface-300 dark:border-surface-700">配料</div>
-      <div class="flex mr-2">
-        <!-- 新增功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetIngredients'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
-          class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="openAddIngredientsDialog">新增</button>
-        <!-- 新增配料 -->
+
+    <!-- 3. 配料 -->
+    <div class="w-full xl:w-[28%] p-4 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-black text-surface-900 dark:text-surface-100">配料</span>
+            <span class="rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[10px] font-bold text-surface-600 dark:text-surface-300">共 {{ drinkStore.drinkAdd.length }} 樣</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              class="rounded-lg border border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-950/40 px-2.5 py-1 text-xs font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 transition-all select-none shadow-sm"
+              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
+              @click="openAddIngredientsDialog">新增</button>
+            <button
+              type="button"
+              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 transition-all select-none shadow-sm"
+              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
+              @click="openEditIngredientsDialog">編輯</button>
+            <button
+              type="button"
+              class="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition-all select-none shadow-sm"
+              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
+              @click="deleteDrinkIngredients">刪除</button>
+          </div>
+        </div>
+
+        <!-- 新增配料 Modal -->
         <ModalDialog v-model:open="addIngredientsDialog" title="新增配料">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            配料名稱:<input
-v-model="currentIngredientsInputName"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="例如: 波霸,雙Q果..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            配料的價錢:<input
-v-model="currentIngredientsInputPrice" type="number" min="1" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="純數字,例如:1,2,3..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            庫存:<input
-v-model="currentIngredientsInputStock" type="number" min="0" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="留空代表不追蹤庫存" />
+          <div class="flex flex-col gap-3.5 py-2">
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              配料名稱
+              <input
+                v-model="currentIngredientsInputName"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
+                placeholder="例如: 波霸,雙Q果..." />
+            </label>
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              配料的價錢
+              <input
+                v-model="currentIngredientsInputPrice" type="number" min="1" step="1"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
+                placeholder="純數字,例如:1,2,3..." />
+            </label>
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              庫存
+              <input
+                v-model="currentIngredientsInputStock" type="number" min="0" step="1"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
+                placeholder="留空代表不追蹤庫存" />
+            </label>
           </div>
           <div class="mt-4 flex justify-end gap-2">
             <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeAddIngredientsDialog">取消</button>
             <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addDrinkIngredients">新增</button>
           </div>
         </ModalDialog>
-        <!-- 刪除功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetIngredients'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
-          class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="deleteDrinkIngredients">刪除</button>
-        <!-- 編輯功能 -->
-        <button
-:class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canSetIngredients'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
-          class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-lg mx-1 lg:text-md md:text-sm text-xs text-surface-700 dark:text-surface-200 font-bold bg-white dark:bg-surface-800 select-none hover:bg-surface-100 dark:hover:bg-surface-700 active:bg-primary-50 dark:active:bg-surface-600"
-          @click="openEditIngredientsDialog">編輯</button>
-        <!-- 編輯配料 -->
+
+        <!-- 編輯配料 Modal -->
         <ModalDialog v-model:open="editIngredientsDialog" title="編輯配料">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            配料名稱:<input
-v-model="currentEditIngredientsInputName"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="例如: 波霸,雙Q果..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            配料的價錢:<input
-v-model="currentEditIngredientsInputPrice" type="number" min="1" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="純數字,例如:1,2,3..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            庫存:<input
-v-model="currentEditIngredientsInputStock" type="number" min="0" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="留空代表不追蹤庫存" />
+          <div class="flex flex-col gap-3.5 py-2">
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              配料名稱
+              <input
+                v-model="currentEditIngredientsInputName"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
+                placeholder="例如: 波霸,雙Q果..." />
+            </label>
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              配料的價錢
+              <input
+                v-model="currentEditIngredientsInputPrice" type="number" min="1" step="1"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
+                placeholder="純數字,例如:1,2,3..." />
+            </label>
+            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+              庫存
+              <input
+                v-model="currentEditIngredientsInputStock" type="number" min="0" step="1"
+                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
+                placeholder="留空代表不追蹤庫存" />
+            </label>
           </div>
           <div class="mt-4 flex justify-end gap-2">
             <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeEditIngredientsDialog">取消</button>
             <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editDrinkIngredients">保存</button>
           </div>
         </ModalDialog>
-      </div>
-    </div>
-    <div>
-      <table class="mt-2 w-full text-center text-sm">
-        <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold text-surface-500 dark:text-surface-400">
-          <tr>
-            <th class="px-2 py-2">序號</th>
-            <th class="px-2 py-2">Id</th>
-            <th class="px-2 py-2">配料名稱</th>
-            <th class="px-2 py-2">價錢</th>
-            <th class="px-2 py-2">庫存</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-          <tr v-if="sliceIngredients.length === 0">
-            <td colspan="5" class="px-2 py-8 text-surface-400 dark:text-surface-500">無配料</td>
-          </tr>
-          <tr
-            v-for="(row, index) in sliceIngredients" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-            :class="{ 'bg-primary-50 dark:bg-primary-950/40': currentIngredientsDrink.id === row.id }" @click="currentIngredientsDrink = row">
-            <td class="px-2 py-2">{{ index + 1 }}</td>
-            <td class="px-2 py-2">{{ row.id }}</td>
-            <td class="px-2 py-2">{{ row.name }}</td>
-            <td class="px-2 py-2">{{ row.price }}</td>
-            <td class="px-2 py-2" :class="stockClass(row.stock)">{{ stockLabel(row.stock) }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="mt-4 flex items-center justify-around rounded-lg bg-surface-100 dark:bg-surface-800 px-2 py-2 text-sm text-surface-600 dark:text-surface-400">
-        <p>{{ `共 ${drinkStore.drinkAdd.length} 樣` }}</p>
-        <div class="flex items-center gap-2">
-          <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="drinkIngredientsCurrentPage <= 1" @click="handleIngredientsCurrentChange(drinkIngredientsCurrentPage - 1)">‹</button>
-          <button type="button" class="rounded border border-surface-300 dark:border-surface-700 px-2 disabled:opacity-40" :disabled="drinkIngredientsCurrentPage >= drinkIngredientsPageCount" @click="handleIngredientsCurrentChange(drinkIngredientsCurrentPage + 1)">›</button>
+
+        <!-- 配料 Table -->
+        <div class="mt-4 overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+          <table class="w-full text-center text-xs">
+            <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
+              <tr>
+                <th class="px-2 py-2.5">序號</th>
+                <th class="px-2 py-2.5">Id</th>
+                <th class="px-2 py-2.5 text-left">配料名稱</th>
+                <th class="px-2 py-2.5 text-right">價錢</th>
+                <th class="px-2 py-2.5">庫存</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr v-if="sliceIngredients.length === 0">
+                <td colspan="5" class="px-2 py-8 text-surface-400 dark:text-surface-500">無配料</td>
+              </tr>
+              <tr
+                v-for="(row, index) in sliceIngredients" :key="row.id"
+                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
+                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentIngredientsDrink.id === row.id }"
+                @click="currentIngredientsDrink = row">
+                <td class="px-2 py-2.5 font-mono text-surface-500">{{ index + 1 }}</td>
+                <td class="px-2 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
+                <td class="px-2 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
+                <td class="px-2 py-2.5 text-right font-mono font-bold text-primary-600 dark:text-primary-400">${{ row.price }}</td>
+                <td class="px-2 py-2.5 font-mono" :class="stockClass(row.stock)">
+                  <span class="rounded-md px-1.5 py-0.5 text-[10px] font-bold">
+                    {{ stockLabel(row.stock) }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <p>{{ `${drinkStore.drinkAdd.length > 0 ? drinkIngredientsCurrentPage : 0}/${drinkIngredientsPageCount}頁` }}</p>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
+        <p>{{ `共 ${drinkStore.drinkAdd.length} 樣` }}</p>
+        <div class="flex items-center gap-1.5">
+          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 disabled:opacity-40" :disabled="drinkIngredientsCurrentPage <= 1" @click="handleIngredientsCurrentChange(drinkIngredientsCurrentPage - 1)">‹</button>
+          <span class="font-mono text-[11px]">{{ `${drinkStore.drinkAdd.length > 0 ? drinkIngredientsCurrentPage : 0}/${drinkIngredientsPageCount}頁` }}</span>
+          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 disabled:opacity-40" :disabled="drinkIngredientsCurrentPage >= drinkIngredientsPageCount" @click="handleIngredientsCurrentChange(drinkIngredientsCurrentPage + 1)">›</button>
+        </div>
       </div>
     </div>
   </div>

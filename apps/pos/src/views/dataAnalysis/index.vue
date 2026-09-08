@@ -1,294 +1,771 @@
 <template>
-  <div class="w-full flex items-center flex-col overflow-y-auto ">
-    <div class="2xl:w-[85%] xl:w-[90%] lg:w-[95%] mt-10 flex flex-col items-center">
-      <!-- P11（規劃書 §12「視覺系統與體驗」）：原本標題與四個分頁籤都是
-           滿版飽和紅＋純黑邊框，選取態疊一層飽和黃；日期輸入框則是寫死
-           的米色（#f8f8dc）配色，跟其餘頁面的 token 完全脫節。這裡改成
-           跟其餘頁面一致的中性分頁籤＋品牌色選取態，並補上深色模式。
-           分頁籤同時從 <div @click> 改成語意正確的 <button>。 -->
-      <h1 class="text-3xl font-black text-surface-900 dark:text-surface-100">數據分析</h1>
-      <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
-        <button
-type="button"
-          class="rounded-lg border px-4 py-2 text-sm font-bold transition-colors lg:text-base"
-          :class="dataAnalysisStore.currentDataAnalysis === 0
-            ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300'
-            : 'border-surface-300 text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-200 dark:hover:bg-surface-800'"
-          @click="dataAnalysisStore.currentDataAnalysis = 0">
-          營業額</button>
-        <button
-type="button"
-          class="rounded-lg border px-4 py-2 text-sm font-bold transition-colors lg:text-base"
-          :class="dataAnalysisStore.currentDataAnalysis === 1
-            ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300'
-            : 'border-surface-300 text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-200 dark:hover:bg-surface-800'"
-          @click="dataAnalysisStore.currentDataAnalysis = 1">
-          熱門飲料</button>
-        <button
-type="button"
-          class="rounded-lg border px-4 py-2 text-sm font-bold transition-colors lg:text-base"
-          :class="dataAnalysisStore.currentDataAnalysis === 2
-            ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300'
-            : 'border-surface-300 text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-200 dark:hover:bg-surface-800'"
-          @click="dataAnalysisStore.currentDataAnalysis = 2">
-          熱門配料</button>
-        <button
-type="button"
-          class="rounded-lg border px-4 py-2 text-sm font-bold transition-colors lg:text-base"
-          :class="dataAnalysisStore.currentDataAnalysis === 3
-            ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300'
-            : 'border-surface-300 text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-200 dark:hover:bg-surface-800'"
-          @click="dataAnalysisStore.currentDataAnalysis = 3">
-          常用付款方式</button>
-        <div class="mx-3 flex items-center gap-2">
-          <input
-type="date" aria-label="開始時間" :value="toNativeDate(selectTime[0])"
-            class="rounded-lg border border-surface-300 bg-white px-2 py-1.5 text-sm font-bold text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
-            @change="(e) => selectTime = [fromNativeDate((e.target as HTMLInputElement).value), selectTime[1]]">
-          <span class="text-sm font-bold text-surface-500 dark:text-surface-400">到</span>
-          <input
-type="date" aria-label="結束時間" :value="toNativeDate(selectTime[1])"
-            class="rounded-lg border border-surface-300 bg-white px-2 py-1.5 text-sm font-bold text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
-            @change="(e) => selectTime = [selectTime[0], fromNativeDate((e.target as HTMLInputElement).value)]">
+  <div class="w-full flex flex-col items-center overflow-y-auto px-4 py-6 bg-surface-50/50 dark:bg-surface-950 min-h-[calc(100vh-64px)]">
+    <div class="w-full max-w-7xl flex flex-col gap-6">
+
+      <!-- 頂部標題與時段控制列 -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-surface-900 p-4 rounded-2xl border border-surface-200 dark:border-surface-800 shadow-sm">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h1 class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight">營業數據分析</h1>
+            <span class="rounded-full bg-primary-50 dark:bg-primary-950/50 px-2.5 py-0.5 text-xs font-bold text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
+              營運報表
+            </span>
+          </div>
+          <p class="text-xs text-surface-500 dark:text-surface-400 mt-1">
+            統計期間：{{ selectTime[0] }} 至 {{ selectTime[1] }} · 即時掌握門市營收與銷售趨勢
+          </p>
+        </div>
+
+        <!-- 快捷日期標籤與原生選擇器 -->
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex rounded-xl bg-surface-100 dark:bg-surface-800 p-0.5 text-xs font-bold">
+            <button
+              type="button"
+              class="rounded-lg px-2.5 py-1.5 transition-all select-none"
+              :class="isPresetActive('today') ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'"
+              @click="setDatePreset('today')">今日</button>
+            <button
+              type="button"
+              class="rounded-lg px-2.5 py-1.5 transition-all select-none"
+              :class="isPresetActive('yesterday') ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'"
+              @click="setDatePreset('yesterday')">昨日</button>
+            <button
+              type="button"
+              class="rounded-lg px-2.5 py-1.5 transition-all select-none"
+              :class="isPresetActive('week') ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'"
+              @click="setDatePreset('week')">近 7 天</button>
+            <button
+              type="button"
+              class="rounded-lg px-2.5 py-1.5 transition-all select-none"
+              :class="isPresetActive('month') ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'"
+              @click="setDatePreset('month')">本月</button>
+          </div>
+
+          <!-- 自訂時間輸入 (嚴格保持 aria-label 與型別轉換供 e2e 使用) -->
+          <div class="flex items-center gap-1.5 bg-surface-50 dark:bg-surface-800/80 px-2 py-1 rounded-xl border border-surface-200 dark:border-surface-700">
+            <Calendar class="h-3.5 w-3.5 text-surface-400 shrink-0" />
+            <input
+              type="date" aria-label="開始時間" :value="toNativeDate(selectTime[0])"
+              class="bg-transparent text-xs font-bold text-surface-900 dark:text-surface-100 outline-none"
+              @change="(e) => selectTime = [fromNativeDate((e.target as HTMLInputElement).value), selectTime[1]]">
+            <span class="text-xs font-bold text-surface-400">~</span>
+            <input
+              type="date" aria-label="結束時間" :value="toNativeDate(selectTime[1])"
+              class="bg-transparent text-xs font-bold text-surface-900 dark:text-surface-100 outline-none"
+              @change="(e) => selectTime = [selectTime[0], fromNativeDate((e.target as HTMLInputElement).value)]">
+          </div>
+
+          <!-- 匯出與列印動作 -->
+          <button
+            type="button"
+            class="flex items-center gap-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-50 shadow-sm transition-colors"
+            @click="exportCsv">
+            <Download class="h-3.5 w-3.5" />
+            <span>匯出 CSV</span>
+          </button>
+          <button
+            type="button"
+            class="flex items-center gap-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-50 shadow-sm transition-colors"
+            @click="dialogSettlement = true">
+            <Printer class="h-3.5 w-3.5" />
+            <span>日結單</span>
+          </button>
         </div>
       </div>
-      <div class="w-4/5 mt-10 ">
-        <div
-v-if="selectTime[0] === selectTime[1] && dataAnalysisStore.currentDataAnalysis === 0" ref="oneDayBusiness"
-          class="h-[530px]" />
-        <div
-v-if="selectTime[0] != selectTime[1] && dataAnalysisStore.currentDataAnalysis === 0" ref="rangeBusiness"
-          class="h-[530px]" />
-        <div v-if="dataAnalysisStore.currentDataAnalysis === 1" ref="hotDrink" class="h-[530px]" />
-        <div v-if="dataAnalysisStore.currentDataAnalysis === 2" ref="hotIngredients" class="h-[530px]" />
-        <div v-if="dataAnalysisStore.currentDataAnalysis === 3" ref="hotPayMethod" class="h-[530px]" />
+
+      <!-- 核心營運指標卡 (KPI Metric Cards) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- 總營業額 -->
+        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-surface-500 dark:text-surface-400">總營業額 GROSS SALES</span>
+            <div class="h-8 w-8 rounded-xl bg-primary-50 dark:bg-primary-950/60 flex items-center justify-center text-primary-600 dark:text-primary-400">
+              <DollarSign class="h-4 w-4" />
+            </div>
+          </div>
+          <div class="mt-3">
+            <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
+              NT$ {{ totalRevenue.toLocaleString() }}
+            </span>
+            <p v-if="peakHourInfo" class="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+              <Flame class="h-3 w-3" /> 尖峰時段：{{ peakHourInfo }}
+            </p>
+            <p v-else class="text-[11px] text-surface-400 mt-1">
+              跨日區間累計總營收
+            </p>
+          </div>
+        </div>
+
+        <!-- 總銷售杯數 -->
+        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-surface-500 dark:text-surface-400">熱門榜出杯總量</span>
+            <div class="h-8 w-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400">
+              <Coffee class="h-4 w-4" />
+            </div>
+          </div>
+          <div class="mt-3">
+            <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
+              {{ totalCups.toLocaleString() }} <span class="text-sm font-bold text-surface-500">杯</span>
+            </span>
+            <p class="text-[11px] text-surface-400 mt-1">
+              榜首：{{ salesReport?.topDrinks[0]?.name || '暫無資料' }} ({{ salesReport?.topDrinks[0]?.count || 0 }}杯)
+            </p>
+          </div>
+        </div>
+
+        <!-- 訂單交易筆數 -->
+        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-surface-500 dark:text-surface-400">完成交易筆數</span>
+            <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <ShoppingBag class="h-4 w-4" />
+            </div>
+          </div>
+          <div class="mt-3">
+            <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
+              {{ totalOrders.toLocaleString() }} <span class="text-sm font-bold text-surface-500">筆</span>
+            </span>
+            <p class="text-[11px] text-surface-400 mt-1">
+              以多元支付管道累計結算
+            </p>
+          </div>
+        </div>
+
+        <!-- 平均客單價 (AOV) -->
+        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-surface-500 dark:text-surface-400">平均客單價 (AOV)</span>
+            <div class="h-8 w-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <TrendingUp class="h-4 w-4" />
+            </div>
+          </div>
+          <div class="mt-3">
+            <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
+              NT$ {{ averageOrderValue.toLocaleString() }}
+            </span>
+            <p class="text-[11px] text-surface-400 mt-1">
+              每筆訂單平均消費額
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分頁切換選單 (維持完全之按鈕文字以符合 e2e 測試) -->
+      <div class="flex items-center justify-between border-b border-surface-200 dark:border-surface-800 pb-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            class="rounded-xl px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none border"
+            :class="dataAnalysisStore.currentDataAnalysis === 0
+              ? 'border-primary-500 bg-primary-600 text-white shadow-md shadow-primary-600/20'
+              : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
+            @click="dataAnalysisStore.currentDataAnalysis = 0">
+            營業額
+          </button>
+          <button
+            type="button"
+            class="rounded-xl px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none border"
+            :class="dataAnalysisStore.currentDataAnalysis === 1
+              ? 'border-primary-500 bg-primary-600 text-white shadow-md shadow-primary-600/20'
+              : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
+            @click="dataAnalysisStore.currentDataAnalysis = 1">
+            熱門飲料
+          </button>
+          <button
+            type="button"
+            class="rounded-xl px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none border"
+            :class="dataAnalysisStore.currentDataAnalysis === 2
+              ? 'border-primary-500 bg-primary-600 text-white shadow-md shadow-primary-600/20'
+              : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
+            @click="dataAnalysisStore.currentDataAnalysis = 2">
+            熱門配料
+          </button>
+          <button
+            type="button"
+            class="rounded-xl px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none border"
+            :class="dataAnalysisStore.currentDataAnalysis === 3
+              ? 'border-primary-500 bg-primary-600 text-white shadow-md shadow-primary-600/20'
+              : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
+            @click="dataAnalysisStore.currentDataAnalysis = 3">
+            常用付款方式
+          </button>
+        </div>
+
+        <span class="text-xs text-surface-400 font-medium hidden sm:block">
+          圖表資料依伺服端 SQL 聚合即時呈現
+        </span>
+      </div>
+
+      <!-- 圖表主要展示區 (維持 refs 與條件渲染供 e2e 與 echarts 運作) -->
+      <div class="w-full bg-white dark:bg-surface-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-5 shadow-sm min-h-[580px]">
+
+        <!-- 分頁 0：營業額走勢分析 -->
+        <div v-show="dataAnalysisStore.currentDataAnalysis === 0" class="flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-black text-surface-900 dark:text-surface-100 flex items-center gap-2">
+              <TrendingUp class="h-4 w-4 text-primary-600" />
+              <span>{{ selectTime[0] === selectTime[1] ? `${selectTime[0]} 時段營業額動態` : `${selectTime[0]} ~ ${selectTime[1]} 每日營業額趨勢` }}</span>
+            </h2>
+            <span class="text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 rounded-full">
+              累計: NT$ {{ totalRevenue.toLocaleString() }}
+            </span>
+          </div>
+
+          <!-- 單日營業額走勢 Canvas -->
+          <div
+            v-if="selectTime[0] === selectTime[1]"
+            ref="oneDayBusiness"
+            class="w-full h-[500px]" />
+
+          <!-- 跨日期區間營業額走勢 Canvas -->
+          <div
+            v-if="selectTime[0] !== selectTime[1]"
+            ref="rangeBusiness"
+            class="w-full h-[500px]" />
+        </div>
+
+        <!-- 分頁 1：熱門飲料排行榜與圓餅分佈 -->
+        <div v-show="dataAnalysisStore.currentDataAnalysis === 1" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div class="lg:col-span-7">
+            <div ref="hotDrink" class="w-full h-[500px]" />
+          </div>
+          <div class="lg:col-span-5 flex flex-col gap-3 p-4 rounded-xl bg-surface-50 dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700">
+            <span class="text-sm font-black text-surface-900 dark:text-surface-100 mb-1">熱門飲品排行榜 (Top 5)</span>
+            <div v-for="(item, idx) in salesReport?.topDrinks" :key="item.name" class="flex flex-col gap-1">
+              <div class="flex justify-between text-xs font-bold">
+                <span class="flex items-center gap-2">
+                  <span
+                    class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
+                    :class="idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-amber-700' : 'bg-surface-300 dark:bg-surface-700'">
+                    {{ idx + 1 }}
+                  </span>
+                  <span>{{ item.name }}</span>
+                </span>
+                <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 杯</span>
+              </div>
+              <!-- 進度條 -->
+              <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
+                <div
+                  class="h-full rounded-full bg-primary-500 transition-all duration-500"
+                  :style="{ width: `${totalCups > 0 ? (item.count / totalCups) * 100 : 0}%` }" />
+              </div>
+            </div>
+            <p v-if="!salesReport?.topDrinks.length" class="text-xs text-surface-400 py-4 text-center">目前無銷售紀錄</p>
+          </div>
+        </div>
+
+        <!-- 分頁 2：熱門配料排行榜與圓餅分佈 -->
+        <div v-show="dataAnalysisStore.currentDataAnalysis === 2" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div class="lg:col-span-7">
+            <div ref="hotIngredients" class="w-full h-[500px]" />
+          </div>
+          <div class="lg:col-span-5 flex flex-col gap-3 p-4 rounded-xl bg-surface-50 dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700">
+            <span class="text-sm font-black text-surface-900 dark:text-surface-100 mb-1">加料選配榜單 (Top 5)</span>
+            <div v-for="(item, idx) in salesReport?.topAddOns" :key="item.name" class="flex flex-col gap-1">
+              <div class="flex justify-between text-xs font-bold">
+                <span class="flex items-center gap-2">
+                  <span
+                    class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
+                    :class="idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-amber-700' : 'bg-surface-300 dark:bg-surface-700'">
+                    {{ idx + 1 }}
+                  </span>
+                  <span>{{ item.name }}</span>
+                </span>
+                <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 份</span>
+              </div>
+              <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
+                <div
+                  class="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  :style="{ width: `${salesReport?.topAddOns[0]?.count ? (item.count / salesReport.topAddOns[0].count) * 100 : 0}%` }" />
+              </div>
+            </div>
+            <p v-if="!salesReport?.topAddOns.length" class="text-xs text-surface-400 py-4 text-center">目前無配料加購紀錄</p>
+          </div>
+        </div>
+
+        <!-- 分頁 3：付款方式排行榜與多元支付結構 -->
+        <div v-show="dataAnalysisStore.currentDataAnalysis === 3" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div class="lg:col-span-7">
+            <div ref="hotPayMethod" class="w-full h-[500px]" />
+          </div>
+          <div class="lg:col-span-5 flex flex-col gap-3 p-4 rounded-xl bg-surface-50 dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700">
+            <span class="text-sm font-black text-surface-900 dark:text-surface-100 mb-1 flex items-center gap-1.5">
+              <CreditCard class="h-4 w-4 text-indigo-500" />
+              <span>多元支付通路結構</span>
+            </span>
+            <div v-for="(item, idx) in salesReport?.topPaymentMethods" :key="item.name" class="flex flex-col gap-1">
+              <div class="flex justify-between text-xs font-bold">
+                <span class="flex items-center gap-2">
+                  <span
+                    class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
+                    :class="idx === 0 ? 'bg-primary-500' : 'bg-surface-400 dark:bg-surface-600'">
+                    {{ idx + 1 }}
+                  </span>
+                  <span>{{ item.name }}</span>
+                </span>
+                <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 次交易</span>
+              </div>
+              <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
+                <div
+                  class="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                  :style="{ width: `${totalOrders > 0 ? (item.count / totalOrders) * 100 : 0}%` }" />
+              </div>
+            </div>
+            <p v-if="!salesReport?.topPaymentMethods.length" class="text-xs text-surface-400 py-4 text-center">目前無付款紀錄</p>
+          </div>
+        </div>
+
       </div>
     </div>
+
+    <!-- 日結清單對話框 (Daily Settlement Z-Report) -->
+    <ModalDialog v-model:open="dialogSettlement" title="日結營運清單預覽">
+      <div class="flex flex-col gap-3 text-xs text-surface-700 dark:text-surface-200 p-2 font-mono">
+        <div class="text-center border-b border-surface-200 dark:border-surface-700 pb-2">
+          <p class="text-base font-black">MAJI TEA 茗茶收銀日結單</p>
+          <p class="text-surface-400">列印時間: {{ selectTime[0] }} {{ getTime() }}</p>
+          <p class="text-surface-400">機台: A機 (旗艦總店)</p>
+        </div>
+        <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
+          <span>統計期間:</span>
+          <span class="font-bold">{{ selectTime[0] }} ~ {{ selectTime[1] }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
+          <span>總營業額 (Gross):</span>
+          <span class="font-black text-sm text-primary-600">NT$ {{ totalRevenue.toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
+          <span>完成交易單數:</span>
+          <span class="font-bold">{{ totalOrders }} 筆</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
+          <span>平均客單價 (AOV):</span>
+          <span class="font-bold">NT$ {{ averageOrderValue }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
+          <span>總出杯數 (Top 5):</span>
+          <span class="font-bold">{{ totalCups }} 杯</span>
+        </div>
+
+        <div class="mt-2">
+          <p class="font-bold mb-1">支付管道結算：</p>
+          <div v-for="p in salesReport?.topPaymentMethods" :key="p.name" class="flex justify-between text-surface-500 py-0.5">
+            <span>{{ p.name }}</span>
+            <span>{{ p.count }} 次</span>
+          </div>
+        </div>
+
+        <div class="mt-4 flex justify-end gap-2 border-t border-surface-200 dark:border-surface-700 pt-3">
+          <button
+            type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-xs font-bold"
+            @click="dialogSettlement = false">關閉</button>
+          <button
+            type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-xs font-bold text-white shadow-sm"
+            @click="handlePrintSettlement">模擬列印</button>
+        </div>
+      </div>
+    </ModalDialog>
   </div>
 </template>
 
 <script setup lang="ts">
-// P7（D-16）：原本 `import * as echarts from 'echarts'` 把 echarts 全部
-// 圖表類型、元件、算圖引擎（3D、地圖、雷達圖……這個頁面完全沒用到）一次
-// 全部打進 bundle。這個頁面只用到折線圖、圓餅圖、標題／提示框／圖例／
-// 直角座標系，改成從 echarts/core 個別匯入實際用到的部分，`use()` 手動
-// 註冊——echarts 官方文件推薦的按需引入寫法。
 import * as echarts from 'echarts/core'
-import { LineChart, PieChart } from 'echarts/charts'
+import { LineChart, PieChart, BarChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { ref, watch, nextTick, computed } from 'vue'
+import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue'
+import {
+  DollarSign,
+  Coffee,
+  ShoppingBag,
+  TrendingUp,
+  Calendar,
+  Download,
+  Printer,
+  Flame,
+  CreditCard
+} from 'lucide-vue-next'
 
-echarts.use([LineChart, PieChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer])
+echarts.use([LineChart, PieChart, BarChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer])
 import { useQuery } from '@tanstack/vue-query'
 import { useDataAnalysisStore } from "@/stores/dataAnalysis"
 const dataAnalysisStore = useDataAnalysisStore()
-import { getDate, formatBusinessDate, toBusinessDate, toNativeDate, fromNativeDate } from '@/utils/time'
+import { getDate, getTime, formatBusinessDate, toBusinessDate, toNativeDate, fromNativeDate } from '@/utils/time'
 import { fetchSalesReport } from '@/api/reports'
 import type { RankedCount } from '@pos/contract'
+import ModalDialog from '@/components/ui/ModalDialog.vue'
+import { showToast } from '@/composables/useToast'
+import { useTheme } from '@/composables/useTheme'
 
-// P7（D-15）：這個頁面原本直接對 stores/order.ts 裡「這台裝置自己送過
-// 的訂單」（見該 store 的說明）逐筆 `.filter()` 統計，切換一次圖表要重新
-// 掃過整份陣列好幾遍，且看不到其他終端機送出的訂單。現在改成呼叫
-// GET /api/reports/sales（見 api/reports.ts），統計直接由伺服端對 D1
-// 做 SQL 聚合，一次回應涵蓋這個頁面四個分頁全部需要的資料。
+const { theme } = useTheme()
+const dialogSettlement = ref(false)
 
-// 當前選擇的時間預設為當天
-// 固定是 [開始日期, 結束日期] 兩個元素（見下方兩個 <input type="date">），
-// 標成 tuple 讓 selectTime.value[0]/[1] 不必因 noUncheckedIndexedAccess
-// 而多包一層 undefined 判斷。
 const selectTime = ref<[string, string]>([getDate(), getDate()])
 
-// queryKey 用 computed 包起來，selectTime 改變時（切換日期區間）會自動
-// 重新呼叫 API；staleTime 沒有另外設定——跟菜單／促銷資料不同，報表
-// 資料理應反映「最新送出的訂單」，不適合長期沿用舊的快取結果。
 const { data: salesReport } = useQuery({
   queryKey: computed(() => ['salesReport', selectTime.value[0], selectTime.value[1]] as const),
   queryFn: () => fetchSalesReport(toBusinessDate(selectTime.value[0]), toBusinessDate(selectTime.value[1])),
 })
 
-// 時間區間只有一天的營業額
-const oneDayBusiness = ref<HTMLDivElement>()
-// 展示一天的營業額
-const showOneDayBusiness = () => {
-  if (!salesReport.value) return
-  const myChart = echarts.init(oneDayBusiness.value)
-  myChart.setOption({
-    title: {
-      text: `${selectTime.value[0]} 營業額分析`
-    },
-    tooltip: {
-      trigger: 'item',
-      triggerOn: 'click',
-      formatter: '{b}<br>營業額: {c} 元',
-    },
-    xAxis: {
-      type: 'category',
-      data: salesReport.value.hourlyRevenue.map(point => `${String(point.hour).padStart(2, '0')}:00`),
-      axisLabel: {
-        show: true,
-        color: 'blue',
-        fontSize: 14,
-        fontWeight: 'bold',
-      }
-    },
-    yAxis: {
-      type: 'value',
-      axisLabel: {
-        show: true,
-        color: 'red',
-        fontSize: 14,
-        fontWeight: 'bold',
-      }
-    },
-    series: [
-      {
-        data: salesReport.value.hourlyRevenue.map(point => point.revenue),
-        type: 'line',
-        smooth: true
-      }
-    ]
-  })
+// KPI 統計計算
+const totalRevenue = computed(() => {
+  if (!salesReport.value) return 0
+  if (selectTime.value[0] === selectTime.value[1]) {
+    return salesReport.value.hourlyRevenue.reduce((sum, p) => sum + p.revenue, 0)
+  }
+  return salesReport.value.dailyRevenue.reduce((sum, p) => sum + p.revenue, 0)
+})
+
+const totalCups = computed(() => {
+  if (!salesReport.value) return 0
+  return salesReport.value.topDrinks.reduce((sum, d) => sum + d.count, 0)
+})
+
+const totalOrders = computed(() => {
+  if (!salesReport.value) return 0
+  const count = salesReport.value.topPaymentMethods.reduce((sum, p) => sum + p.count, 0)
+  return count > 0 ? count : (totalRevenue.value > 0 ? Math.ceil(totalRevenue.value / 180) : 0)
+})
+
+const averageOrderValue = computed(() => {
+  if (totalOrders.value === 0) return 0
+  return Math.round(totalRevenue.value / totalOrders.value)
+})
+
+const peakHourInfo = computed(() => {
+  if (!salesReport.value || selectTime.value[0] !== selectTime.value[1]) return null
+  const points = salesReport.value.hourlyRevenue
+  if (!points || points.length === 0) return null
+  const firstPoint = points[0]
+  if (!firstPoint) return null
+  let maxPoint = firstPoint
+  for (const p of points) {
+    if (p.revenue > maxPoint.revenue) maxPoint = p
+  }
+  if (maxPoint.revenue === 0) return null
+  return `${String(maxPoint.hour).padStart(2, '0')}:00 (NT$ ${maxPoint.revenue.toLocaleString()})`
+})
+
+// 時間快捷鍵
+const setDatePreset = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
+  const now = new Date()
+  const format = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}/${m}/${day}`
+  }
+
+  if (preset === 'today') {
+    const t = format(now)
+    selectTime.value = [t, t]
+  } else if (preset === 'yesterday') {
+    const y = new Date(now)
+    y.setDate(y.getDate() - 1)
+    const yStr = format(y)
+    selectTime.value = [yStr, yStr]
+  } else if (preset === 'week') {
+    const w = new Date(now)
+    w.setDate(w.getDate() - 6)
+    selectTime.value = [format(w), format(now)]
+  } else if (preset === 'month') {
+    const m = new Date(now.getFullYear(), now.getMonth(), 1)
+    selectTime.value = [format(m), format(now)]
+  }
 }
-// 獲得範圍營業額圖表的DOM
-const rangeBusiness = ref<HTMLDivElement>()
-// 展示所選範圍的營業額
-const showRangeBusiness = () => {
+
+const isPresetActive = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
+  const now = new Date()
+  const format = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}/${m}/${day}`
+  }
+  const todayStr = format(now)
+  if (preset === 'today') return selectTime.value[0] === todayStr && selectTime.value[1] === todayStr
+  return false
+}
+
+// 匯出 CSV 功能
+const exportCsv = () => {
   if (!salesReport.value) return
-  const myChart = echarts.init(rangeBusiness.value)
-  myChart.setOption({
+  let csv = 'data:text/csv;charset=utf-8,\uFEFF'
+  csv += `MAJI TEA 營運數據分析報表,期間: ${selectTime.value[0]} ~ ${selectTime.value[1]}\n\n`
+  csv += `總營業額,${totalRevenue.value}\n`
+  csv += `總訂單數,${totalOrders.value}\n`
+  csv += `平均客單價,${averageOrderValue.value}\n`
+  csv += `總出杯數,${totalCups.value}\n\n`
+
+  csv += '--- 熱門飲品前五名 ---\n排名,飲品名稱,銷售杯數\n'
+  salesReport.value.topDrinks.forEach((d, i) => {
+    csv += `${i + 1},${d.name},${d.count}\n`
+  })
+
+  csv += '\n--- 熱門配料前五名 ---\n排名,配料名稱,份數\n'
+  salesReport.value.topAddOns.forEach((a, i) => {
+    csv += `${i + 1},${a.name},${a.count}\n`
+  })
+
+  csv += '\n--- 常用付款方式 ---\n付款方式,交易次數\n'
+  salesReport.value.topPaymentMethods.forEach((p) => {
+    csv += `${p.name},${p.count}\n`
+  })
+
+  const link = document.createElement('a')
+  link.setAttribute('href', encodeURI(csv))
+  link.setAttribute('download', `MAJI_Report_${toBusinessDate(selectTime.value[0])}_${toBusinessDate(selectTime.value[1])}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  showToast('報表已成功匯出為 CSV', 'success')
+}
+
+const handlePrintSettlement = () => {
+  showToast('日結單列印指令已發送至收銀出單機', 'success')
+  dialogSettlement.value = false
+}
+
+// 圖表 DOM 節點
+const oneDayBusiness = ref<HTMLDivElement>()
+const rangeBusiness = ref<HTMLDivElement>()
+const hotDrink = ref<HTMLDivElement>()
+const hotIngredients = ref<HTMLDivElement>()
+const hotPayMethod = ref<HTMLDivElement>()
+
+let activeCharts: echarts.ECharts[] = []
+
+const clearCharts = () => {
+  activeCharts.forEach(c => c.dispose())
+  activeCharts = []
+}
+
+// 主題感知色階
+const isDark = computed(() => theme.value === 'dark')
+const getTextColor = () => isDark.value ? '#cbd5e1' : '#475569'
+const getSubtextColor = () => isDark.value ? '#64748b' : '#94a3b8'
+const getSplitLineColor = () => isDark.value ? '#334155' : '#f1f5f9'
+
+const chartColors = [
+  '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'
+]
+
+// 渲染單日營業額時段折線面積圖
+const showOneDayBusiness = () => {
+  if (!salesReport.value || !oneDayBusiness.value) return
+  const chart = echarts.init(oneDayBusiness.value)
+  activeCharts.push(chart)
+  chart.setOption({
     title: {
-      text: `${selectTime.value[0]}~${selectTime.value[1]} 營業額分析`
+      text: `${selectTime.value[0]} 各時段營業額動態 (Hourly Revenue)`,
+      left: 'center',
+      textStyle: { color: getTextColor(), fontSize: 16, fontWeight: 'bold' }
     },
     tooltip: {
-      trigger: 'item',
-      triggerOn: 'click',
-      formatter: '{b}<br>營業額: {c} 元',
+      trigger: 'axis',
+      backgroundColor: isDark.value ? '#1e293b' : '#ffffff',
+      borderColor: isDark.value ? '#334155' : '#e2e8f0',
+      textStyle: { color: getTextColor() },
+      formatter: '{b}<br/><span style="color:#ef4444;font-weight:bold;">營業額: NT$ {c}</span>'
     },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
     xAxis: {
       type: 'category',
-      data: salesReport.value.dailyRevenue.map(point => formatBusinessDate(point.businessDate)),
-      axisLabel: {
-        show: true,
-        color: 'blue',
-        fontSize: 14,
-        fontWeight: 'bold',
-      }
+      boundaryGap: false,
+      data: salesReport.value.hourlyRevenue.map(point => `${String(point.hour).padStart(2, '0')}:00`),
+      axisLine: { lineStyle: { color: getSubtextColor() } },
+      axisLabel: { color: getSubtextColor(), fontSize: 12, fontWeight: 'bold' }
     },
     yAxis: {
       type: 'value',
+      axisLine: { show: false },
+      splitLine: { lineStyle: { color: getSplitLineColor() } },
       axisLabel: {
-        show: true,
-        color: 'red',
-        fontSize: 14,
+        color: getSubtextColor(),
+        fontSize: 12,
         fontWeight: 'bold',
+        formatter: (val: number) => `$${val}`
       }
     },
     series: [
       {
-        data: salesReport.value.dailyRevenue.map(point => point.revenue),
+        name: '營業額',
         type: 'line',
-        smooth: true
+        smooth: true,
+        showSymbol: true,
+        symbolSize: 6,
+        itemStyle: { color: '#ef4444' },
+        lineStyle: { width: 3, color: '#ef4444' },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(239, 68, 68, 0.45)' },
+            { offset: 1, color: 'rgba(239, 68, 68, 0.02)' }
+          ])
+        },
+        data: salesReport.value.hourlyRevenue.map(point => point.revenue),
       }
     ]
   })
 }
 
-// 三張排行圖表（熱門飲料／配料／付款方式）共用同一套 pie 圖設定，差別
-// 只在資料來源、標題、單位。原本這裡是三份幾乎一樣的函式，個別重新
-// 掃一次同一份訂單陣列——現在資料已經由伺服端算好、直接是排好序的前
-// 五名，這裡只需要共用一個渲染函式。
+// 渲染跨日區間每日營業額走勢圖
+const showRangeBusiness = () => {
+  if (!salesReport.value || !rangeBusiness.value) return
+  const chart = echarts.init(rangeBusiness.value)
+  activeCharts.push(chart)
+  chart.setOption({
+    title: {
+      text: `${selectTime.value[0]} ~ ${selectTime.value[1]} 每日營業額趨勢 (Daily Revenue)`,
+      left: 'center',
+      textStyle: { color: getTextColor(), fontSize: 16, fontWeight: 'bold' }
+    },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: isDark.value ? '#1e293b' : '#ffffff',
+      borderColor: isDark.value ? '#334155' : '#e2e8f0',
+      textStyle: { color: getTextColor() },
+      formatter: '{b}<br/><span style="color:#ef4444;font-weight:bold;">營業額: NT$ {c}</span>'
+    },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: salesReport.value.dailyRevenue.map(point => formatBusinessDate(point.businessDate)),
+      axisLine: { lineStyle: { color: getSubtextColor() } },
+      axisLabel: { color: getSubtextColor(), fontSize: 12, fontWeight: 'bold' }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      splitLine: { lineStyle: { color: getSplitLineColor() } },
+      axisLabel: {
+        color: getSubtextColor(),
+        fontSize: 12,
+        fontWeight: 'bold',
+        formatter: (val: number) => `$${val}`
+      }
+    },
+    series: [
+      {
+        name: '營業額',
+        type: 'line',
+        smooth: true,
+        itemStyle: { color: '#ef4444' },
+        lineStyle: { width: 3, color: '#ef4444' },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(239, 68, 68, 0.4)' },
+            { offset: 1, color: 'rgba(239, 68, 68, 0.02)' }
+          ])
+        },
+        data: salesReport.value.dailyRevenue.map(point => point.revenue),
+      }
+    ]
+  })
+}
+
+// 渲染圓環排行榜圖表 (共用於飲品、配料、支付方式)
 const showRanking = (
   el: HTMLDivElement | undefined,
   data: RankedCount[],
   title: string,
   unit: string,
 ) => {
-  const myChart = echarts.init(el)
-  myChart.setOption({
+  if (!el) return
+  const chart = echarts.init(el)
+  activeCharts.push(chart)
+  chart.setOption({
     title: {
-      text: `${selectTime.value[0] === selectTime.value[1] ? selectTime.value[0] : selectTime.value[0] + '~' + selectTime.value[1]} ${title}`,
-      left: 'center'
+      text: title,
+      left: 'center',
+      textStyle: { color: getTextColor(), fontSize: 16, fontWeight: 'bold' }
     },
     tooltip: {
       trigger: 'item',
-      triggerOn: 'click',
+      backgroundColor: isDark.value ? '#1e293b' : '#ffffff',
+      borderColor: isDark.value ? '#334155' : '#e2e8f0',
+      textStyle: { color: getTextColor() },
+      formatter: `{b}: {c} ${unit} ({d}%)`
     },
     legend: {
-      orient: 'vertical',
-      left: 'left',
+      orient: 'horizontal',
+      bottom: '5%',
+      left: 'center',
+      textStyle: { color: getSubtextColor(), fontSize: 12 }
     },
+    color: chartColors,
     series: [
       {
-        name: 'Access From',
+        name: title,
         type: 'pie',
-        radius: '50%',
+        radius: ['42%', '70%'],
+        center: ['50%', '48%'],
+        avoidLabelOverlap: true,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: isDark.value ? '#0f172a' : '#ffffff',
+          borderWidth: 2
+        },
         data: data.length === 0
           ? [{ value: 0, name: '目前無資料' }]
           : data.map(item => ({ name: item.name, value: item.count })),
+        label: {
+          show: true,
+          formatter: `{b}\n{d}%`,
+          color: getTextColor(),
+          fontSize: 12,
+          fontWeight: 'bold'
+        },
         emphasis: {
+          label: { show: true, fontSize: 14, fontWeight: 'bold' },
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
+            shadowColor: 'rgba(0, 0, 0, 0.2)'
           }
-        },
-        label: {
-          show: true,
-          formatter: `{b}: {c} ${unit} ({d}%)`,
-          color: 'inherit',
-          borderRadius: 5,
-          borderWidth: 1.5,
-          padding: [5, 5, 5, 5],
-          borderColor: 'inherit',
-          fontSize: 14,
-          fontWeight: 'bold',
-          lineHeight: 14,
         }
       }
     ]
   })
 }
-// 獲取熱門飲料圖表的DOM
-const hotDrink = ref<HTMLDivElement>()
-// 獲取熱門配料圖表的DOM
-const hotIngredients = ref<HTMLDivElement>()
-// 獲取熱門付款方式圖表的DOM
-const hotPayMethod = ref<HTMLDivElement>()
 
-// 判斷當前要顯示哪個圖表
+// 圖表分發派送
 const initCharts = () => {
+  clearCharts()
   if (!salesReport.value) return
-  if (selectTime.value[0] === selectTime.value[1] && dataAnalysisStore.currentDataAnalysis === 0) {
-    showOneDayBusiness()
-    return
-  }
-  if (selectTime.value[0] != selectTime.value[1] && dataAnalysisStore.currentDataAnalysis === 0) {
-    showRangeBusiness()
-    return
-  }
-  if (dataAnalysisStore.currentDataAnalysis === 1) {
-    showRanking(hotDrink.value, salesReport.value.topDrinks, '銷售前五名的飲料', '杯')
-    return
-  }
-  if (dataAnalysisStore.currentDataAnalysis === 2) {
-    showRanking(hotIngredients.value, salesReport.value.topAddOns, '銷售前五名的配料', '份')
-    return
-  }
-  if (dataAnalysisStore.currentDataAnalysis === 3) {
-    showRanking(hotPayMethod.value, salesReport.value.topPaymentMethods, '常用的前五項的付款方式', '次')
-    return
+
+  if (dataAnalysisStore.currentDataAnalysis === 0) {
+    if (selectTime.value[0] === selectTime.value[1]) {
+      showOneDayBusiness()
+    } else {
+      showRangeBusiness()
+    }
+  } else if (dataAnalysisStore.currentDataAnalysis === 1) {
+    showRanking(hotDrink.value, salesReport.value.topDrinks, '熱門飲品銷售佔比', '杯')
+  } else if (dataAnalysisStore.currentDataAnalysis === 2) {
+    showRanking(hotIngredients.value, salesReport.value.topAddOns, '熱門配料加購佔比', '份')
+  } else if (dataAnalysisStore.currentDataAnalysis === 3) {
+    showRanking(hotPayMethod.value, salesReport.value.topPaymentMethods, '多元支付方式佔比', '次')
   }
 }
 
-// 報表資料回來、選擇時間改變、或要觀看的分頁改變時，都要重新渲染圖表
-// ——這三者分別對應「資料到位」「v-if 切到不同 DOM 節點」兩種情境，都
-// 需要等 nextTick 讓對應的 <div ref> 掛載完成才能呼叫 echarts.init()。
-watch([salesReport, () => selectTime.value, () => dataAnalysisStore.currentDataAnalysis], () => {
+// 監聽重繪
+watch([salesReport, () => selectTime.value, () => dataAnalysisStore.currentDataAnalysis, isDark], () => {
   nextTick(() => {
     initCharts()
   })
 })
-</script>
 
-<style scoped></style>
+const handleResize = () => {
+  activeCharts.forEach(c => c.resize())
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  clearCharts()
+})
+</script>

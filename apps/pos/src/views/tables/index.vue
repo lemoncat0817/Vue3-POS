@@ -1,21 +1,42 @@
 <template>
-  <div class="w-full flex items-center flex-col overflow-y-auto">
-    <div class="w-4/5 mt-10 flex flex-col items-center">
-      <h1 class="text-3xl font-black text-surface-900 dark:text-surface-100">桌況管理</h1>
-    </div>
-    <div class="w-[90%] mt-6 rounded-lg border border-surface-200 bg-white p-4 dark:border-surface-700 dark:bg-surface-900">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4 text-xs text-surface-500 dark:text-surface-400">
-          <span class="flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-success-500"></span>空桌</span>
-          <span class="flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-danger-500"></span>使用中</span>
-          <span class="flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>已預約</span>
+  <div class="w-full flex flex-col items-center overflow-y-auto bg-surface-50/50 dark:bg-surface-950 px-4 py-6 min-h-[calc(100vh-64px)]">
+    <div class="w-full max-w-7xl flex flex-col gap-5">
+      <!-- 頂部標題卡片 -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h1 class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight">桌況管理</h1>
+            <span class="rounded-full bg-primary-50 dark:bg-primary-950/50 px-2.5 py-0.5 text-xs font-bold text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
+              內用席位
+            </span>
+          </div>
+          <p class="mt-1 text-xs lg:text-sm text-surface-500 dark:text-surface-400">
+            監控內用桌況即時狀態、入座備註與席位調配
+          </p>
         </div>
-        <button
-          type="button"
-          class="rounded-lg border border-surface-300 px-3 py-1.5 text-sm font-bold text-surface-700 transition-colors hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
-          :class="{ 'pointer-events-none opacity-40': !canManage }"
-          @click="openAddDialog">新增桌位</button>
+
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2 text-xs lg:text-sm font-bold text-white transition-all hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 select-none"
+            :class="{ 'pointer-events-none opacity-40': !canManage }"
+            @click="openAddDialog">
+            <Plus class="h-4 w-4" />
+            <span>新增桌位</span>
+          </button>
+        </div>
       </div>
+
+      <!-- 桌況狀態卡片 -->
+      <div class="w-full rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm p-4 overflow-hidden">
+        <div class="flex items-center justify-between pb-3 border-b border-surface-100 dark:border-surface-800">
+          <div class="flex items-center gap-4 text-xs font-bold text-surface-600 dark:text-surface-400">
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-success-500 ring-2 ring-success-500/20"></span>空桌</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-danger-500 ring-2 ring-danger-500/20"></span>使用中</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-amber-500/20"></span>已預約</span>
+          </div>
+          <span class="text-xs font-bold text-surface-500">共 {{ tables.length }} 個桌位</span>
+        </div>
 
       <div v-if="tables.length === 0" class="mt-8 py-8 text-center text-surface-400 dark:text-surface-500">還沒有設定任何桌位</div>
       <div v-else class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -81,10 +102,12 @@
         </div>
       </div>
     </ModalDialog>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Plus } from 'lucide-vue-next'
 // P24（規劃書 §10 P24「真實硬體整合與桌況管理」）：新增桌位欄位單純
 // （桌號＋座位數），用 VeeValidate + Zod 的 <Form> 元件，跟 members/
 // index.vue 是同一套模式。桌況切換（空桌／使用中／已預約＋備註）沒有
