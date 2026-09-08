@@ -23,8 +23,22 @@ export default defineConfig({
     baseURL: 'http://localhost:4173/Vue3-POS/',
     trace: 'on-first-retry',
   },
+  // shift.spec.ts 斷言的是一個絕對數字（收班時算出的 expectedCash），
+  // 前提是「這個班別開帳到收班之間，D1 的 orders 表裡不會多出計畫外的
+  // 現金訂單」——但 sumCashSales（見 apps/api/src/routes/shifts.ts）
+  // 掃的是整張 orders 表、用時間區間篩選，不是只看這個班別自己送出的
+  // 訂單。fullyParallel 情境下，只要任何一條「也會用現金送單」的測試
+  // 剛好在這個時間窗內跑，就會把不相干的金額算進來，讓斷言隨機失敗
+  // ——這不是這個測試本身的邏輯錯，是「單店單機、全域只有一個班別」
+  // 這個既有簡化（見 shifts.spec.ts 的說明）在平行測試環境下的必然
+  // 副作用，隨著送單類測試越來越多，撞期機率只會越來越高。用 Playwright
+  // 的 project dependencies 把 shift.spec.ts 獨立成第二個 project，
+  // 等第一個 project（其他所有會送單的測試）全部跑完才開始，讓這個
+  // 班別在整個測試過程中獨佔 orders 表，不需要放寬斷言本身（放寬成
+  // 「至少多少」會讓這個測試沒辦法真的驗證帳差算得精不精準）。
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /shift\.spec\.ts/ },
+    { name: 'chromium-shift', use: { ...devices['Desktop Chrome'] }, testMatch: /shift\.spec\.ts/, dependencies: ['chromium'] },
   ],
   webServer: [
     {

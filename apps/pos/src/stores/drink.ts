@@ -715,6 +715,15 @@ export const useDrinkStore = defineStore('drink', () => {
   // pinia-plugin-persistedstate 還原持久化狀態時，drinkNotPay 被重新賦值
   // 觸發這個 watch，搶在 discountStore 也還原完成前就把它重置成 0。
   const cartClearedNotice = ref(0)
+  // P14（規劃書 §10 P0「掛單取單」）：掛單也會把 drinkNotPay 清空（把
+  // 目前的購物車搬進 Dexie 之後清掉），跟結帳後清空是同一個 watch 觸發
+  // 點，但「已掛單」跟「已無品項，套用優惠券以及加購的袋子數量已重置」
+  // 這兩句話講的是完全不同的事——掛單當下已經另外彈過「已掛單」的
+  // toast（見 components/checkout/ParkedOrdersPanel.vue），不需要這裡
+  // 再疊加一次語意不符的提示。這個旗標只抑制「彈提示」這個動作本身，
+  // 「清空袋子數量／重置優惠券」這兩件事不論是哪種原因清空都照做
+  // ——掛單之後本來就要把工作區還原成可以服務下一位客人的乾淨狀態。
+  const suppressClearedNotice = ref(false)
   // 判定待付款清單是否清空
   watch(() => drinkNotPay.value, () => {
     // 如果未初始化，直接返回
@@ -729,7 +738,9 @@ export const useDrinkStore = defineStore('drink', () => {
       discountStore.currentPercentDiscount = 0
       discountStore.percentSelectingDiscountId = 0
       discountStore.currentDiscountName = ''
-      cartClearedNotice.value++
+      if (!suppressClearedNotice.value) {
+        cartClearedNotice.value++
+      }
     }
   })
 
@@ -790,6 +801,7 @@ export const useDrinkStore = defineStore('drink', () => {
     useDiscountPrice,
     drinkTotalMoney,
     cartClearedNotice,
+    suppressClearedNotice,
     currentDrinkCount,
   }
 }, {

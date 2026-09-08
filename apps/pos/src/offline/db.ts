@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { CreateOrderRequest } from '@pos/contract'
+import type { CartLineItem, FormNumeric, OrderChannel } from '@/types'
 
 /**
  * 離線送單佇列（P3：規劃書 §14「建立 Dexie schema 與 outbox」）。
@@ -26,12 +27,52 @@ export interface OutboxOrder {
   createdAt: number
 }
 
+/**
+ * 掛單（P14：規劃書 §10 P0「掛單取單」）。
+ *
+ * 「掛單」讓店員把目前正在點的購物車暫存起來、先服務下一位客人，稍後
+ * 再「取單」繼續——跟送出訂單（outboxOrders）是完全不同的東西：掛單
+ * 從來沒有變成一筆真正的訂單，不會出現在訂單列表，也不需要伺服端
+ * 知道它存在。這裡只存回復購物車所需要的最小狀態：品項清單、袋子
+ * 數量、套用中的折價券（見 stores/discount.ts 對應欄位的說明），
+ * 「內用外帶」則交給呼叫端（ParkedOrdersPanel.vue）自己傳入目前選擇。
+ *
+ * 只存在單一終端機的本機（跟 outboxOrders 一樣），不會同步到伺服端或
+ * 其他終端——單店單機情境下這是務實的取捨，理由跟 shifts 不做多終端
+ * 隔離一致（見 apps/api/src/db/schema.ts 的 shifts 說明）。
+ */
+export interface ParkedOrder {
+  /** ULID，同時是這張表的主鍵。 */
+  id: string
+  createdAt: number
+  /** 選填備註，方便店員辨認「這是哪一桌／哪位客人」，例如「3號桌」。 */
+  note: string
+  lines: CartLineItem[]
+  bagCount: number
+  orderChannel: OrderChannel
+  moneyDiscountId: FormNumeric
+  percentDiscountId: FormNumeric
+  currentMoneyDiscount: FormNumeric
+  currentPercentDiscount: FormNumeric
+  currentDiscountName: string
+}
+
 export const offlineDb = new Dexie('pos-offline') as Dexie & {
   outboxOrders: EntityTable<OutboxOrder, 'id'>
+  parkedOrders: EntityTable<ParkedOrder, 'id'>
 }
 
 // createdAt 加索引：SyncWorker 需要依建立順序（等同送單順序）依序處理，
 // 避免同一天的訂單序號因為佇列處理順序打亂而錯位。
 offlineDb.version(1).stores({
   outboxOrders: 'id, status, createdAt',
+})
+
+// P14：新增 parkedOrders 表——沿用同一個 Dexie 資料庫，不另外開一個，
+// 理由跟兩者都是「這台終端機的本機暫存資料」一致，沒有必要拆成兩個
+// 資料庫。version(2) 依 Dexie 慣例要重複宣告未變動的既有表（見
+// Dexie 文件的 schema 版本演進說明），不是又重新定義一次 outboxOrders。
+offlineDb.version(2).stores({
+  outboxOrders: 'id, status, createdAt',
+  parkedOrders: 'id, createdAt',
 })

@@ -117,6 +117,9 @@ class="border border-surface-300 bg-white text-surface-700 hover:bg-surface-50 d
               <button
 class="border border-surface-300 bg-white text-surface-700 hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-100 dark:hover:bg-surface-800 md:text-[10px] text-[8px] font-bold rounded-lg mr-2 px-1 select-none 2xl:text-base xl:text-sm lg:text-xs"
                 @click="clearNotPay">清空全部品項</button>
+              <!-- 掛單／取單（P14：規劃書 §10 P0「掛單取單」）——見
+                   components/checkout/ParkedOrdersPanel.vue 的說明。 -->
+              <ParkedOrdersPanel v-model:order-channel="orderChannel" />
               <!-- 結帳／付款 -->
               <!-- P6（規劃書 §10 P0「混合支付」）：原本「先選一種付款
                    方式→再按送出訂單→彈出一次性確認框」的三步流程，改成
@@ -440,6 +443,7 @@ import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import PaymentPanel, { type TenderDraft } from '@/components/checkout/PaymentPanel.vue'
 import ShiftPanel from '@/components/checkout/ShiftPanel.vue'
+import ParkedOrdersPanel from '@/components/checkout/ParkedOrdersPanel.vue'
 import { alert, confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useDrinkStore } from '@/stores/drink'
