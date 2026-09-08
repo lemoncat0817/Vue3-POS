@@ -254,7 +254,13 @@
                 </th>
                 <th class="w-12 px-3 py-3.5 text-center" />
                 <th v-for="header in leafHeaders" :key="header.id" class="px-4 py-3.5">
-                  {{ header.isPlaceholder ? '' : header.column.columnDef.header }}
+                  <!-- UI-4：header 不能直接用 {{ }} 文字插值——多數欄位
+                       的 header 是純字串沒問題，但金額欄的 header 改用
+                       render function（靠右對齊）之後，文字插值只會把
+                       函式原始碼字串化印出來。跟 cell 一樣一律透過
+                       FlexRender 呼叫，字串與函式兩種 columnDef.header
+                       都能正確渲染。 -->
+                  <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header" :props="header.getContext()" />
                 </th>
               </tr>
             </thead>
