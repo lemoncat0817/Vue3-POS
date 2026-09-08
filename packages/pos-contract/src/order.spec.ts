@@ -24,6 +24,7 @@ const validRequest = {
   bagCount: 0,
   tenders: [{ method: '現金', amount: 80 }],
   appliedCoupon: { type: 'none' as const },
+  orderChannel: '外帶' as const,
 }
 
 describe('createOrderRequestSchema', () => {
@@ -101,6 +102,14 @@ describe('createOrderRequestSchema', () => {
         lines: [{ ...validLine, addList: '其他字串' }],
       }).success,
     ).toBe(false)
+  })
+
+  it('orderChannel 只接受內用／外帶（P13：規劃書 §10 P0「內用外帶」）', () => {
+    expect(createOrderRequestSchema.safeParse({ ...validRequest, orderChannel: '內用' }).success).toBe(true)
+    expect(createOrderRequestSchema.safeParse({ ...validRequest, orderChannel: '外送' }).success).toBe(false)
+    const withoutChannel: Record<string, unknown> = { ...validRequest }
+    delete withoutChannel.orderChannel
+    expect(createOrderRequestSchema.safeParse(withoutChannel).success).toBe(false)
   })
 })
 

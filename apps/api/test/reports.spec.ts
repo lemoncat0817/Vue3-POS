@@ -32,6 +32,7 @@ function buildRequest(overrides: Record<string, unknown> = {}) {
     bagCount: 0,
     tenders: [{ method: '現金', amount: 160 }],
     appliedCoupon: { type: 'none' },
+    orderChannel: '外帶',
     ...overrides,
   }
 }

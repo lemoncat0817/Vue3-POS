@@ -36,6 +36,7 @@ function buildRequest(overrides: Record<string, unknown> = {}) {
     bagCount: 0,
     tenders: [{ method: '現金', amount: 160 }],
     appliedCoupon: { type: 'none' },
+    orderChannel: '外帶',
     ...overrides,
   }
 }
@@ -74,6 +75,37 @@ describe('POST /api/orders', () => {
     expect(body.orderTotalPrice).toBe(150)
     expect(body.orderCupCount).toBe(2)
     expect(body.orderId).toBe('202406101')
+  })
+
+  it('orderChannel 原封不動存回並回傳（P13：規劃書 §10 P0「內用外帶」）', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ orderChannel: '內用' })),
+    })
+    expect(res.status).toBe(201)
+    const body = await readJson(res)
+    expect(body.orderChannel).toBe('內用')
+
+    const list = await readJson(await app.request('/api/orders'))
+    expect(list.find((o: { orderId: string }) => o.orderId === body.orderId).orderChannel).toBe('內用')
+  })
+
+  it('沒有帶 orderChannel 時拒絕，回傳 400', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const withoutChannel: Record<string, unknown> = buildRequest()
+    delete withoutChannel.orderChannel
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(withoutChannel),
+    })
+    expect(res.status).toBe(400)
   })
 
   it('同一營業日內連續建立訂單，編號依序遞增', async () => {

@@ -284,6 +284,18 @@ const columns = [
   columnHelper.accessor('orderId', { header: '訂單編號' }),
   columnHelper.accessor('orderTime', { header: '訂單時間' }),
   columnHelper.accessor('staff', { header: '服務人員' }),
+  // P13（規劃書 §10 P0「內用外帶」）：golden orders 這類舊資料沒有這
+  // 個欄位（見 stores/order.ts 的 GOLDEN_ORDERS 說明），用 `?? '外帶'`
+  // 兜底，理由跟 refundedAmountOf() 一致。
+  columnHelper.accessor((row) => row.orderChannel ?? '外帶', {
+    id: 'orderChannel',
+    header: '內用／外帶',
+    cell: (info) => h(
+      'span',
+      { class: 'rounded-full bg-info-100 px-2 py-0.5 text-xs font-bold text-info-700 dark:bg-info-950 dark:text-info-300' },
+      info.getValue(),
+    ),
+  }),
   columnHelper.accessor('orderStatus', {
     header: '訂單狀態',
     cell: (info) => {

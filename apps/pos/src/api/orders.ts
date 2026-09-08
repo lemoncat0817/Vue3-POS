@@ -1,6 +1,6 @@
 import { createOrderRequestSchema, orderSchema, type AppliedCoupon, type CreateOrderRequest, type Order, type OrderStatus, type RefundInput, type TenderInput } from '@pos/contract'
 import { ulid } from '@pos/domain'
-import type { CartLineItem } from '@/types'
+import type { CartLineItem, OrderChannel } from '@/types'
 import { fetchJson } from './http'
 
 /**
@@ -89,6 +89,7 @@ export function buildCreateOrderRequest(params: {
   bagCount: number
   tenders: TenderInput[]
   appliedCoupon: AppliedCoupon
+  orderChannel: OrderChannel
 }): CreateOrderRequest {
   return createOrderRequestSchema.parse({
     idempotencyKey: ulid(),
@@ -111,5 +112,6 @@ export function buildCreateOrderRequest(params: {
     bagCount: params.bagCount,
     tenders: params.tenders,
     appliedCoupon: params.appliedCoupon,
+    orderChannel: params.orderChannel,
   })
 }

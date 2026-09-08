@@ -3,11 +3,15 @@ import type { CartLineItem } from './drink'
 /** 訂單狀態——`editOrderStatus` 只會把它設成這兩者之一。 */
 export type OrderStatus = '已完成' | '已取消'
 
+/** 內用／外帶（P13：規劃書 §10 P0「內用外帶」），見 @pos/contract 的 orderChannelSchema 說明。 */
+export type OrderChannel = '內用' | '外帶'
+
 /** 一筆已送出的歷史訂單。 */
 export interface OrderRecord {
   orderId: string
   orderTime: string
   orderStatus: OrderStatus
+  orderChannel: OrderChannel
   staff: string
   orderData: CartLineItem[]
   orderBagCount: number

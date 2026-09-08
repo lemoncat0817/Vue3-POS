@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
-import type { AuthorityKey, DrinkCustomized, OrderStatus } from '@pos/contract'
+import type { AuthorityKey, DrinkCustomized, OrderChannel, OrderStatus } from '@pos/contract'
 
 /**
  * D1（SQLite 方言）的資料表定義。
@@ -118,6 +118,11 @@ export const orders = sqliteTable(
     orderId: text('order_id').primaryKey(),
     orderTime: text('order_time').notNull(),
     orderStatus: text('order_status').$type<OrderStatus>().notNull(),
+    // 內用／外帶（P13：規劃書 §10 P0「內用外帶」）。預設值 '外帶' 只
+    // 用在資料庫層級補齊這個功能上線前既有的歷史訂單（見對應的
+    // migration）——新訂單一律由 apps/pos 明確帶這個欄位，不會依賴
+    // 這個預設值。
+    orderChannel: text('order_channel').$type<OrderChannel>().notNull().default('外帶'),
     staff: text('staff').notNull(),
     orderBagCount: integer('order_bag_count').notNull(),
     orderCupCount: integer('order_cup_count').notNull(),

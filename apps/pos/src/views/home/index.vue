@@ -22,6 +22,25 @@
             <div class=" flex md:flex-row flex-col items-start justify-center">
               <ShiftPanel :operator="`${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`" />
             </div>
+            <!-- 內用／外帶（P13：規劃書 §10 P0「內用外帶」）：每筆訂單
+                 送出當下的頻道選擇，不是持久設定，放在點餐頁最顯眼的
+                 資訊列，跟班別狀態同一排。 -->
+            <div class="ml-4 flex items-center gap-1" data-testid="order-channel-toggle">
+              <button
+type="button"
+                class="rounded-lg px-2 py-1 text-xs font-bold transition-colors xl:text-sm"
+                :class="orderChannel === '內用'
+                  ? 'bg-primary-600 text-white'
+                  : 'border border-surface-300 text-surface-600 hover:bg-surface-50 dark:border-surface-700 dark:text-surface-400 dark:hover:bg-surface-800'"
+                @click="orderChannel = '內用'">內用</button>
+              <button
+type="button"
+                class="rounded-lg px-2 py-1 text-xs font-bold transition-colors xl:text-sm"
+                :class="orderChannel === '外帶'
+                  ? 'bg-primary-600 text-white'
+                  : 'border border-surface-300 text-surface-600 hover:bg-surface-50 dark:border-surface-700 dark:text-surface-400 dark:hover:bg-surface-800'"
+                @click="orderChannel = '外帶'">外帶</button>
+            </div>
           </div>
         </div>
         <!-- 資訊顯示欄右半部 -->
@@ -431,7 +450,7 @@ import { useOrderStore } from '@/stores/order'
 const orderStore = useOrderStore()
 import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
-import type { CartLineItem, FormNumeric, OrderRecord } from '@/types'
+import type { CartLineItem, FormNumeric, OrderChannel, OrderRecord } from '@/types'
 import { fromSelection } from '@/utils/selection'
 import { getBusinessDate, priceLine, toggleContainer, toggleFree, toggleRate, type LineDiscountFlags, type OftenUseRates } from '@pos/domain'
 import type { AppliedCoupon } from '@pos/contract'
@@ -628,6 +647,12 @@ const clearSelectNotPay = async () => {
   drinkStore.drinkNotPay = drinkStore.drinkNotPay.filter(item => !drinkSelectList.value.includes(item))
   showToast('清除成功', 'success')
 }
+
+// 內用／外帶（P13：規劃書 §10 P0「內用外帶」）。預設「外帶」——這個
+// 專案原本就只有加購袋子這個間接暗示外帶的欄位，多數訂單本來就是
+// 外帶，改成明確的頻道選擇後，這裡的預設值只是操作上少按一次，不是
+// 業務規則本身要求外帶優先。
+const orderChannel = ref<OrderChannel>('外帶')
 
 // 控制袋子數量相關功能
 // 控制加購袋子視窗
@@ -900,6 +925,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     orderId: orderStore.issueOrderId(),
     orderTime: `${getDate()} ${getTime()}`,
     orderStatus: '已完成',
+    orderChannel: orderChannel.value,
     staff: `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name} `,
     orderData: drinkStore.drinkNotPay,
     orderBagCount: drinkStore.currentBagCount,
@@ -943,6 +969,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     bagCount: toPayOrder.orderBagCount,
     tenders,
     appliedCoupon,
+    orderChannel: toPayOrder.orderChannel,
   })
   void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
 

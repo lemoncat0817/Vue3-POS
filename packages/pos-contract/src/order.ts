@@ -76,6 +76,17 @@ export const tenderSchema = z.object({
 export type Tender = z.infer<typeof tenderSchema>
 
 /**
+ * 內用／外帶（P13：規劃書 §10 P0「內用外帶」）。這個專案只有袋子
+ * （bagCount）能間接暗示外帶，沒有真正的內用／外帶區分——結果是內用
+ * 客人也被問「要不要加購袋子」，報表也無法拆分兩種客群的營業額。
+ * 只有這兩種值，不像餐廳還有「外送」，這裡刻意不做成開放字串，理由
+ * 跟 orderStatusSchema 一致：一個封閉的小型列舉比自由字串更容易在
+ * UI 上排版（固定兩顆按鈕）跟報表上分組。
+ */
+export const orderChannelSchema = z.enum(['內用', '外帶'])
+export type OrderChannel = z.infer<typeof orderChannelSchema>
+
+/**
  * 送出訂單的請求。appliedCoupon 只是「套用了哪張折價券」的意圖（P5：
  * 促銷引擎），實際折抵金額（orderDiscount）與名稱（discountName）由
  * 伺服端查真正的折價券資料重算——這是 D-01／D-02 修復方式在訂單層級
@@ -91,6 +102,7 @@ export const createOrderRequestSchema = z.object({
   bagCount: z.number().int().nonnegative(),
   tenders: z.array(tenderInputSchema).min(1),
   appliedCoupon: appliedCouponSchema,
+  orderChannel: orderChannelSchema,
 })
 export type CreateOrderRequest = z.infer<typeof createOrderRequestSchema>
 
@@ -142,6 +154,8 @@ export const orderSchema = z.object({
   orderId: z.string(),
   orderTime: z.string(),
   orderStatus: orderStatusSchema,
+  /** 內用／外帶（P13：規劃書 §10 P0「內用外帶」），見 orderChannelSchema 的說明。 */
+  orderChannel: orderChannelSchema,
   staff: z.string(),
   orderData: z.array(orderLineSchema),
   orderBagCount: z.number().int().nonnegative(),

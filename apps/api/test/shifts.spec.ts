@@ -32,6 +32,7 @@ function buildOrderRequest(idempotencyKey: string, tenders: { method: string; am
     bagCount: 0,
     tenders,
     appliedCoupon: { type: 'none' },
+    orderChannel: '外帶',
   }
 }
 

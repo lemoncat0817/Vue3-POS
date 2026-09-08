@@ -1,0 +1,1 @@
+ALTER TABLE `orders` ADD `order_channel` text DEFAULT '外帶' NOT NULL;
