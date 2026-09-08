@@ -8,10 +8,10 @@
     "test": "vitest run",
     "dev": "wrangler dev",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply maji-tea-pos-db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply maji-tea-pos-db --remote",
-    "db:seed:local": "wrangler d1 execute maji-tea-pos-db --local --file=./seed/catalog.sql && wrangler d1 execute maji-tea-pos-db --local --file=./seed/staff.sql && wrangler d1 execute maji-tea-pos-db --local --file=./seed/promotions.sql && wrangler d1 execute maji-tea-pos-db --local --file=./seed/payment-methods.sql && wrangler d1 execute maji-tea-pos-db --local --file=./seed/invoice-tracks.sql",
-    "db:seed:remote": "wrangler d1 execute maji-tea-pos-db --remote --file=./seed/catalog.sql && wrangler d1 execute maji-tea-pos-db --remote --file=./seed/staff.sql && wrangler d1 execute maji-tea-pos-db --remote --file=./seed/promotions.sql && wrangler d1 execute maji-tea-pos-db --remote --file=./seed/payment-methods.sql && wrangler d1 execute maji-tea-pos-db --remote --file=./seed/invoice-tracks.sql",
+    "db:migrate:local": "wrangler d1 migrations apply pos-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply pos-db --remote",
+    "db:seed:local": "wrangler d1 execute pos-db --local --file=./seed/catalog.sql && wrangler d1 execute pos-db --local --file=./seed/staff.sql && wrangler d1 execute pos-db --local --file=./seed/promotions.sql && wrangler d1 execute pos-db --local --file=./seed/payment-methods.sql && wrangler d1 execute pos-db --local --file=./seed/invoice-tracks.sql",
+    "db:seed:remote": "wrangler d1 execute pos-db --remote --file=./seed/catalog.sql && wrangler d1 execute pos-db --remote --file=./seed/staff.sql && wrangler d1 execute pos-db --remote --file=./seed/promotions.sql && wrangler d1 execute pos-db --remote --file=./seed/payment-methods.sql && wrangler d1 execute pos-db --remote --file=./seed/invoice-tracks.sql",
     "deploy": "wrangler deploy"
   },
   "dependencies": {

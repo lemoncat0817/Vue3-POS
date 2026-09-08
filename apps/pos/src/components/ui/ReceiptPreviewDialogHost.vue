@@ -4,7 +4,7 @@
       <!-- 收據本體：只有這個區塊會被印出來，見下方 @media print 的說明。 -->
       <div class="receipt-print-area rounded-xl border border-dashed border-surface-300 bg-white p-4 font-mono text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-100">
         <div class="text-center">
-          <p class="text-lg font-bold">MAJI Tea POS</p>
+          <p class="text-lg font-bold">POS 系統</p>
           <p class="text-xs text-surface-500 dark:text-surface-400">手搖飲收據</p>
         </div>
         <div class="my-2 border-t border-dashed border-surface-300 dark:border-surface-700" />

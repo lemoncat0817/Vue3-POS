@@ -50,7 +50,7 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
 1. **登入**：`pnpm exec wrangler login`（會開瀏覽器走 OAuth）。
 2. **建立 D1 資料庫**：
    ```sh
-   pnpm exec wrangler d1 create maji-tea-pos-db
+   pnpm exec wrangler d1 create pos-db
    ```
    指令會印出 `database_id`，貼到 `wrangler.jsonc` 的
    `d1_databases[0].database_id`（目前是佔位字串

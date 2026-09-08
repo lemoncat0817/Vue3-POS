@@ -323,7 +323,7 @@
     <ModalDialog v-model:open="dialogSettlement" title="日結營運清單預覽">
       <div class="flex flex-col gap-3 text-xs text-surface-700 dark:text-surface-200 p-2 font-mono">
         <div class="text-center border-b border-surface-200 dark:border-surface-700 pb-2">
-          <p class="text-base font-black">MAJI TEA 茗茶收銀日結單</p>
+          <p class="text-base font-black">POS 收銀日結單</p>
           <p class="text-surface-400">列印時間: {{ selectTime[0] }} {{ getTime() }}</p>
           <p class="text-surface-400">機台: A機 (旗艦總店)</p>
         </div>
@@ -492,7 +492,7 @@ const isPresetActive = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
 const exportCsv = () => {
   if (!salesReport.value) return
   let csv = 'data:text/csv;charset=utf-8,\uFEFF'
-  csv += `MAJI TEA 營運數據分析報表,期間: ${selectTime.value[0]} ~ ${selectTime.value[1]}\n\n`
+  csv += `POS 營運數據分析報表,期間: ${selectTime.value[0]} ~ ${selectTime.value[1]}\n\n`
   csv += `總營業額,${totalRevenue.value}\n`
   csv += `總訂單數,${totalOrders.value}\n`
   csv += `平均客單價,${averageOrderValue.value}\n`
@@ -515,7 +515,7 @@ const exportCsv = () => {
 
   const link = document.createElement('a')
   link.setAttribute('href', encodeURI(csv))
-  link.setAttribute('download', `MAJI_Report_${toBusinessDate(selectTime.value[0])}_${toBusinessDate(selectTime.value[1])}.csv`)
+  link.setAttribute('download', `POS_Report_${toBusinessDate(selectTime.value[0])}_${toBusinessDate(selectTime.value[1])}.csv`)
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)

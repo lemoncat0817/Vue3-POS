@@ -4,7 +4,7 @@
     <!-- 品牌識別 -->
     <div class="flex items-center gap-2.5 mr-2">
       <div class="hidden 2xl:flex flex-col">
-        <span class="text-sm font-black tracking-tight text-surface-900 dark:text-surface-50 leading-none">MAJI TEA</span>
+        <span class="text-sm font-black tracking-tight text-surface-900 dark:text-surface-50 leading-none">POS</span>
         <span class="text-[10px] font-bold text-primary-600 dark:text-primary-400 tracking-wider">COMMERCIAL POS</span>
       </div>
     </div>

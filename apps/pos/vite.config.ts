@@ -26,8 +26,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'MAJI Tea POS 點餐系統',
-        short_name: 'MAJI POS',
+        name: 'POS 點餐系統',
+        short_name: 'POS',
         description: '單店單機使用的手搖飲點餐收銀系統',
         theme_color: '#ef4444',
         background_color: '#ffffff',

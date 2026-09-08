@@ -10,7 +10,7 @@ import { ref, watchEffect } from 'vue'
  * 系統設定變化：使用者一旦手動選過，代表這是他的明確意圖，不該被
  * OS 設定變化蓋掉。
  */
-const STORAGE_KEY = 'maji-pos-theme'
+const STORAGE_KEY = 'pos-theme'
 type Theme = 'light' | 'dark'
 
 function loadInitialTheme(): Theme {

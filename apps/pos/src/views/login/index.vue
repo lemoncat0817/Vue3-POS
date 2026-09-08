@@ -18,7 +18,7 @@ width="560" height="315" src="https://www.youtube.com/embed/4ELxt64heEs?si=V5_55
 
     <div v-else class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-overlay dark:bg-surface-900">
       <div class="mb-8 flex flex-col items-center gap-3">
-        <h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-50">MAJI Tea POS</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-50">POS 系統</h1>
         <button
           type="button" class="text-sm font-bold text-primary-600 hover:underline dark:text-primary-400"
           @click="isWatchVideo = !isWatchVideo">觀看教學影片</button>
@@ -116,7 +116,7 @@ const login = async () => {
     loginStore.userInfo = toStaffMember(staff)
     loginStore.isLogin = true
     router.push('/home')
-    showToast(`登入成功：${staff.jobTitle} - ${staff.name}，歡迎進入 MAJI Tea POS機系統`, 'success')
+    showToast(`登入成功：${staff.jobTitle} - ${staff.name}，歡迎進入 POS機系統`, 'success')
   } catch (err) {
     loginStore.isLogin = false
     loginStore.userInfo = []

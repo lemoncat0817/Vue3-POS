@@ -89,7 +89,7 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string; allow
 
   app.doc('/openapi.json', {
     openapi: '3.1.0',
-    info: { title: 'MAJI Tea POS API', version: '0.0.0' },
+    info: { title: 'POS API', version: '0.0.0' },
   })
 
   return app
