@@ -6,7 +6,7 @@
         class="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 text-surface-900 shadow-overlay focus:outline-none dark:bg-surface-900 dark:text-surface-100">
         <div class="flex items-center justify-between">
           <DialogTitle class="text-lg font-bold">{{ title }}</DialogTitle>
-          <DialogClose class="text-surface-400 transition-colors hover:text-surface-700 dark:hover:text-surface-200" aria-label="關閉">✕</DialogClose>
+          <DialogClose class="text-surface-400 dark:text-surface-500 transition-colors hover:text-surface-700 dark:hover:text-surface-200" aria-label="關閉">✕</DialogClose>
         </div>
         <div class="mt-4">
           <slot />

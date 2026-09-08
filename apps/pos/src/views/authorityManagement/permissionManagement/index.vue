@@ -150,7 +150,7 @@ v-model="currentEditInputStaffPassword"
                    O/X 欄位裡的其中一個），現在 authorityCheckList 是
                    唯一來源，這一格的 O/X 是不是有這個權限的直接呈現，
                    不是另外存了一份。 -->
-              <span :class="row.authorityCheckList.includes(field.value) ? 'text-emerald-600' : 'text-red-600'">
+              <span :class="row.authorityCheckList.includes(field.value) ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'">
                 {{ row.authorityCheckList.includes(field.value) ? 'O' : 'X' }}
               </span>
             </td>

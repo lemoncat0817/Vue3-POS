@@ -2,18 +2,18 @@
   <ModalDialog :open="open" title="付款" @update:open="(value) => !value && emit('cancel')">
     <div class="flex flex-col gap-4">
       <!-- 金額總覽：應付、已支付、剩餘應付／找零，付款過程中隨時看得到目前狀態。 -->
-      <div class="grid grid-cols-3 gap-2 rounded-lg bg-surface-50 p-3 text-center">
+      <div class="grid grid-cols-3 gap-2 rounded-lg bg-surface-50 dark:bg-surface-800 p-3 text-center">
         <div>
-          <p class="text-xs font-bold text-surface-500">應付金額</p>
-          <p class="text-lg font-bold text-surface-900">$ {{ dueAmount }}</p>
+          <p class="text-xs font-bold text-surface-500 dark:text-surface-400">應付金額</p>
+          <p class="text-lg font-bold text-surface-900 dark:text-surface-100">$ {{ dueAmount }}</p>
         </div>
         <div>
-          <p class="text-xs font-bold text-surface-500">已加入支付</p>
-          <p class="text-lg font-bold text-surface-900">$ {{ tenderedAmount }}</p>
+          <p class="text-xs font-bold text-surface-500 dark:text-surface-400">已加入支付</p>
+          <p class="text-lg font-bold text-surface-900 dark:text-surface-100">$ {{ tenderedAmount }}</p>
         </div>
         <div>
-          <p class="text-xs font-bold text-surface-500">{{ remaining > 0 ? '剩餘應付' : '找零' }}</p>
-          <p class="text-lg font-bold" :class="remaining > 0 ? 'text-primary-600' : 'text-emerald-600'">
+          <p class="text-xs font-bold text-surface-500 dark:text-surface-400">{{ remaining > 0 ? '剩餘應付' : '找零' }}</p>
+          <p class="text-lg font-bold" :class="remaining > 0 ? 'text-primary-600 dark:text-primary-400' : 'text-success-600 dark:text-success-400'">
             $ {{ remaining > 0 ? remaining : changeDue }}
           </p>
         </div>
@@ -23,16 +23,16 @@
       <div v-if="tenders.length > 0" class="flex flex-col gap-1">
         <div
 v-for="(tender, index) in tenders" :key="index"
-          class="flex items-center justify-between rounded-lg border border-surface-200 px-3 py-2 text-sm">
+          class="flex items-center justify-between rounded-lg border border-surface-200 dark:border-surface-700 px-3 py-2 text-sm">
           <div>
-            <span class="font-bold">{{ tender.method }}</span>
-            <span class="ml-2 text-surface-500">$ {{ tender.amount }}</span>
-            <span v-if="tender.receivedAmount" class="ml-2 text-xs text-surface-400">
+            <span class="font-bold text-surface-900 dark:text-surface-100">{{ tender.method }}</span>
+            <span class="ml-2 text-surface-500 dark:text-surface-400">$ {{ tender.amount }}</span>
+            <span v-if="tender.receivedAmount" class="ml-2 text-xs text-surface-400 dark:text-surface-500">
               （實收 $ {{ tender.receivedAmount }}）
             </span>
           </div>
           <button
-type="button" class="text-xs font-bold text-red-600 hover:text-red-700"
+type="button" class="text-xs font-bold text-danger-600 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300"
             @click="removeTender(index)">移除</button>
         </div>
       </div>
@@ -42,44 +42,44 @@ type="button" class="text-xs font-bold text-red-600 hover:text-red-700"
            折價券折到 0 元）的訂單，仍需要加一筆 amount:0 的 tender 才能
            結案（見 @pos/contract 的 tenderInputSchema 說明），這裡不能
            因為「已經付清」就直接把新增區塊藏起來。 -->
-      <div v-if="remaining > 0 || tenders.length === 0" class="flex flex-col gap-2 rounded-lg border border-surface-200 p-3">
-        <p class="text-xs font-bold text-surface-500">新增支付方式</p>
+      <div v-if="remaining > 0 || tenders.length === 0" class="flex flex-col gap-2 rounded-lg border border-surface-200 dark:border-surface-700 p-3">
+        <p class="text-xs font-bold text-surface-500 dark:text-surface-400">新增支付方式</p>
         <div class="flex flex-wrap gap-1">
           <button
 v-for="method in paymentMethods" :key="method.name" type="button"
             class="rounded-lg border px-3 py-1.5 text-sm font-bold transition-colors"
             :class="draftMethod?.name === method.name
-              ? 'border-primary-500 bg-primary-50 text-primary-700'
-              : 'border-surface-300 text-surface-700 hover:bg-surface-50'"
+              ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-400'
+              : 'border-surface-300 dark:border-surface-700 text-surface-700 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800'"
             @click="selectDraftMethod(method)">{{ method.name }}</button>
         </div>
         <div class="flex items-end gap-2">
-          <label class="flex-1 text-xs font-bold text-surface-500">
+          <label class="flex-1 text-xs font-bold text-surface-500 dark:text-surface-400">
             分擔金額
             <input
 v-model.number="draftAmount" type="number" min="0" :max="remaining"
-              class="mt-1 w-full rounded-lg border border-surface-300 px-2 py-1.5 text-sm">
+              class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
           </label>
-          <label v-if="draftMethod?.useMethod === '紙鈔'" class="flex-1 text-xs font-bold text-surface-500">
+          <label v-if="draftMethod?.useMethod === '紙鈔'" class="flex-1 text-xs font-bold text-surface-500 dark:text-surface-400">
             實收金額（選填，用來算找零）
             <input
 v-model.number="draftReceivedAmount" type="number" min="0"
-              class="mt-1 w-full rounded-lg border border-surface-300 px-2 py-1.5 text-sm">
+              class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
           </label>
           <button
 type="button" :disabled="!canAddDraftTender"
-            class="rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-bold text-white disabled:opacity-40"
+            class="rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
             @click="addDraftTender">加入</button>
         </div>
       </div>
 
       <div class="mt-2 flex justify-end gap-2">
         <button
-type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100"
+type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800"
           @click="emit('cancel')">取消</button>
         <button
 type="button" :disabled="remaining > 0 || tenders.length === 0"
-          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
           @click="submit">確認送出</button>
       </div>
     </div>
@@ -97,6 +97,13 @@ type="button" :disabled="remaining > 0 || tenders.length === 0"
 // 這個元件只管「湊出一組合法的 tenders」，實際送單（呼叫
 // buildCreateOrderRequest／enqueueOrder）留在 views/home/index.vue，
 // 面板本身不知道訂單的其他細節（品項、折扣），保持職責單一。
+//
+// P17（視覺重構收尾）：這個元件從 P6／P9 建立以來就沒有補上深色模式
+// 與語意色 token（success／danger），是 P11 那一輪全站重構掃描時的
+// 漏網之魚——它是結帳流程裡最常用的對話框，卻剛好在 P11 之前就已經
+// 存在、之後也沒有再被修改過，沒有觸發那一輪的檢查。找零／移除支付
+// 兩處原本直接寫 text-emerald-600／text-red-600，改用 success／danger
+// token，跟 order/index.vue 等其他頁面一致。
 import { computed, ref, watch } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import type { PaymentMethod } from '@/types'
