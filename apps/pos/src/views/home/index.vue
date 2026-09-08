@@ -119,7 +119,7 @@ class="border border-surface-300 bg-white text-surface-700 hover:bg-surface-50 d
                 @click="clearNotPay">清空全部品項</button>
               <!-- 掛單／取單（P14：規劃書 §10 P0「掛單取單」）——見
                    components/checkout/ParkedOrdersPanel.vue 的說明。 -->
-              <ParkedOrdersPanel v-model:order-channel="orderChannel" />
+              <ParkedOrdersPanel v-model:order-channel="orderChannel" v-model:invoice-carrier="invoiceCarrier" />
               <!-- 結帳／付款 -->
               <!-- P6（規劃書 §10 P0「混合支付」）：原本「先選一種付款
                    方式→再按送出訂單→彈出一次性確認框」的三步流程，改成
@@ -201,10 +201,9 @@ class="bg-primary-600 text-white hover:bg-primary-700 md:text-[10px] text-[8px] 
       <div class="w-full h-[281px] flex justify-around border-solid border-t-2 border-surface-200 dark:border-surface-800">
         <!-- 主要功能區 -->
         <div class="lg:w-[65%] h-[95%] w-[60%] mt-2 place-items-center grid grid-cols-5 lg:gap-x-3 gap-x-3.5 ml-1">
-          <!-- 載具 -->
-          <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            @click="scanCarrier">載具</button>
+          <!-- 載具（P15：規劃書 §10 P0「發票」）——見
+               components/checkout/InvoiceCarrierPanel.vue 的說明。 -->
+          <InvoiceCarrierPanel v-model="invoiceCarrier" />
           <!-- 加購袋子 -->
           <button
 class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
@@ -444,6 +443,7 @@ import ModalDialog from '@/components/ui/ModalDialog.vue'
 import PaymentPanel, { type TenderDraft } from '@/components/checkout/PaymentPanel.vue'
 import ShiftPanel from '@/components/checkout/ShiftPanel.vue'
 import ParkedOrdersPanel from '@/components/checkout/ParkedOrdersPanel.vue'
+import InvoiceCarrierPanel from '@/components/checkout/InvoiceCarrierPanel.vue'
 import { alert, confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useDrinkStore } from '@/stores/drink'
@@ -457,7 +457,7 @@ const loginStore = useLoginStore()
 import type { CartLineItem, FormNumeric, OrderChannel, OrderRecord } from '@/types'
 import { fromSelection } from '@/utils/selection'
 import { getBusinessDate, priceLine, toggleContainer, toggleFree, toggleRate, type LineDiscountFlags, type OftenUseRates } from '@pos/domain'
-import type { AppliedCoupon } from '@pos/contract'
+import type { AppliedCoupon, InvoiceCarrier } from '@pos/contract'
 import { buildCreateOrderRequest } from '@/api/orders'
 import { enqueueOrder } from '@/offline/outbox'
 import { useOrderSync } from '@/offline/useOrderSync'
@@ -658,6 +658,13 @@ const clearSelectNotPay = async () => {
 // 業務規則本身要求外帶優先。
 const orderChannel = ref<OrderChannel>('外帶')
 
+// 發票載具（P15：規劃書 §10 P0「發票」）。預設「無載具」（紙本發票）。
+// 跟 orderChannel 不同，這裡選填的是「這一次交易」的個別需求（客人
+// 這次要不要用手機條碼），下一位客人多半不會延續同一個選擇，所以在
+// submitPayment() 送出訂單後會重置回預設值，orderChannel 則刻意不重置
+// （見 orderChannel 的說明）。
+const invoiceCarrier = ref<InvoiceCarrier>({ type: '無載具' })
+
 // 控制袋子數量相關功能
 // 控制加購袋子視窗
 const dialogBag = ref(false)
@@ -682,11 +689,7 @@ const changeBagCount = () => {
   showToast('修改加購袋子數量成功', 'success')
 }
 
-// 掃描載具已及開啟收銀機相關功能
-// 掃描載具
-const scanCarrier = () => {
-  void alert({ title: '通知', description: '請掃描載具條碼', confirmText: '掃描完成' })
-}
+// 開啟收銀機相關功能（載具已改由 InvoiceCarrierPanel 處理，見 P15 的說明）
 // 開啟收銀機
 const openCashier = () => {
   void alert({ title: '通知', description: '開啟收銀機', confirmText: '確定' })
@@ -943,6 +946,11 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     voidReason: null,
     voidedBy: null,
     voidedAt: null,
+    // 送單當下先佔位；伺服端配發的真正發票號碼稍後由 SyncWorker
+    // 同步回來（見 offline/sync-worker.ts 的 reconcileOrderId 說明，
+    // 目前發票號碼只顯示在訂單列表頁，不影響離線佇列本身）。
+    invoiceNumber: '',
+    invoiceCarrier: invoiceCarrier.value,
   }
   orderStore.order.push(toPayOrder)
   showToast('訂單送出成功', 'success')
@@ -974,8 +982,12 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     tenders,
     appliedCoupon,
     orderChannel: toPayOrder.orderChannel,
+    invoiceCarrier: toPayOrder.invoiceCarrier,
   })
   void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
+  // 載具是這一次交易的個別需求，下一位客人多半不會延續同一個選擇
+  // （見 invoiceCarrier 的說明），送出後重置回預設值。
+  invoiceCarrier.value = { type: '無載具' }
 
   drinkStore.drinkNotPay = []
 }

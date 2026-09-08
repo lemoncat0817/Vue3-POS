@@ -87,6 +87,32 @@ export const orderChannelSchema = z.enum(['內用', '外帶'])
 export type OrderChannel = z.infer<typeof orderChannelSchema>
 
 /**
+ * 發票載具（P15：規劃書 §10 P0「發票」）。這個專案原本的「載具」按鈕
+ * （見 apps/pos/src/views/home/index.vue 的 scanCarrier）只彈一句
+ * 「請掃描載具條碼」就結束，不記錄掃了什麼、也不影響訂單本身——是
+ * 重構前就存在的假操作，這裡把它換成真的會影響發票開立方式的資料。
+ *
+ * 手機條碼格式（財政部規定）：「/」開頭＋7 碼（數字、大寫英文字母、
+ * 或 . + - 三個符號）。統一編號：8 碼數字，用於企業客戶需要跟公司
+ * 對帳的情境（B2B）。「無載具」代表開紙本發票，不需要 value。
+ */
+export const invoiceCarrierTypeSchema = z.enum(['無載具', '手機條碼', '統一編號'])
+export type InvoiceCarrierType = z.infer<typeof invoiceCarrierTypeSchema>
+
+export const invoiceCarrierSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('無載具') }),
+  z.object({
+    type: z.literal('手機條碼'),
+    value: z.string().regex(/^\/[0-9A-Z.+-]{7}$/, '手機條碼格式錯誤，需為「/」開頭加 7 碼數字或大寫英文字母'),
+  }),
+  z.object({
+    type: z.literal('統一編號'),
+    value: z.string().regex(/^\d{8}$/, '統一編號需為 8 碼數字'),
+  }),
+])
+export type InvoiceCarrier = z.infer<typeof invoiceCarrierSchema>
+
+/**
  * 送出訂單的請求。appliedCoupon 只是「套用了哪張折價券」的意圖（P5：
  * 促銷引擎），實際折抵金額（orderDiscount）與名稱（discountName）由
  * 伺服端查真正的折價券資料重算——這是 D-01／D-02 修復方式在訂單層級
@@ -103,6 +129,7 @@ export const createOrderRequestSchema = z.object({
   tenders: z.array(tenderInputSchema).min(1),
   appliedCoupon: appliedCouponSchema,
   orderChannel: orderChannelSchema,
+  invoiceCarrier: invoiceCarrierSchema,
 })
 export type CreateOrderRequest = z.infer<typeof createOrderRequestSchema>
 
@@ -178,5 +205,8 @@ export const orderSchema = z.object({
   voidReason: z.string().nullable(),
   voidedBy: z.string().nullable(),
   voidedAt: z.string().nullable(),
+  /** 發票號碼（P15：規劃書 §10 P0「發票」），見 nextInvoiceNumber() 的說明。 */
+  invoiceNumber: z.string(),
+  invoiceCarrier: invoiceCarrierSchema,
 })
 export type Order = z.infer<typeof orderSchema>

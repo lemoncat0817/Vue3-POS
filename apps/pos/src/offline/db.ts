@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { CreateOrderRequest } from '@pos/contract'
+import type { InvoiceCarrier } from '@pos/contract'
 import type { CartLineItem, FormNumeric, OrderChannel } from '@/types'
 
 /**
@@ -34,8 +35,10 @@ export interface OutboxOrder {
  * 再「取單」繼續——跟送出訂單（outboxOrders）是完全不同的東西：掛單
  * 從來沒有變成一筆真正的訂單，不會出現在訂單列表，也不需要伺服端
  * 知道它存在。這裡只存回復購物車所需要的最小狀態：品項清單、袋子
- * 數量、套用中的折價券（見 stores/discount.ts 對應欄位的說明），
- * 「內用外帶」則交給呼叫端（ParkedOrdersPanel.vue）自己傳入目前選擇。
+ * 數量、套用中的折價券（見 stores/discount.ts 對應欄位的說明）、
+ * 內用外帶、發票載具——後兩者不是 Pinia store 的狀態（見
+ * views/home/index.vue 的 orderChannel／invoiceCarrier 說明），由
+ * 呼叫端（ParkedOrdersPanel.vue）自己傳入目前選擇、取單時再讀回去。
  *
  * 只存在單一終端機的本機（跟 outboxOrders 一樣），不會同步到伺服端或
  * 其他終端——單店單機情境下這是務實的取捨，理由跟 shifts 不做多終端
@@ -50,6 +53,8 @@ export interface ParkedOrder {
   lines: CartLineItem[]
   bagCount: number
   orderChannel: OrderChannel
+  /** 發票載具（P15：規劃書 §10 P0「發票」），見 InvoiceCarrierPanel.vue 的說明。 */
+  invoiceCarrier: InvoiceCarrier
   moneyDiscountId: FormNumeric
   percentDiscountId: FormNumeric
   currentMoneyDiscount: FormNumeric

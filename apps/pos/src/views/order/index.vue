@@ -110,6 +110,12 @@
                     <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
                       顧客應付金額：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderPaymentPrice }}</span>
                     </span>
+                    <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
+                      發票號碼：<span class="text-primary-600 dark:text-primary-400">{{ row.original.invoiceNumber || '（無，此功能上線前建立）' }}</span>
+                      <template v-if="row.original.invoiceCarrier && row.original.invoiceCarrier.type !== '無載具'">
+                        ．{{ row.original.invoiceCarrier.type }} {{ row.original.invoiceCarrier.value }}
+                      </template>
+                    </span>
                     <span
 v-if="(row.original.refundedAmount ?? 0) > 0"
                       class="rounded-full bg-warning-50 dark:bg-warning-950 px-3 py-1 text-xs font-bold text-warning-700 dark:text-warning-300 shadow-sm">

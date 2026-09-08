@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createOrderRequestSchema, tenderInputSchema } from './order'
+import { createOrderRequestSchema, invoiceCarrierSchema, tenderInputSchema } from './order'
 
 const validLine = {
   name: '楊枝甘露2.0',
@@ -25,6 +25,7 @@ const validRequest = {
   tenders: [{ method: '現金', amount: 80 }],
   appliedCoupon: { type: 'none' as const },
   orderChannel: '外帶' as const,
+  invoiceCarrier: { type: '無載具' as const },
 }
 
 describe('createOrderRequestSchema', () => {
@@ -110,6 +111,31 @@ describe('createOrderRequestSchema', () => {
     const withoutChannel: Record<string, unknown> = { ...validRequest }
     delete withoutChannel.orderChannel
     expect(createOrderRequestSchema.safeParse(withoutChannel).success).toBe(false)
+  })
+
+  it('沒有帶 invoiceCarrier 時拒絕（P15：規劃書 §10 P0「發票」）', () => {
+    const withoutCarrier: Record<string, unknown> = { ...validRequest }
+    delete withoutCarrier.invoiceCarrier
+    expect(createOrderRequestSchema.safeParse(withoutCarrier).success).toBe(false)
+  })
+})
+
+describe('invoiceCarrierSchema（P15：規劃書 §10 P0「發票」）', () => {
+  it('無載具不需要 value', () => {
+    expect(invoiceCarrierSchema.safeParse({ type: '無載具' }).success).toBe(true)
+  })
+
+  it('手機條碼必須是「/」開頭加 7 碼數字或大寫英文字母', () => {
+    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: '/ABC1234' }).success).toBe(true)
+    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: 'ABC1234' }).success).toBe(false)
+    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: '/ABC123' }).success).toBe(false)
+    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: '/abc1234' }).success).toBe(false)
+  })
+
+  it('統一編號必須是 8 碼數字', () => {
+    expect(invoiceCarrierSchema.safeParse({ type: '統一編號', value: '12345678' }).success).toBe(true)
+    expect(invoiceCarrierSchema.safeParse({ type: '統一編號', value: '1234567' }).success).toBe(false)
+    expect(invoiceCarrierSchema.safeParse({ type: '統一編號', value: 'abcdefgh' }).success).toBe(false)
   })
 })
 

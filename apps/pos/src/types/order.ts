@@ -1,3 +1,4 @@
+import type { InvoiceCarrier } from '@pos/contract'
 import type { CartLineItem } from './drink'
 
 /** 訂單狀態——`editOrderStatus` 只會把它設成這兩者之一。 */
@@ -13,6 +14,12 @@ export interface OrderRecord {
   orderStatus: OrderStatus
   orderChannel: OrderChannel
   staff: string
+  // P15（規劃書 §10 P0「發票」）：invoiceNumber 送單當下一律是空字串，
+  // 由伺服端配發後才有真正的值（見 api/orders.ts、views/home/index.vue
+  // 的 submitPayment 說明）——跟 refundedAmount 這幾個衍生欄位同一種
+  // 「先佔位、拿到伺服端回應才覆寫」的處理方式。
+  invoiceNumber: string
+  invoiceCarrier: InvoiceCarrier
   orderData: CartLineItem[]
   orderBagCount: number
   orderCupCount: number

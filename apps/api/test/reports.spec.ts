@@ -33,6 +33,7 @@ function buildRequest(overrides: Record<string, unknown> = {}) {
     tenders: [{ method: '現金', amount: 160 }],
     appliedCoupon: { type: 'none' },
     orderChannel: '外帶',
+    invoiceCarrier: { type: '無載具' },
     ...overrides,
   }
 }

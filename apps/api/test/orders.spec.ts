@@ -37,6 +37,7 @@ function buildRequest(overrides: Record<string, unknown> = {}) {
     tenders: [{ method: '現金', amount: 160 }],
     appliedCoupon: { type: 'none' },
     orderChannel: '外帶',
+    invoiceCarrier: { type: '無載具' },
     ...overrides,
   }
 }
@@ -106,6 +107,64 @@ describe('POST /api/orders', () => {
       body: JSON.stringify(withoutChannel),
     })
     expect(res.status).toBe(400)
+  })
+
+  it('每一筆訂單都會核發發票號碼，連續建立的訂單編號依序遞增（P15：規劃書 §10 P0「發票」）', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const first = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB1' })),
+    })
+    const second = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB2' })),
+    })
+    const firstBody = await readJson(first)
+    const secondBody = await readJson(second)
+    expect(firstBody.invoiceNumber).toMatch(/^AA\d{8}$/)
+    expect(secondBody.invoiceNumber).toMatch(/^AA\d{8}$/)
+    expect(secondBody.invoiceNumber).not.toBe(firstBody.invoiceNumber)
+  })
+
+  it('帶手機條碼載具時原封不動存回並回傳，格式不對時拒絕（回傳 400）', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ invoiceCarrier: { type: '手機條碼', value: '/ABC1234' } })),
+    })
+    expect(res.status).toBe(201)
+    const body = await readJson(res)
+    expect(body.invoiceCarrier).toEqual({ type: '手機條碼', value: '/ABC1234' })
+
+    const invalid = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FC1', invoiceCarrier: { type: '手機條碼', value: 'bad' } })),
+    })
+    expect(invalid.status).toBe(400)
+  })
+
+  it('帶統一編號載具時原封不動存回並回傳（B2B 情境）', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ invoiceCarrier: { type: '統一編號', value: '12345678' } })),
+    })
+    expect(res.status).toBe(201)
+    const body = await readJson(res)
+    expect(body.invoiceCarrier).toEqual({ type: '統一編號', value: '12345678' })
   })
 
   it('同一營業日內連續建立訂單，編號依序遞增', async () => {

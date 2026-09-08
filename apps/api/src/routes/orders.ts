@@ -6,6 +6,7 @@ import {
   orderStatusSchema,
   refundInputSchema,
   type AppliedCoupon,
+  type InvoiceCarrier,
   type TenderInput,
 } from '@pos/contract'
 import { priceLine, summarizeOrderRefunds, type OftenUseRates } from '@pos/domain'
@@ -192,6 +193,8 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderT
     voidReason: order.voidReason,
     voidedBy: order.voidedBy,
     voidedAt: order.voidedAt,
+    invoiceNumber: order.invoiceNumber,
+    invoiceCarrier: toInvoiceCarrier(order.invoiceCarrierType, order.invoiceCarrierValue),
     tenders: [...tenders]
       .sort((a, b) => a.seq - b.seq)
       .map((tender) => ({
@@ -286,6 +289,38 @@ async function nextOrderSequence(db: AnyDb, businessDate: string): Promise<numbe
     throw new Error(`核發訂單序號失敗（businessDate=${businessDate}）`)
   }
   return row.counter
+}
+
+// 單一固定字軌前綴（P15：規劃書 §10 P0「發票」）。真正的統一發票字軌
+// 由財政部按期配發、會輪替，見 db/schema.ts 的 invoiceSequences 說明
+// ——單店單機情境下簡化成固定前綴，不做期別輪替。
+const INVOICE_PREFIX = 'AA'
+const INVOICE_SEQUENCE_ID = 'default'
+
+/**
+ * 原子核發下一個發票號碼，寫法跟 nextOrderSequence() 同一套模式
+ * （INSERT ... ON CONFLICT DO UPDATE ... RETURNING，單一陳述式保證
+ * 原子性）。發票號碼全域遞增、不分業務日——這是統一發票本身的規則
+ * （同一字軌期別內連續，不因為換日重新歸零），跟訂單序號刻意按營業日
+ * 分段是不同的需求。
+ */
+async function nextInvoiceNumber(db: AnyDb): Promise<string> {
+  const row = await db.get<{ counter: number }>(sql`
+    insert into invoice_sequences (id, counter)
+    values (${INVOICE_SEQUENCE_ID}, 1)
+    on conflict (id) do update set counter = counter + 1
+    returning counter
+  `)
+  if (!row) {
+    throw new Error('核發發票號碼失敗')
+  }
+  return `${INVOICE_PREFIX}${String(row.counter).padStart(8, '0')}`
+}
+
+/** DB 的 invoiceCarrierType／invoiceCarrierValue 兩欄組回 @pos/contract 的 InvoiceCarrier 判別聯集。 */
+function toInvoiceCarrier(type: InvoiceCarrier['type'], value: string | null): InvoiceCarrier {
+  if (type === '無載具') return { type }
+  return { type, value: value ?? '' }
 }
 
 /**
@@ -384,6 +419,10 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     // 行為一致，不影響既有畫面。
     const orderPayment = input.tenders.map((tender) => tender.method).join('、')
 
+    // 每一筆訂單一律開立發票（P15：規劃書 §10 P0「發票」），不管有沒有
+    // 帶載具——這是統一發票本身的規則（有交易就要開立），不是可選項。
+    const invoiceNumber = await nextInvoiceNumber(db)
+
     const newOrder: OrderRow = {
       orderId,
       orderTime,
@@ -403,6 +442,9 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       voidReason: null,
       voidedBy: null,
       voidedAt: null,
+      invoiceNumber,
+      invoiceCarrierType: input.invoiceCarrier.type,
+      invoiceCarrierValue: input.invoiceCarrier.type === '無載具' ? null : input.invoiceCarrier.value,
     }
     const newTenders: Omit<OrderTenderRow, 'id'>[] = input.tenders.map((tender, seq) => ({
       orderId,

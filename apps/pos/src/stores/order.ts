@@ -108,11 +108,16 @@ export const useOrderStore = defineStore('order', () => {
   // 同一營業日訂單數 + 1）回填——單店單機情境下兩者通常相同，但佇列
   // 裡有多筆等待同步、或同一營業日內曾經有過從未同步成功的失敗訂單時
   // 可能不同，以伺服端為準（見 src/offline/sync-worker.ts 的說明）。
-  const reconcileOrderId = (localOrderId: string, serverOrderId: string) => {
-    if (localOrderId === serverOrderId) return
+  //
+  // P15（規劃書 §10 P0「發票」）：發票號碼只有伺服端配發過才存在，
+  // 送單當下本機記錄一律是空字串（見 views/home/index.vue 的
+  // submitPayment），這裡順便一起回填，不是另外開一個「找到這筆訂單、
+  // 更新它」的第二套機制。
+  const reconcileOrderId = (localOrderId: string, serverOrderId: string, invoiceNumber: string) => {
     const record = order.value.find((item) => item.orderId === localOrderId)
     if (record) {
       record.orderId = serverOrderId
+      record.invoiceNumber = invoiceNumber
     }
   }
 

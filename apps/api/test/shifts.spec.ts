@@ -33,6 +33,7 @@ function buildOrderRequest(idempotencyKey: string, tenders: { method: string; am
     tenders,
     appliedCoupon: { type: 'none' },
     orderChannel: '外帶',
+    invoiceCarrier: { type: '無載具' },
   }
 }
 

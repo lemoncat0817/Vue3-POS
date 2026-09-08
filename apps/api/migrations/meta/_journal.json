@@ -71,6 +71,13 @@
       "when": 1788827987844,
       "tag": "0009_lively_molten_man",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1788830624800,
+      "tag": "0010_late_joseph",
+      "breakpoints": true
     }
   ]
 }

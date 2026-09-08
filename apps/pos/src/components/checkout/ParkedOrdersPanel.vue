@@ -73,10 +73,11 @@ import { showToast } from '@/composables/useToast'
 import { addParkedOrder, deleteParkedOrder, listParkedOrders } from '@/offline/parked-orders'
 import type { ParkedOrder } from '@/offline/db'
 import { ulid } from '@pos/domain'
+import type { InvoiceCarrier } from '@pos/contract'
 import type { OrderChannel } from '@/types'
 
-const props = defineProps<{ orderChannel: OrderChannel }>()
-const emit = defineEmits<{ 'update:orderChannel': [OrderChannel] }>()
+const props = defineProps<{ orderChannel: OrderChannel; invoiceCarrier: InvoiceCarrier }>()
+const emit = defineEmits<{ 'update:orderChannel': [OrderChannel]; 'update:invoiceCarrier': [InvoiceCarrier] }>()
 
 const drinkStore = useDrinkStore()
 const discountStore = useDiscountStore()
@@ -144,6 +145,10 @@ async function parkCurrent() {
     lines: JSON.parse(JSON.stringify(drinkStore.drinkNotPay)),
     bagCount: drinkStore.currentBagCount,
     orderChannel: props.orderChannel,
+    // props.invoiceCarrier 是 ref<object> 的值，一樣是 reactive proxy
+    // ——跟 drinkNotPay 同一個 DataCloneError 陷阱（見上面的說明），一併
+    // 用 JSON 序列化繞過。
+    invoiceCarrier: JSON.parse(JSON.stringify(props.invoiceCarrier)),
     moneyDiscountId: discountStore.moneyDiscountId,
     percentDiscountId: discountStore.percentDiscountId,
     currentMoneyDiscount: discountStore.currentMoneyDiscount,
@@ -186,6 +191,7 @@ async function resumeOrder(order: ParkedOrder) {
   discountStore.currentPercentDiscount = order.currentPercentDiscount
   discountStore.currentDiscountName = order.currentDiscountName
   emit('update:orderChannel', order.orderChannel)
+  emit('update:invoiceCarrier', order.invoiceCarrier)
 
   await deleteParkedOrder(order.id)
   await refresh()

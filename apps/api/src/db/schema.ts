@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
-import type { AuthorityKey, DrinkCustomized, OrderChannel, OrderStatus } from '@pos/contract'
+import type { AuthorityKey, DrinkCustomized, InvoiceCarrierType, OrderChannel, OrderStatus } from '@pos/contract'
 
 /**
  * D1（SQLite 方言）的資料表定義。
@@ -150,6 +150,15 @@ export const orders = sqliteTable(
     voidReason: text('void_reason'),
     voidedBy: text('voided_by'),
     voidedAt: text('voided_at'),
+    // 發票（P15：規劃書 §10 P0「發票」）。每一筆訂單一律開立發票號碼
+    // （見 nextInvoiceNumber() 的說明），既有歷史訂單（這個功能上線前
+    // 建立的）沒有真正的發票號碼，遷移時補一個空字串佔位，不是假造
+    // 一個發票號碼混充——空字串在畫面上會顯示成「（無，此功能上線前
+    // 建立）」，不會被誤認成真正開立過的發票。
+    invoiceNumber: text('invoice_number').notNull().default(''),
+    invoiceCarrierType: text('invoice_carrier_type').$type<InvoiceCarrierType>().notNull().default('無載具'),
+    // 只有手機條碼／統一編號才有值，見 @pos/contract 的 invoiceCarrierSchema。
+    invoiceCarrierValue: text('invoice_carrier_value'),
   },
   (table) => [uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey)],
 )
@@ -167,6 +176,19 @@ export const orders = sqliteTable(
  */
 export const orderSequences = sqliteTable('order_sequences', {
   businessDate: text('business_date').primaryKey(),
+  counter: integer('counter').notNull(),
+})
+
+/**
+ * 發票號碼的原子計數器（P15：規劃書 §10 P0「發票」）。真正的統一發票
+ * 號碼由財政部按「字軌」（兩碼英文字母前綴）配發、每兩個月一期，
+ * 字軌會輪替——單店單機情境下，這裡簡化成單一固定前綴＋全域遞增的
+ * 8 位數流水號（見 routes/orders.ts 的 nextInvoiceNumber()），不做
+ * 期別輪替。這是刻意的簡化，不是想模擬財政部的配號規則，跟
+ * order_sequences 用營業日分段、這裡不分段是同一種務實取捨。
+ */
+export const invoiceSequences = sqliteTable('invoice_sequences', {
+  id: text('id').primaryKey(),
   counter: integer('counter').notNull(),
 })
 
@@ -295,6 +317,7 @@ export const schema = {
   orderTenders,
   orderRefunds,
   orderSequences,
+  invoiceSequences,
   shifts,
   cashMovements,
 }
