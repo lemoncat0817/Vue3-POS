@@ -10,11 +10,6 @@ import { expect, test } from '@playwright/test'
  * 看不到）。
  */
 test('後台新增／刪除人員會真的呼叫伺服端，重新整理後狀態一致', async ({ page }) => {
-  // 新增人員的對話框（4 個欄位＋16 格權限勾選網格）比預設視窗高，
-  // ModalDialog 本身沒有另外處理內容超出視窗高度的捲動（見
-  // components/ui/ModalDialog.vue，跟 e2e/defect-fixes.spec.ts 的
-  // D-10 測試是同一個既有畫面問題），用大一點的視窗繞過。
-  await page.setViewportSize({ width: 1280, height: 1400 })
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
   await page.getByPlaceholder('請輸入 PIN').fill('1234')

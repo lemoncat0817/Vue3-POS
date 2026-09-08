@@ -14,32 +14,21 @@
             門市操作人員帳號、職稱權限分配與支援支付管道維護
           </p>
         </div>
-
-        <div class="flex items-center gap-1.5 rounded-xl bg-surface-100 dark:bg-surface-800 p-1">
-          <button
-            type="button"
-            class="flex items-center gap-2 rounded-lg px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm ring-1 ring-black/5 dark:ring-white/5"
-            @click="authorityManagementStore.currentAuthorityManagementPage = 0">
-            <Users class="h-4 w-4" />
-            <span>人員及付款方式管理</span>
-          </button>
-        </div>
       </div>
 
-      <!-- 內容面板 -->
+      <!-- UI-6（規劃書 §5.4「權限管理」）：這個頁面底下只有一個子頁
+           （人員及付款方式管理），原本卻複製了 backgroundSetting 的
+           分段頁籤容器，做出一個永遠是選中態、點了也不會切換到任何
+           別處的假頁籤——純粹的版面雜訊，拿掉。 -->
       <div class="w-full rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[640px] flex overflow-hidden">
-        <PermissionManagement v-if="authorityManagementStore.currentAuthorityManagementPage === 0" class="w-full" />
+        <PermissionManagement class="w-full" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Users } from 'lucide-vue-next'
-import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 import PermissionManagement from './permissionManagement/index.vue'
-
-const authorityManagementStore = useAuthorityManagementStore()
 </script>
 
 <style scoped></style>

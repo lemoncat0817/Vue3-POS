@@ -39,8 +39,6 @@ import type { StaffMember } from '@/types'
  * persist:true，兩者才會同進退。
  */
 export const useAuthorityManagementStore = defineStore('authorityManagement', () => {
-  // 當前的查看的資料類型
-  const currentAuthorityManagementPage = ref(0)
   const staffSource = ref<'seed' | 'server'>('seed')
   // 人員名單，見上方說明。
   const staffList = ref<StaffMember[]>([])
@@ -53,7 +51,7 @@ export const useAuthorityManagementStore = defineStore('authorityManagement', ()
     staffSource.value = 'server'
   }
 
-  return { currentAuthorityManagementPage, staffSource, hydrateStaffFromServer, staffList }
+  return { staffSource, hydrateStaffFromServer, staffList }
 }, {
   persist: true,
 })

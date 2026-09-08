@@ -10,7 +10,7 @@
             </div>
             <div>
               <h3 class="text-sm font-bold text-surface-900 dark:text-surface-100 tracking-tight">人員名單</h3>
-              <p class="text-[11px] text-surface-400">門市各崗位人員與 18 項系統操作權限明細</p>
+              <p class="text-[11px] text-surface-400">門市各崗位人員與角色權限範本</p>
             </div>
           </div>
           <div class="flex items-center gap-1.5">
@@ -23,7 +23,7 @@
             <!-- 刪除功能 -->
             <button
               type="button"
-              class="pos-btn bg-danger-50 text-danger-600 border border-danger-200/80 hover:bg-danger-100 dark:bg-danger-950/40 dark:text-danger-400 dark:border-danger-800 px-3 py-1.5 text-xs font-bold"
+              class="pos-btn pos-btn-danger px-3 py-1.5 text-xs font-bold"
               :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
               @click="deleteStaff">刪除</button>
             <!-- 編輯功能 -->
@@ -35,20 +35,28 @@
           </div>
         </div>
 
-        <div class="mt-4 overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800">
-          <table class="w-full text-center text-xs whitespace-nowrap">
+        <!-- UI-6（規劃書 §5.4「權限管理」）：人員名單原本是 4 + 18 = 22
+             欄的權限矩陣，整張表 whitespace-nowrap、永遠處於橫向捲動
+             狀態，且 18 個等權重的欄位讓權限之間的父子階層完全消失。
+             現在降到 5 欄，18 項權限的明細改用「角色」摘要（見
+             utils/authority.ts 的 deriveStaffRole）——角色是從既有的
+             authorityCheckList 反推出來的顯示層概念，跟三個角色範本
+             完全吻合就顯示範本名稱，對不上就是「自訂」，完整明細留到
+             編輯對話框（依父子關係分組呈現）才看得到。 -->
+        <div class="mt-4 overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+          <table class="w-full text-center text-xs">
             <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
               <tr>
                 <th class="px-3 py-2.5 text-left">人員名稱</th>
-                <th class="px-3 py-2.5">Id</th>
-                <th class="px-3 py-2.5">職稱</th>
                 <th class="px-3 py-2.5">帳號</th>
-                <th v-for="field in authorityFields" :key="field.value" class="whitespace-nowrap px-2.5 py-2.5 font-medium">{{ field.label }}</th>
+                <th class="px-3 py-2.5">職稱</th>
+                <th class="px-3 py-2.5">權限</th>
+                <th class="px-3 py-2.5">操作</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
               <tr v-if="sliceStaffList.length === 0">
-                <td :colspan="4 + authorityFields.length" class="px-3 py-8 text-surface-400 dark:text-surface-500">人員名單是空的</td>
+                <td colspan="5" class="px-3 py-8 text-surface-400 dark:text-surface-500">人員名單是空的</td>
               </tr>
               <tr
                 v-for="row in sliceStaffList" :key="row.id"
@@ -56,7 +64,7 @@
                 :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 font-bold': currentStaff.id === row.id }"
                 @click="currentStaff = row">
                 <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
-                <td class="px-3 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
+                <td class="px-3 py-2.5 font-mono text-surface-500">{{ row.account }}</td>
                 <td class="px-3 py-2.5">
                   <span
                     class="rounded-lg px-2 py-0.5 text-[11px] font-bold"
@@ -64,13 +72,24 @@
                     {{ row.jobTitle }}
                   </span>
                 </td>
-                <td class="px-3 py-2.5 font-mono text-surface-500">{{ row.account }}</td>
-                <td v-for="field in authorityFields" :key="field.value" class="px-2 py-2">
-                  <span
-                    class="inline-flex h-6 w-6 items-center justify-center rounded-lg text-xs font-black"
-                    :class="row.authorityCheckList.includes(field.value) ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40' : 'bg-surface-100 text-surface-400 dark:bg-surface-800 dark:text-surface-600'">
-                    {{ row.authorityCheckList.includes(field.value) ? 'O' : 'X' }}
+                <td class="px-3 py-2.5">
+                  <span class="inline-flex items-center gap-1.5">
+                    <span
+                      class="rounded-full px-2 py-0.5 text-[11px] font-bold"
+                      :class="staffRoleBadgeClass(row.authorityCheckList)">
+                      {{ deriveStaffRole(row.authorityCheckList) }}
+                    </span>
+                    <span class="text-[10px] font-mono text-surface-400">{{ row.authorityCheckList.length }}/{{ authorityFields.length }} 項</span>
                   </span>
+                </td>
+                <td class="px-3 py-2.5">
+                  <button
+                    type="button" aria-label="編輯人員"
+                    class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-surface-500 hover:bg-surface-100 hover:text-primary-600 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-primary-400"
+                    :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
+                    @click.stop="currentStaff = row; openEditStaffDialog()">
+                    <Pencil class="h-3.5 w-3.5" />
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -115,7 +134,7 @@
             <!-- 刪除功能 -->
             <button
               type="button"
-              class="pos-btn bg-danger-50 text-danger-600 border border-danger-200/80 hover:bg-danger-100 dark:bg-danger-950/40 dark:text-danger-400 dark:border-danger-800 px-3 py-1.5 text-xs font-bold"
+              class="pos-btn pos-btn-danger px-3 py-1.5 text-xs font-bold"
               :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
               @click="deletePayMethod">刪除</button>
             <!-- 編輯功能 -->
@@ -184,7 +203,7 @@
   </div>
 
   <!-- 新增人員 -->
-  <ModalDialog v-model:open="addStaffDialog" title="新增人員">
+  <ModalDialog v-model:open="addStaffDialog" title="新增人員" size="lg">
     <div class="space-y-3.5 py-1">
       <div class="grid grid-cols-2 gap-3">
         <div>
@@ -218,23 +237,8 @@
       </div>
 
       <div>
-        <div class="flex items-center justify-between mb-1.5">
-          <label class="text-xs font-bold text-surface-700 dark:text-surface-300">權限管理</label>
-          <span class="text-[11px] text-surface-400">依門市職責勾選授權</span>
-        </div>
-        <div class="max-h-56 overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-800/40 p-2.5 grid grid-cols-2 gap-1.5">
-          <label
-            v-for="field in authorityFields" :key="field.value"
-            class="flex items-center gap-2 rounded-lg p-1.5 text-xs font-medium cursor-pointer transition-colors hover:bg-white dark:hover:bg-surface-700"
-            :class="{ 'opacity-40 cursor-not-allowed': !!field.dependsOn && !authorityCheckList.includes(field.dependsOn) }">
-            <input
-              type="checkbox" :checked="authorityCheckList.includes(field.value)"
-              :disabled="!!field.dependsOn && !authorityCheckList.includes(field.dependsOn)"
-              class="h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500/20"
-              @change="toggleAuthorityCheck(authorityCheckList, field.value, ($event.target as HTMLInputElement).checked, (v) => authorityCheckList = v)">
-            <span class="text-surface-800 dark:text-surface-200">{{ field.label }}</span>
-          </label>
-        </div>
+        <label class="mb-1.5 block text-xs font-bold text-surface-700 dark:text-surface-300">權限管理</label>
+        <AuthorityChecklist v-model="authorityCheckList" />
       </div>
     </div>
     <div class="mt-5 flex justify-end gap-2.5">
@@ -244,7 +248,7 @@
   </ModalDialog>
 
   <!-- 編輯人員 -->
-  <ModalDialog v-model:open="editStaffDialog" title="編輯人員">
+  <ModalDialog v-model:open="editStaffDialog" title="編輯人員" size="lg">
     <div class="space-y-3.5 py-1">
       <div class="grid grid-cols-2 gap-3">
         <div>
@@ -278,23 +282,8 @@
       </div>
 
       <div>
-        <div class="flex items-center justify-between mb-1.5">
-          <label class="text-xs font-bold text-surface-700 dark:text-surface-300">權限管理</label>
-          <span class="text-[11px] text-surface-400">依門市職責勾選授權</span>
-        </div>
-        <div class="max-h-56 overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-800/40 p-2.5 grid grid-cols-2 gap-1.5">
-          <label
-            v-for="field in authorityFields" :key="field.value"
-            class="flex items-center gap-2 rounded-lg p-1.5 text-xs font-medium cursor-pointer transition-colors hover:bg-white dark:hover:bg-surface-700"
-            :class="{ 'opacity-40 cursor-not-allowed': !!field.dependsOn && !editAuthorityCheckList.includes(field.dependsOn) }">
-            <input
-              type="checkbox" :checked="editAuthorityCheckList.includes(field.value)"
-              :disabled="!!field.dependsOn && !editAuthorityCheckList.includes(field.dependsOn)"
-              class="h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500/20"
-              @change="toggleAuthorityCheck(editAuthorityCheckList, field.value, ($event.target as HTMLInputElement).checked, (v) => editAuthorityCheckList = v)">
-            <span class="text-surface-800 dark:text-surface-200">{{ field.label }}</span>
-          </label>
-        </div>
+        <label class="mb-1.5 block text-xs font-bold text-surface-700 dark:text-surface-300">權限管理</label>
+        <AuthorityChecklist v-model="editAuthorityCheckList" />
       </div>
     </div>
     <div class="mt-5 flex justify-end gap-2.5">
@@ -415,7 +404,7 @@
 // 寫法，改成用業務含意本身（職稱是店長／名稱是現金）判斷——伺服端的
 // id 是 UUID，不會再有「第一筆一定是 1」這件事。
 import { ref, computed } from 'vue'
-import { UserCheck, CreditCard, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { UserCheck, CreditCard, ChevronLeft, ChevronRight, Pencil } from 'lucide-vue-next'
 import {
   SelectContent,
   SelectItem,
@@ -429,6 +418,8 @@ import {
   SwitchThumb,
 } from 'reka-ui'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
+import AuthorityChecklist from '@/components/ui/AuthorityChecklist.vue'
+import { AUTHORITY_FIELDS as authorityFields, deriveStaffRole, CUSTOM_ROLE_LABEL } from '@/utils/authority'
 import { alert, confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
@@ -501,56 +492,17 @@ const authorityCheckList = ref<AuthorityKey[]>([])
 // 定義編輯人員的權限管理清單
 const editAuthorityCheckList = ref<AuthorityKey[]>([])
 
-// 權限欄位清單——資料驅動表格欄位跟兩個表單的 checkbox 群組，取代原本
-// 新增／編輯各自重複 16 個幾乎一樣的 el-checkbox，以及 el-table 裡 16
-// 個幾乎一樣的 el-table-column（見上方 template 的說明）。dependsOn
-// 表示這個權限依附在另一個權限之下：母權限沒勾選時這個選項要停用。
-interface AuthorityField {
-  label: string
-  value: AuthorityKey
-  dependsOn?: AuthorityKey
-}
-const authorityFields: AuthorityField[] = [
-  { label: '免費招待', value: 'canFreeDrink' },
-  { label: '開收銀機', value: 'canOpenCashier' },
-  { label: '查看訂單', value: 'canCheckOrder' },
-  { label: '編輯訂單狀態', value: 'canEditOrderStatus', dependsOn: 'canCheckOrder' },
-  { label: '刪除訂單', value: 'canDeleteOrder', dependsOn: 'canCheckOrder' },
-  { label: '查看後台設定', value: 'canCheckBackgroundSetting' },
-  { label: '設定飲品類型', value: 'canSetDrinkType', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定飲料品項', value: 'canSetDrink', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定配料', value: 'canSetIngredients', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定現金折扣券', value: 'canSetMoneyDiscount', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定折數折扣券', value: 'canSetPercentDiscount', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定常用優惠', value: 'canSetOftenUseDiscount', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '查看數據分析', value: 'canCheckDataAnalysis' },
-  { label: '查看權限管理', value: 'canCheckAuthority' },
-  { label: '設定人員名單', value: 'canSetAuthority', dependsOn: 'canCheckAuthority' },
-  { label: '設定付款方式', value: 'canSetPayMethod', dependsOn: 'canCheckAuthority' },
-  { label: '查看會員管理', value: 'canCheckMembers' },
-  { label: '查看桌況管理', value: 'canManageTables' },
-]
-// 母權限被取消勾選時，連帶取消勾選依附在它底下的子權限。
-function cascadeAuthorityCheckList(list: AuthorityKey[]): AuthorityKey[] {
-  let next = list
-  for (const parent of ['canCheckOrder', 'canCheckBackgroundSetting', 'canCheckAuthority'] as const) {
-    if (!next.includes(parent)) {
-      const dependents = authorityFields.filter((field) => field.dependsOn === parent).map((field) => field.value)
-      next = next.filter((item) => !dependents.includes(item))
-    }
-  }
-  return next
-}
-// 切換單一權限的勾選狀態，並套用上面的連帶取消規則。set 是對應表單那份
-// authorityCheckList／editAuthorityCheckList 的賦值函式（見 template）。
-function toggleAuthorityCheck(
-  current: AuthorityKey[],
-  key: AuthorityKey,
-  checked: boolean,
-  set: (value: AuthorityKey[]) => void,
-) {
-  const next = checked ? [...current, key] : current.filter((item) => item !== key)
-  set(cascadeAuthorityCheckList(next))
+// 權限欄位清單、分組與角色範本的定義都在 utils/authority.ts（規劃書
+// §5.4）——人員名單表格的「權限」欄摘要、AuthorityChecklist 共用元件
+// 都要用到同一份定義，不能各自維護一份。
+
+// 人員名單「權限」欄的角色徽章配色：角色範本各自一個顏色，「自訂」用
+// 中性色，一眼就能分辨這個人的權限是不是照著標準範本設定的。
+function staffRoleBadgeClass(authorityCheckList: AuthorityKey[]): string {
+  const role = deriveStaffRole(authorityCheckList)
+  if (role === CUSTOM_ROLE_LABEL) return 'bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400'
+  if (role === '店長') return 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
+  return 'bg-info-50 text-info-600 dark:bg-info-950/50 dark:text-info-400'
 }
 
 // 新增人員
