@@ -339,7 +339,7 @@
                 <td class="px-2 py-2.5 font-mono">${{ row.priceL }}</td>
                 <td class="px-2 py-2.5 font-mono">{{ row.priceBottle === 'none' ? '-' : `$${row.priceBottle}` }}</td>
                 <td class="px-2 py-2.5">
-                  <span class="rounded-md px-1.5 py-0.5 text-[10px] font-bold" :class="row.customized === 'none' ? 'bg-surface-100 text-surface-500 dark:bg-surface-800' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'">
+                  <span class="rounded-md px-1.5 py-0.5 text-[10px] font-bold" :class="row.customized === 'none' ? 'bg-surface-100 text-surface-500 dark:bg-surface-800' : 'bg-success-50 text-success-600 dark:bg-success-950/40 dark:text-success-400'">
                     {{ row.customized }}
                   </span>
                 </td>

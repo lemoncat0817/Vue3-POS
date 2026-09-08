@@ -87,7 +87,7 @@
             <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
               NT$ {{ totalRevenue.toLocaleString() }}
             </span>
-            <p v-if="peakHourInfo" class="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+            <p v-if="peakHourInfo" class="text-[11px] font-medium text-success-600 dark:text-success-400 mt-1 flex items-center gap-1">
               <Flame class="h-3 w-3" /> 尖峰時段：{{ peakHourInfo }}
             </p>
             <p v-else class="text-[11px] text-surface-400 mt-1">
@@ -100,7 +100,7 @@
         <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-surface-500 dark:text-surface-400">熱門榜出杯總量</span>
-            <div class="h-8 w-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400">
+            <div class="h-8 w-8 rounded-xl bg-accent-50 dark:bg-accent-950/60 flex items-center justify-center text-accent-600 dark:text-accent-400">
               <Coffee class="h-4 w-4" />
             </div>
           </div>
@@ -118,7 +118,7 @@
         <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-surface-500 dark:text-surface-400">完成交易筆數</span>
-            <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <div class="h-8 w-8 rounded-xl bg-success-50 dark:bg-success-950/60 flex items-center justify-center text-success-600 dark:text-success-400">
               <ShoppingBag class="h-4 w-4" />
             </div>
           </div>
@@ -136,7 +136,7 @@
         <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-surface-500 dark:text-surface-400">平均客單價 (AOV)</span>
-            <div class="h-8 w-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+            <div class="h-8 w-8 rounded-xl bg-info-50 dark:bg-info-950/60 flex items-center justify-center text-info-600 dark:text-info-400">
               <TrendingUp class="h-4 w-4" />
             </div>
           </div>
@@ -187,7 +187,7 @@
               <span class="flex items-center gap-2">
                 <span
                   class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
-                  :class="idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-surface-400' : idx === 2 ? 'bg-amber-700' : 'bg-surface-300 dark:bg-surface-700'">
+                  :class="idx === 0 ? 'bg-accent-500' : idx === 1 ? 'bg-surface-400' : idx === 2 ? 'bg-accent-700' : 'bg-surface-300 dark:bg-surface-700'">
                   {{ idx + 1 }}
                 </span>
                 <span>{{ item.name }}</span>
@@ -211,7 +211,7 @@
               <span class="flex items-center gap-2">
                 <span
                   class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
-                  :class="idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-surface-400' : idx === 2 ? 'bg-amber-700' : 'bg-surface-300 dark:bg-surface-700'">
+                  :class="idx === 0 ? 'bg-accent-500' : idx === 1 ? 'bg-surface-400' : idx === 2 ? 'bg-accent-700' : 'bg-surface-300 dark:bg-surface-700'">
                   {{ idx + 1 }}
                 </span>
                 <span>{{ item.name }}</span>
@@ -220,7 +220,7 @@
             </div>
             <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
               <div
-                class="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                class="h-full rounded-full bg-success-500 transition-all duration-500"
                 :style="{ width: `${salesReport?.topAddOns[0]?.count ? (item.count / salesReport.topAddOns[0].count) * 100 : 0}%` }" />
             </div>
           </div>

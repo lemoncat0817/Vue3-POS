@@ -10,7 +10,7 @@
     "build": "pnpm -r --if-present run build",
     "preview": "pnpm --filter @pos/app preview",
     "typecheck": "pnpm -r --if-present run typecheck",
-    "lint": "eslint .",
+    "lint": "eslint . && pnpm --filter @pos/app run check:tokens",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,ts,vue,json,md}\" --ignore-path .gitignore",
     "test": "pnpm -r --if-present run test",

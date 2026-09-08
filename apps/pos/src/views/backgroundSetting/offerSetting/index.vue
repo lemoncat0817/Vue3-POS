@@ -5,7 +5,7 @@
       <div>
         <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
           <div class="flex items-center gap-2.5">
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-success-50 text-success-600 dark:bg-success-950/50 dark:text-success-400 border border-success-200/50 dark:border-success-800/40">
               <Ticket class="h-4 w-4" />
             </div>
             <div>
@@ -54,7 +54,7 @@
                 <td class="px-3 py-2.5 font-mono text-surface-400">{{ index + 1 }}</td>
                 <td class="px-3 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
                 <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
-                <td class="px-3 py-2.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">-${{ row.discountMoney }}</td>
+                <td class="px-3 py-2.5 text-right font-mono font-bold text-success-600 dark:text-success-400">-${{ row.discountMoney }}</td>
               </tr>
             </tbody>
           </table>
@@ -80,7 +80,7 @@
       <div>
         <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
           <div class="flex items-center gap-2.5">
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-info-50 text-info-600 dark:bg-info-950/50 dark:text-info-400 border border-info-200/50 dark:border-info-800/40">
               <Percent class="h-4 w-4" />
             </div>
             <div>
@@ -129,7 +129,7 @@
                 <td class="px-3 py-2.5 font-mono text-surface-400">{{ index + 1 }}</td>
                 <td class="px-3 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
                 <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
-                <td class="px-3 py-2.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.discountMoney }}</td>
+                <td class="px-3 py-2.5 text-right font-mono font-bold text-info-600 dark:text-info-400">{{ row.discountMoney }}</td>
               </tr>
             </tbody>
           </table>
@@ -155,7 +155,7 @@
       <div>
         <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
           <div class="flex items-center gap-2.5">
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/40">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-50 text-accent-600 dark:bg-accent-950/50 dark:text-accent-400 border border-accent-200/50 dark:border-accent-800/40">
               <Sparkles class="h-4 w-4" />
             </div>
             <div>
@@ -188,10 +188,10 @@
                 @click="currentOftenUseDiscount = row">
                 <td class="px-3 py-2.5 font-mono text-surface-400">{{ index + 1 }}</td>
                 <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
-                <td class="px-3 py-2.5 text-right font-mono font-bold" :class="Number(row.discountMoney) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-surface-400'">
+                <td class="px-3 py-2.5 text-right font-mono font-bold" :class="Number(row.discountMoney) > 0 ? 'text-success-600 dark:text-success-400' : 'text-surface-400'">
                   {{ Number(row.discountMoney) > 0 ? `-$${row.discountMoney}` : '-' }}
                 </td>
-                <td class="px-3 py-2.5 text-right font-mono font-bold" :class="Number(row.discountPercent) > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-surface-400'">
+                <td class="px-3 py-2.5 text-right font-mono font-bold" :class="Number(row.discountPercent) > 0 ? 'text-info-600 dark:text-info-400' : 'text-surface-400'">
                   {{ Number(row.discountPercent) > 0 ? `${row.discountPercent}` : '-' }}
                 </td>
               </tr>

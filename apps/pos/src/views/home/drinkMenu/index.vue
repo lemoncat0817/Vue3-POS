@@ -44,7 +44,7 @@
             class="rounded-md bg-surface-100 dark:bg-surface-700/60 px-1.5 py-0.5 text-[9px] font-bold text-surface-500 dark:text-surface-400">
             固定
           </span>
-          <span v-else class="rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+          <span v-else class="rounded-md bg-success-50 dark:bg-success-950/40 px-1.5 py-0.5 text-[9px] font-bold text-success-600 dark:text-success-400">
             可調
           </span>
 

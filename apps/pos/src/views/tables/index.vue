@@ -33,7 +33,7 @@
           <div class="flex items-center gap-4 text-xs font-bold text-surface-600 dark:text-surface-400">
             <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-success-500 ring-2 ring-success-500/20"></span>空桌</span>
             <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-danger-500 ring-2 ring-danger-500/20"></span>使用中</span>
-            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-amber-500/20"></span>已預約</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-warning-500 ring-2 ring-warning-500/20"></span>已預約</span>
           </div>
           <span class="text-xs font-bold text-surface-500">共 {{ tables.length }} 個桌位</span>
         </div>
@@ -158,7 +158,7 @@ function statusLabel(status: TableStatus): string {
 }
 function statusCardClass(status: TableStatus): string {
   if (status === 'occupied') return 'border-danger-300 bg-danger-50 text-danger-700 dark:border-danger-800 dark:bg-danger-950 dark:text-danger-300'
-  if (status === 'reserved') return 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300'
+  if (status === 'reserved') return 'border-warning-300 bg-warning-50 text-warning-700 dark:border-warning-800 dark:bg-warning-950 dark:text-warning-300'
   return 'border-success-300 bg-success-50 text-success-700 dark:border-success-800 dark:bg-success-950 dark:text-success-300'
 }
 function statusButtonClass(status: TableStatus): string {

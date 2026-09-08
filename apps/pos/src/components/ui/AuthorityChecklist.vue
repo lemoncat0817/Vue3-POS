@@ -19,7 +19,7 @@
         class="ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold"
         :class="currentRole === CUSTOM_ROLE_LABEL
           ? 'bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400'
-          : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'">
+          : 'bg-success-50 text-success-600 dark:bg-success-950/50 dark:text-success-400'">
         目前：{{ currentRole }} · {{ modelValue.length }}/{{ AUTHORITY_FIELDS.length }} 項
       </span>
     </div>

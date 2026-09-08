@@ -102,8 +102,8 @@ type="button" :disabled="remaining > 0 || tenders.length === 0"
 // 與語意色 token（success／danger），是 P11 那一輪全站重構掃描時的
 // 漏網之魚——它是結帳流程裡最常用的對話框，卻剛好在 P11 之前就已經
 // 存在、之後也沒有再被修改過，沒有觸發那一輪的檢查。找零／移除支付
-// 兩處原本直接寫 text-emerald-600／text-red-600，改用 success／danger
-// token，跟 order/index.vue 等其他頁面一致。
+// 兩處原本直接寫死綠色／紅色的原生色階，改用語意色 token，跟
+// order/index.vue 等其他頁面一致。
 import { computed, ref, watch } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import type { PaymentMethod } from '@/types'

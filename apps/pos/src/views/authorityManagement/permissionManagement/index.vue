@@ -68,7 +68,7 @@
                 <td class="px-3 py-2.5">
                   <span
                     class="rounded-lg px-2 py-0.5 text-[11px] font-bold"
-                    :class="row.jobTitle === '店長' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800' : 'bg-surface-100 text-surface-600 dark:bg-surface-800 dark:text-surface-300'">
+                    :class="row.jobTitle === '店長' ? 'bg-accent-50 text-accent-600 dark:bg-accent-950/50 dark:text-accent-400 border border-accent-200 dark:border-accent-800' : 'bg-surface-100 text-surface-600 dark:bg-surface-800 dark:text-surface-300'">
                     {{ row.jobTitle }}
                   </span>
                 </td>
@@ -116,7 +116,7 @@
       <div>
         <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
           <div class="flex items-center gap-2.5">
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-info-50 text-info-600 dark:bg-info-950/50 dark:text-info-400 border border-info-200/50 dark:border-info-800/40">
               <CreditCard class="h-4 w-4" />
             </div>
             <div>
@@ -177,7 +177,7 @@
                 <td class="px-3 py-2.5">
                   <span
                     class="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                    :class="row.disabled == false ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-surface-100 text-surface-400 dark:bg-surface-800 dark:text-surface-500'">
+                    :class="row.disabled == false ? 'bg-success-50 text-success-600 dark:bg-success-950/40 dark:text-success-400' : 'bg-surface-100 text-surface-400 dark:bg-surface-800 dark:text-surface-500'">
                     {{ row.disabled == false ? '是' : '否' }}
                   </span>
                 </td>
@@ -501,7 +501,7 @@ const editAuthorityCheckList = ref<AuthorityKey[]>([])
 function staffRoleBadgeClass(authorityCheckList: AuthorityKey[]): string {
   const role = deriveStaffRole(authorityCheckList)
   if (role === CUSTOM_ROLE_LABEL) return 'bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400'
-  if (role === '店長') return 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
+  if (role === '店長') return 'bg-accent-50 text-accent-600 dark:bg-accent-950/50 dark:text-accent-400'
   return 'bg-info-50 text-info-600 dark:bg-info-950/50 dark:text-info-400'
 }
 

@@ -52,7 +52,7 @@
         type="button"
         class="flex h-9 w-9 items-center justify-center rounded-xl border border-surface-200 bg-surface-50 text-surface-600 hover:bg-surface-100 hover:text-surface-900 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300 dark:hover:bg-surface-800 dark:hover:text-surface-100 transition-colors shadow-sm"
         :aria-label="theme === 'dark' ? '切換為淺色模式' : '切換為深色模式'" @click="toggleTheme">
-        <Sun v-if="theme === 'dark'" class="h-4 w-4 text-amber-400" />
+        <Sun v-if="theme === 'dark'" class="h-4 w-4 text-accent-400" />
         <Moon v-else class="h-4 w-4 text-surface-600" />
       </button>
 
