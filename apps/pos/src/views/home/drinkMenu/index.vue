@@ -8,17 +8,7 @@
           共 {{ currentDrinks.length }} 品項
         </span>
       </div>
-      <div v-if="pageCount > 1" class="flex items-center gap-1.5">
-        <button
-          type="button"
-          class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 disabled:opacity-30 hover:bg-surface-100 transition-colors shadow-sm"
-          :disabled="currentPage <= 1" @click="handleCurrentChange(currentPage - 1)">‹</button>
-        <span class="text-xs font-bold text-surface-500">{{ currentPage }}/{{ pageCount }}</span>
-        <button
-          type="button"
-          class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 disabled:opacity-30 hover:bg-surface-100 transition-colors shadow-sm"
-          :disabled="currentPage >= pageCount" @click="handleCurrentChange(currentPage + 1)">›</button>
-      </div>
+      <AppPagination v-if="pageCount > 1" :page="currentPage" :page-count="pageCount" :total="currentDrinks.length" @update:page="handleCurrentChange" />
     </div>
 
     <!-- 飲品卡片網格 -->
@@ -74,6 +64,7 @@ import { computed, ref } from 'vue'
 import { useDrinkStore } from '@/stores/drink'
 import type { DrinkListItem } from '@/types'
 import { fromSelection } from '@/utils/selection'
+import AppPagination from '@/components/ui/AppPagination.vue'
 const drinkStore = useDrinkStore()
 
 const isSoldOut = (item: DrinkListItem) => item.stock === 0

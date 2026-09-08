@@ -347,17 +347,9 @@
                 </div>
               </div>
               <!-- 現金折扣券分頁器 -->
-              <div class="flex h-10 w-full items-center justify-around rounded-lg bg-surface-100 px-2 text-sm text-surface-600">
+              <div class="flex h-10 w-full items-center justify-between rounded-lg bg-surface-100 px-3 text-sm text-surface-600">
                 <p>{{ `共 ${discountStore.moneyDiscount.length} 樣` }}</p>
-                <div class="flex items-center gap-2">
-                  <button
-                    type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
-                    :disabled="moneyDiscountCurrentPage <= 1" @click="handleMoneyDiscountCurrentChange(moneyDiscountCurrentPage - 1)">‹</button>
-                  <button
-                    type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
-                    :disabled="moneyDiscountCurrentPage >= moneyDiscountPageCount" @click="handleMoneyDiscountCurrentChange(moneyDiscountCurrentPage + 1)">›</button>
-                </div>
-                <p>{{ `${discountStore.moneyDiscount.length > 0 ? moneyDiscountCurrentPage : 0}/${moneyDiscountPageCount}頁` }}</p>
+                <AppPagination :page="moneyDiscountCurrentPage" :page-count="moneyDiscountPageCount" :total="discountStore.moneyDiscount.length" @update:page="handleMoneyDiscountCurrentChange" />
               </div>
             </div>
             <div v-if="discountStore.discountMenu === 1" class="my-2">
@@ -370,17 +362,9 @@
                 </div>
               </div>
               <!-- 折數折扣券分頁器 -->
-              <div class="flex h-10 w-full items-center justify-around rounded-lg bg-surface-100 px-2 text-sm text-surface-600">
+              <div class="flex h-10 w-full items-center justify-between rounded-lg bg-surface-100 px-3 text-sm text-surface-600">
                 <p>{{ `共 ${discountStore.percentDiscount.length} 樣` }}</p>
-                <div class="flex items-center gap-2">
-                  <button
-                    type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
-                    :disabled="percentDiscountCurrentPage <= 1" @click="handlePercentDiscountCurrentChange(percentDiscountCurrentPage - 1)">‹</button>
-                  <button
-                    type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
-                    :disabled="percentDiscountCurrentPage >= percentDiscountPageCount" @click="handlePercentDiscountCurrentChange(percentDiscountCurrentPage + 1)">›</button>
-                </div>
-                <p>{{ `${discountStore.percentDiscount.length > 0 ? percentDiscountCurrentPage : 0}/${percentDiscountPageCount}頁` }}</p>
+                <AppPagination :page="percentDiscountCurrentPage" :page-count="percentDiscountPageCount" :total="discountStore.percentDiscount.length" @update:page="handlePercentDiscountCurrentChange" />
               </div>
             </div>
           </div>
@@ -402,6 +386,7 @@ import DrinkMenu from './drinkMenu/index.vue'
 import DrinkCustomized from './drinkCustomized/index.vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
 import PaymentPanel, { type TenderDraft } from '@/components/checkout/PaymentPanel.vue'
 import ShiftPanel from '@/components/checkout/ShiftPanel.vue'
 import ParkedOrdersPanel from '@/components/checkout/ParkedOrdersPanel.vue'

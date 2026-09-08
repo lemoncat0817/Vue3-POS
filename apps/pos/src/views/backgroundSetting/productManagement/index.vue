@@ -113,9 +113,7 @@
       <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
         <p>{{ `共 ${drinkStore.drinkType.length} 樣` }}</p>
         <div class="flex items-center gap-1.5">
-          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 flex items-center justify-center disabled:opacity-30 shadow-sm" :disabled="drinkTypeCurrentPage <= 1" @click="handleDrinkTypeCurrentChange(drinkTypeCurrentPage - 1)">‹</button>
-          <span>{{ `${drinkStore.drinkType.length > 0 ? drinkTypeCurrentPage : 0}/${drinkTypePageCount}頁` }}</span>
-          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 flex items-center justify-center disabled:opacity-30 shadow-sm" :disabled="drinkTypeCurrentPage >= drinkTypePageCount" @click="handleDrinkTypeCurrentChange(drinkTypeCurrentPage + 1)">›</button>
+          <AppPagination :page="drinkTypeCurrentPage" :page-count="drinkTypePageCount" :total="drinkStore.drinkType.length" @update:page="handleDrinkTypeCurrentChange" />
         </div>
       </div>
     </div>
@@ -358,9 +356,7 @@
       <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
         <p>{{ `共 ${currentType.drinkList ? currentType.drinkList.length : 0} 樣` }}</p>
         <div class="flex items-center gap-1.5">
-          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 flex items-center justify-center disabled:opacity-30 shadow-sm" :disabled="drinkCurrentPage <= 1" @click="handleDrinkCurrentChange(drinkCurrentPage - 1)">‹</button>
-          <span>{{ currentType.drinkList ? `${drinkCurrentPage}/${drinkPageCount}頁` : '0/0頁' }}</span>
-          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 flex items-center justify-center disabled:opacity-30 shadow-sm" :disabled="drinkCurrentPage >= drinkPageCount" @click="handleDrinkCurrentChange(drinkCurrentPage + 1)">›</button>
+          <AppPagination :page="drinkCurrentPage" :page-count="drinkPageCount" :total="currentType.drinkList?.length ?? 0" @update:page="handleDrinkCurrentChange" />
         </div>
       </div>
     </div>
@@ -493,9 +489,7 @@
       <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
         <p>{{ `共 ${drinkStore.drinkAdd.length} 樣` }}</p>
         <div class="flex items-center gap-1.5">
-          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 disabled:opacity-40" :disabled="drinkIngredientsCurrentPage <= 1" @click="handleIngredientsCurrentChange(drinkIngredientsCurrentPage - 1)">‹</button>
-          <span class="font-mono text-[11px]">{{ `${drinkStore.drinkAdd.length > 0 ? drinkIngredientsCurrentPage : 0}/${drinkIngredientsPageCount}頁` }}</span>
-          <button type="button" class="h-6 w-6 rounded border border-surface-300 dark:border-surface-700 disabled:opacity-40" :disabled="drinkIngredientsCurrentPage >= drinkIngredientsPageCount" @click="handleIngredientsCurrentChange(drinkIngredientsCurrentPage + 1)">›</button>
+          <AppPagination :page="drinkIngredientsCurrentPage" :page-count="drinkIngredientsPageCount" :total="drinkStore.drinkAdd.length" @update:page="handleIngredientsCurrentChange" />
         </div>
       </div>
     </div>
@@ -517,6 +511,7 @@ import {
   SwitchThumb,
 } from 'reka-ui'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
 import { alert, confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useDrinkStore } from '@/stores/drink'

@@ -99,15 +99,7 @@
 
       <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
         <p>{{ `共 ${authorityManagementStore.staffList.length} 樣` }}</p>
-        <div class="flex items-center gap-1.5">
-          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="staffCurrentPage <= 1" @click="handleStaffCurrentChange(staffCurrentPage - 1)">
-            <ChevronLeft class="h-3.5 w-3.5" />
-          </button>
-          <span class="px-1 font-mono text-[11px]">{{ authorityManagementStore.staffList.length > 0 ? staffCurrentPage : 0 }} / {{ staffPageCount }}</span>
-          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="staffCurrentPage >= staffPageCount" @click="handleStaffCurrentChange(staffCurrentPage + 1)">
-            <ChevronRight class="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <AppPagination :page="staffCurrentPage" :page-count="staffPageCount" :total="authorityManagementStore.staffList.length" @update:page="handleStaffCurrentChange" />
       </div>
     </div>
 
@@ -189,15 +181,7 @@
 
       <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
         <p>{{ `共 ${orderStore.paymentList.length} 樣` }}</p>
-        <div class="flex items-center gap-1.5">
-          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="payMethodCurrentPage <= 1" @click="handlePayMethodCurrentChange(payMethodCurrentPage - 1)">
-            <ChevronLeft class="h-3.5 w-3.5" />
-          </button>
-          <span class="px-1 font-mono text-[11px]">{{ orderStore.paymentList.length > 0 ? payMethodCurrentPage : 0 }} / {{ payMethodPageCount }}</span>
-          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="payMethodCurrentPage >= payMethodPageCount" @click="handlePayMethodCurrentChange(payMethodCurrentPage + 1)">
-            <ChevronRight class="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <AppPagination :page="payMethodCurrentPage" :page-count="payMethodPageCount" :total="orderStore.paymentList.length" @update:page="handlePayMethodCurrentChange" />
       </div>
     </div>
   </div>
@@ -404,7 +388,7 @@
 // 寫法，改成用業務含意本身（職稱是店長／名稱是現金）判斷——伺服端的
 // id 是 UUID，不會再有「第一筆一定是 1」這件事。
 import { ref, computed } from 'vue'
-import { UserCheck, CreditCard, ChevronLeft, ChevronRight, Pencil } from 'lucide-vue-next'
+import { UserCheck, CreditCard, Pencil } from 'lucide-vue-next'
 import {
   SelectContent,
   SelectItem,
@@ -418,6 +402,7 @@ import {
   SwitchThumb,
 } from 'reka-ui'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
 import AuthorityChecklist from '@/components/ui/AuthorityChecklist.vue'
 import { AUTHORITY_FIELDS as authorityFields, deriveStaffRole, CUSTOM_ROLE_LABEL } from '@/utils/authority'
 import { alert, confirm } from '@/composables/useConfirm'

@@ -21,7 +21,7 @@
               @click="openAddMoneyDiscountDialog">新增</button>
             <button
               type="button"
-              class="pos-btn bg-danger-50 text-danger-600 border border-danger-200/80 hover:bg-danger-100 dark:bg-danger-950/40 dark:text-danger-400 dark:border-danger-800 px-2.5 py-1.5 text-xs font-bold"
+              class="pos-btn pos-btn-danger px-2.5 py-1.5 text-xs font-bold"
               :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
               @click="deleteDrinkMoneyDiscount">刪除</button>
             <button
@@ -63,15 +63,7 @@
 
       <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
         <p>{{ `共 ${discountStore.moneyDiscount.length} 樣` }}</p>
-        <div class="flex items-center gap-1.5">
-          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="moneyDiscountCurrentPage <= 1" @click="moneyDiscountCurrentPage--">
-            <ChevronLeft class="h-3.5 w-3.5" />
-          </button>
-          <span class="px-1 font-mono text-[11px]">{{ discountStore.moneyDiscount.length > 0 ? moneyDiscountCurrentPage : 0 }} / {{ moneyDiscountPageCount }}</span>
-          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="moneyDiscountCurrentPage >= moneyDiscountPageCount" @click="moneyDiscountCurrentPage++">
-            <ChevronRight class="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <AppPagination :page="moneyDiscountCurrentPage" :page-count="moneyDiscountPageCount" :total="discountStore.moneyDiscount.length" @update:page="(value) => moneyDiscountCurrentPage = value" />
       </div>
     </div>
 
@@ -96,7 +88,7 @@
               @click="openAddPercentDiscountDialog">新增</button>
             <button
               type="button"
-              class="pos-btn bg-danger-50 text-danger-600 border border-danger-200/80 hover:bg-danger-100 dark:bg-danger-950/40 dark:text-danger-400 dark:border-danger-800 px-2.5 py-1.5 text-xs font-bold"
+              class="pos-btn pos-btn-danger px-2.5 py-1.5 text-xs font-bold"
               :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
               @click="deleteDrinkPercentDiscount">刪除</button>
             <button
@@ -138,15 +130,7 @@
 
       <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
         <p>{{ `共 ${discountStore.percentDiscount.length} 樣` }}</p>
-        <div class="flex items-center gap-1.5">
-          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="percentDiscountCurrentPage <= 1" @click="percentDiscountCurrentPage--">
-            <ChevronLeft class="h-3.5 w-3.5" />
-          </button>
-          <span class="px-1 font-mono text-[11px]">{{ discountStore.percentDiscount.length > 0 ? percentDiscountCurrentPage : 0 }} / {{ percentDiscountPageCount }}</span>
-          <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:opacity-30" :disabled="percentDiscountCurrentPage >= percentDiscountPageCount" @click="percentDiscountCurrentPage++">
-            <ChevronRight class="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <AppPagination :page="percentDiscountCurrentPage" :page-count="percentDiscountPageCount" :total="discountStore.percentDiscount.length" @update:page="(value) => percentDiscountCurrentPage = value" />
       </div>
     </div>
 
@@ -297,12 +281,13 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Ticket, Percent, Sparkles, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { Ticket, Percent, Sparkles } from 'lucide-vue-next'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form } from 'vee-validate'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import FormField from '@/components/ui/FormField.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
 import { useDiscountStore } from '@/stores/discount'
 const discountStore = useDiscountStore()
 import { useLoginStore } from "@/stores/login"
