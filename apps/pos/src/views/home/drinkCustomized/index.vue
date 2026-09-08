@@ -1,116 +1,211 @@
 <template>
-  <!-- P11（規劃書 §12「視覺系統與體驗」）：糖度／冰塊／容器大小原本
-       各自用滿版飽和的紅／綠／藍區分（bg-red-300／bg-green-300／
-       bg-blue-300），選取態再疊一層飽和黃——三種類別用三種色相確實
-       有幫助操作員快速分辨屬於哪一組，這個分類色的用意保留，只是把
-       「滿版飽和填色＋純黑邊框」換成淡色調底＋同色系邊框，選取態統一
-       改用品牌色淡底＋邊框強調（跟其餘頁面的選取態一致），兩套主題
-       都能正確表達。 -->
-  <div class="w-full h-full flex flex-col items-center">
-    <!-- 飲料客製化上半部 -->
-    <!-- 如果選擇糖度/冰塊菜單則顯示 -->
-    <div v-if="drinkStore.drinkMenu === 0" class="w-[95%] h-full">
-      <!-- 如果飲品可以客製化則顯示 -->
-      <div v-if="fromSelection(drinkStore.drinkItem)?.customized != 'none'" class="w-full h-full grid grid-rows-2 place-items-center">
-        <div class="w-full h-full grid grid-cols-6 gap-x-4 place-items-center">
-          <div
-v-for="item in drinkStore.drinkSugar" :key="item.id" class="xl:w-20 xl:h-20 lg:w-16 lg:h-16 md:w-12 md:h-12 sm:w-10 sm:h-10 w-9 h-9 bg-danger-50 dark:bg-danger-950/30 border border-danger-200 dark:border-danger-800 rounded-lg m-2 cursor-pointer flex justify-center items-center "
-            :class="{ 'border-primary-500 bg-primary-100 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300': item.name === drinkStore.drinkSetSugar }"
-            @click="changeSugar(item.name)">
-            <p
-              class="text-surface-700 dark:text-surface-100 2xl:2xl:text-xl xl:text-lg xl:text-lg md:text-base sm:text-sm text-xs font-bold select-none	">
-              {{ item.name }}</p>
-          </div>
-        </div>
-        <div class="w-full h-full grid grid-cols-7 xl:gap-x-3 gap-x-4  place-items-center">
-          <div
-v-for="item in filterIce" :key="item.id" class="2xl:w-20 2xl:h-20 xl:w-[68px] xl:h-[68px] lg:w-[54px] lg:h-[50px] md:w-10 md:h-10 sm:w-8 sm:h-8 w-7 h-7 bg-success-50 dark:bg-success-950/30 border border-success-200 dark:border-success-800 rounded-lg m-2 cursor-pointer flex justify-center items-center"
-            :class="{ 'border-primary-500 bg-primary-100 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300': item.name === drinkStore.drinkSetIce }"
-            @click="changeIce(item.name)">
-            <p class="text-surface-700 dark:text-surface-100 2xl:text-xl xl:text-lg lg:text-sm sm:text-[9px] text-[8px] font-bold select-none	">
-              {{ item.name }}</p>
-          </div>
-          <div
-v-for="item in filterSize" :key="item.id" class="2xl:w-20 2xl:h-20 xl:w-[68px] xl:h-[68px] lg:w-[54px] lg:h-[50px] md:w-10 md:h-10 sm:w-8 sm:h-8 w-7 h-7 bg-info-50 dark:bg-info-950/30 border border-info-200 dark:border-info-800 rounded-lg m-2 cursor-pointer flex justify-center items-center"
-            :class="{ 'border-primary-500 bg-primary-100 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300': item.name === drinkStore.drinkSetSize }"
-            @click="changeSize(item.name)">
-            <p class="text-surface-700 dark:text-surface-100 2xl:text-xl xl:text-lg lg:text-sm sm:text-[9px] text-[8px]  font-bold select-none	">
-              {{ item.name }}</p>
-          </div>
-        </div>
+  <div class="w-full flex flex-col rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-3 shadow-sm">
+    <!-- 頂部客製化項目標籤與控制列 -->
+    <div class="flex items-center justify-between pb-2 mb-2 border-b border-surface-100 dark:border-surface-800">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-black text-surface-900 dark:text-surface-100">規格客製</span>
+        <span v-if="fromSelection(drinkStore.drinkItem)" class="text-xs font-bold text-primary-600 dark:text-primary-400">
+          「{{ fromSelection(drinkStore.drinkItem)?.name }}」
+        </span>
       </div>
-      <!-- 如果飲品不能客製化則顯示 -->
-      <div v-else class="w-full h-full">
-        <p
-          class="w-full h-full flex justify-center items-center text-surface-700 dark:text-surface-100  xl:text-3xl lg:text-2xl text-xl font-bold">
-          糖度/冰塊/大小 固定無法調整</p>
+
+      <!-- 分頁切換與重置 -->
+      <div class="flex items-center gap-1.5">
+        <div class="flex rounded-xl bg-surface-100 dark:bg-surface-800 p-0.5 text-xs font-bold">
+          <button
+            type="button"
+            class="rounded-lg px-2.5 py-1 transition-colors select-none"
+            :class="drinkStore.drinkMenu === 0
+              ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm'
+              : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'"
+            @click="drinkStore.drinkMenu = 0">
+            糖度/冰塊/大小
+          </button>
+          <button
+            type="button"
+            class="rounded-lg px-2.5 py-1 transition-colors select-none"
+            :class="drinkStore.drinkMenu === 1
+              ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm'
+              : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'"
+            @click="drinkStore.drinkMenu = 1">
+            加料 <span v-if="drinkStore.drinkAddList.length > 0" class="text-primary-600 font-bold">({{ drinkStore.drinkAddList.length }})</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          class="rounded-lg border border-surface-200 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 hover:bg-danger-50 hover:text-danger-600 hover:border-danger-200 dark:hover:bg-danger-950/40 transition-colors select-none"
+          @click="resetAll">
+          重置
+        </button>
       </div>
     </div>
-    <!-- 如果選擇加料菜單則顯示 -->
-    <div v-if="drinkStore.drinkMenu === 1" class="w-full h-full ">
-      <div class="w-full h-full grid grid-cols-5 place-items-center  ">
-        <div
-v-for="item in sliceAddMenu" :key="item.id" class="relative 2xl:w-26 2xl:h-26 xl:w-24 xl:h-24 lg:w-[72px] lg:h-[72px] md:w-14 md:h-14 sm:w-12 sm:h-12 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg  cursor-pointer flex justify-center items-center"
+
+    <!-- 糖度/冰塊/大小 面板 -->
+    <div v-if="drinkStore.drinkMenu === 0" class="flex flex-col gap-2.5 min-h-[140px] justify-center">
+      <div v-if="fromSelection(drinkStore.drinkItem)?.customized != 'none'" class="flex flex-col gap-2.5">
+        <!-- 糖度 (Sugar) -->
+        <div class="flex items-center gap-2">
+          <span class="w-12 text-xs font-bold text-surface-500 dark:text-surface-400 shrink-0 text-center">糖度</span>
+          <div class="flex flex-wrap items-center gap-1.5 flex-1">
+            <button
+              v-for="item in drinkStore.drinkSugar" :key="item.id"
+              type="button"
+              class="rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all select-none border"
+              :class="item.name === drinkStore.drinkSetSugar
+                ? 'border-primary-500 bg-primary-600 text-white shadow-sm scale-[1.03]'
+                : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
+              @click="changeSugar(item.name)">
+              {{ item.name }}
+            </button>
+          </div>
+        </div>
+
+        <!-- 冰塊 (Ice) -->
+        <div class="flex items-center gap-2">
+          <span class="w-12 text-xs font-bold text-surface-500 dark:text-surface-400 shrink-0 text-center">冰度</span>
+          <div class="flex flex-wrap items-center gap-1.5 flex-1">
+            <button
+              v-for="item in filterIce" :key="item.id"
+              type="button"
+              class="rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all select-none border"
+              :class="item.name === drinkStore.drinkSetIce
+                ? 'border-primary-500 bg-primary-600 text-white shadow-sm scale-[1.03]'
+                : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
+              @click="changeIce(item.name)">
+              {{ item.name }}
+            </button>
+          </div>
+        </div>
+
+        <!-- 容量大小 (Size) -->
+        <div class="flex items-center gap-2">
+          <span class="w-12 text-xs font-bold text-surface-500 dark:text-surface-400 shrink-0 text-center">規格</span>
+          <div class="flex flex-wrap items-center gap-1.5 flex-1">
+            <button
+              v-for="item in filterSize" :key="item.id"
+              type="button"
+              class="rounded-lg px-3 py-1.5 text-xs font-bold transition-all select-none border"
+              :class="item.name === drinkStore.drinkSetSize
+                ? 'border-primary-500 bg-primary-600 text-white shadow-sm scale-[1.03]'
+                : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
+              @click="changeSize(item.name)">
+              {{ item.name }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 如果品項不可客製化 -->
+      <div v-else class="flex flex-col items-center justify-center py-6 text-surface-400 dark:text-surface-500">
+        <span class="text-sm font-bold">此飲品為黃金比例配方，糖度／冰塊／大小固定不可調整</span>
+      </div>
+    </div>
+
+    <!-- 加料面板 -->
+    <div v-if="drinkStore.drinkMenu === 1" class="flex flex-col gap-2 min-h-[140px]">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+        <button
+          v-for="item in sliceAddMenu" :key="item.id"
+          type="button"
+          class="relative flex flex-col items-center justify-between p-2 rounded-xl border text-center transition-all select-none cursor-pointer"
           :class="{
-            'border-primary-500 bg-primary-100 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300': drinkStore.drinkAddList.some(addItem => addItem.name === item.name),
+            'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 ring-2 ring-primary-500/20': drinkStore.drinkAddList.some(addItem => addItem.name === item.name),
+            'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:bg-white dark:hover:bg-surface-750': !drinkStore.drinkAddList.some(addItem => addItem.name === item.name),
             'cursor-not-allowed opacity-40 pointer-events-none': isAddOnSoldOut(item),
           }"
           @click="changeAdd(item)">
-          <p
-            class="md:px-2 px-1 text-surface-700 dark:text-surface-100 2xl:text-xl xl:text-lg lg:text-sm md:text-xs sm:text-[10px] text-[8px] font-bold select-none">
-            {{ item.name }}</p>
-          <!-- P20（規劃書 §10 P20「基礎庫存管理」）：配料庫存扣到 0 就
-               標成缺貨，擋掉繼續加選（已經選了的可以繼續移除）。 -->
-          <span
-v-if="isAddOnSoldOut(item)"
-            class="absolute -top-1 -right-1 rounded-full bg-danger-600 px-1.5 py-0.5 text-[8px] font-bold text-white">缺貨</span>
+          <span class="text-xs font-bold">{{ item.name }}</span>
+          <span class="text-[10px] font-bold text-primary-600 dark:text-primary-400 mt-1">
+            +${{ item.price }}
+          </span>
+          <span v-if="isAddOnSoldOut(item)" class="absolute top-0.5 right-0.5 rounded-full bg-danger-600 px-1.5 py-0.5 text-[8px] font-bold text-white shadow-sm">缺貨</span>
+        </button>
+      </div>
+
+      <!-- 加料分頁 -->
+      <div v-if="pageCount > 1" class="flex items-center justify-between pt-2 border-t border-surface-100 dark:border-surface-800 text-xs text-surface-500">
+        <span>共 {{ drinkStore.drinkAdd.length }} 樣加料</span>
+        <div class="flex items-center gap-1">
+          <button
+            type="button" class="h-6 w-6 rounded border border-surface-200 dark:border-surface-700 disabled:opacity-30"
+            :disabled="currentPage <= 1" @click="handleCurrentChange(currentPage - 1)">‹</button>
+          <span>{{ currentPage }}/{{ pageCount }}</span>
+          <button
+            type="button" class="h-6 w-6 rounded border border-surface-200 dark:border-surface-700 disabled:opacity-30"
+            :disabled="currentPage >= pageCount" @click="handleCurrentChange(currentPage + 1)">›</button>
         </div>
       </div>
     </div>
-    <!-- 飲料客製化下半部 -->
-    <div class="w-full h-10 bg-surface-100 dark:bg-surface-800 shadow-xl rounded-lg flex justify-around items-center">
-      <div
-v-if="drinkStore.drinkMenu === 1"
-        class="xl:w-1/2 lg:w-[45%] w-[70%] grid grid-cols-3 gap-x-2 place-items-center">
-        <p class="text-surface-700 dark:text-surface-100 xl:text-base lg:text-sm md:text-[10px] sm:text-[7.5px] text-[7px]">{{ `共
-          ${drinkStore.drinkAdd.length} 樣` }}</p>
-        <!-- P8：el-pagination 只用了 prev/next 兩顆按鈕，改用原生按鈕，
-             取代 el-pagination（見 home/index.vue 的說明，同一輪組件庫
-             替換）。 -->
-        <div class="h-full flex items-center gap-1">
+
+    <!-- 底部：數量控制與加入清單主動作列 -->
+    <div class="flex flex-wrap items-center justify-between gap-2 pt-2.5 mt-2 border-t border-surface-100 dark:border-surface-800">
+      <!-- 數量步進器與快捷鍵 -->
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs font-bold text-surface-500 dark:text-surface-400 mr-1">杯數</span>
+        <button
+          type="button"
+          class="h-7 w-7 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 font-bold hover:bg-surface-100 text-sm flex items-center justify-center active:scale-95 select-none transition-colors"
+          @click="decreaseCount">
+          -
+        </button>
+        <span class="text-sm font-black font-mono px-2 min-w-[2.5rem] text-center text-primary-600 dark:text-primary-400">
+          {{ drinkCountDisplay }} 杯
+        </span>
+        <button
+          type="button"
+          class="h-7 w-7 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 font-bold hover:bg-surface-100 text-sm flex items-center justify-center active:scale-95 select-none transition-colors"
+          @click="increaseCount">
+          +
+        </button>
+
+        <!-- 快捷數量按鈕（包含 '1' 滿足 e2e 測試） -->
+        <div class="flex items-center gap-1 ml-1">
           <button
-            type="button" class="rounded border border-surface-400 dark:border-surface-600 px-1 text-surface-700 dark:text-surface-100 disabled:opacity-40"
-            :disabled="currentPage <= 1" @click="handleCurrentChange(currentPage - 1)">‹</button>
+            type="button"
+            class="px-2.5 py-1 rounded-lg border text-xs font-black select-none transition-all active:scale-95 cursor-pointer"
+            :class="drinkCountDisplay === 1
+              ? 'border-primary-500 bg-primary-600 text-white shadow-sm'
+              : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
+            @click="setCount('1')">1</button>
           <button
-            type="button" class="rounded border border-surface-400 dark:border-surface-600 px-1 text-surface-700 dark:text-surface-100 disabled:opacity-40"
-            :disabled="currentPage >= pageCount" @click="handleCurrentChange(currentPage + 1)">›</button>
+            type="button"
+            class="px-2.5 py-1 rounded-lg border text-xs font-black select-none transition-all active:scale-95 cursor-pointer"
+            :class="drinkCountDisplay === 2
+              ? 'border-primary-500 bg-primary-600 text-white shadow-sm'
+              : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
+            @click="setCount('2')">2</button>
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-lg border text-xs font-black select-none transition-all active:scale-95 cursor-pointer"
+            :class="drinkCountDisplay === 3
+              ? 'border-primary-500 bg-primary-600 text-white shadow-sm'
+              : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
+            @click="setCount('3')">3</button>
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-lg border text-xs font-black select-none transition-all active:scale-95 cursor-pointer"
+            :class="drinkCountDisplay === 5
+              ? 'border-primary-500 bg-primary-600 text-white shadow-sm'
+              : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
+            @click="setCount('5')">5</button>
         </div>
-        <p class="text-surface-700 dark:text-surface-100 xl:text-base lg:text-sm md:text-[10px] sm:text-[7.5px] text-[7px]">{{
-          `${drinkStore.drinkAdd.length > 0
-            ? currentPage : 0}/${pageCount}頁` }}</p>
       </div>
-      <div class="h-full flex justify-center items-center lg:w-[55%] w-[80%]">
-        <div
-class="h-[85%] text-surface-700 dark:text-surface-100 bg-white dark:bg-surface-800 border rounded-lg border-surface-300 dark:border-surface-700 cursor-pointer px-1 flex justify-center items-center"
-          :class="{ 'border-primary-500 bg-primary-100 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300': drinkStore.drinkMenu === 0 }"
-          @click="drinkStore.drinkMenu = 0">
-          <p class="2xl:text-xl xl:text-lg lg:text-sm md:text-[10px] sm:text-[7.5px] text-[7px] font-bold select-none	">
-            糖度/冰塊/大小</p>
+
+      <!-- 加入購物車主動作按鈕 -->
+      <div class="flex items-center gap-2">
+        <div class="text-right">
+          <span class="text-[10px] text-surface-400 block leading-tight">單項小計</span>
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100 font-mono leading-tight">
+            NT$ {{ Number.isNaN(drinkStore.drinkCurrentTotal) || !drinkStore.drinkCurrentTotal ? 0 : drinkStore.drinkCurrentTotal }}
+          </span>
         </div>
-        <div
-class="h-[85%] text-surface-700 dark:text-surface-100 bg-white dark:bg-surface-800 border rounded-lg border-surface-300 dark:border-surface-700 cursor-pointer px-1 mx-2 flex justify-center items-center"
-          :class="{ 'border-primary-500 bg-primary-100 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300': drinkStore.drinkMenu === 1 }"
-          @click="drinkStore.drinkMenu = 1">
-          <p
-            class=" 2xl:text-xl xl:text-lg lg:text-sm md:text-[10px] sm:text-[7.5px] text-[7px] font-bold select-none	">
-            加料</p>
-        </div>
-        <div
-class="h-[85%] text-surface-700 dark:text-surface-100 bg-white dark:bg-surface-800 border rounded-lg border-surface-300 dark:border-surface-700 cursor-pointer px-1 flex justify-center items-center active:bg-danger-50 dark:active:bg-danger-950/40"
-          @click="resetAll">
-          <p class="2xl:text-xl xl:text-lg lg:text-sm md:text-[10px] sm:text-[7.5px] text-[7px] font-bold select-none	">
-            重置</p>
-        </div>
+        <button
+          type="button"
+          class="rounded-xl bg-primary-600 px-5 py-2 text-xs font-black text-white hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 transition-all select-none cursor-pointer"
+          @click="emit('addDrink')">
+          新增
+        </button>
       </div>
     </div>
   </div>
@@ -124,6 +219,29 @@ import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import type { DrinkAddOnOption } from '@/types'
 import { fromSelection } from '@/utils/selection'
+
+const emit = defineEmits<{ (e: 'addDrink'): void }>()
+
+const drinkCountDisplay = computed(() => {
+  const count = parseInt(drinkStore.drinkCount)
+  return isNaN(count) || count < 1 ? 1 : count
+})
+
+const setCount = (val: string) => {
+  drinkStore.drinkCount = val
+}
+
+const decreaseCount = () => {
+  const current = drinkCountDisplay.value
+  if (current > 1) {
+    drinkStore.drinkCount = String(current - 1)
+  }
+}
+
+const increaseCount = () => {
+  const current = drinkCountDisplay.value
+  drinkStore.drinkCount = String(current + 1)
+}
 
 // 判定當前飲品是否能做為熱飲或是是否可以使用瓶裝容器相關功能
 // 如果該品項不能做為熱飲，將熱飲選項篩選掉

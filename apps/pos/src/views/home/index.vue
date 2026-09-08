@@ -1,444 +1,394 @@
 <template>
-  <div class="flex overflow-auto ">
-    <!-- 左半部 -->
-    <div class="w-3/5 ">
-      <!-- 資訊顯示欄 -->
-      <div class="w-full h-[70px] flex bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 shadow-xl rounded-lg">
-        <!-- 資訊顯示欄左半部 -->
-        <div class="xl:w-1/2 h-full lg:w-[40%] w-[35%]">
-          <!-- 當前時間 -->
-          <div class="w-full h-1/2 flex justify-start items-center">
-            <div class="ml-2 text-lg flex md:flex-row flex-col ">
-              <p class="mr-2 font-bold xl:text-lg lg:text-base md:text-sm text-xs">{{ getDate() }}</p>
-              <p class="font-bold xl:text-lg lg:text-base md:text-sm text-xs">{{ time }}</p>
-            </div>
+  <div class="flex flex-col lg:flex-row w-full h-full overflow-hidden bg-surface-100/50 dark:bg-surface-950">
+    <!-- 左區：選品主工作區 (Catalog & Specification, ~60%) -->
+    <div class="flex-1 flex flex-col h-full min-w-0 p-3 overflow-hidden">
+      <!-- 頂部資訊列 (日期時間、機台、班別、搜尋提示) -->
+      <div class="flex items-center justify-between rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 px-4 py-2.5 shadow-sm mb-3 shrink-0">
+        <div class="flex items-center gap-4">
+          <!-- 時間與日期 -->
+          <div class="flex items-baseline gap-2">
+            <span class="text-sm font-black text-surface-900 dark:text-surface-100">{{ getDate() }}</span>
+            <span class="text-xs font-mono font-bold text-surface-500 dark:text-surface-400">{{ time }}</span>
           </div>
-          <!-- 機台編號和班別 -->
-          <div class="flex w-full h-1/2 items-center">
-            <div class="mx-2 flex md:flex-row flex-col items-center justify-center ">
-              <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-lg lg:text-base md:text-sm text-xs">機台編號</p>
-              <p class="text-center font-bold xl:text-lg lg:text-base md:text-sm text-xs">A</p>
+          <span class="h-4 w-px bg-surface-200 dark:bg-surface-700"></span>
+          <!-- 機台與班別 -->
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1 rounded-md bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 px-2 py-0.5 text-xs font-bold">
+              <span>機台編號</span>
+              <span class="font-mono">A</span>
             </div>
-            <div class=" flex md:flex-row flex-col items-start justify-center">
-              <ShiftPanel :operator="`${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`" />
-            </div>
-            <!-- 內用／外帶（P13：規劃書 §10 P0「內用外帶」）：每筆訂單
-                 送出當下的頻道選擇，不是持久設定，放在點餐頁最顯眼的
-                 資訊列，跟班別狀態同一排。 -->
-            <div class="ml-4 flex items-center gap-1" data-testid="order-channel-toggle">
-              <button
-type="button"
-                class="rounded-lg px-2 py-1 text-xs font-bold transition-colors xl:text-sm"
-                :class="orderChannel === '內用'
-                  ? 'bg-primary-600 text-white'
-                  : 'border border-surface-300 text-surface-600 hover:bg-surface-50 dark:border-surface-700 dark:text-surface-400 dark:hover:bg-surface-800'"
-                @click="orderChannel = '內用'">內用</button>
-              <button
-type="button"
-                class="rounded-lg px-2 py-1 text-xs font-bold transition-colors xl:text-sm"
-                :class="orderChannel === '外帶'
-                  ? 'bg-primary-600 text-white'
-                  : 'border border-surface-300 text-surface-600 hover:bg-surface-50 dark:border-surface-700 dark:text-surface-400 dark:hover:bg-surface-800'"
-                @click="orderChannel = '外帶'">外帶</button>
-            </div>
-            <!-- 內用桌號（P24：規劃書 §10 P24「真實硬體整合與桌況
-                 管理」）：只有選「內用」時才有意義，見 tableNumberInput
-                 的說明。 -->
-            <div v-if="orderChannel === '內用'" class="ml-2 flex items-center">
-              <input
-                v-model="tableNumberInput" type="text" placeholder="桌號"
-                data-testid="table-number-input"
-                class="w-16 rounded-lg border border-surface-300 bg-white px-2 py-1 text-xs font-bold text-surface-700 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 xl:text-sm" />
-            </div>
+            <ShiftPanel :operator="`${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`" />
           </div>
         </div>
-        <!-- 資訊顯示欄右半部 -->
-        <div class="xl:w-1/2 h-full lg:w-[60%] w-[65%]">
-          <div class="h-full flex justify-between mr-2 items-center">
-            <div class="flex-col">
-              <!-- 購買袋子數量 -->
-              <div class="flex mr-2">
-                <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">購買袋子數量</p>
-                <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">{{ drinkStore.currentBagCount }}
-                  個</p>
-              </div>
-              <!-- 當前飲料杯數 -->
-              <div class="flex mr-2">
-                <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">當前飲料杯數</p>
-                <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">{{ drinkStore.currentDrinkCount
-                  }} 杯</p>
-              </div>
-            </div>
-            <div class="flex-col">
-              <!-- 目前累積金額 -->
-              <div class="flex justify-end">
-                <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">目前累積金額</p>
-                <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">$ {{ drinkStore.drinkTotalMoney
-                  }} 元</p>
-              </div>
-              <!-- 優惠券已折抵金額 -->
-              <div class="flex justify-end">
-                <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">優惠券已折抵</p>
-                <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">$ {{ drinkStore.useDiscountPrice
-                  }} 元</p>
-              </div>
-              <!-- 顧客應付價格 -->
-              <div class="flex justify-end">
-                <p class="text-surface-500 dark:text-surface-400 mr-2 font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">顧客應付金額</p>
-                <p class=" flex justify-end font-bold xl:text-base lg:text-sm md:text-xs sm:text-[11px] text-[10px]">$ {{ drinkStore.drinkPayPrice }}
-                  元</p>
-              </div>
-            </div>
+
+        <!-- 飲品與杯數即時指標 -->
+        <div class="flex items-center gap-3 text-xs font-bold text-surface-600 dark:text-surface-300">
+          <div class="flex items-center gap-1.5 rounded-lg bg-surface-50 dark:bg-surface-800 px-2.5 py-1">
+            <span class="text-surface-400">已選杯數:</span>
+            <span class="text-primary-600 dark:text-primary-400 font-black">{{ drinkStore.currentDrinkCount }}</span>
+            <span>杯</span>
+          </div>
+          <div class="flex items-center gap-1.5 rounded-lg bg-surface-50 dark:bg-surface-800 px-2.5 py-1">
+            <span class="text-surface-400">袋子:</span>
+            <span class="text-primary-600 dark:text-primary-400 font-black">{{ drinkStore.currentBagCount }}</span>
+            <span>個</span>
           </div>
         </div>
       </div>
-      <!-- 單號、服務人員、功能按鈕以及待付款清單 -->
-      <div class="w-full h-[527px]">
-        <!--  -->
-        <div class="w-full h-[10%] bg-surface-100 dark:bg-surface-800 shadow-xl rounded-lg flex">
-          <!-- 單號、服務人員、功能按鈕左半部 -->
-          <div class="2xl:w-1/2 h-full flex justify-around items-center xl:w-[45%] lg:w-[40%] w-[30%]">
-            <!-- 單號 -->
-            <div class="w-1/2 flex h-1/2 items-center xl:flex-row flex-col justify-center">
-              <p class="xl:mr-2 text-surface-500 dark:text-surface-400 font-bold 2xl:text-lg xl:text-sm lg:text-sm  text-[9px]">單號:</p>
-              <p class="text-primary-600 dark:text-primary-400 font-bold 2xl:text-lg xl:text-sm lg:text-sm md:text-[10px] text-[9px]"> {{
-                orderStore.nextOrderId }}
-              </p>
-            </div>
-            <!-- 服務人員 -->
-            <div class="w-1/2 h-full flex items-center xl:flex-row flex-col justify-center">
-              <p class="xl:mr-2 text-surface-500 dark:text-surface-400 font-bold 2xl:text-lg xl:text-sm lg:text-sm md:text-[10px] text-[9px]">
-                服務人員:</p>
-              <p class="text-primary-600 dark:text-primary-400 font-bold 2xl:text-lg xl:text-sm lg:text-sm md:text-[10px] text-[9px]">{{
-                `${fromSelection(loginStore.userInfo)?.jobTitle} -
-                ${fromSelection(loginStore.userInfo)?.name} ` }}</p>
-            </div>
-          </div>
-          <!-- 單號、服務人員、功能按鈕右半部 -->
-          <div class="2xl:w-1/2 h-full flex items-center xl:w-[55%] lg:w-[60%] w-[70%]">
-            <!-- 功能按鈕 -->
-            <div class="w-full h-full flex items-center justify-end">
-              <!-- 刪除已勾選商品 -->
-              <button
-class="border border-surface-300 bg-white text-surface-700 hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-100 dark:hover:bg-surface-800 md:text-[10px] text-[8px] font-bold rounded-lg mr-2 px-1 select-none 2xl:text-base xl:text-sm lg:text-xs"
-                @click="clearSelectNotPay">刪除已勾選品項</button>
-              <!-- 清空全部品項 -->
-              <button
-class="border border-surface-300 bg-white text-surface-700 hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-100 dark:hover:bg-surface-800 md:text-[10px] text-[8px] font-bold rounded-lg mr-2 px-1 select-none 2xl:text-base xl:text-sm lg:text-xs"
-                @click="clearNotPay">清空全部品項</button>
-              <!-- 掛單／取單（P14：規劃書 §10 P0「掛單取單」）——見
-                   components/checkout/ParkedOrdersPanel.vue 的說明。 -->
-              <ParkedOrdersPanel v-model:order-channel="orderChannel" v-model:invoice-carrier="invoiceCarrier" />
-              <!-- 結帳／付款 -->
-              <!-- P6（規劃書 §10 P0「混合支付」）：原本「先選一種付款
-                   方式→再按送出訂單→彈出一次性確認框」的三步流程，改成
-                   單一按鈕直接開啟結帳面板（PaymentPanel），面板裡才是
-                   真正組出這筆訂單要用哪些付款方式、各分擔多少的地方。
-                   結帳前不再需要先「修改付款方式」——這件事本身就是每次
-                   結帳當下才決定的，不是需要事先設定的持久狀態。 -->
-              <!-- 結帳是這個工作區裡唯一的主要動作，維持品牌紅、跟前面
-                   兩個次要動作（邊框樣式）明確區分——規劃書 §12「結帳
-                   畫面上真正需要搶眼的只有金額與主要動作鍵」。 -->
-              <button
-class="bg-primary-600 text-white hover:bg-primary-700 md:text-[10px] text-[8px] font-bold rounded-lg mr-2 px-2 select-none 2xl:text-base xl:text-sm lg:text-xs"
-                data-testid="checkout-button" @click="openPaymentPanel">結帳</button>
-              <PaymentPanel
-                :open="dialogPayment" :due-amount="drinkStore.drinkPayPrice" :payment-methods="orderStore.paymentList"
-                @cancel="cancelPayment" @submit="submitPayment" />
-            </div>
-          </div>
+
+      <!-- 中間選品區 (分類 + 飲品網格獨立捲動 + 客製化面板固定底部) -->
+      <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <!-- 飲料系列分類（橫向膠囊標籤條） -->
+        <DrinkType class="mb-2 shrink-0" />
+
+        <!-- 飲料品項網格（獨立滑動區，任何視窗高度皆自適應） -->
+        <div class="flex-1 min-h-0 overflow-y-auto pr-1">
+          <DrinkMenu />
         </div>
-        <!-- 待付款清單 -->
-        <!-- P8：組件庫替換——el-table（含 type="selection" 勾選欄）改用
-             純 HTML table + 原生 checkbox，取代方式與 order/index.vue、
-             offerSetting/index.vue 一致。這份清單本來就沒有分頁（原本
-             也沒有 :total／el-pagination），維持全量顯示。 -->
-        <div class="w-full h-[90%] overflow-auto rounded-lg border border-surface-200">
-          <table class="w-full text-center text-sm">
-            <thead class="sticky top-0 bg-surface-100 text-xs font-bold text-surface-500">
-              <tr>
-                <th class="px-2 py-2">
-                  <input
-                    type="checkbox" :checked="allNotPaySelected"
-                    @change="toggleSelectAll(($event.target as HTMLInputElement).checked)" />
-                </th>
-                <th class="px-2 py-2">序號</th>
-                <th class="px-2 py-2">商品</th>
-                <th class="px-2 py-2">單價</th>
-                <th class="px-2 py-2">加料</th>
-                <th class="px-2 py-2">配料金額</th>
-                <th class="px-2 py-2">數量</th>
-                <th class="px-2 py-2">折扣金額</th>
-                <th class="px-2 py-2">使用的折扣</th>
-                <th class="px-2 py-2">小計</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-surface-100">
-              <tr v-if="drinkStore.drinkNotPay.length === 0">
-                <td colspan="10" class="px-2 py-8 text-surface-400">目前無待付款的飲品</td>
-              </tr>
-              <tr v-for="(row, index) in drinkStore.drinkNotPay" :key="row.id" data-testid="cart-row" class="hover:bg-surface-50">
-                <td class="px-2 py-2">
-                  <input
-                    type="checkbox" :checked="drinkSelectList.includes(row)"
-                    @change="toggleSelect(row, ($event.target as HTMLInputElement).checked)" />
-                </td>
-                <td class="px-2 py-2">{{ index + 1 }}</td>
-                <td class="px-2 py-2">{{ row.name }}</td>
-                <td class="px-2 py-2">{{ row.price }} 元</td>
-                <td class="px-2 py-2">{{ row.addList }}</td>
-                <td class="px-2 py-2">{{ row.addListPrice }} 元</td>
-                <td class="px-2 py-2">{{ row.count }} 杯</td>
-                <td class="px-2 py-2">{{ row.discount }} 元</td>
-                <td class="px-2 py-2">
-                  <div v-if="row.useDiscountPercent === '' && row.useDiscountMoney === '' && row.useDiscountFree === ''">
-                    無使用折扣
-                  </div>
-                  <div v-else class="flex flex-wrap justify-center gap-1">
-                    <span v-if="row.useDiscountFree != ''" class="rounded-full bg-info-100 px-2 py-0.5 text-info-700 dark:bg-info-950 dark:text-info-300">{{ row.useDiscountFree }}</span>
-                    <span v-if="row.useDiscountPercent != ''" class="rounded-full bg-danger-100 px-2 py-0.5 text-danger-700 dark:bg-danger-950 dark:text-danger-300">{{ row.useDiscountPercent }}</span>
-                    <span v-if="row.useDiscountMoney != ''" class="rounded-full bg-warning-100 px-2 py-0.5 text-warning-700 dark:bg-warning-950 dark:text-warning-300">{{ row.useDiscountMoney }}</span>
-                  </div>
-                </td>
-                <td class="px-2 py-2 font-bold">{{ row.totalPrice }}元</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <!-- 主要功能區、數量設置鍵盤 -->
-      <div class="w-full h-[281px] flex justify-around border-solid border-t-2 border-surface-200 dark:border-surface-800">
-        <!-- 主要功能區 -->
-        <div class="lg:w-[65%] h-[95%] w-[60%] mt-2 place-items-center grid grid-cols-5 lg:gap-x-3 gap-x-3.5 ml-1">
-          <!-- 載具（P15：規劃書 §10 P0「發票」）——見
-               components/checkout/InvoiceCarrierPanel.vue 的說明。 -->
-          <InvoiceCarrierPanel v-model="invoiceCarrier" />
-          <!-- 會員（P22：規劃書 §10 P22「會員與顧客經營」）——見
-               components/checkout/MemberPanel.vue 的說明。 -->
-          <MemberPanel v-model="currentOrderMember" />
-          <!-- 加購袋子 -->
-          <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            @click="openBagDialog">加購袋子</button>
-          <!-- 加購袋子選單 -->
-          <!-- P8：組件庫替換——el-slider（連拖曳滑桿跟旁邊的數字輸入框
-               都要）改用 Reka UI 的 Slider 原語＋原生數字輸入框。 -->
-          <ModalDialog v-model:open="dialogBag" title="加購袋子數量">
-            <div class="mx-2 flex items-center gap-4">
-              <SliderRoot
-                :model-value="[bagCount]" :min="0" :max="100" :step="1"
-                class="relative flex h-5 flex-1 items-center"
-                @update:model-value="(value) => { bagCount = value?.[0] ?? 0 }">
-                <SliderTrack class="relative h-1.5 w-full rounded-full bg-surface-200">
-                  <SliderRange class="absolute h-full rounded-full bg-primary-500" />
-                </SliderTrack>
-                <SliderThumb class="block h-4 w-4 rounded-full border-2 border-primary-500 bg-white shadow focus:outline-none" />
-              </SliderRoot>
-              <input
-                v-model.number="bagCount" type="number" min="0" max="100"
-                class="w-16 rounded-lg border border-surface-300 px-2 py-1 text-center text-sm" />
-            </div>
-            <div class="mt-6 flex justify-end gap-2">
-              <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeBagCount">取消</button>
-              <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="changeBagCount">確定</button>
-            </div>
-          </ModalDialog>
-          <!-- 免費招待 -->
-          <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            :class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canFreeDrink'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canFreeDrink') }"
-            @click="freeDiscount">免費招待</button>
-          <!-- 環保折扣 -->
-          <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            @click="ecoDiscount">{{
-              discountStore.oftenUseDiscount[0].name }}</button>
-          <!-- 瓶裝折扣 -->
-          <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            @click="bottleDiscount">{{
-              discountStore.oftenUseDiscount[1].name }}</button>
-          <!-- 開收銀機 -->
-          <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            :class="{ 'opacity-50': !hasCapability(loginStore.userInfo, 'canOpenCashier'), 'pointer-events-none': !hasCapability(loginStore.userInfo, 'canOpenCashier') }"
-            @click="openCashier">開收銀機</button>
-          <!-- 優惠券 -->
-          <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            @click="openDiscountMenu">優惠券</button>
-          <!-- 優惠券選單 -->
-          <!-- P8：組件庫替換——el-dialog、el-pagination 換法跟上面付款
-               方式選單一致。 -->
-          <ModalDialog v-model:open="dialogDiscount" title="選擇優惠券">
-            <div class="mx-2 max-h-[60vh] overflow-auto">
-              <div class="flex h-[85%] items-center justify-center">
-                <div
-class="h-[85%] text-surface-700 dark:text-surface-100 bg-white dark:bg-surface-800 border rounded-lg border-surface-300 dark:border-surface-700 cursor-pointer px-1"
-                  :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.discountMenu === 0 }"
-                  @click="changeMoneyDiscount">
-                  <p class="w-full h-full text-xl font-bold">現金折扣券</p>
-                </div>
-                <div
-class="h-[85%] text-surface-700 dark:text-surface-100 bg-white dark:bg-surface-800 border rounded-lg border-surface-300 dark:border-surface-700 cursor-pointer px-1 mx-2 "
-                  :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.discountMenu === 1 }"
-                  @click="changePercentDiscount">
-                  <p class="w-full h-full text-xl font-bold">折數折扣券</p>
-                </div>
-              </div>
-              <div v-if="discountStore.discountMenu === 0" class="my-2">
-                <div class="mb-2">
-                  <div
-v-for="item in sliceMoneyDiscount" :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-white dark:bg-surface-800 rounded-xl"
-                    :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.moneySelectingDiscountId === item.id }"
-                    @click="selectMoneyDiscount(item.id)">
-                    <p class="text-3xl font-bold select-none">{{ item.name }}</p>
-                  </div>
-                </div>
-                <!-- 現金折扣券分頁器 -->
-                <div class="flex h-10 w-full items-center justify-around rounded-lg bg-surface-100 px-2 text-sm text-surface-600">
-                  <p>{{ `共 ${discountStore.moneyDiscount.length} 樣` }}</p>
-                  <div class="flex items-center gap-2">
-                    <button
-                      type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
-                      :disabled="moneyDiscountCurrentPage <= 1" @click="handleMoneyDiscountCurrentChange(moneyDiscountCurrentPage - 1)">‹</button>
-                    <button
-                      type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
-                      :disabled="moneyDiscountCurrentPage >= moneyDiscountPageCount" @click="handleMoneyDiscountCurrentChange(moneyDiscountCurrentPage + 1)">›</button>
-                  </div>
-                  <p>{{ `${discountStore.moneyDiscount.length > 0 ? moneyDiscountCurrentPage : 0}/${moneyDiscountPageCount}頁` }}</p>
-                </div>
-              </div>
-              <div v-if="discountStore.discountMenu === 1" class="my-2">
-                <div class="mb-2">
-                  <div
-v-for="item in slicePercentDiscount" :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-white dark:bg-surface-800 rounded-xl"
-                    :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.percentSelectingDiscountId === item.id }"
-                    @click="selectPercentDiscount(item.id)">
-                    <p class="text-3xl font-bold select-none">{{ item.name }}</p>
-                  </div>
-                </div>
-                <!-- 折數折扣券分頁器 -->
-                <div class="flex h-10 w-full items-center justify-around rounded-lg bg-surface-100 px-2 text-sm text-surface-600">
-                  <p>{{ `共 ${discountStore.percentDiscount.length} 樣` }}</p>
-                  <div class="flex items-center gap-2">
-                    <button
-                      type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
-                      :disabled="percentDiscountCurrentPage <= 1" @click="handlePercentDiscountCurrentChange(percentDiscountCurrentPage - 1)">‹</button>
-                    <button
-                      type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
-                      :disabled="percentDiscountCurrentPage >= percentDiscountPageCount" @click="handlePercentDiscountCurrentChange(percentDiscountCurrentPage + 1)">›</button>
-                  </div>
-                  <p>{{ `${discountStore.percentDiscount.length > 0 ? percentDiscountCurrentPage : 0}/${percentDiscountPageCount}頁` }}</p>
-                </div>
-              </div>
-            </div>
-            <div class="mt-4 flex justify-end gap-2">
-              <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeDiscount">取消</button>
-              <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="useDiscount">確定</button>
-            </div>
-          </ModalDialog>
-          <!-- 九折 -->
-          <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            @click="oftenUseDiscount1">{{
-              discountStore.oftenUseDiscount[2].name }}</button>
-          <!-- 八五折 -->
-          <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            @click="oftenUseDiscount2">{{
-              discountStore.oftenUseDiscount[3].name }}</button>
-          <!-- 員工八折 -->
-          <button
-class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
-            @click="oftenUseDiscount3">{{
-              discountStore.oftenUseDiscount[4].name }}</button>
-        </div>
-        <!-- 數量設置鍵盤 -->
-        <div class="lg:w-[30%] h-[95%] w-[35%] mt-2 bg-white dark:bg-surface-900 border border-surface-300 dark:border-surface-700 rounded-xl">
-          <div class="w-full h-1/5 flex items-center justify-around">
-            <input
-v-model="drinkStore.drinkCount" oninput="value=value.replace(/[^\d]/g,'')" maxlength="5" disabled
-              class="w-[65%] h-4/5 ml-2 border border-surface-300 dark:border-surface-700 text-right p-2 text-surface-700 dark:text-surface-100 font-bold text-3xl 	" />
-            <button
-class="w-[20%] lg:h-4/5 h-[70%] ml-2 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg rounded-md font-bold xl:text-3xl lg:text-2xl select-none	 active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('delete')">←</button>
-          </div>
-          <div class="w-full h-1/5 flex items-center justify-around ">
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('7')">7</button>
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('8')">8</button>
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('9')">9</button>
-            <!-- 「新增」是這組鍵盤的確認動作（把目前選好的品項＋杯數
-                 加進待付款清單），跟純粹輸入數字的按鍵不同語意，維持
-                 品牌色。 -->
-            <button
-class="w-[20%] bg-primary-600 text-white hover:bg-primary-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none"
-              @click="addNewDrink">新增</button>
-          </div>
-          <div class="w-full h-1/5 flex items-center justify-around ">
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('4')">4</button>
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('5')">5</button>
-            <button
-class="w-[20%] bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('6')">6</button>
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="drinkStore.drinkCount = '10'">10</button>
-          </div>
-          <div class="w-full h-1/5 flex items-center justify-around ">
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('1')">1</button>
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('2')">2</button>
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('3')">3</button>
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="drinkStore.drinkCount = '50'">50</button>
-          </div>
-          <div class="w-full h-1/5 flex items-center justify-around ">
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('0')">0</button>
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="addCount('00')">00</button>
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="drinkStore.drinkCount = '0'">重設</button>
-            <button
-class="w-[20%]  bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-100 border border-surface-300 dark:border-surface-700 xl:rounded-xl lg:rounded-lg font-bold 2xl:text-xl xl:text-lg lg:text-sm md:text-xs text-[10px] rounded-md select-none active:bg-primary-50 dark:active:bg-surface-700"
-              @click="drinkStore.drinkCount = '100'">100</button>
-          </div>
-        </div>
+
+        <!-- 飲料客製化與數量新增控制台 (固定於左區底部) -->
+        <DrinkCustomized class="mt-2 shrink-0" @add-drink="addNewDrink" />
       </div>
     </div>
-    <!-- 右半部 -->
-    <div class="w-2/5  border-solid border-l-2 border-surface-200 dark:border-surface-800 ">
-      <!-- 飲料類型 -->
-      <div class="w-full h-[308px] ">
-        <DrinkType />
+
+    <!-- 右區：票據式收銀工作台 (Digital Ticket & Checkout, ~40% / 540px) -->
+    <div class="w-full lg:w-[480px] xl:w-[520px] flex flex-col h-full shrink-0 border-l border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-xl overflow-hidden">
+      <!-- 票據頂部：單號、內外帶、桌號、收銀動作 -->
+      <div class="p-3 border-b border-surface-200 dark:border-surface-800 bg-surface-50/70 dark:bg-surface-900/90 shrink-0">
+        <div class="flex items-center justify-between mb-2">
+          <!-- 單號與收銀員 -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-surface-400">單號</span>
+            <span class="text-base font-black text-primary-600 dark:text-primary-400 font-mono tracking-wide">
+              #{{ orderStore.nextOrderId }}
+            </span>
+            <span class="text-xs text-surface-500 font-medium">
+              ({{ fromSelection(loginStore.userInfo)?.jobTitle }} - {{ fromSelection(loginStore.userInfo)?.name }})
+            </span>
+          </div>
+
+          <!-- 內用／外帶切換 (嚴格維持 data-testid 與樣式類別) -->
+          <div class="flex items-center gap-1 bg-surface-200/70 dark:bg-surface-800 p-0.5 rounded-xl" data-testid="order-channel-toggle">
+            <button
+              type="button"
+              class="rounded-lg px-2.5 py-1 text-xs font-bold transition-all select-none"
+              :class="orderChannel === '外帶'
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'text-surface-600 dark:text-surface-300 hover:text-surface-900'"
+              @click="orderChannel = '外帶'">外帶</button>
+            <button
+              type="button"
+              class="rounded-lg px-2.5 py-1 text-xs font-bold transition-all select-none"
+              :class="orderChannel === '內用'
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'text-surface-600 dark:text-surface-300 hover:text-surface-900'"
+              @click="orderChannel = '內用'">內用</button>
+            <input
+              v-if="orderChannel === '內用'"
+              v-model="tableNumberInput" type="text" placeholder="桌號"
+              data-testid="table-number-input"
+              class="w-14 rounded-md border border-surface-300 bg-white px-1.5 py-0.5 text-xs font-bold text-surface-700 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 ml-1" />
+          </div>
+        </div>
+
+        <!-- 訂單快速操作按鈕列 -->
+        <div class="flex items-center justify-between gap-1 pt-1 border-t border-surface-200/50 dark:border-surface-800">
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 select-none shadow-sm transition-colors"
+              @click="clearSelectNotPay">
+              刪除已勾選品項
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-danger-50 hover:text-danger-600 hover:border-danger-200 select-none shadow-sm transition-colors"
+              @click="clearNotPay">
+              清空全部品項
+            </button>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <ParkedOrdersPanel v-model:order-channel="orderChannel" v-model:invoice-carrier="invoiceCarrier" />
+          </div>
+        </div>
       </div>
-      <!-- 飲料品項 -->
-      <div class="w-full h-[308px]">
-        <DrinkMenu />
+
+      <!-- 待付款清單表格 (維持完全相容之 table 結構、欄位次序與 data-testid) -->
+      <div class="flex-1 min-h-[160px] overflow-y-auto border-b border-surface-200 dark:border-surface-800">
+        <table class="w-full text-center text-xs">
+          <thead class="sticky top-0 bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 font-bold border-b border-surface-200 dark:border-surface-700 z-10">
+            <tr>
+              <th class="px-2 py-2">
+                <input
+                  type="checkbox" :checked="allNotPaySelected"
+                  class="rounded text-primary-600 focus:ring-primary-500 cursor-pointer"
+                  @change="toggleSelectAll(($event.target as HTMLInputElement).checked)" />
+              </th>
+              <th class="px-1 py-2">序號</th>
+              <th class="px-2 py-2">商品</th>
+              <th class="px-1 py-2">單價</th>
+              <th class="px-2 py-2">加料</th>
+              <th class="px-1 py-2">配料金額</th>
+              <th class="px-1 py-2">數量</th>
+              <th class="px-1 py-2">折扣金額</th>
+              <th class="px-2 py-2">使用折扣</th>
+              <th class="px-2 py-2">小計</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+            <tr v-if="drinkStore.drinkNotPay.length === 0">
+              <td colspan="10" class="py-12 text-center text-surface-400 dark:text-surface-500">
+                <div class="flex flex-col items-center gap-2">
+                  <p class="font-bold text-sm">目前無待付款的飲品</p>
+                  <p class="text-xs">請點選左側選單加入購物車</p>
+                </div>
+              </td>
+            </tr>
+            <tr
+              v-for="(row, index) in drinkStore.drinkNotPay"
+              :key="row.id"
+              data-testid="cart-row"
+              class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
+              :class="{ 'bg-primary-50/40 dark:bg-primary-950/20': drinkSelectList.includes(row) }">
+              <td class="px-2 py-2">
+                <input
+                  type="checkbox" :checked="drinkSelectList.includes(row)"
+                  class="rounded text-primary-600 focus:ring-primary-500 cursor-pointer"
+                  @change="toggleSelect(row, ($event.target as HTMLInputElement).checked)" />
+              </td>
+              <td class="px-1 py-2 font-mono text-surface-500">{{ index + 1 }}</td>
+              <td class="px-2 py-2 font-bold text-surface-900 dark:text-surface-100 max-w-[120px] truncate" :title="row.name">{{ row.name }}</td>
+              <td class="px-1 py-2 font-mono">${{ row.price }}</td>
+              <td class="px-2 py-2 text-surface-500 max-w-[90px] truncate" :title="String(row.addList)">{{ row.addList }}</td>
+              <td class="px-1 py-2 font-mono">${{ row.addListPrice }}</td>
+              <td class="px-1 py-2 font-black text-primary-600 dark:text-primary-400">{{ row.count }}</td>
+              <td class="px-1 py-2 font-mono text-danger-600 dark:text-danger-400">-${{ row.discount }}</td>
+              <td class="px-2 py-2">
+                <div v-if="row.useDiscountPercent === '' && row.useDiscountMoney === '' && row.useDiscountFree === ''" class="text-surface-400 text-[10px]">
+                  無
+                </div>
+                <div v-else class="flex flex-wrap gap-1 justify-center">
+                  <span v-if="row.useDiscountFree != ''" class="rounded-full bg-info-100 px-1.5 py-0.5 text-[10px] text-info-700 dark:bg-info-950 dark:text-info-300">{{ row.useDiscountFree }}</span>
+                  <span v-if="row.useDiscountPercent != ''" class="rounded-full bg-danger-100 px-1.5 py-0.5 text-[10px] text-danger-700 dark:bg-danger-950 dark:text-danger-300">{{ row.useDiscountPercent }}</span>
+                  <span v-if="row.useDiscountMoney != ''" class="rounded-full bg-warning-100 px-1.5 py-0.5 text-[10px] text-warning-700 dark:bg-warning-950 dark:text-warning-300">{{ row.useDiscountMoney }}</span>
+                </div>
+              </td>
+              <!-- E2E 嚴格相容：第 10 欄 (index 9) 必須為 line total -->
+              <td class="px-2 py-2 font-black font-mono text-surface-900 dark:text-surface-100">${{ row.totalPrice }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <!-- 飲料客製化 -->
-      <div class="w-full h-[263px]">
-        <DrinkCustomized />
+
+      <!-- 收銀快捷操作列 (已移除手刻計算機，轉化為專業收銀工具列) -->
+      <div class="p-2.5 border-b border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-900/60 shrink-0 flex flex-col gap-1.5">
+        <!-- 常用折扣與外設快捷鍵 (維持既有按鈕文字以相容所有 E2E 測試) -->
+        <div class="grid grid-cols-4 gap-1.5">
+          <button
+            type="button"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            @click="ecoDiscount">
+            {{ discountStore.oftenUseDiscount[0].name }}
+          </button>
+          <button
+            type="button"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            @click="bottleDiscount">
+            {{ discountStore.oftenUseDiscount[1].name }}
+          </button>
+          <button
+            type="button"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            @click="openBagDialog">
+            加購袋子
+          </button>
+          <button
+            type="button"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canOpenCashier') }"
+            @click="openCashier">
+            開收銀機
+          </button>
+        </div>
+
+        <!-- 客戶服務與發票載具快捷 (3 欄) -->
+        <div class="grid grid-cols-3 gap-1.5">
+          <InvoiceCarrierPanel v-model="invoiceCarrier" />
+          <MemberPanel v-model="currentOrderMember" />
+          <button
+            type="button"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            @click="openDiscountMenu">
+            優惠券
+          </button>
+        </div>
+
+        <!-- 常用折扣與招待 (4 欄) -->
+        <div class="grid grid-cols-4 gap-1.5">
+          <button
+            type="button"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            @click="oftenUseDiscount1">
+            {{ discountStore.oftenUseDiscount[2].name }}
+          </button>
+          <button
+            type="button"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            @click="oftenUseDiscount2">
+            {{ discountStore.oftenUseDiscount[3].name }}
+          </button>
+          <button
+            type="button"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            @click="oftenUseDiscount3">
+            {{ discountStore.oftenUseDiscount[4].name }}
+          </button>
+          <button
+            type="button"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canFreeDrink') }"
+            @click="freeDiscount">
+            免費招待
+          </button>
+        </div>
+      </div>
+
+      <!-- 底部財務總計與結帳主要動作卡 -->
+      <div class="p-3 bg-surface-50 dark:bg-surface-900 shrink-0 flex flex-col gap-2">
+        <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-surface-500">
+          <div class="flex justify-between">
+            <span>累積金額:</span>
+            <span class="font-bold text-surface-800 dark:text-surface-200">$ {{ drinkStore.drinkTotalMoney }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>優惠折抵:</span>
+            <span class="font-bold text-danger-600 dark:text-danger-400">-$ {{ drinkStore.useDiscountPrice }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>購物袋數:</span>
+            <span class="font-bold text-surface-800 dark:text-surface-200">{{ drinkStore.currentBagCount }} 個</span>
+          </div>
+          <div class="flex justify-between">
+            <span>總出杯數:</span>
+            <span class="font-bold text-surface-800 dark:text-surface-200">{{ drinkStore.currentDrinkCount }} 杯</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-surface-200 dark:border-surface-800">
+          <div class="flex flex-col">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-surface-400">應付總額 DUE TOTAL</span>
+            <span class="text-2xl font-black text-primary-600 dark:text-primary-400 font-mono">
+              $ {{ drinkStore.drinkPayPrice }} 元
+            </span>
+          </div>
+
+          <!-- 結帳按鈕 (維持 data-testid="checkout-button") -->
+          <button
+            type="button"
+            data-testid="checkout-button"
+            class="h-12 px-8 rounded-xl bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-black text-base lg:text-lg shadow-lg shadow-primary-600/30 transition-all select-none flex items-center justify-center gap-2"
+            @click="openPaymentPanel">
+            結帳
+          </button>
+        </div>
+
+        <!-- 結帳面板 -->
+        <PaymentPanel
+          :open="dialogPayment" :due-amount="drinkStore.drinkPayPrice" :payment-methods="orderStore.paymentList"
+          @cancel="cancelPayment" @submit="submitPayment" />
+
+        <!-- 加購袋子選單 -->
+        <ModalDialog v-model:open="dialogBag" title="加購袋子數量">
+          <div class="mx-2 flex items-center gap-4">
+            <SliderRoot
+              :model-value="[bagCount]" :min="0" :max="100" :step="1"
+              class="relative flex h-5 flex-1 items-center"
+              @update:model-value="(value) => { bagCount = value?.[0] ?? 0 }">
+              <SliderTrack class="relative h-1.5 w-full rounded-full bg-surface-200">
+                <SliderRange class="absolute h-full rounded-full bg-primary-500" />
+              </SliderTrack>
+              <SliderThumb class="block h-4 w-4 rounded-full border-2 border-primary-500 bg-white shadow focus:outline-none" />
+            </SliderRoot>
+            <input
+              v-model.number="bagCount" type="number" min="0" max="100"
+              class="w-16 rounded-lg border border-surface-300 px-2 py-1 text-center text-sm" />
+          </div>
+          <div class="mt-6 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeBagCount">取消</button>
+            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="changeBagCount">確定</button>
+          </div>
+        </ModalDialog>
+
+        <!-- 優惠券選單 -->
+        <ModalDialog v-model:open="dialogDiscount" title="選擇優惠券">
+          <div class="mx-2 max-h-[60vh] overflow-auto">
+            <div class="flex h-[85%] items-center justify-center">
+              <div
+                class="h-[85%] text-surface-700 dark:text-surface-100 bg-white dark:bg-surface-800 border rounded-lg border-surface-300 dark:border-surface-700 cursor-pointer px-1"
+                :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.discountMenu === 0 }"
+                @click="changeMoneyDiscount">
+                <p class="w-full h-full text-xl font-bold">現金折扣券</p>
+              </div>
+              <div
+                class="h-[85%] text-surface-700 dark:text-surface-100 bg-white dark:bg-surface-800 border rounded-lg border-surface-300 dark:border-surface-700 cursor-pointer px-1 mx-2 "
+                :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.discountMenu === 1 }"
+                @click="changePercentDiscount">
+                <p class="w-full h-full text-xl font-bold">折數折扣券</p>
+              </div>
+            </div>
+            <div v-if="discountStore.discountMenu === 0" class="my-2">
+              <div class="mb-2">
+                <div
+                  v-for="item in sliceMoneyDiscount" :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-white dark:bg-surface-800 rounded-xl"
+                  :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.moneySelectingDiscountId === item.id }"
+                  @click="selectMoneyDiscount(item.id)">
+                  <p class="text-3xl font-bold select-none">{{ item.name }}</p>
+                </div>
+              </div>
+              <!-- 現金折扣券分頁器 -->
+              <div class="flex h-10 w-full items-center justify-around rounded-lg bg-surface-100 px-2 text-sm text-surface-600">
+                <p>{{ `共 ${discountStore.moneyDiscount.length} 樣` }}</p>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
+                    :disabled="moneyDiscountCurrentPage <= 1" @click="handleMoneyDiscountCurrentChange(moneyDiscountCurrentPage - 1)">‹</button>
+                  <button
+                    type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
+                    :disabled="moneyDiscountCurrentPage >= moneyDiscountPageCount" @click="handleMoneyDiscountCurrentChange(moneyDiscountCurrentPage + 1)">›</button>
+                </div>
+                <p>{{ `${discountStore.moneyDiscount.length > 0 ? moneyDiscountCurrentPage : 0}/${moneyDiscountPageCount}頁` }}</p>
+              </div>
+            </div>
+            <div v-if="discountStore.discountMenu === 1" class="my-2">
+              <div class="mb-2">
+                <div
+                  v-for="item in slicePercentDiscount" :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-white dark:bg-surface-800 rounded-xl"
+                  :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.percentSelectingDiscountId === item.id }"
+                  @click="selectPercentDiscount(item.id)">
+                  <p class="text-3xl font-bold select-none">{{ item.name }}</p>
+                </div>
+              </div>
+              <!-- 折數折扣券分頁器 -->
+              <div class="flex h-10 w-full items-center justify-around rounded-lg bg-surface-100 px-2 text-sm text-surface-600">
+                <p>{{ `共 ${discountStore.percentDiscount.length} 樣` }}</p>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
+                    :disabled="percentDiscountCurrentPage <= 1" @click="handlePercentDiscountCurrentChange(percentDiscountCurrentPage - 1)">‹</button>
+                  <button
+                    type="button" class="rounded border border-surface-300 px-2 disabled:opacity-40"
+                    :disabled="percentDiscountCurrentPage >= percentDiscountPageCount" @click="handlePercentDiscountCurrentChange(percentDiscountCurrentPage + 1)">›</button>
+                </div>
+                <p>{{ `${discountStore.percentDiscount.length > 0 ? percentDiscountCurrentPage : 0}/${percentDiscountPageCount}頁` }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeDiscount">取消</button>
+            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="useDiscount">確定</button>
+          </div>
+        </ModalDialog>
       </div>
     </div>
   </div>

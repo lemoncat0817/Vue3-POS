@@ -1,37 +1,70 @@
 <template>
-  <div class="w-full h-full flex flex-col ">
-    <!-- 飲料品項上半部 -->
-    <div class="w-full h-full grid grid-cols-5 place-items-center">
-      <div
-v-for="item in sliceDrinkMenu" :key="item.id" class="relative 2xl:w-28 2xl:h-28 xl:w-24 xl:h-24 lg:w-[72px] lg:h-[72px] md:w-14 md:h-14 sm:w-12 sm:h-12 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg  cursor-pointer flex justify-center items-center"
+  <div class="w-full flex flex-col">
+    <!-- 飲料品項標題與分頁控制 -->
+    <div class="flex items-center justify-between mb-2 px-1">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-black uppercase tracking-wider text-surface-500 dark:text-surface-400">飲品選單</span>
+        <span class="rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[11px] font-bold text-surface-600 dark:text-surface-300">
+          共 {{ currentDrinks.length }} 品項
+        </span>
+      </div>
+      <div v-if="pageCount > 1" class="flex items-center gap-1.5">
+        <button
+          type="button"
+          class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 disabled:opacity-30 hover:bg-surface-100 transition-colors shadow-sm"
+          :disabled="currentPage <= 1" @click="handleCurrentChange(currentPage - 1)">‹</button>
+        <span class="text-xs font-bold text-surface-500">{{ currentPage }}/{{ pageCount }}</span>
+        <button
+          type="button"
+          class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 disabled:opacity-30 hover:bg-surface-100 transition-colors shadow-sm"
+          :disabled="currentPage >= pageCount" @click="handleCurrentChange(currentPage + 1)">›</button>
+      </div>
+    </div>
+
+    <!-- 飲品卡片網格 -->
+    <div v-if="currentDrinks.length === 0" class="flex flex-col items-center justify-center py-12 rounded-2xl border border-dashed border-surface-300 dark:border-surface-700 text-surface-400">
+      <span class="text-sm font-bold">請先點選上方飲品系列以載入品項</span>
+    </div>
+
+    <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+      <button
+        v-for="item in sliceDrinkMenu" :key="item.id"
+        type="button"
+        class="group relative flex flex-col justify-between p-3 rounded-2xl border text-left transition-all duration-150 select-none shadow-sm cursor-pointer hover:shadow-md active:scale-95"
         :class="{
-          'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': item.name === fromSelection(drinkStore.drinkItem)?.name,
+          'border-primary-500 bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 ring-2 ring-primary-500/30 scale-[1.02]': item.name === fromSelection(drinkStore.drinkItem)?.name,
+          'border-surface-200 dark:border-surface-700/80 bg-white dark:bg-surface-800 text-surface-800 dark:text-surface-100 hover:border-surface-300 dark:hover:border-surface-600': item.name !== fromSelection(drinkStore.drinkItem)?.name,
           'cursor-not-allowed opacity-40 pointer-events-none': isSoldOut(item),
         }"
         @click="changeItem(item)">
-        <p class="md:px-2 px-1 text-surface-700 dark:text-surface-100 2xl:text-xl xl:text-lg lg:text-sm md:text-xs sm:text-[10px] text-[8px] font-bold select-none	">{{ item.name }}</p>
-        <!-- P20（規劃書 §10 P20「基礎庫存管理」）：庫存扣到 0 就標成
-             缺貨，擋掉繼續選取這個品項，不是只在後台看得到。 -->
-        <span
-v-if="isSoldOut(item)"
-          class="absolute -top-1 -right-1 rounded-full bg-danger-600 px-1.5 py-0.5 text-[8px] font-bold text-white">缺貨</span>
-      </div>
-    </div>
-    <!-- 飲料品項下半部 -->
-    <!-- P8：el-pagination 只用了 prev/next 兩顆按鈕，改用原生按鈕，取代
-         el-pagination（見 home/index.vue 的說明，同一輪組件庫替換）。 -->
-    <div class="w-full h-10 bg-surface-100 dark:bg-surface-800 shadow-xl rounded-lg flex justify-around items-center">
-      <p class="text-surface-700 dark:text-surface-100">{{ `共 ${currentDrinks.length} 樣` }}</p>
-      <div class="h-full flex items-center gap-2">
-        <button
-          type="button" class="rounded border border-surface-400 dark:border-surface-600 px-2 text-surface-700 dark:text-surface-100 disabled:opacity-40"
-          :disabled="currentPage <= 1" @click="handleCurrentChange(currentPage - 1)">‹</button>
-        <button
-          type="button" class="rounded border border-surface-400 dark:border-surface-600 px-2 text-surface-700 dark:text-surface-100 disabled:opacity-40"
-          :disabled="currentPage >= pageCount" @click="handleCurrentChange(currentPage + 1)">›</button>
-      </div>
-      <p class="text-surface-700 dark:text-surface-100">{{ `${currentDrinks.length > 0 ? currentPage : 0}/${pageCount}頁`
-        }}</p>
+        <!-- 頂部標籤列 -->
+        <div class="flex items-start justify-between w-full gap-1 mb-1.5">
+          <span
+            v-if="item.customized === 'none'"
+            class="rounded-md bg-surface-100 dark:bg-surface-700/60 px-1.5 py-0.5 text-[9px] font-bold text-surface-500 dark:text-surface-400">
+            固定
+          </span>
+          <span v-else class="rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+            可調
+          </span>
+
+          <span
+            v-if="isSoldOut(item)"
+            class="rounded-full bg-danger-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">缺貨</span>
+        </div>
+
+        <!-- 品名 -->
+        <p class="text-xs lg:text-sm font-black tracking-tight leading-snug line-clamp-2 select-none mb-2">
+          {{ item.name }}
+        </p>
+
+        <!-- 價格 -->
+        <div class="flex items-center justify-between mt-auto pt-1 border-t border-surface-100 dark:border-surface-700/50 w-full">
+          <span class="text-xs lg:text-sm font-black text-primary-600 dark:text-primary-400">
+            NT$ {{ item.priceL !== 'none' ? item.priceL : item.priceBottle }}
+          </span>
+        </div>
+      </button>
     </div>
   </div>
 </template>
@@ -42,43 +75,28 @@ import { useDrinkStore } from '@/stores/drink'
 import type { DrinkListItem } from '@/types'
 import { fromSelection } from '@/utils/selection'
 const drinkStore = useDrinkStore()
-// P20（規劃書 §10 P20「基礎庫存管理」）：庫存扣到 0 視為缺貨，擋掉
-// 繼續選取——`stock` 是 `undefined`（舊版離線種子資料，見 types/
-// drink.ts 的說明）或 `null`（伺服端明確表示「不追蹤庫存」）都不算
-// 缺貨，只有精確等於 0 才算。
+
 const isSoldOut = (item: DrinkListItem) => item.stock === 0
-// 獲取當前所選飲品相關功能
-// 存入當前所選的飲品選項
+
 const changeItem = (item: DrinkListItem) => {
   if (isSoldOut(item)) return
   drinkStore.drinkItem = item
 }
 
-// 計算當前系列包含的飲品相關功能
-// 計算當前所選的飲品系列並且回傳該系列的飲品
 const currentDrinks = computed(() => {
   if (drinkStore.drinkTypeMenu) {
-    // drinkTypeMenu 只會被設成 drinkType 裡真實存在的 type 值（見
-    // drinkType/index.vue 的 changeType），因此這裡的 find 在實務上必定
-    // 命中；用非空斷言保留原本「找不到就丟錯」的行為，不悄悄改成空陣列。
     return drinkStore.drinkType.find(item => item.type === drinkStore.drinkTypeMenu)!.drinkList
   } else {
     return []
   }
 })
 
-// 切換頁數相關功能
-// 頁數切換
 const handleCurrentChange = (page: number) => {
   currentPage.value = page
 }
-// 定義當前頁數
 const currentPage = ref(1)
-// 計算並切換當前頁面內容
 const sliceDrinkMenu = computed(() => {
   return currentDrinks.value.slice((currentPage.value - 1) * 10, currentPage.value * 10)
 })
 const pageCount = computed(() => Math.max(Math.ceil(currentDrinks.value.length / 10), 1))
 </script>
-
-<style lang="scss" scoped></style>

@@ -1,31 +1,23 @@
 <template>
-  <div class="w-full h-full flex flex-col ">
-    <!-- 飲料類型上半部 -->
-    <div class="w-full h-full  grid grid-cols-5 place-items-center">
-      <div
-v-for="item in sliceDrinkType" :key="item.id" class="2xl:w-28 2xl:h-28 xl:w-24 xl:h-24 lg:w-[72px] lg:h-[72px] md:w-14 md:h-14 sm:w-12 sm:h-12 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg flex justify-center items-center cursor-pointer"
-        :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': item.type === drinkStore.drinkTypeMenu }"
-        @click="changeType(item.type)">
-        <p class="md:px-2 px-0.5 text-surface-700 dark:text-surface-100 2xl:text-xl xl:text-lg lg:text-sm md:text-xs sm:text-[10px] text-[8px] font-bold select-none	">{{ item.name }}
-        </p>
-      </div>
-    </div>
-    <!-- 飲料類型下半部 -->
-    <!-- P8：el-pagination 只用了 prev/next 兩顆按鈕，改用原生按鈕，取代
-         el-pagination（見 home/index.vue 的說明，同一輪組件庫替換）。 -->
-    <div class="w-full h-10 bg-surface-100 dark:bg-surface-800 shadow-xl rounded-lg flex justify-around items-center">
-      <p class="text-surface-700 dark:text-surface-100">{{ `共 ${drinkStore.drinkType.length} 樣` }}</p>
-      <div class="h-full flex items-center gap-2">
-        <button
-          type="button" class="rounded border border-surface-400 dark:border-surface-600 px-2 text-surface-700 dark:text-surface-100 disabled:opacity-40"
-          :disabled="currentPage <= 1" @click="handleCurrentChange(currentPage - 1)">‹</button>
-        <button
-          type="button" class="rounded border border-surface-400 dark:border-surface-600 px-2 text-surface-700 dark:text-surface-100 disabled:opacity-40"
-          :disabled="currentPage >= pageCount" @click="handleCurrentChange(currentPage + 1)">›</button>
-      </div>
-      <p class="text-surface-700 dark:text-surface-100">{{ `${drinkStore.drinkType.length > 0
-        ? currentPage : 0}/${pageCount}頁` }}</p>
-    </div>
+  <div class="w-full flex items-center gap-2 overflow-x-auto no-scrollbar py-1 shrink-0">
+    <button
+      v-for="item in drinkStore.drinkType"
+      :key="item.id"
+      type="button"
+      class="group flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-bold transition-all duration-150 select-none shadow-sm cursor-pointer shrink-0 whitespace-nowrap active:scale-95"
+      :class="item.type === drinkStore.drinkTypeMenu
+        ? 'border-primary-500 bg-primary-600 text-white shadow-md shadow-primary-600/25 ring-2 ring-primary-500/20'
+        : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:border-surface-300 dark:hover:border-surface-600 hover:bg-surface-50 dark:hover:bg-surface-750'"
+      @click="changeType(item.type)">
+      <span class="font-black">{{ item.name }}</span>
+      <span
+        class="text-xs px-1.5 py-0.5 rounded-full font-bold transition-colors"
+        :class="item.type === drinkStore.drinkTypeMenu
+          ? 'bg-primary-700 text-primary-100'
+          : 'bg-surface-100 dark:bg-surface-700 text-surface-500 dark:text-surface-400'">
+        {{ item.drinkList.length }}
+      </span>
+    </button>
   </div>
 </template>
 
@@ -35,23 +27,17 @@ import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
 
 // 切換飲料系列相關功能
-// 存放當前所選的飲料系列
 const changeType = (type: string) => {
   drinkStore.drinkTypeMenu = type
 }
 
 // 切換頁數相關功能
-// 頁數切換
 const handleCurrentChange = (page: number) => {
   currentPage.value = page
 }
-// 定義當前頁數
 const currentPage = ref(1)
-// 計算並切換當前頁面內容
 const sliceDrinkType = computed(() => {
   return drinkStore.drinkType.slice((currentPage.value - 1) * 10, currentPage.value * 10)
 })
 const pageCount = computed(() => Math.max(Math.ceil(drinkStore.drinkType.length / 10), 1))
 </script>
-
-<style lang="scss" scoped></style>

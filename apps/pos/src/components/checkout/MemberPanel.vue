@@ -1,7 +1,8 @@
 <template>
   <button
-type="button"
-    class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
+    type="button"
+    v-bind="$attrs"
+    class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
     :class="{ 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300': modelValue }"
     data-testid="member-button" @click="openDialog">
     {{ triggerLabel }}
