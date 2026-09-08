@@ -76,9 +76,14 @@
         </ModalDialog>
 
         <!-- 飲品類型 Table -->
-        <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
+        <!-- UI-5（規劃書 §2.3「三欄都沒有獨立捲動」）：原本靠「每欄
+             固定 10 筆分頁」限制高度，不是真的讓表格自己捲動。改成表格
+             區塊自己 max-h + overflow-y-auto，thead 加 sticky，捲動時
+             欄位標題留在原地——分頁器繼續保留（超過一頁時還是切頁比
+             一次捲一大串好操作），只是不再是唯一撐住高度的手段。 -->
+        <div class="max-h-[420px] overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
           <table class="w-full text-center text-xs sm:text-sm">
-            <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+            <thead class="sticky top-0 z-10 bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
               <tr>
                 <th class="px-2 py-2.5">序號</th>
                 <th class="px-2 py-2.5">Id</th>
@@ -311,9 +316,9 @@
         </ModalDialog>
 
         <!-- 飲料品項 Table -->
-        <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
+        <div class="max-h-[420px] overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
           <table class="w-full text-center text-xs sm:text-sm">
-            <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+            <thead class="sticky top-0 z-10 bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
               <tr>
                 <th class="px-2 py-2.5">序號</th>
                 <th class="px-2 py-2.5">Id</th>
@@ -450,9 +455,9 @@
         </ModalDialog>
 
         <!-- 配料 Table -->
-        <div class="mt-4 overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+        <div class="mt-4 max-h-[420px] overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800">
           <table class="w-full text-center text-xs">
-            <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
+            <thead class="sticky top-0 z-10 bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
               <tr>
                 <th class="px-2 py-2.5">序號</th>
                 <th class="px-2 py-2.5">Id</th>
