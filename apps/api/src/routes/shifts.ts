@@ -7,7 +7,7 @@ import {
   shiftSchema,
 } from '@pos/contract'
 import { summarizeShiftCash } from '@pos/domain'
-import { cashMovements, orderTenders, orders, shifts } from '../db/schema'
+import { cashMovements, orderRefunds, orderTenders, orders, shifts } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
@@ -93,6 +93,7 @@ function toShiftResponse(row: ShiftRow, movements: CashMovementRow[]) {
     cashSales: row.cashSales,
     cashIn,
     cashOut,
+    refunds: row.refunds,
     expectedCash: row.expectedCash,
     actualCash: row.actualCash,
     variance: row.variance,
@@ -122,7 +123,14 @@ async function loadShiftWithMovements(db: AnyDb, shiftId: string) {
 // 類」旗標。
 const CASH_METHOD_NAME = '現金'
 
-/** 統計 [openedAt, closedAt) 區間內，現金類 tender 的金額總和。 */
+/**
+ * 統計 [openedAt, closedAt) 區間內，現金類 tender 的金額總和。
+ *
+ * P12（規劃書 §10 P0「退款／作廢」）修正：排除訂單狀態為「已取消」
+ * 的訂單——作廢代表這筆訂單整筆不算數，繼續把它的現金 tender 算進
+ * 現金營業額會讓應有現金虛高，收班點鈔對不起來（見 @pos/domain 的
+ * refund.ts 對「作廢」跟「退款」的區分說明）。
+ */
 async function sumCashSales(db: AnyDb, openedAt: string, closedAt: string): Promise<number> {
   const rows = await db
     .select({ amount: orderTenders.amount })
@@ -131,10 +139,29 @@ async function sumCashSales(db: AnyDb, openedAt: string, closedAt: string): Prom
     .where(
       and(
         eq(orderTenders.method, CASH_METHOD_NAME),
+        eq(orders.orderStatus, '已完成'),
         gte(orders.createdAt, openedAt),
         lt(orders.createdAt, closedAt),
       ),
     )
+    .all()
+  return rows.reduce((sum, row) => sum + row.amount, 0)
+}
+
+/**
+ * 統計 [openedAt, closedAt) 區間內的退款總額。退款一律視為從現金抽屜
+ * 退出去（見 @pos/domain 的 summarizeShiftCash() 說明），不區分原本
+ * 訂單收的是不是現金——單店手搖飲情境下，退款幾乎都是店員直接從
+ * 抽屜退現金給顧客，不論當初怎麼收款，這是務實的簡化，跟 sumCashSales
+ * 只認「現金」字面值同樣性質的取捨。用退款紀錄自己的時間（at）判斷
+ * 是否落在這個班別區間，不是訂單的建立時間——退款可能發生在訂單成立
+ * 後的任何時候，甚至跨到下一個班別才處理。
+ */
+async function sumCashRefunds(db: AnyDb, openedAt: string, closedAt: string): Promise<number> {
+  const rows = await db
+    .select({ amount: orderRefunds.amount })
+    .from(orderRefunds)
+    .where(and(gte(orderRefunds.at, openedAt), lt(orderRefunds.at, closedAt)))
     .all()
   return rows.reduce((sum, row) => sum + row.amount, 0)
 }
@@ -163,6 +190,7 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
       closedBy: null,
       closedAt: null,
       cashSales: null,
+      refunds: null,
       expectedCash: null,
       actualCash: null,
       variance: null,
@@ -219,6 +247,7 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
 
     const closedAt = new Date().toISOString()
     const cashSales = await sumCashSales(db, existing.shift.openedAt, closedAt)
+    const refunds = await sumCashRefunds(db, existing.shift.openedAt, closedAt)
     const cashIn = existing.movements.filter((m) => m.type === 'in').reduce((sum, m) => sum + m.amount, 0)
     const cashOut = existing.movements.filter((m) => m.type === 'out').reduce((sum, m) => sum + m.amount, 0)
     const { expectedCash, variance } = summarizeShiftCash({
@@ -226,6 +255,7 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
       cashSales,
       cashIn,
       cashOut,
+      cashRefunds: refunds,
       actualCash: input.actualCash,
     })
 
@@ -235,13 +265,14 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
       closedBy: input.operator,
       closedAt,
       cashSales,
+      refunds,
       expectedCash,
       actualCash: input.actualCash,
       variance,
     }
     await db
       .update(shifts)
-      .set({ status: 'closed', closedBy: input.operator, closedAt, cashSales, expectedCash, actualCash: input.actualCash, variance })
+      .set({ status: 'closed', closedBy: input.operator, closedAt, cashSales, refunds, expectedCash, actualCash: input.actualCash, variance })
       .where(eq(shifts.id, id))
 
     return c.json(toShiftResponse(closedShift, existing.movements), 200)

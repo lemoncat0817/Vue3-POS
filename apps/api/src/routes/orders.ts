@@ -1,10 +1,18 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq, sql } from 'drizzle-orm'
-import { createOrderRequestSchema, orderSchema, orderStatusSchema, type AppliedCoupon, type TenderInput } from '@pos/contract'
-import { priceLine, type OftenUseRates } from '@pos/domain'
+import {
+  createOrderRequestSchema,
+  orderSchema,
+  orderStatusSchema,
+  refundInputSchema,
+  type AppliedCoupon,
+  type TenderInput,
+} from '@pos/contract'
+import { priceLine, summarizeOrderRefunds, type OftenUseRates } from '@pos/domain'
 import {
   moneyCoupons,
   orderLines,
+  orderRefunds,
   orders,
   orderTenders,
   oftenUseRates as oftenUseRatesTable,
@@ -72,8 +80,26 @@ const errorSchema = z.object({ error: z.string() })
  * 一旦有第二台終端（或同一台裝置重新整理），本機的異動就會被伺服端
  * 尚未更新的資料蓋掉，兩邊看到的訂單狀態不一致。這兩個端點把這個動作
  * 變成真的伺服端操作。
+ *
+ * P12（規劃書 §10 P0「退款／作廢」）：把狀態改成「已取消」現在是真正
+ * 的「作廢」操作，不只是換個字串——一定要附上原因（reason）與經手人
+ * （operator），伺服端記錄成 voidReason／voidedBy／voidedAt（見
+ * db/schema.ts 的說明），班別結算也會從此排除這筆訂單的現金 tender
+ * （見 shifts.ts 的 sumCashSales）。改回「已完成」則是撤銷這次作廢，
+ * 三個欄位一併清空。「已完成」不需要 reason——這裡只有作廢這個方向
+ * 需要交代理由，跟現實收銀情境一致（沒有人會被要求解釋「為什麼這筆
+ * 訂單是正常完成的」）。
  */
-const updateOrderStatusRequestSchema = z.object({ orderStatus: orderStatusSchema })
+const updateOrderStatusRequestSchema = z
+  .object({
+    orderStatus: orderStatusSchema,
+    operator: z.string().min(1),
+    reason: z.string().min(1).optional(),
+  })
+  .refine((data) => data.orderStatus !== '已取消' || data.reason !== undefined, {
+    message: '作廢訂單必須填寫原因',
+    path: ['reason'],
+  })
 
 const updateOrderStatusRoute = createRoute({
   method: 'patch',
@@ -85,6 +111,30 @@ const updateOrderStatusRoute = createRoute({
   },
   responses: {
     200: { description: '訂單狀態更新成功', content: { 'application/json': { schema: orderSchema } } },
+    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這筆訂單', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+/**
+ * 退款（P12：規劃書 §10 P0「退款／作廢」）。只允許對「已完成」的訂單
+ * 退款——已作廢的訂單整筆都不算數，不需要另外退錢（見 refund.ts 的
+ * 說明）。退款金額不能超過目前還能退的額度（應付金額 − 已退金額，
+ * 用 @pos/domain 的 summarizeOrderRefunds() 驗證），避免同一筆訂單
+ * 因為分好幾次退款、每次都只檢查單次金額合理而退超過。
+ */
+const createRefundRoute = createRoute({
+  method: 'post',
+  path: '/{orderId}/refunds',
+  middleware: [requireDeviceToken] as const,
+  request: {
+    params: z.object({ orderId: z.string().min(1) }),
+    body: { content: { 'application/json': { schema: refundInputSchema } } },
+  },
+  responses: {
+    200: { description: '這個 refundId 已經退過款（冪等），回傳目前的訂單狀態', content: { 'application/json': { schema: orderSchema } } },
+    201: { description: '退款成功', content: { 'application/json': { schema: orderSchema } } },
+    400: { description: '這筆訂單已作廢，或退款金額超過目前還能退的額度', content: { 'application/json': { schema: errorSchema } } },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
     404: { description: '找不到這筆訂單', content: { 'application/json': { schema: errorSchema } } },
   },
@@ -112,8 +162,11 @@ const deleteOrderRoute = createRoute({
 type OrderRow = typeof orders.$inferSelect
 type OrderLineRow = typeof orderLines.$inferSelect
 type OrderTenderRow = typeof orderTenders.$inferSelect
+type OrderRefundRow = typeof orderRefunds.$inferSelect
 
-function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderTenderRow[]) {
+function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderTenderRow[], refunds: OrderRefundRow[]) {
+  const sortedRefunds = [...refunds].sort((a, b) => a.at.localeCompare(b.at))
+  const { refundedAmount } = summarizeOrderRefunds(order.orderPaymentPrice, sortedRefunds)
   return orderSchema.parse({
     orderId: order.orderId,
     orderTime: order.orderTime,
@@ -127,6 +180,17 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderT
     orderPaymentPrice: order.orderPaymentPrice,
     discountName: order.discountName,
     changeDue: order.changeDue,
+    refunds: sortedRefunds.map((refund) => ({
+      id: refund.id,
+      amount: refund.amount,
+      reason: refund.reason,
+      operator: refund.operator,
+      at: refund.at,
+    })),
+    refundedAmount,
+    voidReason: order.voidReason,
+    voidedBy: order.voidedBy,
+    voidedAt: order.voidedAt,
     tenders: [...tenders]
       .sort((a, b) => a.seq - b.seq)
       .map((tender) => ({
@@ -278,7 +342,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     if (existing) {
       const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, existing.orderId)).all()
       const existingTenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, existing.orderId)).all()
-      return c.json(toOrderResponse(existing, lines, existingTenders), 200)
+      const existingRefunds = await db.select().from(orderRefunds).where(eq(orderRefunds.orderId, existing.orderId)).all()
+      return c.json(toOrderResponse(existing, lines, existingTenders, existingRefunds), 200)
     }
 
     // 序號核發之後，如果下面的 insert 因為其他原因失敗，這個序號就浪費
@@ -333,6 +398,9 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       discountName,
       idempotencyKey: input.idempotencyKey,
       createdAt: orderTime,
+      voidReason: null,
+      voidedBy: null,
+      voidedAt: null,
     }
     const newTenders: Omit<OrderTenderRow, 'id'>[] = input.tenders.map((tender, seq) => ({
       orderId,
@@ -353,13 +421,14 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
 
     const insertedLines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
     const insertedTenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
-    return c.json(toOrderResponse(newOrder, insertedLines, insertedTenders), 201)
+    return c.json(toOrderResponse(newOrder, insertedLines, insertedTenders, []), 201)
   })
   .openapi(listOrdersRoute, async (c) => {
     const db = c.get('db')
     const allOrders = await db.select().from(orders).all()
     const allLines = await db.select().from(orderLines).all()
     const allTenders = await db.select().from(orderTenders).all()
+    const allRefunds = await db.select().from(orderRefunds).all()
 
     const linesByOrder = new Map<string, OrderLineRow[]>()
     for (const line of allLines) {
@@ -373,17 +442,28 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       list.push(tender)
       tendersByOrder.set(tender.orderId, list)
     }
+    const refundsByOrder = new Map<string, OrderRefundRow[]>()
+    for (const refund of allRefunds) {
+      const list = refundsByOrder.get(refund.orderId) ?? []
+      list.push(refund)
+      refundsByOrder.set(refund.orderId, list)
+    }
 
     return c.json(
       allOrders.map((order) =>
-        toOrderResponse(order, linesByOrder.get(order.orderId) ?? [], tendersByOrder.get(order.orderId) ?? []),
+        toOrderResponse(
+          order,
+          linesByOrder.get(order.orderId) ?? [],
+          tendersByOrder.get(order.orderId) ?? [],
+          refundsByOrder.get(order.orderId) ?? [],
+        ),
       ),
       200,
     )
   })
   .openapi(updateOrderStatusRoute, async (c) => {
     const { orderId } = c.req.valid('param')
-    const { orderStatus } = c.req.valid('json')
+    const { orderStatus, operator, reason } = c.req.valid('json')
     const db = c.get('db')
 
     const existing = await db.select().from(orders).where(eq(orders.orderId, orderId)).get()
@@ -391,10 +471,61 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '找不到這筆訂單' }, 404)
     }
 
-    await db.update(orders).set({ orderStatus }).where(eq(orders.orderId, orderId))
+    // 改成「已取消」＝這次作廢，記錄理由／經手人／時間；改成「已完成」
+    // ＝撤銷作廢，三個欄位一併清空（見 db/schema.ts 的說明）。
+    const voidFields =
+      orderStatus === '已取消'
+        ? { voidReason: reason ?? null, voidedBy: operator, voidedAt: new Date().toISOString() }
+        : { voidReason: null, voidedBy: null, voidedAt: null }
+
+    await db.update(orders).set({ orderStatus, ...voidFields }).where(eq(orders.orderId, orderId))
     const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
     const tenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
-    return c.json(toOrderResponse({ ...existing, orderStatus }, lines, tenders), 200)
+    const refunds = await db.select().from(orderRefunds).where(eq(orderRefunds.orderId, orderId)).all()
+    return c.json(toOrderResponse({ ...existing, orderStatus, ...voidFields }, lines, tenders, refunds), 200)
+  })
+  .openapi(createRefundRoute, async (c) => {
+    const { orderId } = c.req.valid('param')
+    const input = c.req.valid('json')
+    const db = c.get('db')
+
+    const existing = await db.select().from(orders).where(eq(orders.orderId, orderId)).get()
+    if (!existing) {
+      return c.json({ error: '找不到這筆訂單' }, 404)
+    }
+
+    const existingRefunds = await db.select().from(orderRefunds).where(eq(orderRefunds.orderId, orderId)).all()
+
+    // 冪等：同一個 refundId 重送，回傳目前的訂單狀態，不重複建立退款
+    // 紀錄（理由跟送單的 idempotencyKey 一致，見 createOrderRoute）。
+    if (existingRefunds.some((refund) => refund.id === input.refundId)) {
+      const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
+      const tenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
+      return c.json(toOrderResponse(existing, lines, tenders, existingRefunds), 200)
+    }
+
+    if (existing.orderStatus === '已取消') {
+      return c.json({ error: '這筆訂單已作廢，不需要另外退款' }, 400)
+    }
+
+    const { refundableAmount } = summarizeOrderRefunds(existing.orderPaymentPrice, existingRefunds)
+    if (input.amount > refundableAmount) {
+      return c.json({ error: `退款金額（${input.amount}）超過這筆訂單目前還能退的額度（${refundableAmount}）` }, 400)
+    }
+
+    const newRefund: OrderRefundRow = {
+      id: input.refundId,
+      orderId,
+      amount: input.amount,
+      reason: input.reason,
+      operator: input.operator,
+      at: new Date().toISOString(),
+    }
+    await db.insert(orderRefunds).values(newRefund)
+
+    const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
+    const tenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
+    return c.json(toOrderResponse(existing, lines, tenders, [...existingRefunds, newRefund]), 201)
   })
   .openapi(deleteOrderRoute, async (c) => {
     const { orderId } = c.req.valid('param')
@@ -405,10 +536,12 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '找不到這筆訂單' }, 404)
     }
 
-    // 先刪明細再刪主檔（order_lines／order_tenders 的 order_id 都參照
-    // orders.order_id，見 db/schema.ts），順序反過來會違反外鍵約束。
+    // 先刪明細再刪主檔（order_lines／order_tenders／order_refunds 的
+    // order_id 都參照 orders.order_id，見 db/schema.ts），順序反過來
+    // 會違反外鍵約束。
     await db.delete(orderLines).where(eq(orderLines.orderId, orderId))
     await db.delete(orderTenders).where(eq(orderTenders.orderId, orderId))
+    await db.delete(orderRefunds).where(eq(orderRefunds.orderId, orderId))
     await db.delete(orders).where(eq(orders.orderId, orderId))
     return c.body(null, 204)
   })

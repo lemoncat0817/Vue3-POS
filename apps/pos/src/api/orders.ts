@@ -1,4 +1,4 @@
-import { createOrderRequestSchema, orderSchema, type AppliedCoupon, type CreateOrderRequest, type Order, type OrderStatus, type TenderInput } from '@pos/contract'
+import { createOrderRequestSchema, orderSchema, type AppliedCoupon, type CreateOrderRequest, type Order, type OrderStatus, type RefundInput, type TenderInput } from '@pos/contract'
 import { ulid } from '@pos/domain'
 import type { CartLineItem } from '@/types'
 import { fetchJson } from './http'
@@ -29,17 +29,42 @@ export async function createOrder(payload: CreateOrderRequest): Promise<Order> {
  * 離線佇列裡等待同步（見 src/offline/），伺服端會回 404，呼叫端要自己
  * 處理這個情況（見 views/order/index.vue 的錯誤訊息），這裡不額外做
  * 「排入佇列稍後重試」，避免跟送單本身的離線佇列機制混在一起。
+ *
+ * P12（規劃書 §10 P0「退款／作廢」）：orderStatus 改成「已取消」現在
+ * 是真正的作廢操作，一定要附上 operator，改成「已取消」時還要附上
+ * reason（見 apps/api/src/routes/orders.ts 的 updateOrderStatusRequestSchema
+ * 說明）。
  */
-export async function updateOrderStatus(orderId: string, orderStatus: OrderStatus): Promise<Order> {
+export async function updateOrderStatus(
+  orderId: string,
+  orderStatus: OrderStatus,
+  operator: string,
+  reason?: string,
+): Promise<Order> {
   const body = await fetchJson<unknown>(`/api/orders/${encodeURIComponent(orderId)}/status`, {
     method: 'PATCH',
-    body: JSON.stringify({ orderStatus }),
+    body: JSON.stringify({ orderStatus, operator, reason }),
   })
   return orderSchema.parse(body)
 }
 
 export async function deleteOrder(orderId: string): Promise<void> {
   await fetchJson<null>(`/api/orders/${encodeURIComponent(orderId)}`, { method: 'DELETE' })
+}
+
+/**
+ * 對應 POST /api/orders/:orderId/refunds（P12：規劃書 §10 P0「退款／
+ * 作廢」）。跟作廢不同，退款不改變訂單狀態（訂單仍是「已完成」），只
+ * 是多記一筆退款紀錄——伺服端會驗證這筆金額沒有超過目前還能退的額度
+ * （見 orders.ts 的 createRefundRoute 說明），用戶端不需要（也不被
+ * 信任）自己算剩餘可退額度。
+ */
+export async function refundOrder(orderId: string, input: RefundInput): Promise<Order> {
+  const body = await fetchJson<unknown>(`/api/orders/${encodeURIComponent(orderId)}/refunds`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+  return orderSchema.parse(body)
 }
 
 /**

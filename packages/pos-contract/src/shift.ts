@@ -47,9 +47,12 @@ export const shiftStatusSchema = z.enum(['open', 'closed'])
 export type ShiftStatus = z.infer<typeof shiftStatusSchema>
 
 /**
- * cashSales／expectedCash／actualCash／variance 在班別還開著的時候都是
- * null——這幾個數字只有收班當下才算得出來（cashSales 要看整段區間的
- * 現金訂單，actualCash 要店員實際點鈔），不是開帳時就存在的資料。
+ * cashSales／refunds／expectedCash／actualCash／variance 在班別還開著
+ * 的時候都是 null——這幾個數字只有收班當下才算得出來（cashSales／
+ * refunds 都要看整段區間的訂單／退款紀錄，actualCash 要店員實際
+ * 點鈔），不是開帳時就存在的資料。cashIn／cashOut 則是直接記錄在
+ * 這個班別自己的 cash_movements 表上（見 db/schema.ts），開帳期間
+ * 隨時查得到，不需要等收班。
  */
 export const shiftSchema = z.object({
   id: z.string(),
@@ -62,6 +65,8 @@ export const shiftSchema = z.object({
   cashSales: z.number().int().nonnegative().nullable(),
   cashIn: z.number().int().nonnegative(),
   cashOut: z.number().int().nonnegative(),
+  /** 這個班別期間的退款總額（P12：規劃書 §10 P0「退款／作廢」）。 */
+  refunds: z.number().int().nonnegative().nullable(),
   expectedCash: z.number().int().nonnegative().nullable(),
   actualCash: z.number().int().nonnegative().nullable(),
   variance: z.number().int().nullable(),

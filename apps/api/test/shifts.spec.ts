@@ -60,6 +60,7 @@ describe('POST /api/shifts（P6：規劃書 §10 P0「班別結帳」）', () =>
       openedBy: '店長 - Lemon',
       openingFloat: 3000,
       cashSales: null,
+      refunds: null,
       expectedCash: null,
       actualCash: null,
       variance: null,
@@ -229,6 +230,82 @@ describe('POST /api/shifts/:id/close', () => {
     expect(body.cashSales).toBe(80)
     expect(body.expectedCash).toBe(3580)
     expect(body.actualCash).toBe(3580)
+    expect(body.variance).toBe(0)
+  })
+
+  it('已作廢的訂單不計入 cashSales（P12：作廢代表整筆訂單不算數）', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    await app.request('/api/shifts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ shiftId: '01ARZ3NDEKTSV4RRFFQ69G5FAV', operator: '店長 - Lemon', openingFloat: 3000 }),
+    })
+
+    const createRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildOrderRequest('01ARZ3NDEKTSV4RRFFQ69G5FB1', [{ method: '現金', amount: 80 }])),
+    })
+    const created = await readJson(createRes)
+
+    // 作廢這筆現金訂單——收班時不該再把它算進 cashSales。
+    await app.request(`/api/orders/${created.orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '客人臨時取消' }),
+    })
+
+    const closeRes = await app.request('/api/shifts/01ARZ3NDEKTSV4RRFFQ69G5FAV/close', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ operator: '店長 - Lemon', actualCash: 3000 }),
+    })
+    expect(closeRes.status).toBe(200)
+    const body = await readJson(closeRes)
+    expect(body.cashSales).toBe(0)
+    expect(body.expectedCash).toBe(3000)
+    expect(body.variance).toBe(0)
+  })
+
+  it('班別期間的退款從應有現金扣除（P12：退款一律視為現金退出抽屜）', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    await app.request('/api/shifts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ shiftId: '01ARZ3NDEKTSV4RRFFQ69G5FAV', operator: '店長 - Lemon', openingFloat: 3000 }),
+    })
+
+    const createRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildOrderRequest('01ARZ3NDEKTSV4RRFFQ69G5FB1', [{ method: '現金', amount: 80 }])),
+    })
+    const created = await readJson(createRes)
+
+    // 訂單維持已完成，只退 30 元（少一份配料）。
+    await app.request(`/api/orders/${created.orderId}/refunds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ refundId: '01ARZ3NDEKTSV4RRFFQ69G5FC1', amount: 30, reason: '少一份配料', operator: '店長 - Lemon' }),
+    })
+
+    // 應有現金 = 3000（開帳）+ 80（現金訂單）− 30（退款）= 3050。
+    const closeRes = await app.request('/api/shifts/01ARZ3NDEKTSV4RRFFQ69G5FAV/close', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ operator: '店長 - Lemon', actualCash: 3050 }),
+    })
+    expect(closeRes.status).toBe(200)
+    const body = await readJson(closeRes)
+    expect(body.cashSales).toBe(80)
+    expect(body.refunds).toBe(30)
+    expect(body.expectedCash).toBe(3050)
     expect(body.variance).toBe(0)
   })
 

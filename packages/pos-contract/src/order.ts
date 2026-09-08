@@ -109,6 +109,34 @@ export const orderLineSchema = orderLineInputSchema.extend({
 })
 export type OrderLine = z.infer<typeof orderLineSchema>
 
+/**
+ * 退款（P12：規劃書 §10 P0「退款／作廢」）。
+ *
+ * `refundId` 是用戶端在退款當下用 ULID 產生並送入，理由跟訂單的
+ * idempotencyKey、班別的 shiftId 一致：同一個 refundId 重送不會建立
+ * 第二筆退款紀錄（見 orders.ts 的說明）。`amount` 是這一筆退款的金額，
+ * 不是「退款後剩餘應付金額」——伺服端會用 @pos/domain 的
+ * summarizeOrderRefunds() 驗證這筆金額有沒有超過目前還能退的金額，
+ * 用戶端不需要（也不被信任）自己算剩餘可退額度。
+ */
+export const refundInputSchema = z.object({
+  refundId: ulidSchema,
+  amount: z.number().int().positive(),
+  reason: z.string().min(1),
+  operator: z.string().min(1),
+})
+export type RefundInput = z.infer<typeof refundInputSchema>
+
+/** 伺服端回傳的退款紀錄：跟輸入同形狀，加上伺服端配發的 id 與時間。 */
+export const refundSchema = z.object({
+  id: z.string(),
+  amount: z.number().int().positive(),
+  reason: z.string().min(1),
+  operator: z.string().min(1),
+  at: z.string(),
+})
+export type Refund = z.infer<typeof refundSchema>
+
 /** 伺服端回傳的完整訂單。 */
 export const orderSchema = z.object({
   orderId: z.string(),
@@ -128,5 +156,13 @@ export const orderSchema = z.object({
   tenders: z.array(tenderSchema).min(1),
   /** 找零總額——由伺服端從 tenders 的 receivedAmount 算出，見 orders.ts。 */
   changeDue: z.number().int().nonnegative(),
+  /** 這筆訂單目前所有的退款紀錄，見 refundSchema 的說明。 */
+  refunds: z.array(refundSchema),
+  /** 已退金額總和——由伺服端從 refunds 算出，見 @pos/domain 的 summarizeOrderRefunds()。 */
+  refundedAmount: z.number().int().nonnegative(),
+  /** 作廢原因。只有 orderStatus 為「已取消」時才有值，見 P12 的說明。 */
+  voidReason: z.string().nullable(),
+  voidedBy: z.string().nullable(),
+  voidedAt: z.string().nullable(),
 })
 export type Order = z.infer<typeof orderSchema>

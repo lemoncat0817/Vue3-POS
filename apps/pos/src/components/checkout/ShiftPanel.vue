@@ -93,10 +93,11 @@ type="button" :disabled="isSubmitting"
 // 的營運概念，見 apps/api/src/routes/shifts.ts、@pos/domain 的
 // summarizeShiftCash() 說明。
 //
-// 現金銷售額（cashSales）只有收班當下才由伺服端算出（見 shiftSchema
-// 的說明），因此收班前的「應有現金」預覽（previewExpectedCash）沒辦法
+// 現金銷售額（cashSales）與退款總額（refunds，P12：規劃書 §10 P0
+// 「退款／作廢」）都只有收班當下才由伺服端算出（見 shiftSchema 的
+// 說明），因此收班前的「應有現金」預覽（previewExpectedCash）沒辦法
 // 精確到那一刻——用「開帳零用金 + 存入 − 提出」當底，不含尚未結算的
-// 現金訂單金額，並在畫面上以「應有現金（不含尚未結算的現金訂單）」的
+// 現金訂單金額與退款，並在畫面上以「應有現金（不含尚未結算的現金訂單）」的
 // 標籤說明這個落差，避免誤導店員以為這就是最終帳差。
 import { computed, ref, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'

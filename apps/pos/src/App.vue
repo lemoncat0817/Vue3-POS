@@ -2,9 +2,12 @@
   <RouterView />
   <!-- P8：組件庫替換——確認框／提示訊息（Reka UI），全 App 只掛一個
        實例，見 components/ui/ 的說明；已取代所有頁面原本的
-       ElMessage／ElMessageBox。 -->
+       ElMessage／ElMessageBox。P12：退款／作廢新增的文字輸入框、
+       退款金額框，同樣是全 App 單例。 -->
   <ConfirmDialogHost />
   <ToastHost />
+  <PromptDialogHost />
+  <RefundDialogHost />
 </template>
 
 
@@ -13,6 +16,8 @@ import { onMounted, onUnmounted, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import ConfirmDialogHost from '@/components/ui/ConfirmDialogHost.vue'
 import ToastHost from '@/components/ui/ToastHost.vue'
+import PromptDialogHost from '@/components/ui/PromptDialogHost.vue'
+import RefundDialogHost from '@/components/ui/RefundDialogHost.vue'
 import { useDrinkStore } from '@/stores/drink'
 import { useDiscountStore } from '@/stores/discount'
 import { fetchCatalog, toDrinkAddOnOptions, toDrinkTypeGroups } from '@/api/catalog'

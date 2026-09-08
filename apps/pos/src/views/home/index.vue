@@ -909,6 +909,10 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     orderDiscount: drinkStore.useDiscountPrice,
     orderPaymentPrice: drinkStore.drinkPayPrice,
     discountName: discountStore.currentDiscountName === '' ? '無' : discountStore.currentDiscountName,
+    refundedAmount: 0,
+    voidReason: null,
+    voidedBy: null,
+    voidedAt: null,
   }
   orderStore.order.push(toPayOrder)
   showToast('訂單送出成功', 'success')

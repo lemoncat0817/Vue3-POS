@@ -372,7 +372,7 @@ describe('PATCH /api/orders/:orderId/status（P6：多終端情境，取代 apps
     const res = await app.request(`/api/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderStatus: '已取消' }),
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '顧客取消訂單' }),
     })
     expect(res.status).toBe(401)
   })
@@ -386,14 +386,55 @@ describe('PATCH /api/orders/:orderId/status（P6：多終端情境，取代 apps
     const res = await app.request(`/api/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ orderStatus: '已取消' }),
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '顧客取消訂單' }),
     })
     expect(res.status).toBe(200)
     const body = await readJson(res)
     expect(body.orderStatus).toBe('已取消')
+    expect(body.voidReason).toBe('顧客取消訂單')
+    expect(body.voidedBy).toBe('店長 - Lemon')
+    expect(body.voidedAt).toEqual(expect.any(String))
 
     const list = await readJson(await app.request('/api/orders'))
     expect(list.find((o: { orderId: string }) => o.orderId === orderId).orderStatus).toBe('已取消')
+  })
+
+  it('作廢一筆訂單後又改回已完成，撤銷作廢，voidReason 等欄位清空', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken)
+
+    await app.request(`/api/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '按錯了' }),
+    })
+    const res = await app.request(`/api/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ orderStatus: '已完成', operator: '店長 - Lemon' }),
+    })
+    expect(res.status).toBe(200)
+    const body = await readJson(res)
+    expect(body.orderStatus).toBe('已完成')
+    expect(body.voidReason).toBeNull()
+    expect(body.voidedBy).toBeNull()
+    expect(body.voidedAt).toBeNull()
+  })
+
+  it('作廢訂單沒有填寫原因時拒絕，回傳 400', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken)
+
+    const res = await app.request(`/api/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon' }),
+    })
+    expect(res.status).toBe(400)
   })
 
   it('訂單不存在時回傳 404', async () => {
@@ -401,7 +442,121 @@ describe('PATCH /api/orders/:orderId/status（P6：多終端情境，取代 apps
     const res = await app.request('/api/orders/does-not-exist/status', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ orderStatus: '已取消' }),
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '測試' }),
+    })
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('POST /api/orders/:orderId/refunds（P12：規劃書 §10 P0「退款／作廢」）', () => {
+  it('沒有裝置憑證時拒絕', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken)
+
+    const res = await app.request(`/api/orders/${orderId}/refunds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV', amount: 10, reason: '顧客不滿意', operator: '店長 - Lemon' }),
+    })
+    expect(res.status).toBe(401)
+  })
+
+  it('退部分金額成功，refundedAmount／refunds 反映在訂單上，訂單狀態仍是已完成', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken)
+    const created = await readJson(await app.request(`/api/orders`, { headers: { 'X-Device-Token': deviceToken } }))
+    const order = created.find((o: { orderId: string }) => o.orderId === orderId)
+
+    const res = await app.request(`/api/orders/${orderId}/refunds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV', amount: 50, reason: '少一杯', operator: '店長 - Lemon' }),
+    })
+    expect(res.status).toBe(201)
+    const body = await readJson(res)
+    expect(body.orderStatus).toBe('已完成')
+    expect(body.refundedAmount).toBe(50)
+    expect(body.refunds).toHaveLength(1)
+    expect(body.refunds[0]).toMatchObject({ amount: 50, reason: '少一杯', operator: '店長 - Lemon' })
+    expect(body.refundedAmount).toBeLessThanOrEqual(order.orderPaymentPrice)
+  })
+
+  it('同一個 refundId 重送是冪等的，不會建立第二筆退款', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken)
+    const refundPayload = { refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV', amount: 50, reason: '少一杯', operator: '店長 - Lemon' }
+
+    const first = await app.request(`/api/orders/${orderId}/refunds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(refundPayload),
+    })
+    expect(first.status).toBe(201)
+
+    const second = await app.request(`/api/orders/${orderId}/refunds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(refundPayload),
+    })
+    expect(second.status).toBe(200)
+    const body = await readJson(second)
+    expect(body.refunds).toHaveLength(1)
+    expect(body.refundedAmount).toBe(50)
+  })
+
+  it('退款金額超過還能退的額度時拒絕，回傳 400', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken)
+    const created = await readJson(await app.request(`/api/orders`, { headers: { 'X-Device-Token': deviceToken } }))
+    const order = created.find((o: { orderId: string }) => o.orderId === orderId)
+
+    const res = await app.request(`/api/orders/${orderId}/refunds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({
+        refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+        amount: order.orderPaymentPrice + 1,
+        reason: '超額測試',
+        operator: '店長 - Lemon',
+      }),
+    })
+    expect(res.status).toBe(400)
+  })
+
+  it('已作廢的訂單不能再退款，回傳 400', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken)
+
+    await app.request(`/api/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '整單作廢' }),
+    })
+
+    const res = await app.request(`/api/orders/${orderId}/refunds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV', amount: 10, reason: '不應該成功', operator: '店長 - Lemon' }),
+    })
+    expect(res.status).toBe(400)
+  })
+
+  it('訂單不存在時回傳 404', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/orders/does-not-exist/refunds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV', amount: 10, reason: '測試', operator: '店長 - Lemon' }),
     })
     expect(res.status).toBe(404)
   })

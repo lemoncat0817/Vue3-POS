@@ -47,6 +47,8 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
   await expect(row).toBeVisible()
 
   // 編輯訂單狀態 → 選「已取消」（點取消按鈕，見 editOrderStatus 的說明）。
+  // P12：改成「已取消」現在是真正的作廢操作，選了「已取消」之後還要
+  // 再填一次作廢原因（見 composables/usePrompt.ts、PromptDialogHost.vue）。
   const statusResponse = page.waitForResponse(
     (res) =>
       res.url().includes(`/api/orders/${createBody.orderId}/status`) &&
@@ -55,8 +57,11 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
   )
   await row.getByRole('button', { name: '編輯訂單狀態' }).click()
   await page.getByRole('button', { name: '已取消', exact: true }).click()
-  const statusBody = (await (await statusResponse).json()) as { orderStatus: string }
+  await page.getByRole('textbox', { name: '原因' }).fill('客人臨時取消')
+  await page.getByRole('button', { name: '確認作廢' }).click()
+  const statusBody = (await (await statusResponse).json()) as { orderStatus: string; voidReason: string }
   expect(statusBody.orderStatus).toBe('已取消')
+  expect(statusBody.voidReason).toBe('客人臨時取消')
   // P8：ElMessage 改用 Reka Toast（見 components/ui/ToastHost.vue 的
   // 說明），畫面上這則訊息用 testid 定位，避免跟 Reka 另外渲染的
   // aria-live 隱藏播報文字撞在一起。

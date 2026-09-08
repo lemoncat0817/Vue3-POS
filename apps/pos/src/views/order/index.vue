@@ -110,6 +110,16 @@
                     <span class="rounded-full bg-white dark:bg-surface-900 px-3 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 shadow-sm">
                       顧客應付金額：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderPaymentPrice }}</span>
                     </span>
+                    <span
+v-if="(row.original.refundedAmount ?? 0) > 0"
+                      class="rounded-full bg-warning-50 dark:bg-warning-950 px-3 py-1 text-xs font-bold text-warning-700 dark:text-warning-300 shadow-sm">
+                      已退款：${{ row.original.refundedAmount }}
+                    </span>
+                    <span
+v-if="row.original.voidReason"
+                      class="rounded-full bg-danger-50 dark:bg-danger-950 px-3 py-1 text-xs font-bold text-danger-700 dark:text-danger-300 shadow-sm">
+                      作廢原因：{{ row.original.voidReason }}（{{ row.original.voidedBy }}）
+                    </span>
                   </div>
                   <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900">
                     <table class="w-full text-center text-xs">
@@ -202,10 +212,13 @@ const orderStore = useOrderStore()
 import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
 import { fromSelection } from '@/utils/selection'
-import { deleteOrder as deleteOrderRequest, updateOrderStatus } from '@/api/orders'
+import { deleteOrder as deleteOrderRequest, refundOrder as refundOrderRequest, updateOrderStatus } from '@/api/orders'
 import { ApiError } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
+import { prompt } from '@/composables/usePrompt'
+import { requestRefund } from '@/composables/useRefund'
 import { showToast } from '@/composables/useToast'
+import { ulid } from '@pos/domain'
 import type { OrderRecord } from '@/types'
 
 // P6：訂單還在離線佇列裡等待第一次同步時，伺服端根本沒有這筆訂單，
@@ -259,6 +272,13 @@ const statusBadgeClass = (status: OrderRecord['orderStatus']) =>
     ? 'rounded-full bg-success-100 px-2 py-0.5 text-xs font-bold text-success-700 dark:bg-success-950 dark:text-success-300'
     : 'rounded-full bg-surface-200 dark:bg-surface-800 px-2 py-0.5 text-xs font-bold text-surface-600 dark:text-surface-400'
 
+// P12（規劃書 §10 P0「退款／作廢」）：refundedAmount 只有伺服端算過
+// 一次才有真正的值（見 api/orders.ts 的 refundOrder 說明），golden
+// orders 這類舊資料（見 stores/order.ts 的 GOLDEN_ORDERS）沒有這個
+// 欄位，用 `?? 0` 兜底，不假設一定存在。
+const refundedAmountOf = (order: OrderRecord) => order.refundedAmount ?? 0
+const remainingRefundableOf = (order: OrderRecord) => Math.max(0, order.orderPaymentPrice - refundedAmountOf(order))
+
 const columnHelper = createColumnHelper<OrderRecord>()
 const columns = [
   columnHelper.accessor('orderId', { header: '訂單編號' }),
@@ -266,7 +286,18 @@ const columns = [
   columnHelper.accessor('staff', { header: '服務人員' }),
   columnHelper.accessor('orderStatus', {
     header: '訂單狀態',
-    cell: (info) => h('span', { class: statusBadgeClass(info.getValue()) }, info.getValue()),
+    cell: (info) => {
+      const order = info.row.original
+      const badges = [h('span', { class: statusBadgeClass(info.getValue()) }, info.getValue())]
+      if (refundedAmountOf(order) > 0) {
+        badges.push(h(
+          'span',
+          { class: 'rounded-full bg-warning-100 px-2 py-0.5 text-xs font-bold text-warning-700 dark:bg-warning-950 dark:text-warning-300' },
+          `已退款 $${refundedAmountOf(order)}`,
+        ))
+      }
+      return h('div', { class: 'flex flex-wrap items-center gap-1' }, badges)
+    },
   }),
   columnHelper.accessor('orderPaymentPrice', {
     header: '訂單金額',
@@ -280,7 +311,11 @@ const columns = [
       const order = info.row.original
       const canEditStatus = fromSelection(loginStore.userInfo)?.canEditOrderStatus === 'O'
       const canDelete = fromSelection(loginStore.userInfo)?.canDeleteOrder === 'O'
-      return h('div', { class: 'flex justify-end gap-2' }, [
+      // 退款沒有另外開一個授權欄位（見 types/staff.ts 的 AuthorityKey
+      // 說明），沿用「編輯訂單狀態」這一格權限——能改訂單狀態的人，
+      // 業務上本來就該有權限處理退款，兩者是同一個信任層級。
+      const canRefund = canEditStatus && order.orderStatus === '已完成' && remainingRefundableOf(order) > 0
+      return h('div', { class: 'flex flex-wrap justify-end gap-2' }, [
         h('button', {
           type: 'button',
           class: [
@@ -289,6 +324,14 @@ const columns = [
           ],
           onClick: () => editOrderStatus(order.orderId),
         }, '編輯訂單狀態'),
+        h('button', {
+          type: 'button',
+          class: [
+            'rounded-lg border border-warning-200 px-2 py-1 text-xs font-bold text-warning-700 transition-colors hover:bg-warning-50 dark:border-warning-800 dark:text-warning-400 dark:hover:bg-warning-950',
+            canRefund ? '' : 'pointer-events-none opacity-40',
+          ],
+          onClick: () => refundOrder(order),
+        }, '退款'),
         h('button', {
           type: 'button',
           class: [
@@ -318,6 +361,18 @@ const leafHeaders = computed(() => table.getHeaderGroups()[0]?.headers ?? [])
 // 說明——這裡是它存在的原因：這個對話框其實不是單純的「確定要做嗎」，
 // 而是拿confirm／cancel兩個按鈕代表「已完成」／「已取消」兩個真正的
 // 業務選項，ESC／點外面關閉則代表「兩個都不選」）。
+// 目前登入操作員的顯示字串，跟 ShiftPanel.vue 的 operator prop、
+// home/index.vue 的 staff 欄位用同一種組法（「職稱 - 姓名」），保持
+// 一致——伺服端的 voidedBy／operator 這類欄位只是顯示用的自由文字，
+// 不是要對應到某個帳號 id。
+const currentOperator = () => `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`
+
+// P12（規劃書 §10 P0「退款／作廢」）：改成「已取消」現在是真正的
+// 作廢操作，一定要交代原因——選了「已取消」之後，再彈一次
+// PromptDialogHost（見 composables/usePrompt.ts）要求輸入理由，使用者
+// 在這一步按取消／不填就整個操作取消，不會送出任何請求（不會出現
+// 「已經選了已取消、但沒有理由」這種中間狀態）。改成「已完成」則不需要
+// 理由，直接送出。
 const editOrderStatus = async (id: string) => {
   const result = await confirm({
     title: '修改訂單狀態',
@@ -327,10 +382,50 @@ const editOrderStatus = async (id: string) => {
   })
   if (result === 'dismiss') return
   const nextStatus = result === 'confirm' ? '已完成' : '已取消'
+
+  let reason: string | undefined
+  if (nextStatus === '已取消') {
+    const voidReason = await prompt({
+      title: '作廢原因',
+      description: '這筆訂單將被標記為作廢，班別結算不會再計入這筆訂單的現金收入',
+      label: '原因',
+      placeholder: '例如：客人臨時取消、重複建單',
+      confirmText: '確認作廢',
+    })
+    if (voidReason === null) return
+    reason = voidReason
+  }
+
   try {
-    await updateOrderStatus(id, nextStatus)
-    orderStore.order.find(item => item.orderId === id)!.orderStatus = nextStatus
+    const updated = await updateOrderStatus(id, nextStatus, currentOperator(), reason)
+    const local = orderStore.order.find(item => item.orderId === id)!
+    local.orderStatus = updated.orderStatus
+    local.voidReason = updated.voidReason
+    local.voidedBy = updated.voidedBy
+    local.voidedAt = updated.voidedAt
     showToast(`訂單狀態已設定為${nextStatus}`, 'success')
+  } catch (err) {
+    showToast(orderApiErrorMessage(err), 'error')
+  }
+}
+// 退款（P12：規劃書 §10 P0「退款／作廢」）。跟作廢不同，退款不改變
+// 訂單狀態——訂單仍是「已完成」，只是多記一筆退款紀錄，見 api/orders.ts
+// 的 refundOrder 說明。
+const refundOrder = async (order: OrderRecord) => {
+  const max = remainingRefundableOf(order)
+  if (max <= 0) return
+  const result = await requestRefund({ max })
+  if (result === null) return
+  try {
+    const updated = await refundOrderRequest(order.orderId, {
+      refundId: ulid(),
+      amount: result.amount,
+      reason: result.reason,
+      operator: currentOperator(),
+    })
+    const local = orderStore.order.find(item => item.orderId === order.orderId)!
+    local.refundedAmount = updated.refundedAmount
+    showToast(`退款成功，已退 $${result.amount}`, 'success')
   } catch (err) {
     showToast(orderApiErrorMessage(err), 'error')
   }

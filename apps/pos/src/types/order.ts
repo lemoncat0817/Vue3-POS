@@ -17,4 +17,12 @@ export interface OrderRecord {
   orderDiscount: number
   orderPaymentPrice: number
   discountName: string
+  // P12（規劃書 §10 P0「退款／作廢」）：這幾個欄位是伺服端算出來的
+  // 衍生資料（見 @pos/contract 的 orderSchema），送單當下一律是空值／
+  // 0／null——訂單列表頁的編輯狀態／退款操作拿到伺服端回應後，會把
+  // 這幾個欄位覆寫回真正的值（見 views/order/index.vue 的說明）。
+  refundedAmount: number
+  voidReason: string | null
+  voidedBy: string | null
+  voidedAt: string | null
 }

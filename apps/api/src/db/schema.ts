@@ -138,6 +138,13 @@ export const orders = sqliteTable(
     createdAt: text('created_at')
       .notNull()
       .default(sql`(current_timestamp)`),
+    // 作廢紀錄（P12：規劃書 §10 P0「退款／作廢」）。orderStatus 改成
+    // 「已取消」時才會有值；改回「已完成」（也就是撤銷這次作廢）時
+    // 一併清成 null——這三個欄位只描述「目前這次作廢」，不是累積的
+    // 歷史紀錄，跟 order_refunds 表（可以有很多筆、彼此獨立）不同。
+    voidReason: text('void_reason'),
+    voidedBy: text('voided_by'),
+    voidedAt: text('voided_at'),
   },
   (table) => [uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey)],
 )
@@ -207,6 +214,25 @@ export const orderTenders = sqliteTable('order_tenders', {
 })
 
 /**
+ * 訂單的退款紀錄（P12：規劃書 §10 P0「退款／作廢」）。跟作廢（orders.
+ * voidReason 那一組欄位）是不同的概念：作廢代表整筆訂單不算數，退款
+ * 代表訂單仍然「已完成」、只是退了部分或全部的錢給顧客——同一筆訂單
+ * 可以有多筆退款紀錄（見 @pos/domain 的 summarizeOrderRefunds()），
+ * id 用 ULID（由用戶端在退款當下產生並送入），理由跟 orders.
+ * idempotencyKey、shifts.id 一致：同一個 id 重送不會建立第二筆退款。
+ */
+export const orderRefunds = sqliteTable('order_refunds', {
+  id: text('id').primaryKey(),
+  orderId: text('order_id')
+    .notNull()
+    .references(() => orders.orderId),
+  amount: integer('amount').notNull(),
+  reason: text('reason').notNull(),
+  operator: text('operator').notNull(),
+  at: text('at').notNull(),
+})
+
+/**
  * 班別（P6：規劃書 §10 P0「班別結帳」）。單店單機情境下同一時間全店
  * 只允許一筆 status='open' 的班別，這條規則在 routes/shifts.ts 裡用
  * 查詢檢查，不是資料庫層級的 constraint（SQLite 沒有方便表達「這個
@@ -226,9 +252,12 @@ export const shifts = sqliteTable('shifts', {
   openingFloat: integer('opening_float').notNull(),
   closedBy: text('closed_by'),
   closedAt: text('closed_at'),
-  // 以下四個欄位只有收班當下才算得出來，開帳時一律是 null（見
-  // @pos/contract 的 shiftSchema 說明）。
+  // 以下五個欄位只有收班當下才算得出來，開帳時一律是 null（見
+  // @pos/contract 的 shiftSchema 說明）。refunds 是 P12（規劃書 §10
+  // P0「退款／作廢」）才加入的欄位，跟 cashSales 一樣要看整段班別
+  // 區間的資料才算得出來。
   cashSales: integer('cash_sales'),
+  refunds: integer('refunds'),
   expectedCash: integer('expected_cash'),
   actualCash: integer('actual_cash'),
   variance: integer('variance'),
@@ -259,6 +288,7 @@ export const schema = {
   orders,
   orderLines,
   orderTenders,
+  orderRefunds,
   orderSequences,
   shifts,
   cashMovements,
