@@ -243,6 +243,13 @@
           <table class="w-full text-left text-sm">
             <thead class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">
               <tr>
+                <th class="w-10 px-3 py-3.5 text-center">
+                  <input
+                    type="checkbox" aria-label="全選本頁訂單"
+                    :checked="allVisibleSelected" :indeterminate="someVisibleSelected && !allVisibleSelected"
+                    class="rounded text-primary-600 focus:ring-primary-500"
+                    @change="toggleSelectAllVisible(($event.target as HTMLInputElement).checked)">
+                </th>
                 <th class="w-12 px-3 py-3.5 text-center" />
                 <th v-for="header in leafHeaders" :key="header.id" class="px-4 py-3.5">
                   {{ header.isPlaceholder ? '' : header.column.columnDef.header }}
@@ -254,7 +261,7 @@
               class="divide-y divide-surface-100 dark:divide-surface-800">
               <template v-if="table.getRowModel().rows.length === 0">
                 <tr>
-                  <td :colspan="leafHeaders.length + 1" class="px-3 py-16 text-center text-surface-400 dark:text-surface-500">
+                  <td :colspan="leafHeaders.length + 2" class="px-3 py-16 text-center text-surface-400 dark:text-surface-500">
                     <div class="flex flex-col items-center justify-center gap-2">
                       <Receipt class="h-10 w-10 text-surface-300 dark:text-surface-700" />
                       <span class="text-base font-semibold">目前無訂單</span>
@@ -268,6 +275,13 @@
                   data-testid="order-row"
                   class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
                   :class="{ 'bg-primary-50/30 dark:bg-primary-950/20': expandedOrderId === row.original.orderId }">
+                  <td class="px-3 py-3 text-center">
+                    <input
+                      type="checkbox" :aria-label="`選取訂單 ${row.original.orderId}`"
+                      :checked="selectedOrderIds.has(row.original.orderId)"
+                      class="rounded text-primary-600 focus:ring-primary-500"
+                      @change="toggleSelectOrder(row.original.orderId, ($event.target as HTMLInputElement).checked)">
+                  </td>
                   <td class="px-3 py-3 text-center">
                     <button
                       type="button"
@@ -285,7 +299,7 @@
                 
                 <!-- Expanded Detail Drawer -->
                 <tr v-if="expandedOrderId === row.original.orderId" class="bg-surface-50/60 dark:bg-surface-950/50">
-                  <td :colspan="leafHeaders.length + 1" class="px-6 py-5">
+                  <td :colspan="leafHeaders.length + 2" class="px-6 py-5">
                     <div class="rounded-2xl border border-surface-200/80 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm">
                       
                       <!-- Order Key Information Badges -->
@@ -382,6 +396,30 @@
           </table>
         </div>
 
+        <!-- Batch Action Bar：規劃書 §5.1「查看訂單」的批次操作列。
+             只在有勾選時才出現，浮在分頁列上方，不佔用平常的版面。 -->
+        <div
+          v-if="selectedOrderIds.size > 0"
+          class="flex flex-wrap items-center justify-between gap-3 border-t border-primary-200 dark:border-primary-800 bg-primary-50/60 dark:bg-primary-950/30 px-6 py-3">
+          <div class="text-sm font-bold text-primary-700 dark:text-primary-300">
+            已選 {{ selectedOrderIds.size }} 筆
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="pos-btn pos-btn-secondary px-3 py-1.5 text-xs"
+              @click="exportSelectedCsv">
+              批次匯出 CSV
+            </button>
+            <button
+              type="button"
+              class="pos-btn pos-btn-ghost px-3 py-1.5 text-xs"
+              @click="selectedOrderIds.clear()">
+              取消選取
+            </button>
+          </div>
+        </div>
+
         <!-- Pagination Bar -->
         <div class="flex flex-wrap items-center justify-between gap-3 border-t border-surface-200 dark:border-surface-800 px-6 py-4 bg-surface-50/50 dark:bg-surface-900">
           <div class="text-sm text-surface-500 dark:text-surface-400">
@@ -439,6 +477,7 @@ import {
   ChevronRight,
   X,
 } from 'lucide-vue-next'
+import { getDate } from '@/utils/time'
 import { useOrderStore } from "@/stores/order"
 const orderStore = useOrderStore()
 import { useLoginStore } from "@/stores/login"
@@ -569,6 +608,52 @@ const quickFilterPayment = (payment: string) => {
 const expandedOrderId = ref<string | null>(null)
 function toggleExpand(orderId: string) {
   expandedOrderId.value = expandedOrderId.value === orderId ? null : orderId
+}
+
+// 列選取與批次操作（規劃書 §5.1「查看訂單」）：跟展開明細一樣用
+// orderId（不是 row index）當 key，篩選／換頁不會讓選取狀態錯位。
+// Vue 的 ref() 會把 Set 包成 reactive，.add()／.delete()／.clear() 這些
+// 內建集合方法直接觸發響應式更新，不需要每次都整個重建一份新 Set。
+const selectedOrderIds = ref<Set<string>>(new Set())
+function toggleSelectOrder(orderId: string, checked: boolean) {
+  if (checked) selectedOrderIds.value.add(orderId)
+  else selectedOrderIds.value.delete(orderId)
+}
+const visibleOrderIds = computed(() => table.getRowModel().rows.map((row) => row.original.orderId))
+const someVisibleSelected = computed(() => visibleOrderIds.value.some((id) => selectedOrderIds.value.has(id)))
+const allVisibleSelected = computed(() =>
+  visibleOrderIds.value.length > 0 && visibleOrderIds.value.every((id) => selectedOrderIds.value.has(id)),
+)
+function toggleSelectAllVisible(checked: boolean) {
+  for (const id of visibleOrderIds.value) {
+    if (checked) selectedOrderIds.value.add(id)
+    else selectedOrderIds.value.delete(id)
+  }
+}
+// 篩選條件變動後，篩選結果裡已經看不到的訂單也要跟著從選取狀態移除
+// ——不然會有『選取數字非 0，但畫面上哪一列被選都對不起來』的幽靈
+// 選取。
+watch(filterOrder, (orders) => {
+  const stillVisible = new Set(orders.map((o) => o.orderId))
+  for (const id of selectedOrderIds.value) {
+    if (!stillVisible.has(id)) selectedOrderIds.value.delete(id)
+  }
+})
+function exportSelectedCsv() {
+  const selected = orderStore.order.filter((o) => selectedOrderIds.value.has(o.orderId))
+  if (selected.length === 0) return
+  let csv = 'data:text/csv;charset=utf-8,﻿'
+  csv += '訂單編號,訂單時間,服務人員,內用/外帶,訂單狀態,訂單金額,付款方式\n'
+  for (const o of selected) {
+    csv += `${o.orderId},${o.orderTime},${o.staff},${o.orderChannel ?? '外帶'},${o.orderStatus},${o.orderPaymentPrice},${o.orderPayment}\n`
+  }
+  const link = document.createElement('a')
+  link.setAttribute('href', encodeURI(csv))
+  link.setAttribute('download', `訂單匯出_${getDate()}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  showToast(`已匯出 ${selected.length} 筆訂單`, 'success')
 }
 
 const statusBadgeClass = (status: OrderRecord['orderStatus']) =>
