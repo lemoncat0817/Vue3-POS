@@ -2,6 +2,8 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { cors } from 'hono/cors'
 import type { AnyDb } from './db/types'
 import type { AppEnv } from './types'
+import { rateLimit } from './middleware/rate-limit'
+import { auditLogRoutes } from './routes/audit-logs'
 import { authRoutes } from './routes/auth'
 import { catalogRoutes } from './routes/catalog'
 import { deviceRoutes } from './routes/devices'
@@ -35,17 +37,25 @@ const healthRoute = createRoute({
  * 傳入 D1 還是 better-sqlite3 版本的 Drizzle 實例——路由本身不需要知道
  * 底層是哪個 driver（見 db/client.ts 的說明）。
  */
-export function createApp(db: AnyDb, config: { provisioningSecret: string }) {
+export function createApp(db: AnyDb, config: { provisioningSecret: string; allowedOrigins: string[] }) {
   const app = new OpenAPIHono<AppEnv>()
 
   // 單店單機使用（見規劃書 §1 的部署前提），前端（apps/pos）跟這個 API
   // 執行在不同 origin／port（GitHub Pages 靜態站 vs. Cloudflare
-  // Workers），需要 CORS 才能跨源呼叫。這裡不是對外公開的多租戶 API，
-  // 沒有 cookie-based session 要保護，允許任意 origin 讀取即可；真正的
-  // 存取控制在 requireDeviceToken（見 middleware/require-device-token.ts）。
+  // Workers），需要 CORS 才能跨源呼叫。
+  //
+  // P21（規劃書 §10 P21「API 安全加固」）：這裡原本是 `origin: '*'`，
+  // 理由是「沒有 cookie-based session 要保護」——但 `origin: '*'` 允許
+  // 的不只是「讀」，任何網站都能讓使用者的瀏覽器帶著使用者不知情的
+  // 請求打進這個 API（雖然 requireDeviceToken 會擋掉沒有裝置憑證的
+  // 寫入，但裝置憑證存在 apps/pos 的前端環境變數裡，惡意頁面理論上
+  // 還是能透過使用者已開著的 POS 分頁發起同源請求，`*` 沒有必要地
+  // 放寬了攻擊面）。改成白名單只允許 apps/pos 實際部署的來源，
+  // allowedOrigins 由 index.ts 從 ALLOWED_ORIGINS 環境變數（見
+  // env.ts）解析，本機測試則由 test/helpers/app.ts 帶入固定清單。
   app.use(
     '*',
-    cors({ origin: '*', allowHeaders: ['Content-Type', 'X-Device-Token', 'X-Provisioning-Secret'] }),
+    cors({ origin: config.allowedOrigins, allowHeaders: ['Content-Type', 'X-Device-Token', 'X-Provisioning-Secret'] }),
   )
 
   app.use('*', async (c, next) => {
@@ -54,9 +64,14 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string }) {
     await next()
   })
 
+  // P21：速率限制，見 middleware/rate-limit.ts 的完整說明。放在 db
+  // 綁進 context 之後，因為計數器本身存在 D1。
+  app.use('*', rateLimit)
+
   app.openapi(healthRoute, (c) => c.json({ ok: true as const }))
 
   app.route('/api/auth', authRoutes)
+  app.route('/api/audit-logs', auditLogRoutes)
   app.route('/api/catalog', catalogRoutes)
   app.route('/api/devices', deviceRoutes)
   app.route('/api/orders', orderRoutes)

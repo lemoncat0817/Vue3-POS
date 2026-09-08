@@ -460,6 +460,8 @@ import { fromSelection, hasCapability } from '@/utils/selection'
 import { getBusinessDate, priceLine, toggleContainer, toggleFree, toggleRate, type LineDiscountFlags, type OftenUseRates } from '@pos/domain'
 import type { AppliedCoupon, InvoiceCarrier } from '@pos/contract'
 import { buildCreateOrderRequest } from '@/api/orders'
+import { createAuditLog } from '@/api/audit-logs'
+import { ApiError } from '@/api/http'
 import { enqueueOrder } from '@/offline/outbox'
 import { useOrderSync } from '@/offline/useOrderSync'
 
@@ -698,10 +700,13 @@ const changeBagCount = () => {
 // 開錢箱」這兩種完全不同的情境——後者（例如幫客人換零錢、盤點現金）
 // 在真正的收銀機上是需要交代理由的操作，沒有這道防線的話，錢箱可以
 // 被任何人在沒有交易紀錄的情況下隨時打開，是實際的內控缺口。這裡
-// 用 prompt() 要求輸入理由才會「開啟」，理由跟操作時間目前只印在
-// 瀏覽器主控台（模擬印在稽核用的交易紀錄紙帶上），沒有另外存進
-// 伺服端——單店單機情境下，這個成本比照本專案其他「延後到有真正
-// 需求才加後端」的取捨（見 D-04／D-10 的說明），不是遺漏。
+// 用 prompt() 要求輸入理由才會「開啟」。
+//
+// P21（規劃書 §10 P21「API 安全加固」）：理由跟操作時間原本只印在
+// 瀏覽器主控台（`console.info`），等於稽核紀錄跟著分頁關閉就消失，
+// 換一台裝置或清掉瀏覽器資料也看不到——現在真的寫進伺服端的
+// audit_logs 表（見 api/audit-logs.ts、apps/api/src/db/schema.ts 的
+// auditLogs 說明）。
 const openCashier = async () => {
   const reason = await prompt({
     title: '開啟收銀機',
@@ -711,8 +716,16 @@ const openCashier = async () => {
     confirmText: '開啟',
   })
   if (reason === null) return
-  console.info(`[收銀機] ${getDate()} ${getTime()} ${fromSelection(loginStore.userInfo)?.name} 開啟收銀機：${reason}`)
-  showToast('收銀機已開啟', 'success')
+  try {
+    await createAuditLog({
+      action: 'cashier_open',
+      operator: `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`,
+      detail: reason,
+    })
+    showToast('收銀機已開啟', 'success')
+  } catch (err) {
+    showToast(err instanceof ApiError ? `操作失敗：${err.message}` : '連不上伺服端，請確認網路連線', 'error')
+  }
 }
 
 // 折扣相關功能

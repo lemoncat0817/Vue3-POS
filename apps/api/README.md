@@ -66,6 +66,16 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
    本機開發（`wrangler dev`）用 `.dev.vars` 檔案設定同一個變數，例如
    `PROVISIONING_SECRET=dev-provisioning-secret`（`.dev.vars` 已加進
    .gitignore，不會被提交）。
+
+   `.dev.vars` 同一個檔案也要覆蓋 `ALLOWED_ORIGINS`（CORS 白名單，見
+   `src/app.ts` 的說明）：正式環境的 `wrangler.jsonc` 只允許實際部署
+   的 GitHub Pages 網址，本機開發時 apps/pos 是跑在
+   `http://localhost:4173`（`vite preview`，`pnpm run test:e2e` 用的
+   就是這個）或 `http://localhost:5173`（`vite dev`），需要另外加進
+   白名單才能跨源打到本機的 `wrangler dev`，例如：
+   ```
+   ALLOWED_ORIGINS=http://localhost:4173,http://localhost:5173
+   ```
 5. **部署**：
    ```sh
    pnpm --filter @pos/api run deploy

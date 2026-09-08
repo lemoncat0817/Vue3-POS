@@ -14,5 +14,13 @@
       "database_name": "maji-tea-pos-db",
       "database_id": "REPLACE_AFTER_WRANGLER_D1_CREATE"
     }
-  ]
+  ],
+  "vars": {
+    // CORS 白名單（P21：規劃書 §10 P21「API 安全加固」，見 src/app.ts
+    // 的說明），逗號分隔——不是密鑰，不需要 wrangler secret。這裡列的
+    // 是這個 repo 實際的 GitHub Pages 部署網址；換一個部署位置記得
+    // 改成對應的來源。本機開發／wrangler dev 用 .dev.vars 覆蓋成
+    // localhost 的來源（見 .dev.vars.example）。
+    "ALLOWED_ORIGINS": "https://lemoncat0817.github.io"
+  }
 }

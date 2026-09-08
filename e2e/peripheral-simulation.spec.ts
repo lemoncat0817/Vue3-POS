@@ -9,8 +9,13 @@ import { expect, test } from '@playwright/test'
  * - 收據預覽：訂單列表可以看到收據內容（品項、金額、發票號碼等），
  *   這裡不點「列印」（會叫出瀏覽器系統列印對話框，headless 環境下
  *   行為不可預期，不是這個測試該驗證的範圍），只驗證內容正確渲染。
+ *
+ * P21（規劃書 §10 P21「API 安全加固」）：開收銀機的理由跟操作時間
+ * 原本只印在瀏覽器主控台，現在真的寫進伺服端的稽核紀錄（見
+ * api/audit-logs.ts）——這裡額外驗證真的送出了 POST /api/audit-logs，
+ * 不是只看畫面上的成功訊息。
  */
-test('開收銀機沒填理由無法送出，填了理由後顯示成功訊息', async ({ page }) => {
+test('開收銀機沒填理由無法送出，填了理由後真的寫入伺服端稽核紀錄', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
   await page.getByPlaceholder('請輸入 PIN').fill('1234')
@@ -20,8 +25,14 @@ test('開收銀機沒填理由無法送出，填了理由後顯示成功訊息',
   await page.getByRole('button', { name: '開收銀機', exact: true }).click()
   await expect(page.getByRole('button', { name: '開啟', exact: true })).toBeDisabled()
 
+  const auditLogResponse = page.waitForResponse(
+    (res) => res.url().includes('/api/audit-logs') && res.request().method() === 'POST' && res.ok(),
+  )
   await page.getByRole('textbox', { name: '理由' }).fill('協助客人換零錢')
   await page.getByRole('button', { name: '開啟', exact: true }).click()
+  const auditLogBody = (await (await auditLogResponse).json()) as { action: string; operator: string; detail: string }
+  expect(auditLogBody).toMatchObject({ action: 'cashier_open', detail: '協助客人換零錢' })
+  expect(auditLogBody.operator).toContain('Lemon')
   await expect(page.getByTestId('toast-message')).toHaveText('收銀機已開啟')
 })
 

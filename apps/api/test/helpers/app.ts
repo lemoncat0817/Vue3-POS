@@ -5,7 +5,7 @@ import type { AnyDb } from '../../src/db/types'
 export const TEST_PROVISIONING_SECRET = 'test-provisioning-secret'
 
 export function createTestApp(db: AnyDb) {
-  return createApp(db, { provisioningSecret: TEST_PROVISIONING_SECRET })
+  return createApp(db, { provisioningSecret: TEST_PROVISIONING_SECRET, allowedOrigins: ['http://localhost:4173'] })
 }
 
 /**

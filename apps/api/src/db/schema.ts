@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
-import type { AuthorityKey, DrinkCustomized, InvoiceCarrierType, OrderChannel, OrderStatus, PaymentUseMethod } from '@pos/contract'
+import type { AuditLogAction, AuthorityKey, DrinkCustomized, InvoiceCarrierType, OrderChannel, OrderStatus, PaymentUseMethod } from '@pos/contract'
 
 /**
  * D1（SQLite 方言）的資料表定義。
@@ -320,6 +320,40 @@ export const cashMovements = sqliteTable('cash_movements', {
   at: text('at').notNull(),
 })
 
+// ---------- API 安全加固（P21：規劃書 §10 P21「API 安全加固」） ----------
+
+/**
+ * 速率限制計數器（見 middleware/rate-limit.ts）。key 是裝置憑證／核發
+ * 密鑰／來源 IP 其中一種（依請求帶了什麼決定），windowStart／count
+ * 是固定視窗演算法的狀態——同一把 key 在同一個視窗內超過門檻就回
+ * 429。用 D1 而不是記憶體內計數器：Workers 的執行環境隨時可能換一個
+ * 全新的 isolate（見 index.ts 的說明），純記憶體計數器在正式環境不可靠；
+ * 這個專案原本 P4 的登入錯誤鎖定（見 routes/auth.ts 的 staff 表
+ * failedAttempts／lockedUntil 欄位）就是同樣的考量，這裡沿用同一種
+ * 「狀態存資料庫」的做法，不是另外引入的新模式。
+ */
+export const rateLimitCounters = sqliteTable('rate_limit_counters', {
+  key: text('key').primaryKey(),
+  windowStart: integer('window_start').notNull(),
+  count: integer('count').notNull(),
+})
+
+/**
+ * 稽核紀錄（P21：取代原本只印在瀏覽器主控台的做法，見 views/home/
+ * index.vue 的 openCashier 說明——「沒有對應交易的開錢箱動作」這類
+ * 敏感操作原本只 `console.info`，等於稽核紀錄跟著分頁關閉就消失。
+ * action 目前只有 'cashier_open' 一種，用 enum 而不是自由字串是為了
+ * 之後好擴充（見 @pos/contract 的 auditLogActionSchema），不是預先
+ * 過度設計。
+ */
+export const auditLogs = sqliteTable('audit_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  action: text('action').$type<AuditLogAction>().notNull(),
+  operator: text('operator').notNull(),
+  detail: text('detail').notNull(),
+  createdAt: text('created_at').notNull(),
+})
+
 export const schema = {
   catalogGroups,
   catalogItems,
@@ -338,4 +372,6 @@ export const schema = {
   invoiceSequences,
   shifts,
   cashMovements,
+  rateLimitCounters,
+  auditLogs,
 }
