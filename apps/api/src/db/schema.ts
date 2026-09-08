@@ -27,12 +27,16 @@ export const catalogItems = sqliteTable('catalog_items', {
   priceL: integer('price_l'),
   priceBottle: integer('price_bottle'),
   customized: text('customized').$type<DrinkCustomized>().notNull(),
+  // P20（規劃書 §10 P20「基礎庫存管理」）：null 代表不追蹤這個品項的
+  // 庫存，見 @pos/contract 的 catalogStockSchema 說明。
+  stock: integer('stock'),
 })
 
 export const addOnOptions = sqliteTable('add_on_options', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   price: integer('price').notNull(),
+  stock: integer('stock'),
 })
 
 // ---------- 促銷（P5：規劃書 §10 的促銷引擎） ----------

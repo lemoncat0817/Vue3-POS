@@ -37,6 +37,7 @@ export function toDrinkTypeGroups(catalog: CatalogResponse): DrinkTypeGroup[] {
       priceL: item.priceL ?? 'none',
       priceBottle: item.priceBottle ?? 'none',
       customized: item.customized,
+      stock: item.stock,
     })),
   }))
 }
@@ -46,6 +47,7 @@ export function toDrinkAddOnOptions(catalog: CatalogResponse): DrinkAddOnOption[
     id: addOn.id,
     name: addOn.name,
     price: addOn.price,
+    stock: addOn.stock,
   }))
 }
 

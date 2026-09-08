@@ -85,6 +85,13 @@
       "when": 1788835736021,
       "tag": "0011_sparkling_rattler",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1788839762299,
+      "tag": "0012_cooing_katie_power",
+      "breakpoints": true
     }
   ]
 }

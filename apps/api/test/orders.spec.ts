@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { eq } from 'drizzle-orm'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
+import { addOnOptions, catalogGroups, catalogItems } from '../src/db/schema'
 import { createTestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
 
@@ -255,6 +257,90 @@ describe('POST /api/orders', () => {
       body: JSON.stringify(buildRequest({ lines: [] })),
     })
     expect(res.status).toBe(400)
+  })
+})
+
+describe('POST /api/orders（P20：規劃書 §10 P20「基礎庫存管理」，送單成功後扣庫存）', () => {
+  it('品項與配料的庫存不是 null 時，送單成功後依數量扣減，扣到 0 就不再往下扣', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    await db.insert(catalogGroups).values([{ id: 'g1', name: '季節限定', type: 'drinkSeasonal' }])
+    await db.insert(catalogItems).values([
+      { id: 'i1', groupId: 'g1', name: '楊枝甘露2.0', priceL: 80, priceBottle: null, customized: 'none', stock: 3 },
+    ])
+    await db.insert(addOnOptions).values([{ id: 'a1', name: '珍珠', price: 10, stock: 1 }])
+
+    // 一次送 2 杯，帶 1 份珍珠——品項庫存 3 扣到 1，配料庫存 1（只夠
+    // 1 份，扣 2 份）floor 在 0，不會變負數。
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(
+        buildRequest({
+          lines: [{ ...validLine, addList: ['珍珠'], addListPrice: 10 }],
+          // validLine 是 2 杯 80 元＋每杯 10 元的配料＝180 元。
+          tenders: [{ method: '現金', amount: 180 }],
+        }),
+      ),
+    })
+    expect(res.status).toBe(201)
+
+    const item = await db.select().from(catalogItems).where(eq(catalogItems.id, 'i1')).get()
+    const addOn = await db.select().from(addOnOptions).where(eq(addOnOptions.id, 'a1')).get()
+    expect(item?.stock).toBe(1)
+    expect(addOn?.stock).toBe(0)
+  })
+
+  it('庫存是 null（不追蹤）或找不到對應品項時，送單成功但不影響庫存', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    await db.insert(catalogGroups).values([{ id: 'g1', name: '季節限定', type: 'drinkSeasonal' }])
+    await db.insert(catalogItems).values([
+      { id: 'i1', groupId: 'g1', name: '楊枝甘露2.0', priceL: 80, priceBottle: null, customized: 'none', stock: null },
+    ])
+
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest()),
+    })
+    expect(res.status).toBe(201)
+
+    const item = await db.select().from(catalogItems).where(eq(catalogItems.id, 'i1')).get()
+    expect(item?.stock).toBeNull()
+  })
+
+  it('重送同一筆訂單（idempotencyKey 命中）不會扣兩次庫存', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    await db.insert(catalogGroups).values([{ id: 'g1', name: '季節限定', type: 'drinkSeasonal' }])
+    await db.insert(catalogItems).values([
+      { id: 'i1', groupId: 'g1', name: '楊枝甘露2.0', priceL: 80, priceBottle: null, customized: 'none', stock: 10 },
+    ])
+
+    const body = JSON.stringify(buildRequest())
+    const first = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body,
+    })
+    expect(first.status).toBe(201)
+    const second = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body,
+    })
+    expect(second.status).toBe(200)
+
+    // validLine 是 2 杯，只應該扣一次（10 - 2 = 8），不是兩次。
+    const item = await db.select().from(catalogItems).where(eq(catalogItems.id, 'i1')).get()
+    expect(item?.stock).toBe(8)
   })
 })
 

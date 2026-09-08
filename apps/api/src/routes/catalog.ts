@@ -183,9 +183,10 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
             priceL: item.priceL,
             priceBottle: item.priceBottle,
             customized: item.customized,
+            stock: item.stock,
           })),
         })),
-        addOns: addOns.map((addOn) => ({ id: addOn.id, name: addOn.name, price: addOn.price })),
+        addOns: addOns.map((addOn) => ({ id: addOn.id, name: addOn.name, price: addOn.price, stock: addOn.stock })),
       }),
     )
   })
@@ -225,7 +226,14 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     const newItem = { id: crypto.randomUUID(), ...input }
     await db.insert(catalogItems).values(newItem)
     return c.json(
-      { id: newItem.id, name: newItem.name, priceL: newItem.priceL, priceBottle: newItem.priceBottle, customized: newItem.customized },
+      {
+        id: newItem.id,
+        name: newItem.name,
+        priceL: newItem.priceL,
+        priceBottle: newItem.priceBottle,
+        customized: newItem.customized,
+        stock: newItem.stock,
+      },
       201,
     )
   })
@@ -238,7 +246,10 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     const group = await db.select().from(catalogGroups).where(eq(catalogGroups.id, input.groupId)).get()
     if (!group) return c.json({ error: '找不到對應的飲品類型' }, 404)
     await db.update(catalogItems).set(input).where(eq(catalogItems.id, id))
-    return c.json({ id, name: input.name, priceL: input.priceL, priceBottle: input.priceBottle, customized: input.customized }, 200)
+    return c.json(
+      { id, name: input.name, priceL: input.priceL, priceBottle: input.priceBottle, customized: input.customized, stock: input.stock },
+      200,
+    )
   })
   .openapi(deleteItemRoute, async (c) => {
     const { id } = c.req.valid('param')

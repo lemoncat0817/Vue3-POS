@@ -7,10 +7,13 @@ import {
   refundInputSchema,
   type AppliedCoupon,
   type InvoiceCarrier,
+  type OrderLineInput,
   type TenderInput,
 } from '@pos/contract'
 import { priceLine, summarizeOrderRefunds, type OftenUseRates } from '@pos/domain'
 import {
+  addOnOptions,
+  catalogItems,
   moneyCoupons,
   orderLines,
   orderRefunds,
@@ -324,6 +327,34 @@ function toInvoiceCarrier(type: InvoiceCarrier['type'], value: string | null): I
 }
 
 /**
+ * 送單成功後扣庫存（P20：規劃書 §10 P20「基礎庫存管理」）。訂單品項
+ * 只存名稱（見 packages/pos-contract/src/order.ts 的 orderLineInputSchema
+ * 說明，這個專案的訂單一直是這樣設計，不是這裡才引入的限制），所以
+ * 這裡用名稱比對回菜單品項／配料——換句話說，改過名字的品項／配料，
+ * 舊訂單不會再扣到它的庫存，這是用名稱關聯已知的既有限制，不是這次
+ * 疏漏。庫存是 null（不追蹤）或找不到對應品項／配料時直接略過，扣到
+ * 0 就不再往下扣（不會變負數），也不會因為庫存不夠就擋下這筆訂單——
+ * 「基礎」庫存管理目前只做「扣減與示警」，真的要擋購買（超賣防護）
+ * 需要在下單當下鎖庫存重新設計，留給之後有實際需要再做。
+ */
+async function deductStock(db: AnyDb, lines: Pick<OrderLineInput, 'name' | 'count' | 'addList'>[]): Promise<void> {
+  for (const line of lines) {
+    const item = await db.select().from(catalogItems).where(eq(catalogItems.name, line.name)).get()
+    if (item && item.stock !== null) {
+      await db.update(catalogItems).set({ stock: Math.max(0, item.stock - line.count) }).where(eq(catalogItems.id, item.id))
+    }
+    if (Array.isArray(line.addList)) {
+      for (const addOnName of line.addList) {
+        const addOn = await db.select().from(addOnOptions).where(eq(addOnOptions.name, addOnName)).get()
+        if (addOn && addOn.stock !== null) {
+          await db.update(addOnOptions).set({ stock: Math.max(0, addOn.stock - line.count) }).where(eq(addOnOptions.id, addOn.id))
+        }
+      }
+    }
+  }
+}
+
+/**
  * 訂單層級折價券（P5）：用戶端只送「套用了哪張」，實際折抵金額查真正
  * 的折價券資料重算——不相信用戶端算好的數字，這是 D-01／D-02 修復
  * 方式的延伸。折抵後金額不會是負的（money 折價券面額超過訂單金額時，
@@ -462,6 +493,10 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     await db.insert(orders).values(newOrder)
     await db.insert(orderLines).values(pricedLines.map((line) => ({ ...line, orderId })))
     await db.insert(orderTenders).values(newTenders)
+    // P20：只在真的新建立一筆訂單時扣庫存——上面 idempotencyKey 命中、
+    // 直接回傳既有訂單的那條路徑（本函式最上面）不會走到這裡，重送
+    // 同一筆訂單不會扣兩次庫存。
+    await deductStock(db, input.lines)
 
     const insertedLines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
     const insertedTenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()

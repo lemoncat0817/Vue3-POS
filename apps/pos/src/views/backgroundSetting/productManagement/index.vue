@@ -177,6 +177,11 @@ v-if="setPriceBottle" v-model="currentDrinkInputPriceBottle" type="number" min="
               </SelectPortal>
             </SelectRoot>
           </div>
+          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
+            庫存:<input
+v-model="currentDrinkInputStock" type="number" min="0" step="1"
+              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="留空代表不追蹤庫存" />
+          </div>
           <div class="mt-4 flex justify-end gap-2">
             <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeAddDrinkDialog">取消</button>
             <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addDrink">新增</button>
@@ -254,6 +259,11 @@ v-if="setEditPriceBottle" v-model="currentEditDrinkInputPriceBottle" type="numbe
               </SelectPortal>
             </SelectRoot>
           </div>
+          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
+            庫存:<input
+v-model="currentEditDrinkInputStock" type="number" min="0" step="1"
+              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="留空代表不追蹤庫存" />
+          </div>
           <div class="mt-4 flex justify-end gap-2">
             <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeEditDrinkDialog">取消</button>
             <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editDrink">保存</button>
@@ -271,11 +281,12 @@ v-if="setEditPriceBottle" v-model="currentEditDrinkInputPriceBottle" type="numbe
             <th class="px-2 py-2">大杯價格</th>
             <th class="px-2 py-2">瓶裝價格</th>
             <th class="px-2 py-2">客製化</th>
+            <th class="px-2 py-2">庫存</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
           <tr v-if="sliceDrink.length === 0">
-            <td colspan="6" class="px-2 py-8 text-surface-400 dark:text-surface-500">請先選擇飲品類型</td>
+            <td colspan="7" class="px-2 py-8 text-surface-400 dark:text-surface-500">請先選擇飲品類型</td>
           </tr>
           <tr
             v-for="(row, index) in sliceDrink" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
@@ -286,6 +297,7 @@ v-if="setEditPriceBottle" v-model="currentEditDrinkInputPriceBottle" type="numbe
             <td class="px-2 py-2">{{ row.priceL }}</td>
             <td class="px-2 py-2">{{ row.priceBottle }}</td>
             <td class="px-2 py-2">{{ row.customized }}</td>
+            <td class="px-2 py-2" :class="stockClass(row.stock)">{{ stockLabel(row.stock) }}</td>
           </tr>
         </tbody>
       </table>
@@ -323,6 +335,11 @@ v-model="currentIngredientsInputPrice" type="number" min="1" step="1"
               class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
               placeholder="純數字,例如:1,2,3..." />
           </div>
+          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
+            庫存:<input
+v-model="currentIngredientsInputStock" type="number" min="0" step="1"
+              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="留空代表不追蹤庫存" />
+          </div>
           <div class="mt-4 flex justify-end gap-2">
             <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeAddIngredientsDialog">取消</button>
             <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addDrinkIngredients">新增</button>
@@ -351,6 +368,11 @@ v-model="currentEditIngredientsInputPrice" type="number" min="1" step="1"
               class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
               placeholder="純數字,例如:1,2,3..." />
           </div>
+          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
+            庫存:<input
+v-model="currentEditIngredientsInputStock" type="number" min="0" step="1"
+              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="留空代表不追蹤庫存" />
+          </div>
           <div class="mt-4 flex justify-end gap-2">
             <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeEditIngredientsDialog">取消</button>
             <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editDrinkIngredients">保存</button>
@@ -366,11 +388,12 @@ v-model="currentEditIngredientsInputPrice" type="number" min="1" step="1"
             <th class="px-2 py-2">Id</th>
             <th class="px-2 py-2">配料名稱</th>
             <th class="px-2 py-2">價錢</th>
+            <th class="px-2 py-2">庫存</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
           <tr v-if="sliceIngredients.length === 0">
-            <td colspan="4" class="px-2 py-8 text-surface-400 dark:text-surface-500">無配料</td>
+            <td colspan="5" class="px-2 py-8 text-surface-400 dark:text-surface-500">無配料</td>
           </tr>
           <tr
             v-for="(row, index) in sliceIngredients" :key="row.id" class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
@@ -379,6 +402,7 @@ v-model="currentEditIngredientsInputPrice" type="number" min="1" step="1"
             <td class="px-2 py-2">{{ row.id }}</td>
             <td class="px-2 py-2">{{ row.name }}</td>
             <td class="px-2 py-2">{{ row.price }}</td>
+            <td class="px-2 py-2" :class="stockClass(row.stock)">{{ stockLabel(row.stock) }}</td>
           </tr>
         </tbody>
       </table>
@@ -456,6 +480,29 @@ function toApiPrice(value: FormNumeric | 'none'): number | null {
 }
 function fromApiPrice(value: number | null): FormNumeric | 'none' {
   return value === null ? 'none' : value
+}
+// P20（規劃書 §10 P20「基礎庫存管理」）：庫存欄位是選填的表單輸入
+// （空字串代表「不追蹤庫存」，不是 0），跟價格欄位一樣需要在 API
+// 邊界轉成 `number | null`。這裡的 v-model 綁在 `<input type="number">`
+// 上——Vue 3 對 number input 的 v-model 在使用者清空欄位時會給空
+// 字串，但在有值時實際綁定的是瀏覽器解析過的數字（不是字面字串），
+// 兩種型別都可能出現，用 `String(value)` 統一轉成字串再判斷／轉換，
+// 不能假設一定是字串（曾經直接呼叫 `.trim()` 撞到執行期例外，
+// e2e/inventory.spec.ts 測到的）。
+const LOW_STOCK_THRESHOLD = 5
+function toApiStock(value: string | number): number | null {
+  const text = String(value).trim()
+  return text === '' ? null : Number(text)
+}
+function stockLabel(stock: number | null | undefined): string {
+  if (stock === null || stock === undefined) return '不追蹤'
+  return stock === 0 ? '缺貨' : String(stock)
+}
+function stockClass(stock: number | null | undefined): string {
+  if (stock === null || stock === undefined) return 'text-surface-400 dark:text-surface-500'
+  if (stock === 0) return 'font-bold text-danger-600 dark:text-danger-400'
+  if (stock <= LOW_STOCK_THRESHOLD) return 'font-bold text-warning-600 dark:text-warning-400'
+  return ''
 }
 
 // 飲品類型相關功能
@@ -605,6 +652,7 @@ const openAddDrinkDialog = () => {
     currentDrinkInputPriceL.value = ''
     currentDrinkInputPriceBottle.value = ''
     currentDrinkSelectCustomized.value = ''
+    currentDrinkInputStock.value = ''
     addDrinkDialog.value = true
   } else {
     void alert({ title: '通知', description: '請先選擇要新增飲料品項的的飲品類型', confirmText: '繼續選擇' })
@@ -619,6 +667,9 @@ const currentDrinkInputPriceL = ref<FormNumeric | 'none'>('')
 const currentDrinkInputPriceBottle = ref<FormNumeric | 'none'>('')
 // 存放當前客製化的選項
 const currentDrinkSelectCustomized = ref<DrinkCustomized | ''>('')
+// 存放當前輸入的庫存（P20：規劃書 §10 P20「基礎庫存管理」）——空字串
+// 代表不追蹤庫存，見 toApiStock 的說明。
+const currentDrinkInputStock = ref('')
 // 客製化選項
 const customized = [
   {
@@ -718,6 +769,7 @@ const addDrink = async () => {
       priceL: toApiPrice(currentDrinkInputPriceL.value),
       priceBottle: toApiPrice(currentDrinkInputPriceBottle.value),
       customized: currentDrinkSelectCustomized.value as DrinkCustomized,
+      stock: toApiStock(currentDrinkInputStock.value),
     })
     currentType.value.drinkList!.push({
       id: created.id,
@@ -725,6 +777,7 @@ const addDrink = async () => {
       priceL: fromApiPrice(created.priceL),
       priceBottle: fromApiPrice(created.priceBottle),
       customized: created.customized,
+      stock: created.stock,
     })
     addDrinkDialog.value = false
     showToast('新增成功', 'success')
@@ -757,6 +810,8 @@ const currentEditDrinkInputPriceL = ref<FormNumeric | 'none'>('')
 const currentEditDrinkInputPriceBottle = ref<FormNumeric | 'none'>('')
 // 存放當前客製化的選項
 const currentEditDrinkSelectCustomized = ref<DrinkCustomized | ''>('')
+// 存放當前編輯輸入的庫存（P20：規劃書 §10 P20「基礎庫存管理」）
+const currentEditDrinkInputStock = ref('')
 // 是否可以使用大杯裝
 const setEditPriceL = ref(true)
 // 判定是否可以使用大杯裝
@@ -806,6 +861,7 @@ const openEditDrinkDialog = () => {
     currentEditDrinkInputPriceL.value = currentDrink.value.priceL == 'none' ? 'none' : currentDrink.value.priceL!
     currentEditDrinkInputPriceBottle.value = currentDrink.value.priceBottle == 'none' ? 'none' : currentDrink.value.priceBottle!
     currentEditDrinkSelectCustomized.value = currentDrink.value.customized!
+    currentEditDrinkInputStock.value = currentDrink.value.stock == null ? '' : String(currentDrink.value.stock)
     editDrinkDialog.value = true
   } else {
     void alert({ title: '通知', description: '請先選擇要編輯的飲料品項', confirmText: '繼續選擇' })
@@ -826,7 +882,7 @@ const editDrink = async () => {
     showToast('瓶裝價格不可為空，請重新輸入', 'error')
     return
   }
-  if (currentEditDrinkInputName.value == currentDrink.value.name && currentEditDrinkInputPriceL.value == currentDrink.value.priceL && currentEditDrinkInputPriceBottle.value == currentDrink.value.priceBottle && currentEditDrinkSelectCustomized.value == currentDrink.value.customized) {
+  if (currentEditDrinkInputName.value == currentDrink.value.name && currentEditDrinkInputPriceL.value == currentDrink.value.priceL && currentEditDrinkInputPriceBottle.value == currentDrink.value.priceBottle && currentEditDrinkSelectCustomized.value == currentDrink.value.customized && toApiStock(currentEditDrinkInputStock.value) === (currentDrink.value.stock ?? null)) {
     editDrinkDialog.value = false
     showToast('保存成功', 'success')
     return
@@ -864,11 +920,13 @@ const editDrink = async () => {
       priceL: toApiPrice(currentEditDrinkInputPriceL.value),
       priceBottle: toApiPrice(currentEditDrinkInputPriceBottle.value),
       customized: currentEditDrinkSelectCustomized.value as DrinkCustomized,
+      stock: toApiStock(currentEditDrinkInputStock.value),
     })
     currentDrink.value.name = updated.name
     currentDrink.value.priceL = fromApiPrice(updated.priceL)
     currentDrink.value.priceBottle = fromApiPrice(updated.priceBottle)
     currentDrink.value.customized = updated.customized
+    currentDrink.value.stock = updated.stock
     editDrinkDialog.value = false
     showToast('保存成功', 'success')
   } catch (err) {
@@ -900,6 +958,7 @@ const addIngredientsDialog = ref(false)
 const openAddIngredientsDialog = () => {
   currentIngredientsInputName.value = ''
   currentIngredientsInputPrice.value = ''
+  currentIngredientsInputStock.value = ''
   addIngredientsDialog.value = true
 }
 // 關閉新增配料dialog視窗
@@ -911,6 +970,8 @@ const closeAddIngredientsDialog = () => {
 const currentIngredientsInputName = ref('')
 // 存放當前輸入的配料價格
 const currentIngredientsInputPrice = ref<FormNumeric>('')
+// 存放當前輸入的庫存（P20：規劃書 §10 P20「基礎庫存管理」）
+const currentIngredientsInputStock = ref('')
 // 新增配料
 const addDrinkIngredients = async () => {
   if (currentIngredientsInputName.value === '' || currentIngredientsInputPrice.value === '') {
@@ -926,8 +987,12 @@ const addDrinkIngredients = async () => {
     return
   }
   try {
-    const created = await createAddOnOption({ name: currentIngredientsInputName.value, price: Number(currentIngredientsInputPrice.value) })
-    drinkStore.drinkAdd.push({ id: created.id, name: created.name, price: created.price })
+    const created = await createAddOnOption({
+      name: currentIngredientsInputName.value,
+      price: Number(currentIngredientsInputPrice.value),
+      stock: toApiStock(currentIngredientsInputStock.value),
+    })
+    drinkStore.drinkAdd.push({ id: created.id, name: created.name, price: created.price, stock: created.stock })
     addIngredientsDialog.value = false
     showToast('新增成功', 'success')
   } catch (err) {
@@ -962,11 +1027,14 @@ const closeEditIngredientsDialog = () => {
 const currentEditIngredientsInputName = ref('')
 // 存放當前編輯輸入的配料價格
 const currentEditIngredientsInputPrice = ref<FormNumeric>('')
+// 存放當前編輯輸入的庫存（P20：規劃書 §10 P20「基礎庫存管理」）
+const currentEditIngredientsInputStock = ref('')
 // 開啟編輯dialog視窗
 const openEditIngredientsDialog = () => {
   if (currentIngredientsDrink.value.name) {
     currentEditIngredientsInputName.value = currentIngredientsDrink.value.name
     currentEditIngredientsInputPrice.value = currentIngredientsDrink.value.price!
+    currentEditIngredientsInputStock.value = currentIngredientsDrink.value.stock == null ? '' : String(currentIngredientsDrink.value.stock)
     editIngredientsDialog.value = true
   } else {
     void alert({ title: '通知', description: '請先選擇要編輯的配料', confirmText: '繼續選擇' })
@@ -978,7 +1046,7 @@ const editDrinkIngredients = async () => {
     showToast('請輸入完整資訊', 'error')
     return
   }
-  if (currentEditIngredientsInputName.value == currentIngredientsDrink.value.name && currentEditIngredientsInputPrice.value == currentIngredientsDrink.value.price) {
+  if (currentEditIngredientsInputName.value == currentIngredientsDrink.value.name && currentEditIngredientsInputPrice.value == currentIngredientsDrink.value.price && toApiStock(currentEditIngredientsInputStock.value) === (currentIngredientsDrink.value.stock ?? null)) {
     editIngredientsDialog.value = false
     showToast('保存成功', 'success')
     return
@@ -996,9 +1064,11 @@ const editDrinkIngredients = async () => {
     const updated = await updateAddOnOption(String(currentIngredientsDrink.value.id), {
       name: currentEditIngredientsInputName.value,
       price: Number(currentEditIngredientsInputPrice.value),
+      stock: toApiStock(currentEditIngredientsInputStock.value),
     })
     currentIngredientsDrink.value.name = updated.name
     currentIngredientsDrink.value.price = updated.price
+    currentIngredientsDrink.value.stock = updated.stock
     editIngredientsDialog.value = false
     showToast('保存成功', 'success')
   } catch (err) {

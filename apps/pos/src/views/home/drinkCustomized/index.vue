@@ -50,12 +50,20 @@ v-for="item in filterSize" :key="item.id" class="2xl:w-20 2xl:h-20 xl:w-[68px] x
     <div v-if="drinkStore.drinkMenu === 1" class="w-full h-full ">
       <div class="w-full h-full grid grid-cols-5 place-items-center  ">
         <div
-v-for="item in sliceAddMenu" :key="item.id" class="2xl:w-26 2xl:h-26 xl:w-24 xl:h-24 lg:w-[72px] lg:h-[72px] md:w-14 md:h-14 sm:w-12 sm:h-12 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg  cursor-pointer flex justify-center items-center"
-          :class="{ 'border-primary-500 bg-primary-100 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300': drinkStore.drinkAddList.some(addItem => addItem.name === item.name) }"
+v-for="item in sliceAddMenu" :key="item.id" class="relative 2xl:w-26 2xl:h-26 xl:w-24 xl:h-24 lg:w-[72px] lg:h-[72px] md:w-14 md:h-14 sm:w-12 sm:h-12 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg  cursor-pointer flex justify-center items-center"
+          :class="{
+            'border-primary-500 bg-primary-100 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300': drinkStore.drinkAddList.some(addItem => addItem.name === item.name),
+            'cursor-not-allowed opacity-40 pointer-events-none': isAddOnSoldOut(item),
+          }"
           @click="changeAdd(item)">
           <p
             class="md:px-2 px-1 text-surface-700 dark:text-surface-100 2xl:text-xl xl:text-lg lg:text-sm md:text-xs sm:text-[10px] text-[8px] font-bold select-none">
             {{ item.name }}</p>
+          <!-- P20（規劃書 §10 P20「基礎庫存管理」）：配料庫存扣到 0 就
+               標成缺貨，擋掉繼續加選（已經選了的可以繼續移除）。 -->
+          <span
+v-if="isAddOnSoldOut(item)"
+            class="absolute -top-1 -right-1 rounded-full bg-danger-600 px-1.5 py-0.5 text-[8px] font-bold text-white">缺貨</span>
         </div>
       </div>
     </div>
@@ -152,11 +160,16 @@ const changeIce = (ice: string) => {
 const changeSize = (size: string) => {
   drinkStore.drinkSetSize = size
 }
+// P20（規劃書 §10 P20「基礎庫存管理」）：配料庫存扣到 0 視為缺貨，
+// 擋掉繼續加選——已經選了的（可能是庫存還沒歸零前選的）仍然可以移除，
+// 見下面 changeAdd 的說明。
+const isAddOnSoldOut = (item: DrinkAddOnOption) => item.stock === 0
 // 存入當前所選的加料項目，並判斷是否已存在於選項中，如果存在則刪除，反之則新增
 const changeAdd = (addItem: DrinkAddOnOption) => {
   if (drinkStore.drinkAddList.includes(addItem)) {
     drinkStore.drinkAddList = drinkStore.drinkAddList.filter(item => item != addItem)
   } else {
+    if (isAddOnSoldOut(addItem)) return
     drinkStore.drinkAddList.push(addItem)
   }
 }

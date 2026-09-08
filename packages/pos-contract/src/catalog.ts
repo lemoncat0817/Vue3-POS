@@ -12,12 +12,21 @@ import { z } from 'zod'
 export const drinkCustomizedSchema = z.enum(['none', 'cold', 'both'])
 export type DrinkCustomized = z.infer<typeof drinkCustomizedSchema>
 
+/**
+ * 庫存數量（P20：規劃書 §10 P20「基礎庫存管理」）。`null` 代表「不追蹤
+ * 這個品項的庫存」（大部分現做飲料本來就沒有這個概念），數字代表目前
+ * 還剩多少可以賣——送單成功會扣掉對應的數量（見 routes/orders.ts 的
+ * deductStock），扣到 0 之後點餐頁會標成缺貨、擋掉繼續加入購物車。
+ */
+export const catalogStockSchema = z.number().int().nonnegative().nullable()
+
 export const catalogItemSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   priceL: z.number().int().nonnegative().nullable(),
   priceBottle: z.number().int().nonnegative().nullable(),
   customized: drinkCustomizedSchema,
+  stock: catalogStockSchema,
 })
 export type CatalogItem = z.infer<typeof catalogItemSchema>
 
@@ -38,6 +47,7 @@ export const addOnOptionSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   price: z.number().int().nonnegative(),
+  stock: catalogStockSchema,
 })
 export type AddOnOption = z.infer<typeof addOnOptionSchema>
 
@@ -71,6 +81,7 @@ export const createCatalogItemRequestSchema = z.object({
   priceL: z.number().int().nonnegative().nullable(),
   priceBottle: z.number().int().nonnegative().nullable(),
   customized: drinkCustomizedSchema,
+  stock: catalogStockSchema,
 })
 export type CreateCatalogItemRequest = z.infer<typeof createCatalogItemRequestSchema>
 
@@ -80,6 +91,7 @@ export type UpdateCatalogItemRequest = z.infer<typeof updateCatalogItemRequestSc
 export const createAddOnOptionRequestSchema = z.object({
   name: z.string().min(1),
   price: z.number().int().nonnegative(),
+  stock: catalogStockSchema,
 })
 export type CreateAddOnOptionRequest = z.infer<typeof createAddOnOptionRequestSchema>
 

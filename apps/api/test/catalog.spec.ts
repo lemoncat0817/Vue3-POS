@@ -13,7 +13,7 @@ describe('GET /api/catalog', () => {
     const db = createTestDb()
     await db.insert(catalogGroups).values([{ id: 'g1', name: '原味茶', type: 'drinkOriginal' }])
     await db.insert(catalogItems).values([
-      { id: 'i1', groupId: 'g1', name: '翡翠綠茶', priceL: 30, priceBottle: 45, customized: 'both' },
+      { id: 'i1', groupId: 'g1', name: '翡翠綠茶', priceL: 30, priceBottle: 45, customized: 'both', stock: 20 },
       { id: 'i2', groupId: 'g1', name: '錫蘭紅茶', priceL: 30, priceBottle: null, customized: 'none' },
     ])
     await db.insert(addOnOptions).values([{ id: 'a1', name: '珍珠', price: 10 }])
@@ -30,12 +30,12 @@ describe('GET /api/catalog', () => {
           name: '原味茶',
           type: 'drinkOriginal',
           items: [
-            { id: 'i1', name: '翡翠綠茶', priceL: 30, priceBottle: 45, customized: 'both' },
-            { id: 'i2', name: '錫蘭紅茶', priceL: 30, priceBottle: null, customized: 'none' },
+            { id: 'i1', name: '翡翠綠茶', priceL: 30, priceBottle: 45, customized: 'both', stock: 20 },
+            { id: 'i2', name: '錫蘭紅茶', priceL: 30, priceBottle: null, customized: 'none', stock: null },
           ],
         },
       ],
-      addOns: [{ id: 'a1', name: '珍珠', price: 10 }],
+      addOns: [{ id: 'a1', name: '珍珠', price: 10, stock: null }],
     })
   })
 
@@ -85,7 +85,7 @@ describe('菜單管理寫入 API（P18：規劃書 §10 P18「菜單與權限管
     await app.request('/api/catalog/items', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ groupId: group.id, name: '翡翠綠茶', priceL: 30, priceBottle: 45, customized: 'both' }),
+      body: JSON.stringify({ groupId: group.id, name: '翡翠綠茶', priceL: 30, priceBottle: 45, customized: 'both', stock: null }),
     })
 
     const res = await app.request(`/api/catalog/groups/${group.id}`, {
@@ -100,7 +100,7 @@ describe('菜單管理寫入 API（P18：規劃書 §10 P18「菜單與權限管
     const res = await app.request('/api/catalog/items', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ groupId: 'does-not-exist', name: '翡翠綠茶', priceL: 30, priceBottle: 45, customized: 'both' }),
+      body: JSON.stringify({ groupId: 'does-not-exist', name: '翡翠綠茶', priceL: 30, priceBottle: 45, customized: 'both', stock: null }),
     })
     expect(res.status).toBe(404)
   })
@@ -119,19 +119,19 @@ describe('菜單管理寫入 API（P18：規劃書 §10 P18「菜單與權限管
       await app.request('/api/catalog/items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-        body: JSON.stringify({ groupId: group.id, name: '翡翠綠茶', priceL: 30, priceBottle: 45, customized: 'both' }),
+        body: JSON.stringify({ groupId: group.id, name: '翡翠綠茶', priceL: 30, priceBottle: 45, customized: 'both', stock: null }),
       }),
     )
 
     const updateRes = await app.request(`/api/catalog/items/${item.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ groupId: group.id, name: '特級翡翠綠茶', priceL: 35, priceBottle: 50, customized: 'both' }),
+      body: JSON.stringify({ groupId: group.id, name: '特級翡翠綠茶', priceL: 35, priceBottle: 50, customized: 'both', stock: 5 }),
     })
     expect(updateRes.status).toBe(200)
 
     const afterUpdate = await readJson(await app.request('/api/catalog'))
-    expect(afterUpdate.groups[0].items[0]).toEqual({ id: item.id, name: '特級翡翠綠茶', priceL: 35, priceBottle: 50, customized: 'both' })
+    expect(afterUpdate.groups[0].items[0]).toEqual({ id: item.id, name: '特級翡翠綠茶', priceL: 35, priceBottle: 50, customized: 'both', stock: 5 })
 
     const deleteRes = await app.request(`/api/catalog/items/${item.id}`, {
       method: 'DELETE',
@@ -149,15 +149,15 @@ describe('菜單管理寫入 API（P18：規劃書 §10 P18「菜單與權限管
       await app.request('/api/catalog/add-ons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-        body: JSON.stringify({ name: '珍珠', price: 10 }),
+        body: JSON.stringify({ name: '珍珠', price: 10, stock: null }),
       }),
     )
-    expect(addOn).toMatchObject({ name: '珍珠', price: 10 })
+    expect(addOn).toMatchObject({ name: '珍珠', price: 10, stock: null })
 
     const updateRes = await app.request(`/api/catalog/add-ons/${addOn.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ name: '珍珠', price: 15 }),
+      body: JSON.stringify({ name: '珍珠', price: 15, stock: null }),
     })
     expect(updateRes.status).toBe(200)
 

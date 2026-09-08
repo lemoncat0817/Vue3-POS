@@ -975,6 +975,27 @@ const submitPayment = async (tenders: TenderDraft[]) => {
   orderStore.order.push(toPayOrder)
   showToast('訂單送出成功', 'success')
 
+  // P20（規劃書 §10 P20「基礎庫存管理」）：訂單是先進本機離線佇列、
+  // 背景非同步送到伺服端才真的扣庫存（見下方 enqueueOrder 的說明），
+  // 跟這裡的畫面更新不是同一個時間點——如果不在這裡先扣，點餐頁要
+  // 等到「剛好又有一次伺服端菜單同步」才會看到「賣完了」，中間這段
+  // 空窗期還是能繼續選到已經賣完的品項。這裡用跟伺服端 deductStock
+  // 一致的邏輯先在本機樂觀扣減，之後真正同步成功伺服端各自獨立扣
+  // 自己那份，不會因為這裡先扣過就少扣或扣兩次。
+  for (const line of toPayOrder.orderData) {
+    const item = drinkStore.drinkType.flatMap((group) => group.drinkList).find((drink) => drink.name === line.name)
+    if (item && typeof item.stock === 'number') {
+      item.stock = Math.max(0, item.stock - line.count)
+    }
+    const addOnNames = Array.isArray(line.addList) ? line.addList : []
+    for (const addOnName of addOnNames) {
+      const addOn = drinkStore.drinkAdd.find((option) => option.name === addOnName)
+      if (addOn && typeof addOn.stock === 'number') {
+        addOn.stock = Math.max(0, addOn.stock - line.count)
+      }
+    }
+  }
+
   // P5：訂單層級折價券只送「套用了哪張」，折抵金額由伺服端查真正
   // 的折價券資料重算（見 api/orders.ts 的說明）。要在這裡（清空
   // 待付款清單、連帶重置 discountStore 的選取狀態之前）就讀出
