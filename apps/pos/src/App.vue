@@ -3,11 +3,13 @@
   <!-- P8：組件庫替換——確認框／提示訊息（Reka UI），全 App 只掛一個
        實例，見 components/ui/ 的說明；已取代所有頁面原本的
        ElMessage／ElMessageBox。P12：退款／作廢新增的文字輸入框、
-       退款金額框，同樣是全 App 單例。 -->
+       退款金額框，同樣是全 App 單例。P19：退款／作廢主管二次授權
+       （帳號＋PIN）的對話框，同一套單例模式。 -->
   <ConfirmDialogHost />
   <ToastHost />
   <PromptDialogHost />
   <RefundDialogHost />
+  <ManagerAuthDialogHost />
   <ReceiptPreviewDialogHost />
 </template>
 
@@ -19,6 +21,7 @@ import ConfirmDialogHost from '@/components/ui/ConfirmDialogHost.vue'
 import ToastHost from '@/components/ui/ToastHost.vue'
 import PromptDialogHost from '@/components/ui/PromptDialogHost.vue'
 import RefundDialogHost from '@/components/ui/RefundDialogHost.vue'
+import ManagerAuthDialogHost from '@/components/ui/ManagerAuthDialogHost.vue'
 import ReceiptPreviewDialogHost from '@/components/ui/ReceiptPreviewDialogHost.vue'
 import { useDrinkStore } from '@/stores/drink'
 import { useDiscountStore } from '@/stores/discount'

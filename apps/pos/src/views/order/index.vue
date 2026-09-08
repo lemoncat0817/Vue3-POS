@@ -219,9 +219,11 @@ import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
 import { fromSelection, hasCapability } from '@/utils/selection'
 import { deleteOrder as deleteOrderRequest, refundOrder as refundOrderRequest, updateOrderStatus } from '@/api/orders'
+import { operatorLogin } from '@/api/auth'
 import { ApiError } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { prompt } from '@/composables/usePrompt'
+import { requestManagerAuth } from '@/composables/useManagerAuth'
 import { requestRefund } from '@/composables/useRefund'
 import { showReceipt } from '@/composables/useReceiptPreview'
 import { showToast } from '@/composables/useToast'
@@ -391,6 +393,34 @@ const leafHeaders = computed(() => table.getHeaderGroups()[0]?.headers ?? [])
 // 不是要對應到某個帳號 id。
 const currentOperator = () => `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`
 
+// P19（規劃書 §10 P19「退款／作廢主管二次授權」）：退款、作廢除了
+// 「目前登入操作員本身有沒有 canEditOrderStatus 這個權限」（見上方
+// columns 定義裡 canRefund／canDelete 的說明）之外，執行當下還要再
+// 現場輸入一次有這個權限的人（操作員自己或值班主管）的帳號＋PIN 核可
+// ——見 composables/useManagerAuth.ts 的完整說明。回傳核可人員的顯示
+// 字串（跟 currentOperator() 同一種「職稱 - 姓名」格式），失敗（取消
+// 輸入、帳號或 PIN 錯誤、這個帳號沒有對應權限）一律回傳 null，呼叫端
+// 收到 null 就整個操作取消，不送出任何退款／作廢請求。
+async function requestRefundOrVoidApproval(title: string, description: string): Promise<string | null> {
+  const credentials = await requestManagerAuth({ title, description })
+  if (credentials === null) return null
+  try {
+    const staff = await operatorLogin(credentials.account, credentials.pin)
+    if (!staff.capabilities.includes('canEditOrderStatus')) {
+      showToast('這個帳號沒有退款／作廢的權限，操作已取消', 'error')
+      return null
+    }
+    return `${staff.jobTitle} - ${staff.name}`
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401) {
+      showToast('帳號或 PIN 錯誤，操作已取消', 'error')
+    } else {
+      showToast('連不上伺服端，操作已取消', 'error')
+    }
+    return null
+  }
+}
+
 // P12（規劃書 §10 P0「退款／作廢」）：改成「已取消」現在是真正的
 // 作廢操作，一定要交代原因——選了「已取消」之後，再彈一次
 // PromptDialogHost（見 composables/usePrompt.ts）要求輸入理由，使用者
@@ -408,7 +438,14 @@ const editOrderStatus = async (id: string) => {
   const nextStatus = result === 'confirm' ? '已完成' : '已取消'
 
   let reason: string | undefined
+  let voidApprover: string | null = null
   if (nextStatus === '已取消') {
+    // P19：作廢會直接影響班別結算的現金收入，需要主管二次授權，見
+    // requestRefundOrVoidApproval 的說明；先核可再問理由，沒通過就不用
+    // 浪費時間打理由。
+    voidApprover = await requestRefundOrVoidApproval('作廢需要主管授權', '這筆訂單即將被標記為作廢，請輸入有權限核可的帳號與 PIN')
+    if (voidApprover === null) return
+
     const voidReason = await prompt({
       title: '作廢原因',
       description: '這筆訂單將被標記為作廢，班別結算不會再計入這筆訂單的現金收入',
@@ -421,7 +458,7 @@ const editOrderStatus = async (id: string) => {
   }
 
   try {
-    const updated = await updateOrderStatus(id, nextStatus, currentOperator(), reason)
+    const updated = await updateOrderStatus(id, nextStatus, voidApprover ?? currentOperator(), reason)
     const local = orderStore.order.find(item => item.orderId === id)!
     local.orderStatus = updated.orderStatus
     local.voidReason = updated.voidReason
@@ -438,6 +475,11 @@ const editOrderStatus = async (id: string) => {
 const refundOrder = async (order: OrderRecord) => {
   const max = remainingRefundableOf(order)
   if (max <= 0) return
+  // P19：跟作廢一樣，先核可再問退款金額／原因，見
+  // requestRefundOrVoidApproval 的說明。
+  const approver = await requestRefundOrVoidApproval('退款需要主管授權', '這筆訂單即將辦理退款，請輸入有權限核可的帳號與 PIN')
+  if (approver === null) return
+
   const result = await requestRefund({ max })
   if (result === null) return
   try {
@@ -445,7 +487,7 @@ const refundOrder = async (order: OrderRecord) => {
       refundId: ulid(),
       amount: result.amount,
       reason: result.reason,
-      operator: currentOperator(),
+      operator: approver,
     })
     const local = orderStore.order.find(item => item.orderId === order.orderId)!
     local.refundedAmount = updated.refundedAmount

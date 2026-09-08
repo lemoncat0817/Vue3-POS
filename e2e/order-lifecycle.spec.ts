@@ -57,6 +57,12 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
   )
   await row.getByRole('button', { name: '編輯訂單狀態' }).click()
   await page.getByRole('button', { name: '已取消', exact: true }).click()
+  // P19：作廢需要主管二次授權（見 composables/useManagerAuth.ts 的
+  // 說明），這裡用店長自己的帳號＋PIN 核可。
+  const voidAuthDialog = page.getByRole('dialog', { name: '作廢需要主管授權' })
+  await voidAuthDialog.getByLabel('帳號').fill('lemon')
+  await voidAuthDialog.getByLabel('PIN').fill('1234')
+  await voidAuthDialog.getByRole('button', { name: '確認核可' }).click()
   await page.getByRole('textbox', { name: '原因' }).fill('客人臨時取消')
   await page.getByRole('button', { name: '確認作廢' }).click()
   const statusBody = (await (await statusResponse).json()) as { orderStatus: string; voidReason: string }
