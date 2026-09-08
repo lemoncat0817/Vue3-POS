@@ -133,6 +133,47 @@
             篩選中
           </span>
         </div>
+
+        <!-- UI-4：已套用的篩選條件原本只有一顆「篩選中」徽章，看不出
+             現在到底套了哪幾條，也無法單獨移除其中一條。改成可個別
+             移除的 chip 列，每個欄位各自的 × 只清那一格，「清除全部」
+             等同於既有的重置篩選按鈕。 -->
+        <div v-if="hasActiveFilter" class="mb-3 flex flex-wrap items-center gap-1.5">
+          <button
+            v-if="filterOrderId" type="button"
+            class="inline-flex items-center gap-1 rounded-full bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 text-[11px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/60"
+            @click="filterOrderId = ''">
+            訂單編號：{{ filterOrderId }}<X class="h-3 w-3" />
+          </button>
+          <button
+            v-if="filterOrderTime" type="button"
+            class="inline-flex items-center gap-1 rounded-full bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 text-[11px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/60"
+            @click="filterOrderTime = ''">
+            訂單時間：{{ filterOrderTime }}<X class="h-3 w-3" />
+          </button>
+          <button
+            v-if="filterOrderStaff" type="button"
+            class="inline-flex items-center gap-1 rounded-full bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 text-[11px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/60"
+            @click="filterOrderStaff = ''">
+            服務人員：{{ filterOrderStaff }}<X class="h-3 w-3" />
+          </button>
+          <button
+            v-if="filterOrderStatus" type="button"
+            class="inline-flex items-center gap-1 rounded-full bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 text-[11px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/60"
+            @click="filterOrderStatus = ''">
+            訂單狀態：{{ filterOrderStatus }}<X class="h-3 w-3" />
+          </button>
+          <button
+            v-if="filterOrderPayMethod" type="button"
+            class="inline-flex items-center gap-1 rounded-full bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 text-[11px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/60"
+            @click="filterOrderPayMethod = ''">
+            付款方式：{{ filterOrderPayMethod }}<X class="h-3 w-3" />
+          </button>
+          <button type="button" class="text-[11px] font-bold text-surface-400 hover:text-danger-600 dark:hover:text-danger-400 underline underline-offset-2" @click="resetFilter">
+            清除全部
+          </button>
+        </div>
+
         <div class="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
             <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
@@ -395,6 +436,7 @@ import {
   Tag,
   CreditCard,
   ChevronRight,
+  X,
 } from 'lucide-vue-next'
 import { useOrderStore } from "@/stores/order"
 const orderStore = useOrderStore()
@@ -567,9 +609,17 @@ const columns = [
       return h('div', { class: 'flex flex-wrap items-center gap-1.5' }, badges)
     },
   }),
+  // UI-4（規劃書 §5.1「查看訂單」）：金額欄原本跟其他文字欄一樣置中，
+  // 直式掃描金額很吃力——業界慣例（Stripe 模式）金額一律靠右、用等寬
+  // 數字（tabular-nums）對齊千位數。header／cell 都用 render function
+  // 包一層 `block text-right`，不用改動共用的 <th>／<td> 外層 markup。
   columnHelper.accessor('orderPaymentPrice', {
-    header: '訂單金額',
-    cell: (info) => h('span', { class: 'font-mono font-bold text-surface-900 dark:text-surface-100' }, `${info.getValue()} 元`),
+    header: () => h('span', { class: 'block text-right' }, '訂單金額'),
+    cell: (info) => h(
+      'span',
+      { class: 'block text-right font-mono font-bold tabular-nums text-surface-900 dark:text-surface-100' },
+      `${info.getValue().toLocaleString()} 元`,
+    ),
   }),
   columnHelper.accessor('orderPayment', {
     header: '付款方式',
