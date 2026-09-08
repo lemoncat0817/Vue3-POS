@@ -4,10 +4,15 @@ import { expect, test } from '@playwright/test'
  * P7 迴歸驗證（D-15）：數據分析頁原本完全對本機 Pinia 狀態做統計，從沒
  * 打過任何 API。現在改成呼叫 GET /api/reports/sales（見
  * views/dataAnalysis/index.vue、api/reports.ts 的說明），這裡驗證真的
- * 對 wrangler dev + 本機 D1 送出這個請求、切換分頁與日期區間會帶對應
- * 的查詢參數，且畫面真的用得到回應資料（圖表渲染出對應的 canvas）。
+ * 對 wrangler dev + 本機 D1 送出這個請求、切換日期區間會帶對應的查詢
+ * 參數，且畫面真的用得到回應資料（圖表渲染出對應的 canvas）。
+ *
+ * UI-7（規劃書 §5.3「數據分析」）：四張圖表原本切成四個頁籤、一次只
+ * 顯示一種，改成 12 欄網格的單頁儀表板後不用再切頁籤——原本各排行榜
+ * 搭配的圓餅圖也拿掉了，只留旁邊本來就有的排行清單，所以整頁固定只
+ * 有「營業額走勢」這一張 echarts 折線圖、一個 canvas。
  */
-test('數據分析頁會向伺服端要報表資料，切換分頁與日期會重新查詢', async ({ page }) => {
+test('數據分析頁會向伺服端要報表資料，切換日期會重新查詢', async ({ page }) => {
   const firstReportResponse = page.waitForResponse(
     (res) => res.url().includes('/api/reports/sales') && res.request().method() === 'GET',
   )
@@ -30,13 +35,12 @@ test('數據分析頁會向伺服端要報表資料，切換分頁與日期會�
   expect(from).toMatch(/^\d{8}$/)
   expect(from).toBe(to)
 
-  // 一開始（單日）看的是「營業額」分頁，應該渲染出折線圖的 canvas。
+  // 營業額走勢圖表應該渲染出折線圖的 canvas，熱門飲品／配料／支付
+  // 通路的排行清單（不再是圖表）同一時間都在同一頁上看得到。
   await expect(page.locator('canvas')).toBeVisible()
-
-  // 切到「熱門飲料」分頁——同一份報表資料已經回來，不需要重新打 API，
-  // 但畫面要重新渲染出對應的圖表。
-  await page.getByText('熱門飲料', { exact: true }).click()
-  await expect(page.locator('canvas')).toBeVisible()
+  await expect(page.getByText('熱門飲品排行榜', { exact: false })).toBeVisible()
+  await expect(page.getByText('加料選配榜單', { exact: false })).toBeVisible()
+  await expect(page.getByText('多元支付通路結構', { exact: true })).toBeVisible()
 
   // 切換到跨日期區間會帶新的 from／to 重新呼叫 API。原生
   // <input type="date"> 直接 fill 一個 'YYYY-MM-DD' 字串即可，不像

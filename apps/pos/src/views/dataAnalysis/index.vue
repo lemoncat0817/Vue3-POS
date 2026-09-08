@@ -151,57 +151,18 @@
         </div>
       </div>
 
-      <!-- 分頁切換選單 (維持完全之按鈕文字以符合 e2e 測試) -->
-      <div class="flex items-center justify-between border-b border-surface-200 dark:border-surface-800 pb-2">
-        <div class="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            class="rounded-xl px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none border"
-            :class="dataAnalysisStore.currentDataAnalysis === 0
-              ? 'border-primary-500 bg-primary-600 text-white shadow-md shadow-primary-600/20'
-              : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
-            @click="dataAnalysisStore.currentDataAnalysis = 0">
-            營業額
-          </button>
-          <button
-            type="button"
-            class="rounded-xl px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none border"
-            :class="dataAnalysisStore.currentDataAnalysis === 1
-              ? 'border-primary-500 bg-primary-600 text-white shadow-md shadow-primary-600/20'
-              : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
-            @click="dataAnalysisStore.currentDataAnalysis = 1">
-            熱門飲料
-          </button>
-          <button
-            type="button"
-            class="rounded-xl px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none border"
-            :class="dataAnalysisStore.currentDataAnalysis === 2
-              ? 'border-primary-500 bg-primary-600 text-white shadow-md shadow-primary-600/20'
-              : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
-            @click="dataAnalysisStore.currentDataAnalysis = 2">
-            熱門配料
-          </button>
-          <button
-            type="button"
-            class="rounded-xl px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none border"
-            :class="dataAnalysisStore.currentDataAnalysis === 3
-              ? 'border-primary-500 bg-primary-600 text-white shadow-md shadow-primary-600/20'
-              : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-surface-700 dark:text-surface-300 hover:bg-surface-100'"
-            @click="dataAnalysisStore.currentDataAnalysis = 3">
-            常用付款方式
-          </button>
-        </div>
-
-        <span class="text-xs text-surface-400 font-medium hidden sm:block">
-          圖表資料依伺服端 SQL 聚合即時呈現
-        </span>
-      </div>
-
-      <!-- 圖表主要展示區 (維持 refs 與條件渲染供 e2e 與 echarts 運作) -->
-      <div class="w-full bg-white dark:bg-surface-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-5 shadow-sm min-h-[580px]">
-
-        <!-- 分頁 0：營業額走勢分析 -->
-        <div v-show="dataAnalysisStore.currentDataAnalysis === 0" class="flex flex-col gap-4">
+      <!-- UI-7（規劃書 §5.3「數據分析」）：原本四張圖表被切成四個
+           頁籤，一次只看得到其中一種——這是把「儀表板」硬做成「四個
+           單圖頁」，使用者無法一眼掌握全貌，而這正是儀表板存在的
+           理由。改成 12 欄網格的單頁儀表板：營業額走勢（主圖表，佔
+           8 欄）＋熱門飲品排行（4 欄）為第一列，熱門配料／支付通路
+           結構（各 6 欄）為第二列。三個排行榜原本各自搭一個 500px 的
+           圓餅圖，圓餅圖本身沒有比旁邊已經存在的排行清單多傳達什麼
+           訊息，直接拿掉——換來的版面空間讓四塊內容能同時攤開，不用
+           再切頁籤，也不再需要四個 500px 高的畫布搶首屏空間。 -->
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        <!-- 營業額走勢（主圖表） -->
+        <div class="xl:col-span-8 card-panel p-5 flex flex-col gap-4">
           <div class="flex items-center justify-between">
             <h2 class="text-base font-black text-surface-900 dark:text-surface-100 flex items-center gap-2">
               <TrendingUp class="h-4 w-4 text-primary-600" />
@@ -212,110 +173,86 @@
             </span>
           </div>
 
-          <!-- 單日營業額走勢 Canvas -->
-          <div
-            v-if="selectTime[0] === selectTime[1]"
-            ref="oneDayBusiness"
-            class="w-full h-[500px]" />
-
-          <!-- 跨日期區間營業額走勢 Canvas -->
-          <div
-            v-if="selectTime[0] !== selectTime[1]"
-            ref="rangeBusiness"
-            class="w-full h-[500px]" />
+          <!-- 圖表高度改用 clamp()：隨視窗高度縮放，不再是不管視窗多矮
+               都佔滿 500px、把下方內容全部擠出首屏之外的固定值。 -->
+          <div v-if="selectTime[0] === selectTime[1]" ref="oneDayBusiness" class="w-full h-[clamp(260px,38vh,460px)]" />
+          <div v-else ref="rangeBusiness" class="w-full h-[clamp(260px,38vh,460px)]" />
         </div>
 
-        <!-- 分頁 1：熱門飲料排行榜與圓餅分佈 -->
-        <div v-show="dataAnalysisStore.currentDataAnalysis === 1" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          <div class="lg:col-span-7">
-            <div ref="hotDrink" class="w-full h-[500px]" />
-          </div>
-          <div class="lg:col-span-5 flex flex-col gap-3 p-4 rounded-xl bg-surface-50 dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700">
-            <span class="text-sm font-black text-surface-900 dark:text-surface-100 mb-1">熱門飲品排行榜 (Top 5)</span>
-            <div v-for="(item, idx) in salesReport?.topDrinks" :key="item.name" class="flex flex-col gap-1">
-              <div class="flex justify-between text-xs font-bold">
-                <span class="flex items-center gap-2">
-                  <span
-                    class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
-                    :class="idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-amber-700' : 'bg-surface-300 dark:bg-surface-700'">
-                    {{ idx + 1 }}
-                  </span>
-                  <span>{{ item.name }}</span>
+        <!-- 熱門飲品排行榜 -->
+        <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">熱門飲品排行榜 (Top 5)</span>
+          <div v-for="(item, idx) in salesReport?.topDrinks" :key="item.name" class="flex flex-col gap-1">
+            <div class="flex justify-between text-xs font-bold">
+              <span class="flex items-center gap-2">
+                <span
+                  class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
+                  :class="idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-surface-400' : idx === 2 ? 'bg-amber-700' : 'bg-surface-300 dark:bg-surface-700'">
+                  {{ idx + 1 }}
                 </span>
-                <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 杯</span>
-              </div>
-              <!-- 進度條 -->
-              <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
-                <div
-                  class="h-full rounded-full bg-primary-500 transition-all duration-500"
-                  :style="{ width: `${totalCups > 0 ? (item.count / totalCups) * 100 : 0}%` }" />
-              </div>
+                <span>{{ item.name }}</span>
+              </span>
+              <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 杯</span>
             </div>
-            <p v-if="!salesReport?.topDrinks.length" class="text-xs text-surface-400 py-4 text-center">目前無銷售紀錄</p>
+            <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
+              <div
+                class="h-full rounded-full bg-primary-500 transition-all duration-500"
+                :style="{ width: `${totalCups > 0 ? (item.count / totalCups) * 100 : 0}%` }" />
+            </div>
           </div>
+          <p v-if="!salesReport?.topDrinks.length" class="text-xs text-surface-400 py-4 text-center">目前無銷售紀錄</p>
         </div>
 
-        <!-- 分頁 2：熱門配料排行榜與圓餅分佈 -->
-        <div v-show="dataAnalysisStore.currentDataAnalysis === 2" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          <div class="lg:col-span-7">
-            <div ref="hotIngredients" class="w-full h-[500px]" />
-          </div>
-          <div class="lg:col-span-5 flex flex-col gap-3 p-4 rounded-xl bg-surface-50 dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700">
-            <span class="text-sm font-black text-surface-900 dark:text-surface-100 mb-1">加料選配榜單 (Top 5)</span>
-            <div v-for="(item, idx) in salesReport?.topAddOns" :key="item.name" class="flex flex-col gap-1">
-              <div class="flex justify-between text-xs font-bold">
-                <span class="flex items-center gap-2">
-                  <span
-                    class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
-                    :class="idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-amber-700' : 'bg-surface-300 dark:bg-surface-700'">
-                    {{ idx + 1 }}
-                  </span>
-                  <span>{{ item.name }}</span>
+        <!-- 熱門配料排行榜 -->
+        <div class="xl:col-span-6 card-panel p-4 flex flex-col gap-3">
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">加料選配榜單 (Top 5)</span>
+          <div v-for="(item, idx) in salesReport?.topAddOns" :key="item.name" class="flex flex-col gap-1">
+            <div class="flex justify-between text-xs font-bold">
+              <span class="flex items-center gap-2">
+                <span
+                  class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
+                  :class="idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-surface-400' : idx === 2 ? 'bg-amber-700' : 'bg-surface-300 dark:bg-surface-700'">
+                  {{ idx + 1 }}
                 </span>
-                <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 份</span>
-              </div>
-              <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
-                <div
-                  class="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                  :style="{ width: `${salesReport?.topAddOns[0]?.count ? (item.count / salesReport.topAddOns[0].count) * 100 : 0}%` }" />
-              </div>
+                <span>{{ item.name }}</span>
+              </span>
+              <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 份</span>
             </div>
-            <p v-if="!salesReport?.topAddOns.length" class="text-xs text-surface-400 py-4 text-center">目前無配料加購紀錄</p>
+            <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
+              <div
+                class="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                :style="{ width: `${salesReport?.topAddOns[0]?.count ? (item.count / salesReport.topAddOns[0].count) * 100 : 0}%` }" />
+            </div>
           </div>
+          <p v-if="!salesReport?.topAddOns.length" class="text-xs text-surface-400 py-4 text-center">目前無配料加購紀錄</p>
         </div>
 
-        <!-- 分頁 3：付款方式排行榜與多元支付結構 -->
-        <div v-show="dataAnalysisStore.currentDataAnalysis === 3" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          <div class="lg:col-span-7">
-            <div ref="hotPayMethod" class="w-full h-[500px]" />
-          </div>
-          <div class="lg:col-span-5 flex flex-col gap-3 p-4 rounded-xl bg-surface-50 dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700">
-            <span class="text-sm font-black text-surface-900 dark:text-surface-100 mb-1 flex items-center gap-1.5">
-              <CreditCard class="h-4 w-4 text-indigo-500" />
-              <span>多元支付通路結構</span>
-            </span>
-            <div v-for="(item, idx) in salesReport?.topPaymentMethods" :key="item.name" class="flex flex-col gap-1">
-              <div class="flex justify-between text-xs font-bold">
-                <span class="flex items-center gap-2">
-                  <span
-                    class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
-                    :class="idx === 0 ? 'bg-primary-500' : 'bg-surface-400 dark:bg-surface-600'">
-                    {{ idx + 1 }}
-                  </span>
-                  <span>{{ item.name }}</span>
+        <!-- 多元支付通路結構 -->
+        <div class="xl:col-span-6 card-panel p-4 flex flex-col gap-3">
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100 flex items-center gap-1.5">
+            <CreditCard class="h-4 w-4 text-info-500" />
+            <span>多元支付通路結構</span>
+          </span>
+          <div v-for="(item, idx) in salesReport?.topPaymentMethods" :key="item.name" class="flex flex-col gap-1">
+            <div class="flex justify-between text-xs font-bold">
+              <span class="flex items-center gap-2">
+                <span
+                  class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
+                  :class="idx === 0 ? 'bg-primary-500' : 'bg-surface-400 dark:bg-surface-600'">
+                  {{ idx + 1 }}
                 </span>
-                <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 次交易</span>
-              </div>
-              <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
-                <div
-                  class="h-full rounded-full bg-indigo-500 transition-all duration-500"
-                  :style="{ width: `${totalOrders > 0 ? (item.count / totalOrders) * 100 : 0}%` }" />
-              </div>
+                <span>{{ item.name }}</span>
+              </span>
+              <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 次交易</span>
             </div>
-            <p v-if="!salesReport?.topPaymentMethods.length" class="text-xs text-surface-400 py-4 text-center">目前無付款紀錄</p>
+            <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
+              <div
+                class="h-full rounded-full bg-info-500 transition-all duration-500"
+                :style="{ width: `${totalOrders > 0 ? (item.count / totalOrders) * 100 : 0}%` }" />
+            </div>
           </div>
+          <p v-if="!salesReport?.topPaymentMethods.length" class="text-xs text-surface-400 py-4 text-center">目前無付款紀錄</p>
         </div>
-
       </div>
     </div>
 
@@ -371,7 +308,7 @@
 
 <script setup lang="ts">
 import * as echarts from 'echarts/core'
-import { LineChart, PieChart, BarChart } from 'echarts/charts'
+import { LineChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue'
@@ -387,13 +324,14 @@ import {
   CreditCard
 } from 'lucide-vue-next'
 
-echarts.use([LineChart, PieChart, BarChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer])
+// UI-7：三個排行榜原本各自搭一個 echarts 圓餅圖，改成單頁儀表板後
+// 拿掉了（見上方 template 的說明）——PieChart／BarChart（BarChart其實
+// 從沒被用過任何 'bar' 系列，是更早就存在的死 import）跟著一起移除，
+// 現在只剩營業額走勢這張折線圖真的在用 echarts。
+echarts.use([LineChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer])
 import { useQuery } from '@tanstack/vue-query'
-import { useDataAnalysisStore } from "@/stores/dataAnalysis"
-const dataAnalysisStore = useDataAnalysisStore()
 import { getDate, getTime, formatBusinessDate, toBusinessDate, toNativeDate, fromNativeDate } from '@/utils/time'
 import { fetchSalesReport } from '@/api/reports'
-import type { RankedCount } from '@pos/contract'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { showToast } from '@/composables/useToast'
 import { useTheme } from '@/composables/useTheme'
@@ -530,9 +468,6 @@ const handlePrintSettlement = () => {
 // 圖表 DOM 節點
 const oneDayBusiness = ref<HTMLDivElement>()
 const rangeBusiness = ref<HTMLDivElement>()
-const hotDrink = ref<HTMLDivElement>()
-const hotIngredients = ref<HTMLDivElement>()
-const hotPayMethod = ref<HTMLDivElement>()
 
 let activeCharts: echarts.ECharts[] = []
 
@@ -546,10 +481,6 @@ const isDark = computed(() => theme.value === 'dark')
 const getTextColor = () => isDark.value ? '#cbd5e1' : '#475569'
 const getSubtextColor = () => isDark.value ? '#64748b' : '#94a3b8'
 const getSplitLineColor = () => isDark.value ? '#334155' : '#f1f5f9'
-
-const chartColors = [
-  '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'
-]
 
 // 渲染單日營業額時段折線面積圖
 const showOneDayBusiness = () => {
@@ -664,93 +595,22 @@ const showRangeBusiness = () => {
   })
 }
 
-// 渲染圓環排行榜圖表 (共用於飲品、配料、支付方式)
-const showRanking = (
-  el: HTMLDivElement | undefined,
-  data: RankedCount[],
-  title: string,
-  unit: string,
-) => {
-  if (!el) return
-  const chart = echarts.init(el)
-  activeCharts.push(chart)
-  chart.setOption({
-    title: {
-      text: title,
-      left: 'center',
-      textStyle: { color: getTextColor(), fontSize: 16, fontWeight: 'bold' }
-    },
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: isDark.value ? '#1e293b' : '#ffffff',
-      borderColor: isDark.value ? '#334155' : '#e2e8f0',
-      textStyle: { color: getTextColor() },
-      formatter: `{b}: {c} ${unit} ({d}%)`
-    },
-    legend: {
-      orient: 'horizontal',
-      bottom: '5%',
-      left: 'center',
-      textStyle: { color: getSubtextColor(), fontSize: 12 }
-    },
-    color: chartColors,
-    series: [
-      {
-        name: title,
-        type: 'pie',
-        radius: ['42%', '70%'],
-        center: ['50%', '48%'],
-        avoidLabelOverlap: true,
-        itemStyle: {
-          borderRadius: 8,
-          borderColor: isDark.value ? '#0f172a' : '#ffffff',
-          borderWidth: 2
-        },
-        data: data.length === 0
-          ? [{ value: 0, name: '目前無資料' }]
-          : data.map(item => ({ name: item.name, value: item.count })),
-        label: {
-          show: true,
-          formatter: `{b}\n{d}%`,
-          color: getTextColor(),
-          fontSize: 12,
-          fontWeight: 'bold'
-        },
-        emphasis: {
-          label: { show: true, fontSize: 14, fontWeight: 'bold' },
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.2)'
-          }
-        }
-      }
-    ]
-  })
-}
-
-// 圖表分發派送
+// 圖表分發派送——UI-7 後只剩營業額走勢一張圖表需要初始化（見上方
+// template 的說明，三個排行榜的圓餅圖已經移除，改用旁邊本來就有的
+// 排行清單）。
 const initCharts = () => {
   clearCharts()
   if (!salesReport.value) return
 
-  if (dataAnalysisStore.currentDataAnalysis === 0) {
-    if (selectTime.value[0] === selectTime.value[1]) {
-      showOneDayBusiness()
-    } else {
-      showRangeBusiness()
-    }
-  } else if (dataAnalysisStore.currentDataAnalysis === 1) {
-    showRanking(hotDrink.value, salesReport.value.topDrinks, '熱門飲品銷售佔比', '杯')
-  } else if (dataAnalysisStore.currentDataAnalysis === 2) {
-    showRanking(hotIngredients.value, salesReport.value.topAddOns, '熱門配料加購佔比', '份')
-  } else if (dataAnalysisStore.currentDataAnalysis === 3) {
-    showRanking(hotPayMethod.value, salesReport.value.topPaymentMethods, '多元支付方式佔比', '次')
+  if (selectTime.value[0] === selectTime.value[1]) {
+    showOneDayBusiness()
+  } else {
+    showRangeBusiness()
   }
 }
 
 // 監聽重繪
-watch([salesReport, () => selectTime.value, () => dataAnalysisStore.currentDataAnalysis, isDark], () => {
+watch([salesReport, () => selectTime.value, isDark], () => {
   nextTick(() => {
     initCharts()
   })
