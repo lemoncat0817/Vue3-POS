@@ -1,0 +1,121 @@
+<template>
+  <ModalDialog :open="state.open" title="收據預覽" @update:open="onOpenChange">
+    <div v-if="state.order" class="flex flex-col gap-4">
+      <!-- 收據本體：只有這個區塊會被印出來，見下方 @media print 的說明。 -->
+      <div class="receipt-print-area rounded-xl border border-dashed border-surface-300 bg-white p-4 font-mono text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-100">
+        <div class="text-center">
+          <p class="text-lg font-bold">MAJI Tea POS</p>
+          <p class="text-xs text-surface-500 dark:text-surface-400">手搖飲收據</p>
+        </div>
+        <div class="my-2 border-t border-dashed border-surface-300 dark:border-surface-700" />
+        <div class="flex flex-col gap-0.5 text-xs">
+          <div class="flex justify-between"><span>訂單編號</span><span>{{ state.order.orderId }}</span></div>
+          <div class="flex justify-between"><span>訂單時間</span><span>{{ state.order.orderTime }}</span></div>
+          <div class="flex justify-between"><span>服務人員</span><span>{{ state.order.staff }}</span></div>
+          <div class="flex justify-between"><span>內用／外帶</span><span>{{ state.order.orderChannel }}</span></div>
+          <div class="flex justify-between">
+            <span>發票號碼</span>
+            <span>{{ state.order.invoiceNumber || '（尚未同步）' }}</span>
+          </div>
+          <div v-if="state.order.invoiceCarrier && state.order.invoiceCarrier.type !== '無載具'" class="flex justify-between">
+            <span>發票載具</span>
+            <span>{{ state.order.invoiceCarrier.type }} {{ state.order.invoiceCarrier.value }}</span>
+          </div>
+        </div>
+        <div class="my-2 border-t border-dashed border-surface-300 dark:border-surface-700" />
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="text-left">
+              <th class="pb-1">品項</th>
+              <th class="pb-1 text-right">數量</th>
+              <th class="pb-1 text-right">小計</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(line, index) in state.order.orderData" :key="index">
+              <td class="py-0.5 align-top">
+                {{ line.name }}（{{ line.size }}）
+                <span v-if="line.addList !== '無添加配料' && line.addList.length > 0" class="block text-surface-500 dark:text-surface-400">
+                  ＋{{ Array.isArray(line.addList) ? line.addList.join('、') : line.addList }}
+                </span>
+              </td>
+              <td class="py-0.5 text-right align-top">{{ line.count }}</td>
+              <td class="py-0.5 text-right align-top">${{ line.totalPrice }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="my-2 border-t border-dashed border-surface-300 dark:border-surface-700" />
+        <div class="flex flex-col gap-0.5 text-xs">
+          <div class="flex justify-between"><span>已買袋子數量</span><span>{{ state.order.orderBagCount }} 個</span></div>
+          <div class="flex justify-between"><span>訂單原始金額</span><span>${{ state.order.orderTotalPrice }}</span></div>
+          <div v-if="state.order.orderDiscount > 0" class="flex justify-between">
+            <span>優惠折抵（{{ state.order.discountName }}）</span><span>−${{ state.order.orderDiscount }}</span>
+          </div>
+          <div class="flex justify-between text-sm font-bold">
+            <span>應付金額</span><span>${{ state.order.orderPaymentPrice }}</span>
+          </div>
+          <div class="flex justify-between"><span>付款方式</span><span>{{ state.order.orderPayment }}</span></div>
+        </div>
+        <div class="my-2 border-t border-dashed border-surface-300 dark:border-surface-700" />
+        <p class="text-center text-xs text-surface-500 dark:text-surface-400">謝謝惠顧，歡迎再次光臨</p>
+      </div>
+
+      <div class="flex justify-end gap-2">
+        <button
+type="button"
+          class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-200 dark:hover:bg-surface-800"
+          @click="closeReceipt">
+          關閉
+        </button>
+        <button
+type="button"
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700"
+          data-testid="print-receipt" @click="print">
+          列印
+        </button>
+      </div>
+    </div>
+  </ModalDialog>
+</template>
+
+<script setup lang="ts">
+// P16（規劃書 §10 P0「周邊模擬」）：這個專案原本「開收銀機」按鈕
+// （見 views/home/index.vue 的 openCashier）只彈一句話，沒有真的
+// 模擬任何周邊裝置的實際用途——收據要能真的印出來給客人，才是這個
+// 專案缺的那一半。全 App 只掛一個實例，跟 ConfirmDialogHost／
+// ToastHost 同一套模式，見 composables/useReceiptPreview.ts 的說明。
+import ModalDialog from '@/components/ui/ModalDialog.vue'
+import { closeReceipt, useReceiptPreviewState } from '@/composables/useReceiptPreview'
+
+const state = useReceiptPreviewState()
+
+function onOpenChange(value: boolean) {
+  if (!value) closeReceipt()
+}
+
+// window.print() 是瀏覽器內建能力，出單機（熱感應印表機）在作業系統
+// 層級就是一台印表機，這裡不需要（也不可能在純網頁環境下）另外寫一套
+// 假的印表機驅動模擬——叫出系統列印對話框本身就是跟真正周邊裝置互動
+// 的正確方式。下面的 @media print 只印出收據本體，不印整個網頁介面。
+function print() {
+  window.print()
+}
+</script>
+
+<style>
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .receipt-print-area,
+  .receipt-print-area * {
+    visibility: visible;
+  }
+  .receipt-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
+</style>

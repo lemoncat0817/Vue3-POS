@@ -223,6 +223,7 @@ import { ApiError } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { prompt } from '@/composables/usePrompt'
 import { requestRefund } from '@/composables/useRefund'
+import { showReceipt } from '@/composables/useReceiptPreview'
 import { showToast } from '@/composables/useToast'
 import { ulid } from '@pos/domain'
 import type { OrderRecord } from '@/types'
@@ -334,6 +335,11 @@ const columns = [
       // 業務上本來就該有權限處理退款，兩者是同一個信任層級。
       const canRefund = canEditStatus && order.orderStatus === '已完成' && remainingRefundableOf(order) > 0
       return h('div', { class: 'flex flex-wrap justify-end gap-2' }, [
+        h('button', {
+          type: 'button',
+          class: 'rounded-lg border border-surface-300 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-300 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800',
+          onClick: () => showReceipt(order),
+        }, '收據'),
         h('button', {
           type: 'button',
           class: [

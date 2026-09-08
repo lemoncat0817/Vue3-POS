@@ -445,6 +445,7 @@ import ShiftPanel from '@/components/checkout/ShiftPanel.vue'
 import ParkedOrdersPanel from '@/components/checkout/ParkedOrdersPanel.vue'
 import InvoiceCarrierPanel from '@/components/checkout/InvoiceCarrierPanel.vue'
 import { alert, confirm } from '@/composables/useConfirm'
+import { prompt } from '@/composables/usePrompt'
 import { showToast } from '@/composables/useToast'
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
@@ -689,10 +690,29 @@ const changeBagCount = () => {
   showToast('修改加購袋子數量成功', 'success')
 }
 
-// 開啟收銀機相關功能（載具已改由 InvoiceCarrierPanel 處理，見 P15 的說明）
-// 開啟收銀機
-const openCashier = () => {
-  void alert({ title: '通知', description: '開啟收銀機', confirmText: '確定' })
+// 開啟收銀機（P16：規劃書 §10 P0「周邊模擬」；載具已改由
+// InvoiceCarrierPanel 處理，見 P15 的說明）。
+//
+// 這顆按鈕原本只彈一句「開啟收銀機」就結束，沒有真的模擬任何周邊
+// 裝置的實際用途，也沒有區分「結帳當下開錢箱」跟「沒有交易、單純想
+// 開錢箱」這兩種完全不同的情境——後者（例如幫客人換零錢、盤點現金）
+// 在真正的收銀機上是需要交代理由的操作，沒有這道防線的話，錢箱可以
+// 被任何人在沒有交易紀錄的情況下隨時打開，是實際的內控缺口。這裡
+// 用 prompt() 要求輸入理由才會「開啟」，理由跟操作時間目前只印在
+// 瀏覽器主控台（模擬印在稽核用的交易紀錄紙帶上），沒有另外存進
+// 伺服端——單店單機情境下，這個成本比照本專案其他「延後到有真正
+// 需求才加後端」的取捨（見 D-04／D-10 的說明），不是遺漏。
+const openCashier = async () => {
+  const reason = await prompt({
+    title: '開啟收銀機',
+    description: '沒有對應交易的開錢箱動作需要記錄理由，方便之後對帳與稽核',
+    label: '理由',
+    placeholder: '例如：協助客人換零錢、盤點現金',
+    confirmText: '開啟',
+  })
+  if (reason === null) return
+  console.info(`[收銀機] ${getDate()} ${getTime()} ${fromSelection(loginStore.userInfo)?.name} 開啟收銀機：${reason}`)
+  showToast('收銀機已開啟', 'success')
 }
 
 // 折扣相關功能

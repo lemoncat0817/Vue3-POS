@@ -8,6 +8,7 @@
   <ToastHost />
   <PromptDialogHost />
   <RefundDialogHost />
+  <ReceiptPreviewDialogHost />
 </template>
 
 
@@ -18,6 +19,7 @@ import ConfirmDialogHost from '@/components/ui/ConfirmDialogHost.vue'
 import ToastHost from '@/components/ui/ToastHost.vue'
 import PromptDialogHost from '@/components/ui/PromptDialogHost.vue'
 import RefundDialogHost from '@/components/ui/RefundDialogHost.vue'
+import ReceiptPreviewDialogHost from '@/components/ui/ReceiptPreviewDialogHost.vue'
 import { useDrinkStore } from '@/stores/drink'
 import { useDiscountStore } from '@/stores/discount'
 import { fetchCatalog, toDrinkAddOnOptions, toDrinkTypeGroups } from '@/api/catalog'
