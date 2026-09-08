@@ -1,0 +1,262 @@
+import { describe, expect, it } from 'vitest'
+import { createTestApp, createTestAppWithDevice } from './helpers/app'
+import { createTestDb } from './helpers/db'
+import { seedPromotions } from './helpers/promotions'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- 測試只做屬性斷言，不需要完整型別
+async function readJson(res: Response): Promise<any> {
+  return res.json()
+}
+
+/**
+ * P22（規劃書 §10 P22「會員與顧客經營」）：會員管理 API，見
+ * apps/api/src/db/schema.ts 的 members 說明。
+ */
+describe('POST /api/members', () => {
+  it('沒有裝置憑證時拒絕，回傳 401', async () => {
+    const app = createTestApp(createTestDb())
+    const res = await app.request('/api/members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: '王小明', phone: '0912345678' }),
+    })
+    expect(res.status).toBe(401)
+  })
+
+  it('新增成功，id 由伺服端配發、點數從 0 開始', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ name: '王小明', phone: '0912345678' }),
+    })
+    expect(res.status).toBe(201)
+    const body = await readJson(res)
+    expect(body).toMatchObject({ name: '王小明', phone: '0912345678', points: 0 })
+    expect(typeof body.id).toBe('string')
+    expect(body.id.length).toBeGreaterThan(0)
+  })
+
+  it('同一個手機號碼重複註冊時拒絕，回傳 409', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    await app.request('/api/members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ name: '王小明', phone: '0912345678' }),
+    })
+    const res = await app.request('/api/members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ name: '另一個人', phone: '0912345678' }),
+    })
+    expect(res.status).toBe(409)
+  })
+})
+
+describe('GET /api/members', () => {
+  it('可以用手機號碼查詢，結帳當下用得到（不需要拉全部會員清單）', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    await app.request('/api/members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ name: '王小明', phone: '0912345678' }),
+    })
+    await app.request('/api/members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ name: '林小華', phone: '0987654321' }),
+    })
+
+    const res = await app.request('/api/members?phone=0987654321', { headers: { 'X-Device-Token': deviceToken } })
+    const body = await readJson(res)
+    expect(body).toHaveLength(1)
+    expect(body[0]).toMatchObject({ name: '林小華' })
+  })
+})
+
+describe('GET /api/members/:id、PUT、DELETE', () => {
+  it('找不到會員時通通回傳 404', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+    expect((await app.request('/api/members/does-not-exist', { headers })).status).toBe(404)
+    expect(
+      (await app.request('/api/members/does-not-exist', { method: 'PUT', headers, body: JSON.stringify({ name: 'x', phone: 'y' }) }))
+        .status,
+    ).toBe(404)
+    expect((await app.request('/api/members/does-not-exist', { method: 'DELETE', headers })).status).toBe(404)
+  })
+
+  it('更新資料、刪除都正常運作；改成別人已經用過的手機號碼會被擋（409）', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+    const a = await readJson(
+      await app.request('/api/members', { method: 'POST', headers, body: JSON.stringify({ name: 'A', phone: '0911111111' }) }),
+    )
+    const b = await readJson(
+      await app.request('/api/members', { method: 'POST', headers, body: JSON.stringify({ name: 'B', phone: '0922222222' }) }),
+    )
+
+    const conflictRes = await app.request(`/api/members/${b.id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ name: 'B', phone: '0911111111' }),
+    })
+    expect(conflictRes.status).toBe(409)
+
+    const updateRes = await app.request(`/api/members/${a.id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ name: 'A改名', phone: '0911111111' }),
+    })
+    expect(updateRes.status).toBe(200)
+    expect(await readJson(updateRes)).toMatchObject({ name: 'A改名' })
+
+    const deleteRes = await app.request(`/api/members/${a.id}`, { method: 'DELETE', headers: { 'X-Device-Token': deviceToken } })
+    expect(deleteRes.status).toBe(204)
+    expect((await app.request(`/api/members/${a.id}`, { headers: { 'X-Device-Token': deviceToken } })).status).toBe(404)
+  })
+
+  it('刪除有消費紀錄的會員：訂單本身保留，只是解除會員關聯，不是被 FK 約束擋下來', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+
+    const member = await readJson(
+      await app.request('/api/members', { method: 'POST', headers, body: JSON.stringify({ name: '王小明', phone: '0933333333' }) }),
+    )
+    const orderRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FA9',
+        businessDate: '20240610',
+        staff: '店長 - Lemon',
+        lines: [
+          {
+            name: '楊枝甘露2.0',
+            price: 80,
+            size: 'L',
+            count: 1,
+            addList: '無添加配料',
+            addListPrice: 0,
+            freeDiscount: false,
+            ecoDiscount: false,
+            bottleDiscount: false,
+            oftenUseDiscount1: false,
+            oftenUseDiscount2: false,
+            oftenUseDiscount3: false,
+          },
+        ],
+        bagCount: 0,
+        tenders: [{ method: '現金', amount: 80 }],
+        appliedCoupon: { type: 'none' },
+        orderChannel: '外帶',
+        invoiceCarrier: { type: '無載具' },
+        memberId: member.id,
+      }),
+    })
+    const order = await readJson(orderRes)
+    expect(order.memberId).toBe(member.id)
+
+    const deleteRes = await app.request(`/api/members/${member.id}`, { method: 'DELETE', headers: { 'X-Device-Token': deviceToken } })
+    expect(deleteRes.status).toBe(204)
+
+    const list = await readJson(await app.request('/api/orders', { headers: { 'X-Device-Token': deviceToken } }))
+    const persistedOrder = list.find((item: { orderId: string }) => item.orderId === order.orderId)
+    expect(persistedOrder).toBeDefined()
+    expect(persistedOrder.memberId).toBeNull()
+  })
+})
+
+/**
+ * 送單掛會員後累加點數、消費紀錄看得到這筆訂單（P22）：見
+ * routes/orders.ts 的 accrueMemberPoints。
+ */
+describe('POST /api/orders 掛會員（P22）', () => {
+  const validLine = {
+    name: '楊枝甘露2.0',
+    price: 80,
+    size: 'L',
+    count: 2,
+    addList: '無添加配料' as const,
+    addListPrice: 0,
+    freeDiscount: false,
+    ecoDiscount: false,
+    bottleDiscount: false,
+    oftenUseDiscount1: false,
+    oftenUseDiscount2: false,
+    oftenUseDiscount3: false,
+  }
+
+  function buildRequest(overrides: Record<string, unknown> = {}) {
+    return {
+      idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+      businessDate: '20240610',
+      staff: '店長 - Lemon',
+      lines: [validLine],
+      bagCount: 0,
+      tenders: [{ method: '現金', amount: 160 }],
+      appliedCoupon: { type: 'none' },
+      orderChannel: '外帶',
+      invoiceCarrier: { type: '無載具' },
+      ...overrides,
+    }
+  }
+
+  it('訂單掛會員後，依應付金額累加點數（每 10 元 1 點），消費紀錄看得到這筆訂單', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+
+    const member = await readJson(
+      await app.request('/api/members', { method: 'POST', headers, body: JSON.stringify({ name: '王小明', phone: '0912345678' }) }),
+    )
+
+    const orderRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(buildRequest({ memberId: member.id })),
+    })
+    expect(orderRes.status).toBe(201)
+    const orderBody = await readJson(orderRes)
+    expect(orderBody.memberId).toBe(member.id)
+    // 應付金額 160 元，每 10 元 1 點 = 16 點。
+    expect(orderBody.orderPaymentPrice).toBe(160)
+
+    const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(detail.points).toBe(16)
+    expect(detail.orders).toHaveLength(1)
+    expect(detail.orders[0]).toMatchObject({ orderId: orderBody.orderId, orderPaymentPrice: 160 })
+  })
+
+  it('沒有掛會員的訂單，memberId 是 null，不影響任何會員的點數', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest()),
+    })
+    expect(res.status).toBe(201)
+    expect((await readJson(res)).memberId).toBeNull()
+  })
+
+  it('memberId 對應不到任何會員時，訂單仍然成立（不因為找不到會員就整筆失敗）', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ memberId: 'does-not-exist' })),
+    })
+    expect(res.status).toBe(201)
+    // 無效的 memberId 不會被存進訂單（orders.member_id 有外鍵約束，
+    // 見 resolveMemberId 的說明），回應上看到的是 null，不是那個
+    // 傳進去但找不到的 id。
+    expect((await readJson(res)).memberId).toBeNull()
+  })
+})

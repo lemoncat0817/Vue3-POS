@@ -7,6 +7,7 @@ import { auditLogRoutes } from './routes/audit-logs'
 import { authRoutes } from './routes/auth'
 import { catalogRoutes } from './routes/catalog'
 import { deviceRoutes } from './routes/devices'
+import { memberRoutes } from './routes/members'
 import { orderRoutes } from './routes/orders'
 import { paymentMethodRoutes } from './routes/payment-methods'
 import { promotionRoutes } from './routes/promotions'
@@ -74,6 +75,7 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string; allow
   app.route('/api/audit-logs', auditLogRoutes)
   app.route('/api/catalog', catalogRoutes)
   app.route('/api/devices', deviceRoutes)
+  app.route('/api/members', memberRoutes)
   app.route('/api/orders', orderRoutes)
   app.route('/api/payment-methods', paymentMethodRoutes)
   app.route('/api/promotions', promotionRoutes)

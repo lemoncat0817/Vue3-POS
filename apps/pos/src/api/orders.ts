@@ -91,6 +91,8 @@ export function buildCreateOrderRequest(params: {
   appliedCoupon: AppliedCoupon
   orderChannel: OrderChannel
   invoiceCarrier: InvoiceCarrier
+  /** P22（規劃書 §10 P22「會員與顧客經營」）：這筆訂單掛在哪個會員名下，沒有選會員就不帶這個欄位。 */
+  memberId?: string | null
 }): CreateOrderRequest {
   return createOrderRequestSchema.parse({
     idempotencyKey: ulid(),
@@ -115,5 +117,6 @@ export function buildCreateOrderRequest(params: {
     appliedCoupon: params.appliedCoupon,
     orderChannel: params.orderChannel,
     invoiceCarrier: params.invoiceCarrier,
+    ...(params.memberId ? { memberId: params.memberId } : {}),
   })
 }

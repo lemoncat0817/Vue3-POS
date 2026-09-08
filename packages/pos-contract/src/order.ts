@@ -130,6 +130,13 @@ export const createOrderRequestSchema = z.object({
   appliedCoupon: appliedCouponSchema,
   orderChannel: orderChannelSchema,
   invoiceCarrier: invoiceCarrierSchema,
+  /**
+   * 這筆訂單掛在哪個會員名下（P22：規劃書 §10 P22「會員與顧客經營」）
+   * ——選填，沒有輸入會員手機就是一般訂單，不影響既有的送單流程。
+   * 伺服端會依應付金額累加這個會員的點數（見 routes/orders.ts 的
+   * accrueMemberPoints）。
+   */
+  memberId: z.string().min(1).optional(),
 })
 export type CreateOrderRequest = z.infer<typeof createOrderRequestSchema>
 
@@ -208,5 +215,7 @@ export const orderSchema = z.object({
   /** 發票號碼（P15：規劃書 §10 P0「發票」），見 nextInvoiceNumber() 的說明。 */
   invoiceNumber: z.string(),
   invoiceCarrier: invoiceCarrierSchema,
+  /** 這筆訂單掛在哪個會員名下，見 createOrderRequestSchema.memberId 的說明；沒有掛會員是 null。 */
+  memberId: z.string().nullable(),
 })
 export type Order = z.infer<typeof orderSchema>

@@ -36,4 +36,11 @@ export interface OrderRecord {
   voidReason: string | null
   voidedBy: string | null
   voidedAt: string | null
+  /**
+   * 這筆訂單掛在哪個會員名下（P22：規劃書 §10 P22「會員與顧客經營」）
+   * ——選填，因為 GOLDEN_ORDERS 這份離線種子資料（見 stores/order.ts）
+   * 沒有這個概念，逐一補上沒有意義；伺服端回應一律會帶這個欄位（見
+   * @pos/contract 的 orderSchema）。
+   */
+  memberId?: string | null
 }

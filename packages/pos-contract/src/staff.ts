@@ -21,6 +21,11 @@ export const authorityKeySchema = z.enum([
   'canCheckAuthority',
   'canSetAuthority',
   'canSetPayMethod',
+  // P22（規劃書 §10 P22「會員與顧客經營」）：會員管理是新的一個
+  // 分頁，需要獨立的權限鍵值，不能沿用其他分頁的權限（跟
+  // canCheckDataAnalysis／canCheckAuthority 是同樣的「一個分頁一個
+  // 權限鍵」慣例）。
+  'canCheckMembers',
 ])
 export type AuthorityKey = z.infer<typeof authorityKeySchema>
 

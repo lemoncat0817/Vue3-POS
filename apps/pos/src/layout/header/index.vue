@@ -70,6 +70,7 @@ const navItems = [
   { path: '/backgroundSetting', label: '後台設定' },
   { path: '/dataAnalysis', label: '數據分析' },
   { path: '/authorityManagement', label: '權限管理' },
+  { path: '/members', label: '會員管理' },
 ]
 
 // 切換頁面

@@ -424,6 +424,7 @@ const authorityFields: AuthorityField[] = [
   { label: '查看權限管理', value: 'canCheckAuthority' },
   { label: '設定人員名單', value: 'canSetAuthority', dependsOn: 'canCheckAuthority' },
   { label: '設定付款方式', value: 'canSetPayMethod', dependsOn: 'canCheckAuthority' },
+  { label: '查看會員管理', value: 'canCheckMembers' },
 ]
 // 母權限被取消勾選時，連帶取消勾選依附在它底下的子權限。
 function cascadeAuthorityCheckList(list: AuthorityKey[]): AuthorityKey[] {

@@ -26,7 +26,7 @@ const ALL_CAPABILITIES: AuthorityKey[] = [
   'canFreeDrink', 'canOpenCashier', 'canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder',
   'canCheckBackgroundSetting', 'canSetDrinkType', 'canSetDrink', 'canSetIngredients',
   'canSetMoneyDiscount', 'canSetPercentDiscount', 'canSetOftenUseDiscount',
-  'canCheckDataAnalysis', 'canCheckAuthority', 'canSetAuthority', 'canSetPayMethod',
+  'canCheckDataAnalysis', 'canCheckAuthority', 'canSetAuthority', 'canSetPayMethod', 'canCheckMembers',
 ]
 
 // D-10 修復：StaffMember 只剩 authorityCheckList 這一份權限來源（見

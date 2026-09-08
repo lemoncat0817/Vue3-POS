@@ -14,6 +14,7 @@ import { priceLine, summarizeOrderRefunds, type OftenUseRates } from '@pos/domai
 import {
   addOnOptions,
   catalogItems,
+  members,
   moneyCoupons,
   orderLines,
   orderRefunds,
@@ -198,6 +199,7 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderT
     voidedAt: order.voidedAt,
     invoiceNumber: order.invoiceNumber,
     invoiceCarrier: toInvoiceCarrier(order.invoiceCarrierType, order.invoiceCarrierValue),
+    memberId: order.memberId,
     tenders: [...tenders]
       .sort((a, b) => a.seq - b.seq)
       .map((tender) => ({
@@ -354,6 +356,33 @@ async function deductStock(db: AnyDb, lines: Pick<OrderLineInput, 'name' | 'coun
   }
 }
 
+/** 每消費這麼多元累加 1 點——最基礎的固定比例規則，見 @pos/contract 的 memberSchema 說明。 */
+const POINTS_PER_CURRENCY_UNIT = 10
+
+/**
+ * 確認用戶端送來的 memberId 真的對應存在的會員（P22：規劃書 §10 P22
+ * 「會員與顧客經營」）。找不到對應會員（例如會員被刪除，或用戶端送
+ * 了一個過期的 memberId）不擋這筆訂單、也不強行存一個無效的參照——
+ * orders.memberId 有外鍵約束（見 db/schema.ts），存進去會直接讓整筆
+ * 訂單的 insert 失敗，因此要在送單當下先確認，找不到就當成沒有掛
+ * 會員（回傳 null），而不是讓「找不到會員」變成「整筆訂單失敗」。
+ */
+async function resolveMemberId(db: AnyDb, memberId: string | undefined): Promise<string | null> {
+  if (!memberId) return null
+  const member = await db.select().from(members).where(eq(members.id, memberId)).get()
+  return member ? member.id : null
+}
+
+/** 送單成功後，如果這筆訂單掛了會員，依實付金額累加點數。memberId 這裡已經是 resolveMemberId() 確認過存在的。 */
+async function accrueMemberPoints(db: AnyDb, memberId: string | null, orderPaymentPrice: number): Promise<void> {
+  if (!memberId) return
+  const member = await db.select().from(members).where(eq(members.id, memberId)).get()
+  if (!member) return
+  const earned = Math.floor(orderPaymentPrice / POINTS_PER_CURRENCY_UNIT)
+  if (earned <= 0) return
+  await db.update(members).set({ points: member.points + earned }).where(eq(members.id, memberId))
+}
+
 /**
  * 訂單層級折價券（P5）：用戶端只送「套用了哪張」，實際折抵金額查真正
  * 的折價券資料重算——不相信用戶端算好的數字，這是 D-01／D-02 修復
@@ -453,6 +482,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     // 每一筆訂單一律開立發票（P15：規劃書 §10 P0「發票」），不管有沒有
     // 帶載具——這是統一發票本身的規則（有交易就要開立），不是可選項。
     const invoiceNumber = await nextInvoiceNumber(db)
+    // P22：找不到對應會員就當成沒有掛會員，見 resolveMemberId 的說明。
+    const memberId = await resolveMemberId(db, input.memberId)
 
     const newOrder: OrderRow = {
       orderId,
@@ -476,6 +507,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       invoiceNumber,
       invoiceCarrierType: input.invoiceCarrier.type,
       invoiceCarrierValue: input.invoiceCarrier.type === '無載具' ? null : input.invoiceCarrier.value,
+      memberId,
     }
     const newTenders: Omit<OrderTenderRow, 'id'>[] = input.tenders.map((tender, seq) => ({
       orderId,
@@ -493,10 +525,11 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     await db.insert(orders).values(newOrder)
     await db.insert(orderLines).values(pricedLines.map((line) => ({ ...line, orderId })))
     await db.insert(orderTenders).values(newTenders)
-    // P20：只在真的新建立一筆訂單時扣庫存——上面 idempotencyKey 命中、
-    // 直接回傳既有訂單的那條路徑（本函式最上面）不會走到這裡，重送
-    // 同一筆訂單不會扣兩次庫存。
+    // P20／P22：只在真的新建立一筆訂單時扣庫存、累加會員點數——上面
+    // idempotencyKey 命中、直接回傳既有訂單的那條路徑（本函式最上面）
+    // 不會走到這裡，重送同一筆訂單不會扣兩次庫存或算兩次點數。
     await deductStock(db, input.lines)
+    await accrueMemberPoints(db, memberId, orderPaymentPrice)
 
     const insertedLines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
     const insertedTenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()

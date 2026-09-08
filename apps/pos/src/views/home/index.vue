@@ -204,6 +204,9 @@ class="bg-primary-600 text-white hover:bg-primary-700 md:text-[10px] text-[8px] 
           <!-- 載具（P15：規劃書 §10 P0「發票」）——見
                components/checkout/InvoiceCarrierPanel.vue 的說明。 -->
           <InvoiceCarrierPanel v-model="invoiceCarrier" />
+          <!-- 會員（P22：規劃書 §10 P22「會員與顧客經營」）——見
+               components/checkout/MemberPanel.vue 的說明。 -->
+          <MemberPanel v-model="currentOrderMember" />
           <!-- 加購袋子 -->
           <button
 class="2xl:w-28 lg:w-20 lg:h-20 2xl:h-28 xl:w-24 xl:h-24 md:w-14 md:h-14 w-11 h-11 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl  text-surface-700 dark:text-surface-100 font-bold 2xl:text-2xl xl:text-xl lg:text-lg md:text-sm sm:text-xs text-[8px] px-0.5 select-none active:bg-primary-50 dark:active:bg-surface-700"
@@ -444,6 +447,7 @@ import PaymentPanel, { type TenderDraft } from '@/components/checkout/PaymentPan
 import ShiftPanel from '@/components/checkout/ShiftPanel.vue'
 import ParkedOrdersPanel from '@/components/checkout/ParkedOrdersPanel.vue'
 import InvoiceCarrierPanel from '@/components/checkout/InvoiceCarrierPanel.vue'
+import MemberPanel from '@/components/checkout/MemberPanel.vue'
 import { alert, confirm } from '@/composables/useConfirm'
 import { prompt } from '@/composables/usePrompt'
 import { showToast } from '@/composables/useToast'
@@ -458,7 +462,7 @@ const loginStore = useLoginStore()
 import type { CartLineItem, FormNumeric, OrderChannel, OrderRecord } from '@/types'
 import { fromSelection, hasCapability } from '@/utils/selection'
 import { getBusinessDate, priceLine, toggleContainer, toggleFree, toggleRate, type LineDiscountFlags, type OftenUseRates } from '@pos/domain'
-import type { AppliedCoupon, InvoiceCarrier } from '@pos/contract'
+import type { AppliedCoupon, InvoiceCarrier, Member } from '@pos/contract'
 import { buildCreateOrderRequest } from '@/api/orders'
 import { createAuditLog } from '@/api/audit-logs'
 import { ApiError } from '@/api/http'
@@ -667,6 +671,11 @@ const orderChannel = ref<OrderChannel>('外帶')
 // submitPayment() 送出訂單後會重置回預設值，orderChannel 則刻意不重置
 // （見 orderChannel 的說明）。
 const invoiceCarrier = ref<InvoiceCarrier>({ type: '無載具' })
+
+// 這筆訂單掛在哪個會員名下（P22：規劃書 §10 P22「會員與顧客經營」）。
+// 跟 invoiceCarrier 是同一種「這一次交易的個別需求」，送單後重置回
+// 預設值（null），不會延續給下一位客人。
+const currentOrderMember = ref<Member | null>(null)
 
 // 控制袋子數量相關功能
 // 控制加購袋子視窗
@@ -984,6 +993,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     // 目前發票號碼只顯示在訂單列表頁，不影響離線佇列本身）。
     invoiceNumber: '',
     invoiceCarrier: invoiceCarrier.value,
+    memberId: currentOrderMember.value?.id ?? null,
   }
   orderStore.order.push(toPayOrder)
   showToast('訂單送出成功', 'success')
@@ -1037,11 +1047,14 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     appliedCoupon,
     orderChannel: toPayOrder.orderChannel,
     invoiceCarrier: toPayOrder.invoiceCarrier,
+    memberId: toPayOrder.memberId ?? null,
   })
   void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
-  // 載具是這一次交易的個別需求，下一位客人多半不會延續同一個選擇
-  // （見 invoiceCarrier 的說明），送出後重置回預設值。
+  // 載具、會員都是這一次交易的個別需求，下一位客人多半不會延續同一個
+  // 選擇（見 invoiceCarrier、currentOrderMember 的說明），送出後重置
+  // 回預設值。
   invoiceCarrier.value = { type: '無載具' }
+  currentOrderMember.value = null
 
   drinkStore.drinkNotPay = []
 }

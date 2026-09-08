@@ -176,8 +176,37 @@ export const orders = sqliteTable(
     invoiceCarrierType: text('invoice_carrier_type').$type<InvoiceCarrierType>().notNull().default('無載具'),
     // 只有手機條碼／統一編號才有值，見 @pos/contract 的 invoiceCarrierSchema。
     invoiceCarrierValue: text('invoice_carrier_value'),
+    // 這筆訂單掛在哪個會員名下（P22：規劃書 §10 P22「會員與顧客經營」），
+    // 沒有掛會員是 null——見 members 表、routes/orders.ts 的
+    // accrueMemberPoints 說明。
+    memberId: text('member_id').references(() => members.id),
   },
   (table) => [uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey)],
+)
+
+// ---------- 會員與顧客經營（P22：規劃書 §10 P22） ----------
+
+/**
+ * 會員。phone 是結帳當下查會員唯一合理的輸入方式（收銀機沒有讀卡機、
+ * 也不會要求顧客記會員編號），設唯一索引——見 routes/members.ts 的
+ * 查詢／建立流程，跟 staff.account 的唯一索引是同樣的考量。
+ */
+export const members = sqliteTable(
+  'members',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    phone: text('phone').notNull(),
+    // 點數（見 @pos/contract 的 memberSchema 說明）：訂單完成時依應付
+    // 金額累加，這裡只存目前的累積值，不是每筆異動都留紀錄——「基礎」
+    // 會員經營先做到看得到累積多少，異動明細屬於之後有實際需要再做
+    // 的範圍。
+    points: integer('points').notNull().default(0),
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [uniqueIndex('members_phone_idx').on(table.phone)],
 )
 
 /**
@@ -374,4 +403,5 @@ export const schema = {
   cashMovements,
   rateLimitCounters,
   auditLogs,
+  members,
 }

@@ -70,6 +70,15 @@ export const constantRoutes: RouteRecordRaw[] = [
           title: '權限管理',
           capability: 'canCheckAuthority'
         }
+      },
+      {
+        path: '/members',
+        name: 'members',
+        component: () => import('@/views/members/index.vue'),
+        meta: {
+          title: '會員管理',
+          capability: 'canCheckMembers'
+        }
       }
     ]
   }
