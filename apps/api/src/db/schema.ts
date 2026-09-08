@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
-import type { AuthorityKey, DrinkCustomized, InvoiceCarrierType, OrderChannel, OrderStatus } from '@pos/contract'
+import type { AuthorityKey, DrinkCustomized, InvoiceCarrierType, OrderChannel, OrderStatus, PaymentUseMethod } from '@pos/contract'
 
 /**
  * D1（SQLite 方言）的資料表定義。
@@ -109,6 +109,19 @@ export const staff = sqliteTable(
   },
   (table) => [uniqueIndex('staff_account_idx').on(table.account)],
 )
+
+/**
+ * 付款方式（P18：規劃書 §10 P18「菜單與權限管理接上伺服端」）。後台
+ * 設定允許用哪些方式收款——跟訂單 tenders[] 裡的 method（自由字串，
+ * 見 order_tenders 的說明）是不同的東西，這張表不影響送單本身能不能
+ * 成功，只是後台管理／點餐頁付款面板要顯示哪些選項的資料來源。
+ */
+export const paymentMethods = sqliteTable('payment_methods', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  disabled: integer('disabled', { mode: 'boolean' }).notNull(),
+  useMethod: text('use_method').$type<PaymentUseMethod>().notNull(),
+})
 
 // ---------- 訂單 ----------
 
@@ -312,6 +325,7 @@ export const schema = {
   oftenUseRates,
   devices,
   staff,
+  paymentMethods,
   orders,
   orderLines,
   orderTenders,

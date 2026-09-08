@@ -78,4 +78,15 @@ test('D-10：編輯人員權限只有一份來源，取消勾選後人員名單�
   })
   expect(columnIndex).toBeGreaterThan(-1)
   await expect(jamesRow.locator('td').nth(columnIndex)).toHaveText('X')
+
+  // 這個編輯現在會真的呼叫伺服端（P18），會持久改掉 James 這筆種子
+  // 資料，不像改之前純本機 Pinia 狀態、重新整理就恢復——把勾選狀態
+  // 存回去，讓這個測試不管重跑幾次都是同一個起始狀態（種子資料裡
+  // James 原本就有「查看數據分析」這個權限）。
+  await jamesRow.click()
+  await page.getByRole('button', { name: '編輯', exact: true }).first().click()
+  await checkbox.check()
+  await page.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(page.getByTestId('toast-message')).toHaveText('保存成功')
+  await expect(jamesRow.locator('td').nth(columnIndex)).toHaveText('O')
 })

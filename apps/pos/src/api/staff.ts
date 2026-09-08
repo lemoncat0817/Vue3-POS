@@ -1,0 +1,34 @@
+import {
+  staffSchema,
+  type CreateStaffRequest,
+  type Staff,
+  type UpdateStaffRequest,
+} from '@pos/contract'
+import { fetchJson } from './http'
+
+/**
+ * 員工／權限管理（P18：規劃書 §10 P18「菜單與權限管理接上伺服端」）。
+ * permissionManagement.vue 原本的新增／編輯／刪除只改本機 Pinia 狀態，
+ * 這裡補上對應的伺服端呼叫。
+ */
+export async function fetchStaffList(): Promise<Staff[]> {
+  const body = await fetchJson<unknown>('/api/staff')
+  return staffSchema.array().parse(body)
+}
+
+export async function createStaff(input: CreateStaffRequest): Promise<Staff> {
+  const body = await fetchJson<unknown>('/api/staff', { method: 'POST', body: JSON.stringify(input) })
+  return staffSchema.parse(body)
+}
+
+export async function updateStaff(id: string, input: UpdateStaffRequest): Promise<Staff> {
+  const body = await fetchJson<unknown>(`/api/staff/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+  return staffSchema.parse(body)
+}
+
+export async function deleteStaff(id: string): Promise<void> {
+  await fetchJson<null>(`/api/staff/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}

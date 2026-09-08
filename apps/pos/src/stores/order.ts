@@ -14,6 +14,17 @@ export const useOrderStore = defineStore('order', () => {
   // views/home/index.vue 的 submitPayment()），不再是需要跨元件共用、
   // 需要長期持有的 store 狀態，四個 ref 直接刪除。paymentList（可選用
   // 的付款方式清單本身）仍是要跨頁面共用的設定資料，保留。
+  //
+  // P18（規劃書 §10 P18「菜單與權限管理接上伺服端」）：paymentList 原本
+  // 是純本機寫死的陣列，authorityManagement/permissionManagement 頁面
+  // 的新增／編輯／刪除也只改這個本機陣列，從沒呼叫過任何 API。現在
+  // apps/api 有真正的 payment_methods 表（見 api/payment-methods.ts），
+  // paymentSource 跟 stores/drink.ts 的 catalogSource 是同一套邏輯：
+  // 只在「這個瀏覽器從來沒同步過伺服端付款方式清單」時套用一次
+  // hydratePaymentMethodsFromServer() 的結果，之後永遠以本機（可能已被
+  // 管理員編輯過）的資料為準，避免每次啟動都用伺服端資料覆蓋掉剛做的
+  // 異動。
+  const paymentSource = ref<'seed' | 'server'>('seed')
   // 定義全部付款方式清單
   const paymentList = ref<PaymentMethod[]>([{
     "id": 1,
@@ -121,8 +132,17 @@ export const useOrderStore = defineStore('order', () => {
     }
   }
 
+  // 見上方 paymentSource 的說明：只在第一次（本機從未同步過伺服端付款
+  // 方式清單）時套用，之後就算重新呼叫也不會再覆蓋本機資料。
+  const hydratePaymentMethodsFromServer = (methods: PaymentMethod[]) => {
+    if (paymentSource.value === 'server') return
+    paymentList.value = methods
+    paymentSource.value = 'server'
+  }
+
   return {
     currentOrderNumber, order, paymentList,
+    paymentSource, hydratePaymentMethodsFromServer,
     nextOrderId, issueOrderId, reconcileOrderId,
   }
 }, {

@@ -20,12 +20,6 @@ class="lg:px-2 px-0.5 border border-surface-300 dark:border-surface-700 rounded-
              e2e 覆蓋的情況下悄悄改變行為。 -->
         <ModalDialog v-model:open="addTypeDialog" title="新增飲品類型">
           <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            飲品類型的Id:<input
-v-model="currentInputId" type="number" min="1" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="純數字,例如:1,2,3..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
             飲品類型:<input
 v-model="currentInputName"
               class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
@@ -54,12 +48,6 @@ v-model="currentInputType"
           @click="openEditTypeDialog">編輯</button>
         <!-- 編輯飲品類型 -->
         <ModalDialog v-model:open="editTypeDialog" title="編輯飲品類型">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            飲品類型的Id:<input
-v-model="currentEditInputId" type="number" min="1" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="純數字,例如:1,2,3..." />
-          </div>
           <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
             飲品類型:<input
 v-model="currentEditInputName"
@@ -130,12 +118,6 @@ v-model="currentEditInputType"
         <!-- P8：組件庫替換——el-switch 改用 Reka UI 的 Switch 原語，
              el-select／el-option 改用 Reka UI 的 Select 原語。 -->
         <ModalDialog v-model:open="addDrinkDialog" title="新增飲料品項">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            飲料品項的Id:<input
-v-model="currentDrinkInputId" type="number" min="1" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="純數字,例如:1,2,3..." />
-          </div>
           <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
             飲料名稱:<input
 v-model="currentDrinkInputName"
@@ -212,11 +194,6 @@ v-if="setPriceBottle" v-model="currentDrinkInputPriceBottle" type="number" min="
           @click="openEditDrinkDialog">編輯</button>
         <!-- 編輯飲料品項 -->
         <ModalDialog v-model:open="editDrinkDialog" title="編輯飲料品項">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            飲料品項的Id:<input
-v-model="currentEditDrinkInputId" type="number" min="1" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="無此容器，請關左側開關" />
-          </div>
           <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
             飲料名稱:<input
 v-model="currentEditDrinkInputName"
@@ -336,12 +313,6 @@ v-if="setEditPriceBottle" v-model="currentEditDrinkInputPriceBottle" type="numbe
         <!-- 新增配料 -->
         <ModalDialog v-model:open="addIngredientsDialog" title="新增配料">
           <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            配料的Id:<input
-v-model="currentIngredientsInputId" type="number" min="1" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="純數字,例如:1,2,3..." />
-          </div>
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
             配料名稱:<input
 v-model="currentIngredientsInputName"
               class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100" placeholder="例如: 波霸,雙Q果..." />
@@ -369,12 +340,6 @@ v-model="currentIngredientsInputPrice" type="number" min="1" step="1"
           @click="openEditIngredientsDialog">編輯</button>
         <!-- 編輯配料 -->
         <ModalDialog v-model:open="editIngredientsDialog" title="編輯配料">
-          <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
-            配料的Id:<input
-v-model="currentEditIngredientsInputId" type="number" min="1" step="1"
-              class="border border-surface-300 dark:border-surface-700 rounded-lg ml-2 text-center px-2 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-              placeholder="純數字,例如:1,2,3..." />
-          </div>
           <div class="w-4/5 flex justify-between items-center text-surface-900 dark:text-surface-100 text-lg font-bold my-2">
             配料名稱:<input
 v-model="currentEditIngredientsInputName"
@@ -452,6 +417,46 @@ import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
 import type { DrinkAddOnOption, DrinkCustomized, DrinkListItem, DrinkTypeGroup, FormNumeric, MaybeSelected } from '@/types'
 import { hasCapability } from '@/utils/selection'
+import { ApiError } from '@/api/http'
+import {
+  createAddOnOption,
+  createCatalogGroup,
+  createCatalogItem,
+  deleteAddOnOption,
+  deleteCatalogGroup,
+  deleteCatalogItem,
+  updateAddOnOption,
+  updateCatalogGroup,
+  updateCatalogItem,
+} from '@/api/catalog'
+
+// P18（規劃書 §10 P18「菜單與權限管理接上伺服端」）：這個頁面的新增／
+// 刪除／編輯改成真的呼叫 apps/api 的菜單寫入端點（見 api/catalog.ts），
+// 不再只是本機 drinkStore 陣列操作。Id 因此不再是這裡手動輸入的欄位
+// ——新增時由伺服端配發（crypto.randomUUID()，見 apps/api/src/routes/
+// catalog.ts），編輯只能改名稱／價格等欄位，不能改 Id。
+//
+// P8 當時的說明仍然成立：飲料品項的表單欄位之間有大量互相牽動的邏輯
+// （客製化選「無」會連動關掉瓶裝開關、清空瓶裝價格），這裡繼續維持
+// 原本 ref + if/else 的驗證方式，不改成 offerSetting.vue 那種
+// VeeValidate + Zod 的 <Form> 寫法，只把送出時的動作從「改本機陣列」
+// 換成「呼叫 API，成功後用伺服端回傳的資料更新本機陣列」。
+function apiErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 409) return '這個類型底下還有品項，請先清空品項再刪除'
+    return `操作失敗：${err.message}`
+  }
+  return '連不上伺服端，請確認網路連線'
+}
+// 伺服端的價格是「支援就填數字、不支援就是 null」，這個頁面既有的
+// 表單欄位沿用 D-19 那套「不支援用字面值 'none' 表示」的慣例，這兩個
+// 轉換函式只在跟 API 邊界銜接時各用一次。
+function toApiPrice(value: FormNumeric | 'none'): number | null {
+  return value === 'none' ? null : Number(value)
+}
+function fromApiPrice(value: number | null): FormNumeric | 'none' {
+  return value === null ? 'none' : value
+}
 
 // 飲品類型相關功能
 // 存放當前已選類型
@@ -459,8 +464,6 @@ import { hasCapability } from '@/utils/selection'
 // @click="currentType = row"（見上方 template），不需要中介的
 // handleCurrentChange 函式，其餘兩個表格（飲料品項／配料）比照辦理。
 const currentType = ref<MaybeSelected<DrinkTypeGroup>>({})
-// 存放當前輸入的Id
-const currentInputId = ref<FormNumeric>('')
 // 存放當前輸入的類型名稱
 const currentInputName = ref('')
 // 存放當前輸入的類型代號
@@ -469,7 +472,6 @@ const currentInputType = ref('')
 const addTypeDialog = ref(false)
 // 開啟新增dialog視窗
 const openAddTypeDialog = () => {
-  currentInputId.value = ''
   currentInputName.value = ''
   currentInputType.value = ''
   addTypeDialog.value = true
@@ -480,13 +482,9 @@ const closeAddTypeDialog = () => {
   showToast('取消操作', 'error')
 }
 // 新增茶品類型
-const addDrinkType = () => {
-  if (currentInputId.value === '' || currentInputName.value === '' || currentInputType.value === '') {
+const addDrinkType = async () => {
+  if (currentInputName.value === '' || currentInputType.value === '') {
     showToast('請輸入完整資訊', 'error')
-    return
-  }
-  if (drinkStore.drinkType.find((item) => item.id == currentInputId.value)) {
-    showToast('此Id已存在,請重新輸入', 'error')
     return
   }
   if (drinkStore.drinkType.find((item) => item.name == currentInputName.value)) {
@@ -497,19 +495,14 @@ const addDrinkType = () => {
     showToast('此類型代碼已存在,請重新輸入', 'error')
     return
   }
-  if (Number(currentInputId.value) <= 0) {
-    showToast('Id不可為負數且需大於0,請重新輸入', 'error')
-    return
+  try {
+    const created = await createCatalogGroup({ name: currentInputName.value, type: currentInputType.value })
+    drinkStore.drinkType.push({ id: created.id, name: created.name, type: created.type, drinkList: [] })
+    addTypeDialog.value = false
+    showToast('新增成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
   }
-  const newDrinkType: DrinkTypeGroup = {
-    id: currentInputId.value,
-    name: currentInputName.value,
-    type: currentInputType.value,
-    drinkList: []
-  }
-  drinkStore.drinkType.push(newDrinkType)
-  addTypeDialog.value = false
-  showToast('新增成功', 'success')
 }
 // 存放當前茶品類型當前的頁數
 const drinkTypeCurrentPage = ref(1)
@@ -534,14 +527,19 @@ const deleteDrinkType = async () => {
   }
   const result = await confirm({ title: '警告', description: `是否刪除 ${currentType.value.name} 類型?` })
   if (result !== 'confirm') return
-  drinkStore.drinkTypeMenu = ''
-  drinkStore.drinkType = drinkStore.drinkType.filter((item) => item.id !== currentType.value.id)
-  window.location.reload()
+  try {
+    await deleteCatalogGroup(String(currentType.value.id))
+    drinkStore.drinkTypeMenu = ''
+    drinkStore.drinkType = drinkStore.drinkType.filter((item) => item.id !== currentType.value.id)
+    currentType.value = {}
+    currentDrink.value = {}
+    showToast('刪除成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
 }
 // 控制編輯dialog視窗開關
 const editTypeDialog = ref(false)
-// 存放當前編輯輸入的Id
-const currentEditInputId = ref<FormNumeric>('')
 // 存放當前編輯輸入的類型名稱
 const currentEditInputName = ref('')
 // 存放當前編輯輸入的類型代號
@@ -549,7 +547,6 @@ const currentEditInputType = ref('')
 // 開啟編輯dialog視窗
 const openEditTypeDialog = () => {
   if (currentType.value.name) {
-    currentEditInputId.value = currentType.value.id!
     currentEditInputName.value = currentType.value.name
     currentEditInputType.value = currentType.value.type!
     editTypeDialog.value = true
@@ -563,41 +560,35 @@ const closeEditTypeDialog = () => {
   showToast('取消操作', 'error')
 }
 // 編輯茶品類型
-const editDrinkType = () => {
-  if (currentEditInputId.value === '' || currentEditInputName.value === '' || currentEditInputType.value === '') {
+const editDrinkType = async () => {
+  if (currentEditInputName.value === '' || currentEditInputType.value === '') {
     showToast('請輸入完整資訊', 'error')
     return
   }
-  if (currentEditInputId.value == currentType.value.id && currentEditInputName.value == currentType.value.name && currentEditInputType.value == currentType.value.type) {
+  if (currentEditInputName.value == currentType.value.name && currentEditInputType.value == currentType.value.type) {
     editTypeDialog.value = false
     showToast('保存成功', 'success')
     return
-  } else {
-    const anotherId = drinkStore.drinkType.filter(item => item.id != currentType.value.id)
-    if (anotherId.some(item => item.id == currentEditInputId.value)) {
-      showToast('此Id已存在,請重新輸入', 'error')
-      return
-    }
-    const anotherName = drinkStore.drinkType.filter(item => item.name != currentType.value.name)
-    if (anotherName.some(item => item.name == currentEditInputName.value)) {
-      showToast('此類型已存在,請重新輸入', 'error')
-      return
-    }
-    const anotherType = drinkStore.drinkType.filter(item => item.type != currentType.value.type)
-    if (anotherType.some(item => item.type == currentEditInputType.value)) {
-      showToast('此類型代號已存在,請重新輸入', 'error')
-      return
-    }
-    if (Number(currentEditInputId.value) <= 0) {
-      showToast('Id不可為負數且需大於0,請重新輸入', 'error')
-      return
-    }
   }
-  currentType.value.id = currentEditInputId.value
-  currentType.value.name = currentEditInputName.value
-  currentType.value.type = currentEditInputType.value
-  editTypeDialog.value = false
-  showToast('保存成功', 'success')
+  const anotherName = drinkStore.drinkType.filter(item => item.id != currentType.value.id)
+  if (anotherName.some(item => item.name == currentEditInputName.value)) {
+    showToast('此類型已存在,請重新輸入', 'error')
+    return
+  }
+  const anotherType = drinkStore.drinkType.filter(item => item.id != currentType.value.id)
+  if (anotherType.some(item => item.type == currentEditInputType.value)) {
+    showToast('此類型代號已存在,請重新輸入', 'error')
+    return
+  }
+  try {
+    const updated = await updateCatalogGroup(String(currentType.value.id), { name: currentEditInputName.value, type: currentEditInputType.value })
+    currentType.value.name = updated.name
+    currentType.value.type = updated.type
+    editTypeDialog.value = false
+    showToast('保存成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
 }
 
 // 飲料品項相關功能
@@ -610,7 +601,6 @@ const openAddDrinkDialog = () => {
   if (currentType.value.name) {
     setPriceL.value = true
     setPriceBottle.value = true
-    currentDrinkInputId.value = ''
     currentDrinkInputName.value = ''
     currentDrinkInputPriceL.value = ''
     currentDrinkInputPriceBottle.value = ''
@@ -621,8 +611,6 @@ const openAddDrinkDialog = () => {
     return
   }
 }
-// 存放當前輸入的飲料品項Id
-const currentDrinkInputId = ref<FormNumeric>('')
 // 存放當前輸入的飲料品項名稱
 const currentDrinkInputName = ref('')
 // 存放當前輸入的飲料品項大杯價格
@@ -685,13 +673,9 @@ const checkPriceBottleSwitch = () => {
   }
 }
 // 新增飲料品項
-const addDrink = () => {
-  if (currentDrinkInputId.value === '' || currentDrinkInputName.value === '' || currentDrinkInputPriceL.value === '' || currentDrinkInputPriceBottle.value === '' || currentDrinkSelectCustomized.value === '') {
+const addDrink = async () => {
+  if (currentDrinkInputName.value === '' || currentDrinkInputPriceL.value === '' || currentDrinkInputPriceBottle.value === '' || currentDrinkSelectCustomized.value === '') {
     showToast('請輸入完整資訊', 'error')
-    return
-  }
-  if (currentType.value.drinkList!.find((item) => item.id == currentDrinkInputId.value)) {
-    showToast('此Id已存在,請重新輸入', 'error')
     return
   }
   if (currentType.value.drinkList!.find((item) => item.name == currentDrinkInputName.value)) {
@@ -719,10 +703,6 @@ const addDrink = () => {
       return
     }
   }
-  if (Number(currentDrinkInputId.value) <= 0) {
-    showToast('Id不可為負數且需大於0,請重新輸入', 'error')
-    return
-  }
   if (setPriceL.value == true && Number(currentDrinkInputPriceL.value) < 0) {
     showToast('大杯價格不可為負數,請重新輸入', 'error')
     return
@@ -731,16 +711,26 @@ const addDrink = () => {
     showToast('瓶裝價格不可為負數,請重新輸入', 'error')
     return
   }
-  const newDrink: DrinkListItem = {
-    id: currentDrinkInputId.value,
-    name: currentDrinkInputName.value,
-    priceL: currentDrinkInputPriceL.value,
-    priceBottle: currentDrinkInputPriceBottle.value,
-    customized: currentDrinkSelectCustomized.value as DrinkCustomized
+  try {
+    const created = await createCatalogItem({
+      groupId: String(currentType.value.id),
+      name: currentDrinkInputName.value,
+      priceL: toApiPrice(currentDrinkInputPriceL.value),
+      priceBottle: toApiPrice(currentDrinkInputPriceBottle.value),
+      customized: currentDrinkSelectCustomized.value as DrinkCustomized,
+    })
+    currentType.value.drinkList!.push({
+      id: created.id,
+      name: created.name,
+      priceL: fromApiPrice(created.priceL),
+      priceBottle: fromApiPrice(created.priceBottle),
+      customized: created.customized,
+    })
+    addDrinkDialog.value = false
+    showToast('新增成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
   }
-  currentType.value.drinkList!.push(newDrink)
-  addDrinkDialog.value = false
-  showToast('新增成功', 'success')
 }
 // 刪除當前選擇的飲料品項
 const deleteDrink = async () => {
@@ -750,11 +740,15 @@ const deleteDrink = async () => {
   }
   const result = await confirm({ title: '警告', description: `是否刪除飲料品項 ${currentDrink.value.name} ?` })
   if (result !== 'confirm') return
-  currentType.value.drinkList = currentType.value.drinkList!.filter((item) => item.id !== currentDrink.value.id)
-  showToast('刪除成功', 'success')
+  try {
+    await deleteCatalogItem(String(currentDrink.value.id))
+    currentType.value.drinkList = currentType.value.drinkList!.filter((item) => item.id !== currentDrink.value.id)
+    currentDrink.value = {}
+    showToast('刪除成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
 }
-// 存放當前編輯輸入的Id
-const currentEditDrinkInputId = ref<FormNumeric>('')
 // 存放當前編輯輸入的飲料名稱
 const currentEditDrinkInputName = ref('')
 // 存放當前編輯輸入的大杯價格
@@ -806,7 +800,6 @@ const closeEditDrinkDialog = () => {
 // 開啟編輯dialog視窗
 const openEditDrinkDialog = () => {
   if (currentDrink.value != null && currentDrink.value.name) {
-    currentEditDrinkInputId.value = currentDrink.value.id!
     currentEditDrinkInputName.value = currentDrink.value.name
     setEditPriceL.value = currentDrink.value.priceL == 'none' ? false : true
     setEditPriceBottle.value = currentDrink.value.priceBottle == 'none' ? false : true
@@ -820,8 +813,8 @@ const openEditDrinkDialog = () => {
 }
 
 // 編輯飲料品項
-const editDrink = () => {
-  if (currentEditDrinkInputId.value === '' || currentEditDrinkInputName.value === '' || currentEditDrinkInputPriceL.value === '' || currentEditDrinkInputPriceBottle.value === '' || currentEditDrinkSelectCustomized.value === '') {
+const editDrink = async () => {
+  if (currentEditDrinkInputName.value === '' || currentEditDrinkInputPriceL.value === '' || currentEditDrinkInputPriceBottle.value === '' || currentEditDrinkSelectCustomized.value === '') {
     showToast('請輸入完整資訊', 'error')
     return
   }
@@ -833,54 +826,54 @@ const editDrink = () => {
     showToast('瓶裝價格不可為空，請重新輸入', 'error')
     return
   }
-  if (currentEditDrinkInputId.value == currentDrink.value.id && currentEditDrinkInputName.value == currentDrink.value.name && currentEditDrinkInputPriceL.value == currentDrink.value.priceL && currentEditDrinkInputPriceBottle.value == currentDrink.value.priceBottle && currentEditDrinkSelectCustomized.value == currentDrink.value.customized) {
+  if (currentEditDrinkInputName.value == currentDrink.value.name && currentEditDrinkInputPriceL.value == currentDrink.value.priceL && currentEditDrinkInputPriceBottle.value == currentDrink.value.priceBottle && currentEditDrinkSelectCustomized.value == currentDrink.value.customized) {
     editDrinkDialog.value = false
     showToast('保存成功', 'success')
     return
-  } else {
-    const anotherId = currentType.value.drinkList!.filter(item => item.id != currentDrink.value.id)
-    if (anotherId.some(item => item.id == currentEditDrinkInputId.value)) {
-      showToast('此Id已存在,請重新輸入', 'error')
-      return
-    }
-    const anotherName = currentType.value.drinkList!.filter(item => item.name != currentDrink.value.name)
-    if (anotherName.some(item => item.name == currentEditDrinkInputName.value)) {
-      showToast('此飲料名稱已存在,請重新輸入', 'error')
-      return
-    }
-    if (currentEditDrinkInputPriceL.value == 'none' && currentEditDrinkInputPriceBottle.value == 'none') {
-      showToast('請至少選擇一種飲料容器,請重新輸入', 'error')
-      return
-    }
-    if (currentEditDrinkSelectCustomized.value === 'none') {
-      if (currentEditDrinkInputPriceBottle.value !== 'none' && setPriceBottle.value !== false) {
-        setEditPriceL.value = true
-        setEditPriceBottle.value = false
-        currentEditDrinkInputPriceBottle.value = 'none'
-        showToast('因為無客製化，容器僅限大杯,已關閉瓶裝價格輸入', 'error')
-        return
-      }
-    }
-    if (Number(currentEditDrinkInputId.value) <= 0) {
-      showToast('Id不可為負數且需大於0,請重新輸入', 'error')
-      return
-    }
-    if (setEditPriceL.value == true && Number(currentEditDrinkInputPriceL.value) < 0) {
-      showToast('大杯價格不可為負數,請重新輸入', 'error')
-      return
-    }
-    if (setEditPriceBottle.value == true && Number(currentEditDrinkInputPriceBottle.value) < 0) {
-      showToast('瓶裝價格不可為負數,請重新輸入', 'error')
+  }
+  const anotherName = currentType.value.drinkList!.filter(item => item.id != currentDrink.value.id)
+  if (anotherName.some(item => item.name == currentEditDrinkInputName.value)) {
+    showToast('此飲料名稱已存在,請重新輸入', 'error')
+    return
+  }
+  if (currentEditDrinkInputPriceL.value == 'none' && currentEditDrinkInputPriceBottle.value == 'none') {
+    showToast('請至少選擇一種飲料容器,請重新輸入', 'error')
+    return
+  }
+  if (currentEditDrinkSelectCustomized.value === 'none') {
+    if (currentEditDrinkInputPriceBottle.value !== 'none' && setPriceBottle.value !== false) {
+      setEditPriceL.value = true
+      setEditPriceBottle.value = false
+      currentEditDrinkInputPriceBottle.value = 'none'
+      showToast('因為無客製化，容器僅限大杯,已關閉瓶裝價格輸入', 'error')
       return
     }
   }
-  currentDrink.value.id = currentEditDrinkInputId.value
-  currentDrink.value.name = currentEditDrinkInputName.value
-  currentDrink.value.priceL = currentEditDrinkInputPriceL.value
-  currentDrink.value.priceBottle = currentEditDrinkInputPriceBottle.value
-  currentDrink.value.customized = currentEditDrinkSelectCustomized.value as DrinkCustomized
-  editDrinkDialog.value = false
-  showToast('保存成功', 'success')
+  if (setEditPriceL.value == true && Number(currentEditDrinkInputPriceL.value) < 0) {
+    showToast('大杯價格不可為負數,請重新輸入', 'error')
+    return
+  }
+  if (setEditPriceBottle.value == true && Number(currentEditDrinkInputPriceBottle.value) < 0) {
+    showToast('瓶裝價格不可為負數,請重新輸入', 'error')
+    return
+  }
+  try {
+    const updated = await updateCatalogItem(String(currentDrink.value.id), {
+      groupId: String(currentType.value.id),
+      name: currentEditDrinkInputName.value,
+      priceL: toApiPrice(currentEditDrinkInputPriceL.value),
+      priceBottle: toApiPrice(currentEditDrinkInputPriceBottle.value),
+      customized: currentEditDrinkSelectCustomized.value as DrinkCustomized,
+    })
+    currentDrink.value.name = updated.name
+    currentDrink.value.priceL = fromApiPrice(updated.priceL)
+    currentDrink.value.priceBottle = fromApiPrice(updated.priceBottle)
+    currentDrink.value.customized = updated.customized
+    editDrinkDialog.value = false
+    showToast('保存成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
 }
 // 存放當前茶品類型當前的頁數
 const drinkCurrentPage = ref(1)
@@ -905,7 +898,6 @@ const currentIngredientsDrink = ref<MaybeSelected<DrinkAddOnOption>>({})
 const addIngredientsDialog = ref(false)
 // 打開新增配料dialog視窗
 const openAddIngredientsDialog = () => {
-  currentIngredientsInputId.value = ''
   currentIngredientsInputName.value = ''
   currentIngredientsInputPrice.value = ''
   addIngredientsDialog.value = true
@@ -915,42 +907,32 @@ const closeAddIngredientsDialog = () => {
   addIngredientsDialog.value = false
   showToast('取消操作', 'error')
 }
-// 存放當前輸入的配料Id
-const currentIngredientsInputId = ref<FormNumeric>('')
 // 存放當前輸入的配料名稱
 const currentIngredientsInputName = ref('')
 // 存放當前輸入的配料價格
 const currentIngredientsInputPrice = ref<FormNumeric>('')
 // 新增配料
-const addDrinkIngredients = () => {
-  if (currentIngredientsInputId.value === '' || currentIngredientsInputName.value === '' || currentIngredientsInputPrice.value === '') {
+const addDrinkIngredients = async () => {
+  if (currentIngredientsInputName.value === '' || currentIngredientsInputPrice.value === '') {
     showToast('請輸入完整資訊', 'error')
-    return
-  }
-  if (drinkStore.drinkAdd.find((item) => item.id == currentIngredientsInputId.value)) {
-    showToast('此Id已存在,請重新輸入', 'error')
     return
   }
   if (drinkStore.drinkAdd.find((item) => item.name == currentIngredientsInputName.value)) {
     showToast('此配料名稱已存在,請重新輸入', 'error')
     return
   }
-  if (Number(currentIngredientsInputId.value) <= 0) {
-    showToast('Id不可為負數且需大於0,請重新輸入', 'error')
-    return
-  }
   if (Number(currentIngredientsInputPrice.value) < 0) {
     showToast('配料價格不可為負數,請重新輸入', 'error')
     return
   }
-  const newIngredients: DrinkAddOnOption = {
-    id: currentIngredientsInputId.value,
-    name: currentIngredientsInputName.value,
-    price: currentIngredientsInputPrice.value
+  try {
+    const created = await createAddOnOption({ name: currentIngredientsInputName.value, price: Number(currentIngredientsInputPrice.value) })
+    drinkStore.drinkAdd.push({ id: created.id, name: created.name, price: created.price })
+    addIngredientsDialog.value = false
+    showToast('新增成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
   }
-  drinkStore.drinkAdd.push(newIngredients)
-  addIngredientsDialog.value = false
-  showToast('新增成功', 'success')
 }
 // 刪除配料
 const deleteDrinkIngredients = async () => {
@@ -960,8 +942,14 @@ const deleteDrinkIngredients = async () => {
   }
   const result = await confirm({ title: '警告', description: `是否刪除配料 ${currentIngredientsDrink.value.name} ?` })
   if (result !== 'confirm') return
-  drinkStore.drinkAdd = drinkStore.drinkAdd.filter((item) => item.id !== currentIngredientsDrink.value.id)
-  showToast('刪除成功', 'success')
+  try {
+    await deleteAddOnOption(String(currentIngredientsDrink.value.id))
+    drinkStore.drinkAdd = drinkStore.drinkAdd.filter((item) => item.id !== currentIngredientsDrink.value.id)
+    currentIngredientsDrink.value = {}
+    showToast('刪除成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
 }
 // 控制編輯dialog視窗開關
 const editIngredientsDialog = ref(false)
@@ -970,8 +958,6 @@ const closeEditIngredientsDialog = () => {
   editIngredientsDialog.value = false
   showToast('取消操作', 'error')
 }
-// 存放當前編輯輸入的配料Id
-const currentEditIngredientsInputId = ref<FormNumeric>('')
 // 存放當前編輯輸入的配料名稱
 const currentEditIngredientsInputName = ref('')
 // 存放當前編輯輸入的配料價格
@@ -979,7 +965,6 @@ const currentEditIngredientsInputPrice = ref<FormNumeric>('')
 // 開啟編輯dialog視窗
 const openEditIngredientsDialog = () => {
   if (currentIngredientsDrink.value.name) {
-    currentEditIngredientsInputId.value = currentIngredientsDrink.value.id!
     currentEditIngredientsInputName.value = currentIngredientsDrink.value.name
     currentEditIngredientsInputPrice.value = currentIngredientsDrink.value.price!
     editIngredientsDialog.value = true
@@ -988,40 +973,37 @@ const openEditIngredientsDialog = () => {
   }
 }
 // 編輯配料
-const editDrinkIngredients = () => {
-  if (currentEditIngredientsInputId.value === '' || currentEditIngredientsInputName.value === '' || currentEditIngredientsInputPrice.value === '') {
+const editDrinkIngredients = async () => {
+  if (currentEditIngredientsInputName.value === '' || currentEditIngredientsInputPrice.value === '') {
     showToast('請輸入完整資訊', 'error')
     return
   }
-  if (currentEditIngredientsInputId.value == currentIngredientsDrink.value.id && currentEditIngredientsInputName.value == currentIngredientsDrink.value.name && currentEditIngredientsInputPrice.value == currentIngredientsDrink.value.price) {
+  if (currentEditIngredientsInputName.value == currentIngredientsDrink.value.name && currentEditIngredientsInputPrice.value == currentIngredientsDrink.value.price) {
     editIngredientsDialog.value = false
     showToast('保存成功', 'success')
     return
-  } else {
-    const anotherId = drinkStore.drinkAdd.filter(item => item.id != currentIngredientsDrink.value.id)
-    if (anotherId.some(item => item.id == currentEditIngredientsInputId.value)) {
-      showToast('此Id已存在,請重新輸入', 'error')
-      return
-    }
-    const anotherName = drinkStore.drinkAdd.filter(item => item.name != currentIngredientsDrink.value.name)
-    if (anotherName.some(item => item.name == currentEditIngredientsInputName.value)) {
-      showToast('此配料名稱已存在,請重新輸入', 'error')
-      return
-    }
-    if (Number(currentEditIngredientsInputId.value) <= 0) {
-      showToast('Id不可為負數且需大於0,請重新輸入', 'error')
-      return
-    }
-    if (Number(currentEditIngredientsInputPrice.value) < 0) {
-      showToast('配料價格不可為負數,請重新輸入', 'error')
-      return
-    }
   }
-  currentIngredientsDrink.value.id = currentEditIngredientsInputId.value
-  currentIngredientsDrink.value.name = currentEditIngredientsInputName.value
-  currentIngredientsDrink.value.price = currentEditIngredientsInputPrice.value
-  editIngredientsDialog.value = false
-  showToast('保存成功', 'success')
+  const anotherName = drinkStore.drinkAdd.filter(item => item.id != currentIngredientsDrink.value.id)
+  if (anotherName.some(item => item.name == currentEditIngredientsInputName.value)) {
+    showToast('此配料名稱已存在,請重新輸入', 'error')
+    return
+  }
+  if (Number(currentEditIngredientsInputPrice.value) < 0) {
+    showToast('配料價格不可為負數,請重新輸入', 'error')
+    return
+  }
+  try {
+    const updated = await updateAddOnOption(String(currentIngredientsDrink.value.id), {
+      name: currentEditIngredientsInputName.value,
+      price: Number(currentEditIngredientsInputPrice.value),
+    })
+    currentIngredientsDrink.value.name = updated.name
+    currentIngredientsDrink.value.price = updated.price
+    editIngredientsDialog.value = false
+    showToast('保存成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
 }
 // 存放當前茶品類型當前的頁數
 const drinkIngredientsCurrentPage = ref(1)

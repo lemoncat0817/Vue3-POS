@@ -6,6 +6,7 @@ import { authRoutes } from './routes/auth'
 import { catalogRoutes } from './routes/catalog'
 import { deviceRoutes } from './routes/devices'
 import { orderRoutes } from './routes/orders'
+import { paymentMethodRoutes } from './routes/payment-methods'
 import { promotionRoutes } from './routes/promotions'
 import { reportRoutes } from './routes/reports'
 import { shiftRoutes } from './routes/shifts'
@@ -59,6 +60,7 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string }) {
   app.route('/api/catalog', catalogRoutes)
   app.route('/api/devices', deviceRoutes)
   app.route('/api/orders', orderRoutes)
+  app.route('/api/payment-methods', paymentMethodRoutes)
   app.route('/api/promotions', promotionRoutes)
   app.route('/api/reports', reportRoutes)
   app.route('/api/shifts', shiftRoutes)

@@ -91,3 +91,116 @@ describe('POST /api/staff（權限拒絕案例，見重構規劃書 §14 P2 退�
     expect(res.status).toBe(401)
   })
 })
+
+describe('PUT /api/staff/:id（P18：規劃書 §10 P18「菜單與權限管理接上伺服端」）', () => {
+  it('沒有帶裝置憑證時拒絕，回傳 401', async () => {
+    const app = createTestApp(createTestDb())
+    const res = await app.request('/api/staff/does-not-exist', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(expectedStaffFields),
+    })
+    expect(res.status).toBe(401)
+  })
+
+  it('更新職稱與權限，不填 PIN 時沿用既有的雜湊值', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const created = await (
+      await app.request('/api/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+        body: JSON.stringify(newStaffInput),
+      })
+    ).json() as { id: string }
+
+    const res = await app.request(`/api/staff/${created.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ ...expectedStaffFields, jobTitle: '值班經理', capabilities: ['canCheckOrder'] }),
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body).toEqual(expect.objectContaining({ jobTitle: '值班經理', capabilities: ['canCheckOrder'] }))
+
+    // 原本的 PIN（3456）應該還能登入——沒填 pin 時不該把雜湊值清掉或改掉。
+    const login = await app.request('/api/auth/operator-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ account: 'emily', pin: '3456' }),
+    })
+    expect(login.status).toBe(200)
+  })
+
+  it('帳號被其他員工使用時拒絕，回傳 409', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    await app.request('/api/staff', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ ...newStaffInput, account: 'lemon' }),
+    })
+    const second = await (
+      await app.request('/api/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+        body: JSON.stringify({ ...newStaffInput, account: 'james' }),
+      })
+    ).json() as { id: string }
+
+    const res = await app.request(`/api/staff/${second.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ ...expectedStaffFields, account: 'lemon' }),
+    })
+    expect(res.status).toBe(409)
+  })
+
+  it('找不到員工時回傳 404', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/staff/does-not-exist', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(expectedStaffFields),
+    })
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('DELETE /api/staff/:id（P18）', () => {
+  it('沒有帶裝置憑證時拒絕，回傳 401', async () => {
+    const app = createTestApp(createTestDb())
+    const res = await app.request('/api/staff/does-not-exist', { method: 'DELETE' })
+    expect(res.status).toBe(401)
+  })
+
+  it('刪除存在的員工，之後 GET 也看不到', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const created = await (
+      await app.request('/api/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+        body: JSON.stringify(newStaffInput),
+      })
+    ).json() as { id: string }
+
+    const res = await app.request(`/api/staff/${created.id}`, {
+      method: 'DELETE',
+      headers: { 'X-Device-Token': deviceToken },
+    })
+    expect(res.status).toBe(204)
+
+    const list = await (await app.request('/api/staff')).json()
+    expect(list).toEqual([])
+  })
+
+  it('找不到員工時回傳 404', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/staff/does-not-exist', {
+      method: 'DELETE',
+      headers: { 'X-Device-Token': deviceToken },
+    })
+    expect(res.status).toBe(404)
+  })
+})

@@ -22,8 +22,13 @@ import RefundDialogHost from '@/components/ui/RefundDialogHost.vue'
 import ReceiptPreviewDialogHost from '@/components/ui/ReceiptPreviewDialogHost.vue'
 import { useDrinkStore } from '@/stores/drink'
 import { useDiscountStore } from '@/stores/discount'
+import { useOrderStore } from '@/stores/order'
+import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 import { fetchCatalog, toDrinkAddOnOptions, toDrinkTypeGroups } from '@/api/catalog'
 import { fetchPromotions, toMoneyDiscounts, toOftenUseDiscountList, toPercentDiscounts } from '@/api/promotions'
+import { fetchPaymentMethods } from '@/api/payment-methods'
+import { fetchStaffList } from '@/api/staff'
+import { toStaffMember } from '@/api/auth'
 import { useOrderSync } from '@/offline/useOrderSync'
 // P11（規劃書 §12「深色模式」）：在根元件匯入一次即可——useTheme.ts
 // 的 watchEffect 是模組層級的副作用，只要這個模組被 import 過一次就會
@@ -75,6 +80,38 @@ watch(promotions, (value) => {
     percentDiscount: toPercentDiscounts(value),
     oftenUseDiscount: toOftenUseDiscountList(value),
   })
+})
+
+// P18：付款方式清單同步，跟菜單／促銷同步採同一套邏輯（見
+// stores/order.ts 的 paymentSource 說明）。
+const orderStore = useOrderStore()
+const { data: paymentMethods } = useQuery({
+  queryKey: ['payment-methods'],
+  queryFn: fetchPaymentMethods,
+  staleTime: Infinity,
+  retry: 1,
+})
+watch(paymentMethods, (value) => {
+  if (!value) return
+  orderStore.hydratePaymentMethodsFromServer(value)
+})
+
+// P18：人員名單同步，跟菜單／促銷／付款方式同步採同一套邏輯（見
+// stores/authorityManagement.ts 的 staffSource 說明）——這裡改用
+// App.vue 啟動時就同步一次，取代原本在 permissionManagement/index.vue
+// 掛載時整包覆蓋 staffList 的做法：那個做法在使用者剛進頁面就送出
+// 新增／編輯表單時，可能被稍後才 resolve 的舊資料蓋掉剛做的異動
+// （見 authorityManagement.ts 的完整說明）。
+const authorityManagementStore = useAuthorityManagementStore()
+const { data: staffListResponse } = useQuery({
+  queryKey: ['staff'],
+  queryFn: fetchStaffList,
+  staleTime: Infinity,
+  retry: 1,
+})
+watch(staffListResponse, (value) => {
+  if (!value) return
+  authorityManagementStore.hydrateStaffFromServer(value.map(toStaffMember))
 })
 
 // P3：離線送單佇列的背景同步（見 src/offline/sync-worker.ts）。App.vue

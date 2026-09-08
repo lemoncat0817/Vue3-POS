@@ -1,0 +1,124 @@
+import { expect, test } from '@playwright/test'
+
+/**
+ * P18 迴歸驗證（規劃書 §10 P18「菜單與權限管理接上伺服端」）：後台
+ * 「權限管理」頁的人員新增／刪除改成真的呼叫 apps/api 的員工寫入端點
+ * （見 views/authorityManagement/permissionManagement/index.vue 的
+ * 說明），不再只是本機 authorityManagementStore 陣列操作。這裡驗證
+ * 新增一個人員（帶登入用 PIN）後，Id 是伺服端配發的字串（不是使用者
+ * 手動輸入的數字），且刪除後真的從伺服端的資料也消失（重新整理仍然
+ * 看不到）。
+ */
+test('後台新增／刪除人員會真的呼叫伺服端，重新整理後狀態一致', async ({ page }) => {
+  // 新增人員的對話框（4 個欄位＋16 格權限勾選網格）比預設視窗高，
+  // ModalDialog 本身沒有另外處理內容超出視窗高度的捲動（見
+  // components/ui/ModalDialog.vue，跟 e2e/defect-fixes.spec.ts 的
+  // D-10 測試是同一個既有畫面問題），用大一點的視窗繞過。
+  await page.setViewportSize({ width: 1280, height: 1400 })
+  await page.goto('login')
+  await page.getByPlaceholder('請輸入帳號').fill('lemon')
+  await page.getByPlaceholder('請輸入 PIN').fill('1234')
+  await page.getByRole('button', { name: '登入' }).click()
+  await expect(page).toHaveURL(/\/home$/)
+
+  await page.getByRole('button', { name: '權限管理', exact: true }).click()
+  await expect(page).toHaveURL(/\/authorityManagement$/)
+
+  const staffName = `E2E測試員工-${Date.now()}`
+  const staffAccount = `e2e${Date.now()}`
+
+  const createResponse = page.waitForResponse(
+    (res) => res.url().includes('/api/staff') && res.request().method() === 'POST' && res.ok(),
+  )
+  await page.getByRole('button', { name: '新增', exact: true }).first().click()
+  const addDialog = page.getByRole('dialog', { name: '新增人員' })
+  await addDialog.getByPlaceholder('例如: Jensen、Jacky...').fill(staffName)
+  await addDialog.getByPlaceholder('例如: 襄理、工讀生...').fill('E2E測試職稱')
+  await addDialog.getByPlaceholder('請輸入帳號').fill(staffAccount)
+  await addDialog.getByPlaceholder('4~6碼數字').fill('9999')
+  await addDialog.getByRole('button', { name: '新增', exact: true }).click()
+
+  const createBody = (await (await createResponse).json()) as { id: string; name: string; account: string }
+  expect(createBody).toMatchObject({ name: staffName, account: staffAccount })
+  // Id 是伺服端配發的字串（staff-<ulid>），不是使用者輸入的小整數。
+  expect(typeof createBody.id).toBe('string')
+  expect(createBody.id.length).toBeGreaterThan(0)
+
+  await expect(page.getByTestId('toast-message')).toHaveText('新增人員成功')
+  await expect(page.getByText(staffName)).toBeVisible()
+
+  // 重新整理後仍然看得到（證明是真的存在伺服端，不是只在這個分頁的記憶體裡）。
+  await page.reload()
+  await page.getByRole('button', { name: '權限管理', exact: true }).click()
+  await expect(page.getByText(staffName)).toBeVisible()
+
+  // 清掉這筆測試資料：選取該列 → 刪除 → 確認。
+  const deleteResponse = page.waitForResponse(
+    (res) => res.url().includes(`/api/staff/${createBody.id}`) && res.request().method() === 'DELETE' && res.status() === 204,
+  )
+  await page.getByText(staffName, { exact: true }).click()
+  await page.getByRole('button', { name: '刪除', exact: true }).first().click()
+  await page.getByRole('button', { name: '確定' }).click()
+  await deleteResponse
+  await expect(page.getByTestId('toast-message')).toHaveText('刪除成功')
+  await expect(page.getByText(staffName)).toHaveCount(0)
+
+  await page.reload()
+  await page.getByRole('button', { name: '權限管理', exact: true }).click()
+  await expect(page.getByText(staffName)).toHaveCount(0)
+})
+
+/**
+ * P18 迴歸驗證：付款方式的新增／刪除同樣改成真的呼叫伺服端（見
+ * api/payment-methods.ts），不再只是 orderStore.paymentList 的本機
+ * 陣列操作。
+ */
+test('後台新增／刪除付款方式會真的呼叫伺服端，重新整理後狀態一致', async ({ page }) => {
+  await page.goto('login')
+  await page.getByPlaceholder('請輸入帳號').fill('lemon')
+  await page.getByPlaceholder('請輸入 PIN').fill('1234')
+  await page.getByRole('button', { name: '登入' }).click()
+  await expect(page).toHaveURL(/\/home$/)
+
+  await page.getByRole('button', { name: '權限管理', exact: true }).click()
+  await expect(page).toHaveURL(/\/authorityManagement$/)
+
+  const methodName = `E2E測試付款-${Date.now()}`
+
+  const createResponse = page.waitForResponse(
+    (res) => res.url().includes('/api/payment-methods') && res.request().method() === 'POST' && res.ok(),
+  )
+  // 付款方式區塊的「新增」按鈕是頁面上第二個「新增」按鈕（第一個是人員名單的）。
+  await page.getByRole('button', { name: '新增', exact: true }).nth(1).click()
+  const addDialog = page.getByRole('dialog', { name: '新增付款方式' })
+  await addDialog.getByPlaceholder('例如: 現金、LinePay...').fill(methodName)
+  await addDialog.getByText('選擇支付方式').click()
+  await page.getByRole('option', { name: '感應', exact: true }).click()
+  await addDialog.getByRole('button', { name: '新增', exact: true }).click()
+
+  const createBody = (await (await createResponse).json()) as { id: string; name: string; useMethod: string }
+  expect(createBody).toMatchObject({ name: methodName, useMethod: '感應' })
+  expect(typeof createBody.id).toBe('string')
+  expect(createBody.id.length).toBeGreaterThan(0)
+
+  await expect(page.getByTestId('toast-message')).toHaveText('新增付款方式成功')
+  await expect(page.getByText(methodName)).toBeVisible()
+
+  await page.reload()
+  await page.getByRole('button', { name: '權限管理', exact: true }).click()
+  await expect(page.getByText(methodName)).toBeVisible()
+
+  const deleteResponse = page.waitForResponse(
+    (res) => res.url().includes(`/api/payment-methods/${createBody.id}`) && res.request().method() === 'DELETE' && res.status() === 204,
+  )
+  await page.getByText(methodName, { exact: true }).click()
+  await page.getByRole('button', { name: '刪除', exact: true }).nth(1).click()
+  await page.getByRole('button', { name: '確定' }).click()
+  await deleteResponse
+  await expect(page.getByTestId('toast-message')).toHaveText('刪除成功')
+  await expect(page.getByText(methodName)).toHaveCount(0)
+
+  await page.reload()
+  await page.getByRole('button', { name: '權限管理', exact: true }).click()
+  await expect(page.getByText(methodName)).toHaveCount(0)
+})

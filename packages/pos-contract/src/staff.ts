@@ -45,6 +45,14 @@ export const createStaffRequestSchema = staffSchema.omit({ id: true }).extend({ 
 export type CreateStaffRequest = z.infer<typeof createStaffRequestSchema>
 
 /**
+ * 編輯員工（P18：規劃書 §10 P18「菜單與權限管理接上伺服端」）。pin
+ * 是選填——大多數編輯只是改權限或職稱，不需要每次都重設 PIN；有填
+ * 才會重新雜湊存入，見 routes/staff.ts 的說明。
+ */
+export const updateStaffRequestSchema = staffSchema.omit({ id: true }).extend({ pin: pinSchema.optional() })
+export type UpdateStaffRequest = z.infer<typeof updateStaffRequestSchema>
+
+/**
  * 操作員登入請求。pin 這裡不用 pinSchema 的格式限制——格式不對跟格式對
  * 但驗證失敗，都要走同一個「帳號或 PIN 錯誤」的 401，不要讓格式驗證
  * 錯誤本身洩漏「這個帳號存不存在」以外的額外資訊。
