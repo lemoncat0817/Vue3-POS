@@ -1,5 +1,7 @@
 <template>
-  <div class="w-full flex flex-col items-center overflow-y-auto px-4 py-6 bg-surface-50/50 dark:bg-surface-950 min-h-[calc(100vh-64px)]">
+  <!-- UI-3（規劃書 B-7）：捲動改由 layout/admin/index.vue 的 <main>
+       統一負責，這裡不再自己 overflow-y-auto + min-h-[calc(100vh-64px)]。 -->
+  <div class="w-full flex flex-col items-center px-4 py-6 bg-surface-50/50 dark:bg-surface-950">
     <div class="w-full max-w-7xl flex flex-col gap-6">
 
       <!-- 頂部標題與時段控制列 -->

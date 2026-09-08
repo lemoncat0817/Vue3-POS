@@ -23,6 +23,9 @@ export const constantRoutes: RouteRecordRaw[] = [
       title: '登入'
     }
   }, {
+    // UI-3（規劃書 §4.1「後台 Shell」）：點餐首頁單獨留在這個頂部列
+    // 版型——觸控主戰場，需要全寬，不適合被側邊欄吃掉 200px（見
+    // layout/admin/index.vue 的說明）。
     path: '/',
     component: () => import('@/layout/index.vue'),
     redirect: '/home',
@@ -35,6 +38,14 @@ export const constantRoutes: RouteRecordRaw[] = [
           title: '點餐'
         }
       },
+    ]
+  }, {
+    // 訂單／後台設定／數據分析／權限管理／會員管理／桌況管理共用
+    // 左側導覽的後台 shell（見 layout/admin/index.vue、
+    // composables/useAppShell.ts）。
+    path: '/',
+    component: () => import('@/layout/admin/index.vue'),
+    children: [
       {
         path: '/order',
         name: 'order',

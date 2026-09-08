@@ -1,5 +1,7 @@
 <template>
-  <div class="flex w-full flex-col items-center overflow-y-auto bg-surface-50 dark:bg-surface-950 px-4 py-8">
+  <!-- UI-3（規劃書 B-7）：捲動改由 layout/admin/index.vue 的 <main>
+       統一負責，這裡不再自己 overflow-y-auto，避免巢狀捲動容器。 -->
+  <div class="flex w-full flex-col items-center bg-surface-50 dark:bg-surface-950 px-4 py-8">
     <div class="flex w-full max-w-7xl flex-col gap-6">
       
       <!-- Top Title & Quick Overview Banner -->
