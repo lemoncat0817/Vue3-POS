@@ -1,16 +1,8 @@
 import { reactive } from 'vue'
 
 /**
- * P12（規劃書 §10 P0「退款／作廢」）：退款金額＋原因的輸入框，跟
- * usePrompt.ts 的單一文字輸入框不同——這裡多一個「金額」欄位，而且
- * 金額有上限（這筆訂單目前還能退的額度，由呼叫端算好傳進來，見
- * views/order/index.vue 的 refundOrder），所以不能直接複用 prompt()。
- *
- * 回傳 `{ amount, reason } | null`：確認且金額合法（大於 0、不超過
- * `max`）且原因非空白才是物件本身，否則是 null（含取消／ESC／點外面
- * 關閉）——實際送出前伺服端還是會再驗證一次金額上限（見 apps/api/src/
- * routes/orders.ts 的 createRefundRoute），這裡的驗證只是避免使用者
- * 明顯打錯數字就送出，不是唯一的防線。
+ * 退款對話框（包含金額與原因輸入）。
+ * 回傳 `{ amount, reason } | null`，前端做基本金額上限檢驗，伺服端做最終驗證。
  */
 export interface RefundPromptOptions {
   /** 這筆訂單目前還能退的金額——輸入框的上限，畫面上也會顯示給店員看。 */

@@ -1,19 +1,8 @@
 import { reactive } from 'vue'
 
 /**
- * P8：取代 `ElMessageBox.confirm(...).then().catch()` 的確認對話框。
- *
- * 呼叫端維持跟 ElMessageBox.confirm 幾乎一樣的 promise 風格（見
- * views/order/index.vue 的 editOrderStatus／deleteOrder），底層改用
- * Reka UI 的 AlertDialog 原語（見 components/ui/ConfirmDialogHost.vue）
- * 渲染，畫面樣式改用這個專案自己的 Tailwind token（見 tailwind.config.js）。
- *
- * 回傳值刻意是三態（'confirm' | 'cancel' | 'dismiss'），不是原本
- * ElMessageBox 那種「resolve／reject」二選一：原本 editOrderStatus 把
- * 一個「確定／取消」的確認框硬拗成三選一（確定＝已完成、取消按鈕＝
- * 已取消、ESC／點外面關閉＝不變更），呼叫端要另外用 `reason !== 'cancel'`
- * 才能分辨「按了取消」跟「直接關掉」——這裡把這個區分正式收進回傳型別，
- * 呼叫端不用再猜 reject 的原因字串。
+ * 確認對話框 composable。
+ * 回傳值為三態（'confirm' | 'cancel' | 'dismiss'），清楚區分確認、取消與點擊遮罩/ESC 關閉。
  */
 export interface ConfirmOptions {
   title: string
@@ -50,8 +39,7 @@ export function useConfirmState() {
   return state
 }
 
-/** 彈出確認框，回傳使用者的選擇。同時間只會有一個確認框——跟
- * ElMessageBox 一樣，後一次呼叫會直接覆蓋還沒關閉的前一個。 */
+/** 彈出確認框，回傳使用者的選擇。後一次呼叫會覆蓋未關閉的前一個。 */
 export function confirm(options: ConfirmOptions): Promise<ConfirmResult> {
   return new Promise((resolve) => {
     state.resolve?.('dismiss')
@@ -66,15 +54,7 @@ export function confirm(options: ConfirmOptions): Promise<ConfirmResult> {
   })
 }
 
-/**
- * 取代 `ElMessageBox.alert(...).then()`：純告知、不是二選一的對話框
- * （只有一顆確認鍵），常見於「請先掃描載具」「應收現金 $X 元」這類
- * 需要店員實際操作完才能繼續、原本用 `.then()` 串接後續動作的流程。
- * 原本的 `ElMessageBox.alert` 沒有 `.catch()`，代表不管是點確認鍵、
- * 按 ESC 還是點遮罩，呼叫端都當作「知道了、可以繼續」——這裡回傳
- * `Promise<void>`（不分結果），保留這個語意，呼叫端不用處理「使用者
- * 拒絕了一個只有一顆按鈕的對話框」這種不存在的狀況。
- */
+/** 單鍵純告知對話框，使用者確認或關閉後 resolve。 */
 export function alert(options: Omit<ConfirmOptions, 'cancelText' | 'variant'>): Promise<void> {
   return confirm({ ...options, singleButton: true }).then(() => undefined)
 }

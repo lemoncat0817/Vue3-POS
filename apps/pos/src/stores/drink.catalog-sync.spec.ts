@@ -2,12 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import { useDrinkStore } from './drink'
 
-/**
- * P3：驗證 hydrateCatalogFromServer() 的「只套用一次」保護（見 drink.ts
- * 對 catalogSource 的說明）——backgroundSetting/productManagement 頁面
- * 目前是直接原地修改 drinkType／drinkAdd，還沒有對應的伺服端寫入 API，
- * 如果每次都無條件覆蓋，管理員在背景設定頁做的異動會在下次同步後消失。
- */
+/** 驗證 hydrateCatalogFromServer() 僅初次注入伺服端資料，避免覆蓋本機編輯。 */
 describe('useDrinkStore — hydrateCatalogFromServer()', () => {
   it('第一次呼叫時，用伺服端資料取代種子資料', () => {
     setActivePinia(createPinia())

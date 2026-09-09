@@ -1,15 +1,8 @@
 import { reactive } from 'vue'
 
 /**
- * P12（規劃書 §10 P0「退款／作廢」）：單一文字輸入的提示框，取代
- * `window.prompt()`——跟 useConfirm.ts 的 confirm() 是同一組模式（單一
- * 全域實例、promise 風格），差別是這裡除了確認／取消，還需要使用者
- * 打一段文字（目前只有「作廢原因」這個用途，見 views/order/index.vue
- * 的 editOrderStatus）。
- *
- * 回傳 `string | null`：使用者按確認且欄位非空白時是字串本身（已
- * trim），按取消／ESC／點外面關閉都是 null——呼叫端不用分辨「取消」
- * 跟「沒填」，反正兩種都代表「不繼續」。
+ * 單一文字輸入提示對話框（取代 window.prompt）。
+ * 使用者確認且填寫非空白時回傳字串，取消或空白則回傳 null。
  */
 export interface PromptOptions {
   title: string

@@ -3,25 +3,14 @@ import { defineStore } from 'pinia'
 import type { FormNumeric, MoneyDiscount, OftenUseDiscountList, PercentDiscount } from '@/types'
 
 export const useDiscountStore = defineStore('discount', () => {
-  // P5：促銷資料（現金／折數折價券、常用折扣）改由 apps/api 當唯一
-  // 來源（見 src/api/promotions.ts）。下面保留的種子資料是「第一次
-  // 啟動、還沒同步過、且伺服端也連不到」時的離線預設值，不是常態資料
-  // 來源。promotionSource 的用法跟 stores/drink.ts 的 catalogSource
-  // 完全一樣：只在第一次（本機從未同步過伺服端促銷資料）時套用，之後
-  // 永遠以本機資料為準，避免背景同步蓋掉畫面上還沒送出的編輯狀態。
+  // 促銷資料來源：初次啟動時自伺服端注入，後續以本機（含管理員異動）為準。
   const promotionSource = ref<'seed' | 'server'>('seed')
 
-  // 當前折價券選單
   const discountMenu = ref(0)
-  // 當前正在選的現金折價券id
   const moneySelectingDiscountId = ref<FormNumeric>(0)
-  // 當前已選的現金折價券id
   const moneyDiscountId = ref<FormNumeric>(0)
-  // 當前已選的折價券名稱
   const currentDiscountName = ref('')
-  // 當前已選的現金折價券折價金額
   const currentMoneyDiscount = ref<FormNumeric>(0)
-  // 定義現金折價券的資料
   const moneyDiscount = ref<MoneyDiscount[]>([{
     "id": 1,
     "name": "$50折價券",
@@ -42,13 +31,9 @@ export const useDiscountStore = defineStore('discount', () => {
     "name": "$200折價券",
     "discountMoney": 200,
   }])
-  // 當前正在選的折數折價券id
   const percentSelectingDiscountId = ref<FormNumeric>(0)
-  // 當前已選的折數折價券id
   const percentDiscountId = ref<FormNumeric>(0)
-  // 當前已選的現金折價券折價金額
   const currentPercentDiscount = ref<FormNumeric>(0)
-  // 定義折數折價券的資料
   const percentDiscount = ref<PercentDiscount[]>([{
     "id": 1,
     "name": "整單95折",
@@ -69,7 +54,6 @@ export const useDiscountStore = defineStore('discount', () => {
     "name": "滿萬打5折",
     "discountMoney": 0.5,
   }])
-  // 常用的折價清單
   const oftenUseDiscount = ref<OftenUseDiscountList>([{
     "id": 1,
     "name": "環保折扣",
@@ -102,8 +86,7 @@ export const useDiscountStore = defineStore('discount', () => {
   }
   ])
 
-  // 見上方 promotionSource 的說明：只在第一次（本機從未同步過伺服端
-  // 促銷資料）時套用。
+  // 僅在尚未同步過伺服端資料時套用，避免覆蓋本機編輯。
   const hydratePromotionsFromServer = (promotions: {
     moneyDiscount: MoneyDiscount[]
     percentDiscount: PercentDiscount[]

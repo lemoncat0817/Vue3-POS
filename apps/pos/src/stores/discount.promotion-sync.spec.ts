@@ -2,12 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import { useDiscountStore } from './discount'
 
-/**
- * P5：驗證 hydratePromotionsFromServer() 的「只套用一次」保護，跟
- * stores/drink.ts 的 hydrateCatalogFromServer() 是同一個理由——
- * backgroundSetting/offerSetting 頁面若在本機新增／編輯過折價券，
- * 之後的同步不該把畫面上的狀態蓋掉。
- */
+/** 驗證 hydratePromotionsFromServer() 僅初次注入伺服端資料，避免覆蓋本機編輯。 */
 describe('useDiscountStore — hydratePromotionsFromServer()', () => {
   it('第一次呼叫時，用伺服端資料取代種子資料', () => {
     setActivePinia(createPinia())

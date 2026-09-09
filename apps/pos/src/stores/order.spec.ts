@@ -2,11 +2,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOrderStore } from './order'
 
-/**
- * 驗證 D-03／D-08 的修復：訂單編號改用 getBusinessDate() 當下現算，
- * 不再依賴 setInterval 輪詢 UTC 日期。
- */
-describe('useOrderStore — 訂單編號（修復 D-03、D-08）', () => {
+// 驗證訂單編號計算（同一營業日遞增、跨日歸零）。
+describe('useOrderStore — 訂單編號', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.useFakeTimers()
