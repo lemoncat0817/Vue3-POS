@@ -91,5 +91,9 @@ export const constantRoutes: RouteRecordRaw[] = [
         }
       }
     ]
+  }, {
+    // 無效網址一律導回點餐首頁，避免 RouterView 無內容可渲染而黑屏。
+    path: '/:pathMatch(.*)*',
+    redirect: '/home'
   }
 ]
