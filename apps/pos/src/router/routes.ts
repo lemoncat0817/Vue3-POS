@@ -1,13 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router'
 import type { AuthorityKey } from '@/types/staff'
 
-/**
- * D-11 修復：權限保護原本寫死在 router/index.ts 的 beforeEach 裡，一個
- * 路由對應一段 if/else 分支。改成路由自己宣告「需要哪個權限欄位」
- * （meta.capability），beforeEach 改成通用地讀這個欄位（見該檔案）——
- * 新增一個受保護頁面只需要在這裡加一行 meta，不用回頭改導航守衛本身。
- * 沒有寫 capability 代表「登入即可造訪」，例如點餐首頁。
- */
+/** 路由元資訊擴充：`capability` 宣告造訪該路由所需具備的權限。未設定代表登入即可造訪。 */
 declare module 'vue-router' {
   interface RouteMeta {
     capability?: AuthorityKey
@@ -23,9 +17,7 @@ export const constantRoutes: RouteRecordRaw[] = [
       title: '登入'
     }
   }, {
-    // UI-3（規劃書 §4.1「後台 Shell」）：點餐首頁單獨留在這個頂部列
-    // 版型——觸控主戰場，需要全寬，不適合被側邊欄吃掉 200px（見
-    // layout/admin/index.vue 的說明）。
+    // 點餐首頁使用全寬頂部列版型。
     path: '/',
     component: () => import('@/layout/index.vue'),
     redirect: '/home',
@@ -40,9 +32,7 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
     ]
   }, {
-    // 訂單／後台設定／數據分析／權限管理／會員管理／桌況管理共用
-    // 左側導覽的後台 shell（見 layout/admin/index.vue、
-    // composables/useAppShell.ts）。
+    // 後台功能頁共用側邊欄後台版型。
     path: '/',
     component: () => import('@/layout/admin/index.vue'),
     children: [

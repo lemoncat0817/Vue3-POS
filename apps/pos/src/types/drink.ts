@@ -11,13 +11,7 @@ export interface DrinkListItem {
   priceL: FormNumeric | 'none'
   priceBottle: FormNumeric | 'none'
   customized: DrinkCustomized
-  /**
-   * 庫存數量（P20：規劃書 §10 P20「基礎庫存管理」）。`null`／缺少這個
-   * 欄位代表不追蹤庫存——選填而不是必填，是因為 stores/drink.ts 裡
-   * 大量寫死的離線種子資料（見該檔案的說明）本來就沒有這個概念，
-   * 逐一補上沒有意義；伺服端回應一律會帶這個欄位（見 api/catalog.ts
-   * 的 toDrinkTypeGroups）。
-   */
+  /** 庫存數量。`null` 或未提供代表不追蹤庫存。 */
   stock?: number | null
 }
 
@@ -44,13 +38,7 @@ export interface DrinkAddOnOption {
   stock?: number | null
 }
 
-/**
- * 待付款清單／歷史訂單的單一品項列。
- *
- * `drinkStore.drinkNotPay` 的項目在送出訂單時會被直接指派給
- * `order.orderData`（`orderData: drinkStore.drinkNotPay`），兩處共用同一個
- * 執行期形狀，因此以同一個介面表示。
- */
+/** 待付款清單／歷史訂單的單一品項列（購物車與 orderData 共用形狀）。 */
 export interface CartLineItem {
   id: number
   name: string
@@ -59,10 +47,7 @@ export interface CartLineItem {
   size: string
   count: number
   discount: number
-  /**
-   * 種子資料裡這個欄位同時出現字串（"無添加配料"）與陣列
-   * （["芝芝"]）兩種形狀——如實記錄，不在 P0 正規化。
-   */
+  /** 種子資料中此欄位並存字串與陣列兩種形狀。 */
   addList: string | string[]
   addListPrice: number
   totalPrice: number

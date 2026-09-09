@@ -1,12 +1,6 @@
 import type { AuthorityKey } from '@/types'
 
-/**
- * UI-6（規劃書 §5.4「權限管理」）：權限欄位清單、依附關係與角色範本，
- * 從 authorityManagement/permissionManagement/index.vue 抽出來獨立成
- * 純函式模組——原本這份清單只活在那個元件裡，現在人員名單表格、
- * 新增／編輯對話框的分組checkbox、以及這裡新增的角色推導都要共用同
- * 一份定義，抽出來才不會有兩份互相漂移的風險。
- */
+/** 權限欄位清單、依附關係與角色範本共用定義。 */
 export interface AuthorityField {
   label: string
   value: AuthorityKey
@@ -48,12 +42,7 @@ export function cascadeAuthorityCheckList(list: AuthorityKey[]): AuthorityKey[] 
   return next
 }
 
-/**
- * 依 dependsOn 分組，供編輯對話框把 18 個權限畫成有階層的區塊，而不是
- * 18 個等權重的欄位（規劃書 §5.4：「權限矩陣移到 DetailDrawer，依
- * dependsOn 分組並階層縮排」）。沒有 dependsOn、也沒有任何欄位依附它的
- * 欄位歸進「其他」。
- */
+/** 依 dependsOn 分組，供 UI 依階層渲染權限設定。無依附或被依附者歸類為「其他」。 */
 export interface AuthorityGroup {
   title: string
   root?: AuthorityField
@@ -77,15 +66,7 @@ export function groupAuthorityFields(): AuthorityGroup[] {
   return grouped
 }
 
-/**
- * 角色範本——直接對應 apps/api/seed/staff.sql 三筆示範帳號的權限組合
- * （Lemon=店長、James=值班經理、Emily=工讀生），不是憑空發明的抽象
- * 分級。店裡實務上職務組合就是這幾種，新增人員時選一個範本就能套用
- * 整組權限，不用 18 格逐一勾選；勾選狀態如果跟任何範本都對不上，就是
- * 「已自訂」。這一層完全是顯示層的推導，不需要新增資料庫欄位或改動
- * StaffMember 的形狀——角色永遠是從既有的 authorityCheckList 反推出來
- * 的（規劃書 §5.4「不需要改資料庫」）。
- */
+/** 角色預設範本：純前端顯示層依據 authorityCheckList 組合反推，不額外新增 DB 欄位。 */
 export const STAFF_ROLE_PRESETS: Record<string, AuthorityKey[]> = {
   店長: AUTHORITY_FIELDS.map((field) => field.value),
   值班經理: [
