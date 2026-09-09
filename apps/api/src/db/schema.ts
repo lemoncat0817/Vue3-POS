@@ -12,13 +12,8 @@ import type {
   TableStatus,
 } from '@pos/contract'
 
-/**
- * D1（SQLite 方言）的資料表定義。
- *
- * 這是伺服端的全新設計，欄位型別選乾淨的（number／boolean／JSON），不是
- * 照搬 apps/pos 現行因表單輸入造成的型別混用（FormNumeric、'none' 字面
- * 值——見 apps/pos/src/types 的說明）。
- */
+// D1（SQLite）資料表定義。型別刻意用乾淨的 number／boolean／JSON，不照搬
+// apps/pos 現行因表單輸入而混用的型別（FormNumeric、'none' 字面值）。
 
 // ---------- 菜單 ----------
 
@@ -37,8 +32,7 @@ export const catalogItems = sqliteTable('catalog_items', {
   priceL: integer('price_l'),
   priceBottle: integer('price_bottle'),
   customized: text('customized').$type<DrinkCustomized>().notNull(),
-  // P20（規劃書 §10 P20「基礎庫存管理」）：null 代表不追蹤這個品項的
-  // 庫存，見 @pos/contract 的 catalogStockSchema 說明。
+  // null 代表不追蹤此品項庫存，見 @pos/contract 的 catalogStockSchema。
   stock: integer('stock'),
 })
 
@@ -49,7 +43,7 @@ export const addOnOptions = sqliteTable('add_on_options', {
   stock: integer('stock'),
 })
 
-// ---------- 促銷（P5：規劃書 §10 的促銷引擎） ----------
+// ---------- 促銷 ----------
 
 /** 現金折價券（例如「$50折價券」），後台可自由新增／刪除。 */
 export const moneyCoupons = sqliteTable('money_coupons', {
@@ -65,12 +59,8 @@ export const percentCoupons = sqliteTable('percent_coupons', {
   discountPercent: real('discount_percent').notNull(),
 })
 
-/**
- * 常用折扣固定 5 筆（見 @pos/domain 的 OftenUseRates），slot 是
- * 0～4 的固定位置（0：環保折扣、1：瓶裝折扣、2～4：三個折數折扣），
- * 後台只能編輯內容、不能新增或刪除這張表的列（對照 apps/pos 現行
- * offerSetting 頁面：常用折扣沒有新增/刪除功能，只有編輯）。
- */
+// 常用折扣固定 5 筆（見 @pos/domain 的 OftenUseRates），slot 0～4 為固定
+// 位置（0 環保、1 瓶裝、2～4 三個折數），後台只能編輯內容、不能新增／刪除列。
 export const oftenUseRates = sqliteTable('often_use_rates', {
   slot: integer('slot').primaryKey(),
   name: text('name').notNull(),
@@ -78,16 +68,11 @@ export const oftenUseRates = sqliteTable('often_use_rates', {
   discountPercent: real('discount_percent').notNull(),
 })
 
-// ---------- 裝置憑證（P4：規劃書 §9 的身分系統） ----------
+// ---------- 裝置憑證 ----------
 
-/**
- * 一台終端機一筆紀錄。只存雜湊值＋鹽（見 src/auth/hash.ts）；明碼只在
- * 核發當下（POST /api/devices）回傳一次，之後即使是這個資料庫本身也
- * 還原不出明碼——跟 GitHub personal access token 那類憑證同一種設計。
- * revokedAt 非 null 代表這台裝置的憑證已被撤銷，requireDeviceToken
- * （見 middleware/require-device-token.ts）會拒絕它，不需要真的刪除
- * 這筆紀錄（保留稽核軌跡）。
- */
+// 一台終端機一筆紀錄，只存雜湊值＋鹽（見 src/auth/hash.ts），明碼僅核發
+// 當下回傳一次（同 GitHub PAT 的設計）。revokedAt 非 null 代表憑證已撤銷，
+// 不刪除紀錄以保留稽核軌跡。
 export const devices = sqliteTable('devices', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -108,28 +93,21 @@ export const staff = sqliteTable(
     name: text('name').notNull(),
     jobTitle: text('job_title').notNull(),
     account: text('account').notNull(),
-    // 權限只有這一份陣列來源（對照 D-10：apps/pos 現行是 16 個獨立布林
-    // 欄位加一份平行陣列的雙重來源）。
+    // 權限只有這一份陣列來源，不是 16 個獨立布林欄位加一份平行陣列的雙重來源。
     capabilities: text('capabilities', { mode: 'json' }).$type<AuthorityKey[]>().notNull(),
-    // 操作員 PIN（P4：規劃書 §9）。只存雜湊值＋鹽（見 src/auth/hash.ts），
-    // 明碼只在登入請求（POST /api/auth/operator-login）當下經手。
+    // 操作員 PIN，只存雜湊值＋鹽，明碼只在登入請求當下經手。
     pinHash: text('pin_hash').notNull(),
     pinSalt: text('pin_salt').notNull(),
-    // 連續輸入錯誤的次數與鎖定到期時間，見 routes/auth.ts 的鎖定邏輯
-    // ——4～6 碼的 PIN 遠比密碼容易暴力猜中，沒有這道防線的話雜湊本身
-    // 起不了太大作用。
+    // 連續輸入錯誤次數與鎖定到期時間（見 routes/auth.ts）：PIN 只有
+    // 4～6 碼，遠比密碼容易暴力猜中，需要這道防線。
     failedPinAttempts: integer('failed_pin_attempts').notNull().default(0),
     lockedUntil: text('locked_until'),
   },
   (table) => [uniqueIndex('staff_account_idx').on(table.account)],
 )
 
-/**
- * 付款方式（P18：規劃書 §10 P18「菜單與權限管理接上伺服端」）。後台
- * 設定允許用哪些方式收款——跟訂單 tenders[] 裡的 method（自由字串，
- * 見 order_tenders 的說明）是不同的東西，這張表不影響送單本身能不能
- * 成功，只是後台管理／點餐頁付款面板要顯示哪些選項的資料來源。
- */
+// 付款方式。後台設定允許用哪些方式收款——跟訂單 tenders[] 裡的 method
+// （自由字串）是不同的東西，這張表只影響付款面板要顯示哪些選項。
 export const paymentMethods = sqliteTable('payment_methods', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -145,84 +123,57 @@ export const orders = sqliteTable(
     orderId: text('order_id').primaryKey(),
     orderTime: text('order_time').notNull(),
     orderStatus: text('order_status').$type<OrderStatus>().notNull(),
-    // 內用／外帶（P13：規劃書 §10 P0「內用外帶」）。預設值 '外帶' 只
-    // 用在資料庫層級補齊這個功能上線前既有的歷史訂單（見對應的
-    // migration）——新訂單一律由 apps/pos 明確帶這個欄位，不會依賴
-    // 這個預設值。
+    // 預設 '外帶' 只用於補齊此欄位上線前的歷史訂單，新訂單一律由前端明確帶入。
     orderChannel: text('order_channel').$type<OrderChannel>().notNull().default('外帶'),
     staff: text('staff').notNull(),
     orderBagCount: integer('order_bag_count').notNull(),
     orderCupCount: integer('order_cup_count').notNull(),
     orderTotalPrice: integer('order_total_price').notNull(),
-    // 顯示用的付款方式摘要（多筆 tender 以頓號連接），實際明細見
-    // order_tenders 表——這個欄位不是計算來源，只是列表頁不用另外
-    // join 就能顯示付款方式的捷徑，跟 discountName 是同樣的取捨。
+    // 顯示用付款方式摘要（多筆 tender 以頓號連接），實際明細見 order_tenders。
     orderPayment: text('order_payment').notNull(),
     orderDiscount: integer('order_discount').notNull(),
     orderPaymentPrice: integer('order_payment_price').notNull(),
-    // 找零總額（P6：規劃書 §10 P0「混合支付」）。從 order_tenders 的
-    // receivedAmount 算出後存一份在這裡，理由跟 orderPayment 一樣：
-    // 列表頁與收據不用為了一個數字另外 join 明細表。
+    // 找零總額，從 order_tenders 的 receivedAmount 算出後存一份，理由同 orderPayment。
     changeDue: integer('change_due').notNull().default(0),
     discountName: text('discount_name').notNull(),
-    // 冪等鍵：同一個 idempotencyKey 重送不會建立第二筆訂單（見 §8）。
+    // 冪等鍵：同一個 idempotencyKey 重送不會建立第二筆訂單。
     idempotencyKey: text('idempotency_key').notNull(),
     createdAt: text('created_at')
       .notNull()
       .default(sql`(current_timestamp)`),
-    // 作廢紀錄（P12：規劃書 §10 P0「退款／作廢」）。orderStatus 改成
-    // 「已取消」時才會有值；改回「已完成」（也就是撤銷這次作廢）時
-    // 一併清成 null——這三個欄位只描述「目前這次作廢」，不是累積的
-    // 歷史紀錄，跟 order_refunds 表（可以有很多筆、彼此獨立）不同。
+    // 作廢紀錄，只描述「目前這次作廢」；orderStatus 改回「已完成」時一併
+    // 清成 null，跟可累積多筆的 order_refunds 是不同概念。
     voidReason: text('void_reason'),
     voidedBy: text('voided_by'),
     voidedAt: text('voided_at'),
-    // 發票（P15：規劃書 §10 P0「發票」）。每一筆訂單一律開立發票號碼
-    // （見 nextInvoiceNumber() 的說明），既有歷史訂單（這個功能上線前
-    // 建立的）沒有真正的發票號碼，遷移時補一個空字串佔位，不是假造
-    // 一個發票號碼混充——空字串在畫面上會顯示成「（無，此功能上線前
-    // 建立）」，不會被誤認成真正開立過的發票。
+    // 每筆訂單一律開立發票號碼，此欄位上線前的歷史訂單以空字串佔位（畫面上
+    // 顯示為「無，此功能上線前建立」），不是假造發票號碼。
     invoiceNumber: text('invoice_number').notNull().default(''),
     invoiceCarrierType: text('invoice_carrier_type').$type<InvoiceCarrierType>().notNull().default('無載具'),
     // 只有手機條碼／統一編號才有值，見 @pos/contract 的 invoiceCarrierSchema。
     invoiceCarrierValue: text('invoice_carrier_value'),
-    // 這筆訂單掛在哪個會員名下（P22：規劃書 §10 P22「會員與顧客經營」），
-    // 沒有掛會員是 null——見 members 表、routes/orders.ts 的
-    // accrueMemberPoints 說明。
+    // 這筆訂單掛在哪個會員名下，沒有掛會員是 null。
     memberId: text('member_id').references(() => members.id),
-    // 發票上傳狀態（P23：規劃書 §10 P23「電子發票平台串接」）。開立
-    // 時一律是 'issued'，模擬批次上傳後變成 'submitted'（見 routes/
-    // invoices.ts 的 submitInvoices），訂單作廢時變成 'voided'——見
-    // @pos/contract 的 invoiceStatusSchema 說明。既有歷史訂單（這個
-    // 功能上線前建立的）預設也是 'issued'，不影響既有資料。
+    // 開立時一律 'issued'，模擬批次上傳後變成 'submitted'，訂單作廢時變成
+    // 'voided'。歷史訂單預設也是 'issued'。
     invoiceStatus: text('invoice_status').$type<InvoiceStatus>().notNull().default('issued'),
     invoiceSubmittedAt: text('invoice_submitted_at'),
-    // 內用桌號（P24：規劃書 §10 P24「真實硬體整合與桌況管理」），見
-    // @pos/contract 的 createOrderRequestSchema.tableNumber 說明——
-    // 純紀錄用途，故意不設外鍵指到 dining_tables，桌況跟訂單各自
-    // 獨立維護。
+    // 內用桌號，純紀錄用途，故意不設外鍵指到 dining_tables——桌況跟訂單各自獨立維護。
     tableNumber: text('table_number'),
   },
   (table) => [uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey)],
 )
 
-// ---------- 會員與顧客經營（P22：規劃書 §10 P22） ----------
+// ---------- 會員與顧客經營 ----------
 
-/**
- * 會員。phone 是結帳當下查會員唯一合理的輸入方式（收銀機沒有讀卡機、
- * 也不會要求顧客記會員編號），設唯一索引——見 routes/members.ts 的
- * 查詢／建立流程，跟 staff.account 的唯一索引是同樣的考量。
- */
+// 會員。phone 是結帳當下查會員唯一合理的輸入方式（無讀卡機、不要求記編號），設唯一索引。
 export const members = sqliteTable(
   'members',
   {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     phone: text('phone').notNull(),
-    // 點數（見 @pos/contract 的 memberSchema 說明）：訂單完成時依應付
-    // 金額累加，這裡只存目前的累積值，不是每筆異動都留紀錄——「基礎」
-    // 會員經營先做到看得到累積多少，異動明細屬於之後有實際需要再做
-    // 的範圍。
+    // 訂單完成時依應付金額累加，只存目前累積值，不記逐筆異動明細。
     points: integer('points').notNull().default(0),
     createdAt: text('created_at')
       .notNull()
@@ -231,42 +182,24 @@ export const members = sqliteTable(
   (table) => [uniqueIndex('members_phone_idx').on(table.phone)],
 )
 
-/**
- * 訂單序號的原子計數器（P6：規劃書 §3「多終端情境」）。
- *
- * P2～P5 的作法是「查同一營業日已有幾筆訂單、+1」，這在單一終端情境下
- * 沒問題，但兩台終端幾乎同時送單時，兩者查到的訂單數可能相同，算出
- * 一樣的序號——後 insert 的那筆會因為 orderId 撞到 orders 表的
- * primary key 直接失敗，顧客等於白排了隊。這張表用 SQLite 的
- * `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` 換成單一 SQL
- * 陳述式內完成「讀當前值、加一、寫回」，不需要額外包交易（單一陳述式
- * 本身就是原子的），見 routes/orders.ts 的 nextOrderSequence()。
- */
+// 訂單序號的原子計數器。用 SQLite 的 `INSERT ... ON CONFLICT DO UPDATE
+// ... RETURNING` 在單一陳述式內完成「讀當前值、加一、寫回」，避免兩台
+// 終端幾乎同時送單時算出相同序號、後 insert 者因主鍵衝突失敗（見
+// routes/orders.ts 的 nextOrderSequence()）。
 export const orderSequences = sqliteTable('order_sequences', {
   businessDate: text('business_date').primaryKey(),
   counter: integer('counter').notNull(),
 })
 
-/**
- * 發票號碼的原子計數器（P15：規劃書 §10 P0「發票」）。這是 P15 當時的
- * 簡化版本：單一固定前綴＋全域遞增的 8 位數流水號，不做字軌輪替
- * ——P23（規劃書 §10 P23「電子發票平台串接」）用下面的 invoiceTracks
- * 表補上真正的字軌／期別管理，取代這裡的角色。這張表留著不刪（見
- * apps/api/README.md「migration 只往前加」的說明），只是新的
- * nextInvoiceNumber() 不再讀寫它。
- */
+// 發票號碼的舊版計數器（單一固定前綴＋全域遞增流水號，不做字軌輪替）。
+// 已被下方 invoiceTracks 取代，表留著不刪但新的 nextInvoiceNumber() 不再讀寫它。
 export const invoiceSequences = sqliteTable('invoice_sequences', {
   id: text('id').primaryKey(),
   counter: integer('counter').notNull(),
 })
 
-/**
- * 電子發票字軌（P23：規劃書 §10 P23「電子發票平台串接」）。真正的
- * 字軌（兩碼英文字母前綴＋號碼區間）由財政部每兩個月配發一次，商家
- * 要先申請——這裡設計成後台手動輸入的設定資料，不是系統自己產生，
- * 見 @pos/contract 的 invoiceTrackSchema 說明。同時間只會有一個字軌
- * `isActive`，見 routes/orders.ts 的 nextInvoiceNumber()。
- */
+// 電子發票字軌。真正的字軌由財政部核發、商家申請取得，這裡設計成後台
+// 手動輸入的設定資料。同時間只會有一個字軌 isActive。
 export const invoiceTracks = sqliteTable('invoice_tracks', {
   id: text('id').primaryKey(),
   trackCode: text('track_code').notNull(),
@@ -303,36 +236,25 @@ export const orderLines = sqliteTable('order_lines', {
   oftenUseDiscount3: integer('often_use_discount_3', { mode: 'boolean' }).notNull(),
 })
 
-/**
- * 一筆訂單實際收到的每一筆支付（P6：規劃書 §10 P0「混合支付」）。
- *
- * 取代舊的 orders.orderPayment 單一字串——那個欄位只能表達「這筆訂單
- * 用一種方式付清」，無法表達「現金 300 元 + 行動支付找零」這種真實
- * 收銀情境，而班別結算、退款、發票全部都要知道「實際收了哪些支付、
- * 各多少」才對得起帳（見規劃書 §10 P0 表格「混合支付必須最先」的
- * 說明）。receivedAmount 只在需要找零時才有值（主要是現金），為
- * null 代表「這筆 tender 剛好付清分擔的金額，沒有找零」。
- */
+// 一筆訂單實際收到的每一筆支付，取代舊的 orders.orderPayment 單一字串
+// （無法表達「現金 300 + 行動支付找零」這種混合收款）。receivedAmount
+// 只在需要找零時才有值，為 null 代表這筆 tender 剛好付清、沒有找零。
 export const orderTenders = sqliteTable('order_tenders', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   orderId: text('order_id')
     .notNull()
     .references(() => orders.orderId),
-  // 顯示順序（對應使用者在付款面板上加入 tender 的順序），不是主鍵。
+  // 顯示順序（對應使用者在付款面板加入 tender 的順序），不是主鍵。
   seq: integer('seq').notNull(),
   method: text('method').notNull(),
   amount: integer('amount').notNull(),
   receivedAmount: integer('received_amount'),
 })
 
-/**
- * 訂單的退款紀錄（P12：規劃書 §10 P0「退款／作廢」）。跟作廢（orders.
- * voidReason 那一組欄位）是不同的概念：作廢代表整筆訂單不算數，退款
- * 代表訂單仍然「已完成」、只是退了部分或全部的錢給顧客——同一筆訂單
- * 可以有多筆退款紀錄（見 @pos/domain 的 summarizeOrderRefunds()），
- * id 用 ULID（由用戶端在退款當下產生並送入），理由跟 orders.
- * idempotencyKey、shifts.id 一致：同一個 id 重送不會建立第二筆退款。
- */
+// 訂單的退款紀錄，跟作廢（orders.voidReason 那組欄位）是不同概念：作廢
+// 代表整筆訂單不算數，退款代表訂單仍「已完成」、只是退了部分或全部的錢
+// ——同一筆訂單可以有多筆退款。id 用 ULID，理由同 orders.idempotencyKey：
+// 同一個 id 重送不會建立第二筆。
 export const orderRefunds = sqliteTable('order_refunds', {
   id: text('id').primaryKey(),
   orderId: text('order_id')
@@ -344,18 +266,9 @@ export const orderRefunds = sqliteTable('order_refunds', {
   at: text('at').notNull(),
 })
 
-/**
- * 班別（P6：規劃書 §10 P0「班別結帳」）。單店單機情境下同一時間全店
- * 只允許一筆 status='open' 的班別，這條規則在 routes/shifts.ts 裡用
- * 查詢檢查，不是資料庫層級的 constraint（SQLite 沒有方便表達「這個
- * 欄位值最多有一列符合某個條件」的部分唯一索引語法能跨 D1／
- * better-sqlite3 兩種 driver 都可靠運作，查詢層檢查已經足夠——單店
- * 單機下開帳頻率低，不構成效能疑慮）。
- *
- * id 由用戶端在開帳當下用 ULID 產生並送入（見 @pos/contract 的
- * openShiftRequestSchema），理由跟訂單的 idempotencyKey 一致：同一個
- * id 重送會拿回同一筆班別，不會重複開帳。
- */
+// 班別。單店單機情境下同一時間全店只允許一筆 status='open' 的班別，這條
+// 規則在 routes/shifts.ts 用查詢檢查，不是資料庫層 constraint。id 由
+// 用戶端開帳當下用 ULID 產生並送入，同一個 id 重送會拿回同一筆班別。
 export const shifts = sqliteTable('shifts', {
   id: text('id').primaryKey(),
   status: text('status').$type<'open' | 'closed'>().notNull(),
@@ -364,10 +277,7 @@ export const shifts = sqliteTable('shifts', {
   openingFloat: integer('opening_float').notNull(),
   closedBy: text('closed_by'),
   closedAt: text('closed_at'),
-  // 以下五個欄位只有收班當下才算得出來，開帳時一律是 null（見
-  // @pos/contract 的 shiftSchema 說明）。refunds 是 P12（規劃書 §10
-  // P0「退款／作廢」）才加入的欄位，跟 cashSales 一樣要看整段班別
-  // 區間的資料才算得出來。
+  // 以下五欄只有收班當下才算得出來，開帳時一律是 null。
   cashSales: integer('cash_sales'),
   refunds: integer('refunds'),
   expectedCash: integer('expected_cash'),
@@ -388,32 +298,18 @@ export const cashMovements = sqliteTable('cash_movements', {
   at: text('at').notNull(),
 })
 
-// ---------- API 安全加固（P21：規劃書 §10 P21「API 安全加固」） ----------
+// ---------- API 安全加固 ----------
 
-/**
- * 速率限制計數器（見 middleware/rate-limit.ts）。key 是裝置憑證／核發
- * 密鑰／來源 IP 其中一種（依請求帶了什麼決定），windowStart／count
- * 是固定視窗演算法的狀態——同一把 key 在同一個視窗內超過門檻就回
- * 429。用 D1 而不是記憶體內計數器：Workers 的執行環境隨時可能換一個
- * 全新的 isolate（見 index.ts 的說明），純記憶體計數器在正式環境不可靠；
- * 這個專案原本 P4 的登入錯誤鎖定（見 routes/auth.ts 的 staff 表
- * failedAttempts／lockedUntil 欄位）就是同樣的考量，這裡沿用同一種
- * 「狀態存資料庫」的做法，不是另外引入的新模式。
- */
+// 速率限制計數器。key 是裝置憑證／核發密鑰／來源 IP 其中一種，
+// windowStart／count 是固定視窗演算法的狀態。用 D1 而不是記憶體內計數器：
+// Workers 的執行環境隨時可能換一個全新的 isolate，純記憶體計數器不可靠。
 export const rateLimitCounters = sqliteTable('rate_limit_counters', {
   key: text('key').primaryKey(),
   windowStart: integer('window_start').notNull(),
   count: integer('count').notNull(),
 })
 
-/**
- * 稽核紀錄（P21：取代原本只印在瀏覽器主控台的做法，見 views/home/
- * index.vue 的 openCashier 說明——「沒有對應交易的開錢箱動作」這類
- * 敏感操作原本只 `console.info`，等於稽核紀錄跟著分頁關閉就消失。
- * action 目前只有 'cashier_open' 一種，用 enum 而不是自由字串是為了
- * 之後好擴充（見 @pos/contract 的 auditLogActionSchema），不是預先
- * 過度設計。
- */
+// 稽核紀錄，取代原本只印在瀏覽器主控台的做法（分頁關閉紀錄就消失）。
 export const auditLogs = sqliteTable('audit_logs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   action: text('action').$type<AuditLogAction>().notNull(),
@@ -422,15 +318,10 @@ export const auditLogs = sqliteTable('audit_logs', {
   createdAt: text('created_at').notNull(),
 })
 
-// ---------- 桌況管理（P24：規劃書 §10 P24「真實硬體整合與桌況管理」） ----------
+// ---------- 桌況管理 ----------
 
-/**
- * 內用桌況。狀態由店員手動維護（帶位／清空／預約），不是由訂單狀態
- * 推導——見 @pos/contract 的 table.ts 說明。tableNumber 不設唯一索引：
- * 允許同名桌號重複這件事本身不合理，但比起用資料庫限制擋住，更適合
- * 讓後台自己決定命名規則（例如可能有「戶外 A」「戶外 B」這種前台自訂
- * 的命名習慣），跟 catalogGroups.name 目前也沒有唯一索引是同樣的考量。
- */
+// 內用桌況，狀態由店員手動維護（帶位／清空／預約），不是由訂單狀態推導。
+// tableNumber 不設唯一索引：允許重複命名比用資料庫限制擋住更適合後台自訂命名習慣。
 export const diningTables = sqliteTable('dining_tables', {
   id: text('id').primaryKey(),
   tableNumber: text('table_number').notNull(),
