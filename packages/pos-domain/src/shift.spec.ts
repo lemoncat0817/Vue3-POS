@@ -17,7 +17,7 @@ describe('summarizeShiftCash', () => {
     expect(result).toEqual({ expectedCash: 7000, variance: 0 })
   })
 
-  it('退款金額從應有現金扣除（P12：退款一律視為現金退出抽屜）', () => {
+  it('退款金額從應有現金扣除（退款視為自現金抽屜支出）', () => {
     const result = summarizeShiftCash({ openingFloat: 3000, cashSales: 5000, cashIn: 0, cashOut: 0, cashRefunds: 800, actualCash: 7200 })
     expect(result).toEqual({ expectedCash: 7200, variance: 0 })
   })

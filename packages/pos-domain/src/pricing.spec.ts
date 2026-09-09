@@ -62,7 +62,7 @@ describe('priceLine — 對照原本六個折扣函式的正向計算式', () =>
   })
 })
 
-describe('計價不變式（見重構規劃書 §13，修復 D-01／D-02 的驗證基準）', () => {
+describe('計價不變式', () => {
   it('不變式：總額加折扣金額恆等於原價（無論任何旗標組合）', () => {
     fc.assert(
       fc.property(lineBaseArb, flagsArb, (base, flags) => {
@@ -92,7 +92,7 @@ describe('計價不變式（見重構規劃書 §13，修復 D-01／D-02 的驗�
     )
   })
 
-  it('不變式：切換招待兩次後，其餘旗標必定回到未選取狀態（修復 D-02）', () => {
+  it('不變式：切換招待兩次後，其餘旗標必定回到未選取狀態', () => {
     fc.assert(
       fc.property(flagsArb, (flags) => {
         const result = toggleFree(toggleFree(flags))

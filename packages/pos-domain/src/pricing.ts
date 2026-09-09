@@ -1,15 +1,6 @@
 /**
- * 單一品項的折扣計價（重構規劃書 §7）。
- *
- * 取代 `home/index.vue` 原本六個各自手動改欄位的折扣函式。原本的寫法是
- * 「切換旗標 → 手動更新一部分衍生欄位」，不同函式各自更新的欄位不一致
- * （D-02：`freeDiscount` 清除其他折扣時打錯欄位名稱，導致折數折扣沒被
- * 真的清除；D-01：套用與取消的計算式不對稱）。
- *
- * 這裡改成「純函式每次都從當前旗標整個重算」：`priceLine()` 不依賴前一
- * 次呼叫的結果，只依賴傳入的旗標，因此不存在「切換順序 A→B 和 B→A
- * 結果不同」或「清除時漏改欄位」這類問題——旗標本身就是唯一的真實
- * 來源。
+ * 單一品項折扣計價邏輯。
+ * 純函式每次從當前旗標完整重算衍生欄位，避免順序依賴與狀態殘留。
  */
 
 /** 常用折扣的定額或折數設定值（已轉換為 number，不是表單輸入的字串）。 */
@@ -70,12 +61,7 @@ export interface PricedLine {
   useDiscountFree: string
 }
 
-/**
- * 依目前的折扣旗標，從品項原價重新計算最終金額。
- *
- * 求值順序（見 §7）：招待優先於一切；其餘依序套用容器定額折扣、
- * 折數折扣；結果箝制不得為負。
- */
+/** 依折扣旗標計算金額。優先序：招待 > 容器定額折扣 > 折數折扣；結果箝制不為負。 */
 export function priceLine(base: LineBase, flags: LineDiscountFlags, oftenUse: OftenUseRates): PricedLine {
   const originalPrice = base.price * base.count + base.addListPrice * base.count
 
@@ -118,12 +104,7 @@ export function priceLine(base: LineBase, flags: LineDiscountFlags, oftenUse: Of
   }
 }
 
-/**
- * 切換「招待」。招待與其他所有折扣互斥，切換時一律把其餘旗標清空
- * ——不論切上或切下都一樣，因此招待一定會回到「乾淨」的狀態，不會
- * 有殘留的舊折扣旗標（修復 D-02：原本清除折數折扣時欄位名稱打錯，
- * 導致取消招待後折數折扣沒有真的被清除）。
- */
+/** 切換「招待」。招待與其他所有折扣互斥，切換時重置其餘旗標以防殘留舊狀態。 */
 export function toggleFree(flags: LineDiscountFlags): LineDiscountFlags {
   return { ...NO_DISCOUNT, freeDiscount: !flags.freeDiscount }
 }

@@ -3,16 +3,8 @@ import { priceLine, type LineDiscountFlags } from '../pricing'
 import { GOLDEN_ORDERS } from './golden-orders'
 import { DEFAULT_OFTEN_USE_RATES } from './often-use-rates'
 
-/**
- * P1 退出條件（重構規劃書 §14）：用黃金資料集的品項組成重新跑一次
- * priceLine()，比對重算結果是否與既有金額一致——證明「D-01／D-02 的
- * 修復沒有把原本就正確的計算結果改壞」。
- *
- * 這 4 筆歷史訂單裡的折扣都是單一類型（環保、瓶裝、九折），沒有踩到
- * D-01／D-02 實際會出錯的「疊加後取消」情境，所以重算結果理應逐筆
- * 一致；這正是這份測試要驗證的事。
- */
-describe('priceLine() 對照黃金資料集（P1 退出條件）', () => {
+/** 用黃金資料集的品項組成重跑 priceLine()，驗證重算結果與歷史訂單金額一致。 */
+describe('priceLine() 對照黃金資料集', () => {
   const cases = GOLDEN_ORDERS.flatMap((order) =>
     order.orderData.map((line) => ({
       orderId: order.orderId,

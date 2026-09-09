@@ -1,9 +1,6 @@
 import type { OftenUseRates } from '../pricing'
 
-/**
- * 對照 apps/pos/src/stores/discount.ts 的預設常用折扣種子資料，供領域
- * 層測試使用，不需要額外依賴 apps/pos 才能取得這份設定值。
- */
+/** 常用折扣預設值，供領域層測試獨立使用以避免依賴應用層。 */
 export const DEFAULT_OFTEN_USE_RATES: OftenUseRates = [
   { name: '環保折扣', discountMoney: 5, discountPercent: 1 },
   { name: '瓶裝折扣', discountMoney: 10, discountPercent: 1 },

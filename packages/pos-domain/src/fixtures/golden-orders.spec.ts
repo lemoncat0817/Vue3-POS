@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { GOLDEN_ORDERS } from './golden-orders'
 
-/**
- * 這份測試鎖住 P0 黃金資料集的內容與結構性不變式，作為 P1 導入
- * `priceOrder()` 之後的迴歸比對基準（見重構規劃書 §12、§15）。
- *
- * 三條不變式在這 4 筆重構前的既有訂單上恰好全數成立，用來確認
- * 「資料本身沒有在搬遷過程中被改動」；P1 會再加上以 priceOrder() 重算
- * 同一批品項組成、比對是否得到相同金額的測試。
- */
+/** 鎖定黃金資料集內容與結構性不變式，作為計價重算與迴歸比對基準。 */
 describe('GOLDEN_ORDERS（P0 黃金資料集）', () => {
   it('固定為重構前的 4 筆歷史訂單', () => {
     expect(GOLDEN_ORDERS).toHaveLength(4)
