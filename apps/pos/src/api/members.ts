@@ -8,10 +8,7 @@ import {
 } from '@pos/contract'
 import { fetchJson } from './http'
 
-/**
- * 會員管理（P22：規劃書 §10 P22「會員與顧客經營」），跟 staff.ts／
- * payment-methods.ts 是同一套模式。
- */
+/** 會員管理 API 用戶端。 */
 export async function fetchMembers(): Promise<Member[]> {
   const body = await fetchJson<unknown>('/api/members')
   return memberSchema.array().parse(body)

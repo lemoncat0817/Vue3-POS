@@ -14,18 +14,13 @@ import {
 import { fetchJson } from './http'
 import type { DrinkAddOnOption, DrinkTypeGroup } from '@/types/drink'
 
-/** 對應 GET /api/catalog，回傳前用 Zod 驗證，避免伺服端契約悄悄漂移而不自知。 */
+/** 查詢菜單目錄（GET /api/catalog）。 */
 export async function fetchCatalog(): Promise<CatalogResponse> {
   const body = await fetchJson<unknown>('/api/catalog')
   return catalogResponseSchema.parse(body)
 }
 
-/**
- * 把伺服端的乾淨型別（price 是 `number | null`）轉成現行前端元件既有的
- * 形狀（不支援時是字面值 `'none'`，見 apps/pos/src/types/drink.ts 的
- * D-19 說明）。轉換只在這個邊界做一次，元件層不需要知道伺服端資料原本
- * 長怎樣。
- */
+/** 將伺服端 catalog 資料轉為前端既有形狀（空價格映射為 'none'）。 */
 export function toDrinkTypeGroups(catalog: CatalogResponse): DrinkTypeGroup[] {
   return catalog.groups.map((group) => ({
     id: group.id,
@@ -51,12 +46,7 @@ export function toDrinkAddOnOptions(catalog: CatalogResponse): DrinkAddOnOption[
   }))
 }
 
-// ---------- 後台管理（backgroundSetting/productManagement，見該元件的說明） ----------
-//
-// P18（規劃書 §10 P18「菜單與權限管理接上伺服端」）：這個頁面原本的
-// 新增／編輯／刪除只改本機 drinkStore 狀態，從來沒有呼叫過任何 API。
-// 下面這幾個函式補上對應的伺服端呼叫，跟 promotions.ts 對 offerSetting
-// 頁面的做法一致。
+// 後台菜單管理 API（類別、品項、配料之 CRUD）。
 
 export async function createCatalogGroup(input: CreateCatalogGroupRequest): Promise<CatalogGroupSummary> {
   const body = await fetchJson<unknown>('/api/catalog/groups', { method: 'POST', body: JSON.stringify(input) })

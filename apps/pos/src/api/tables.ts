@@ -7,10 +7,7 @@ import {
 } from '@pos/contract'
 import { fetchJson } from './http'
 
-/**
- * 桌況管理（P24：規劃書 §10 P24「真實硬體整合與桌況管理」），跟
- * members.ts／staff.ts 是同一套模式。
- */
+/** 桌況管理 API 用戶端。 */
 export async function fetchTables(): Promise<DiningTable[]> {
   const body = await fetchJson<unknown>('/api/tables')
   return diningTableSchema.array().parse(body)

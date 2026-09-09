@@ -2,12 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { CatalogResponse } from '@pos/contract'
 import { toDrinkAddOnOptions, toDrinkTypeGroups } from './catalog'
 
-/**
- * P3：驗證伺服端菜單資料轉成現行前端元件既有形狀時的轉換規則，尤其是
- * `priceL`／`priceBottle` 從 `number | null`（伺服端的乾淨型別）轉成
- * `FormNumeric | 'none'`（前端既有慣例，見 types/drink.ts 的 D-19 說明）
- * 這一步——這是兩邊型別對不上、最容易轉錯的地方。
- */
+/** 驗證伺服端菜單資料轉為前端既有形狀時的轉換規則（null 轉為 'none'）。 */
 const sampleCatalog: CatalogResponse = {
   groups: [
     {

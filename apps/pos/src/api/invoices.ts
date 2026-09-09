@@ -7,10 +7,7 @@ import {
 } from '@pos/contract'
 import { fetchJson } from './http'
 
-/**
- * 電子發票字軌與模擬批次上傳（P23：規劃書 §10 P23「電子發票平台
- * 串接」），見 apps/api/src/routes/invoices.ts 的說明。
- */
+/** 電子發票字軌與批次上傳 API 用戶端。 */
 export async function fetchInvoiceTracks(): Promise<InvoiceTrack[]> {
   const body = await fetchJson<unknown>('/api/invoices/tracks')
   return invoiceTrackSchema.array().parse(body)

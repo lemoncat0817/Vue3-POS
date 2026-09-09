@@ -11,13 +11,13 @@ import {
 import { fetchJson } from './http'
 import type { MoneyDiscount, OftenUseDiscountList, PercentDiscount } from '@/types/discount'
 
-/** 對應 GET /api/promotions（P5：促銷引擎）。 */
+/** 查詢促銷設定（GET /api/promotions）。 */
 export async function fetchPromotions(): Promise<PromotionsResponse> {
   const body = await fetchJson<unknown>('/api/promotions')
   return promotionsResponseSchema.parse(body)
 }
 
-// ---------- 後台管理（backgroundSetting/offerSetting，見該元件的說明） ----------
+// 後台優惠設定 API（現金券、折數券、常用折扣之 CRUD）。
 
 export async function createMoneyCoupon(input: { name: string; discountMoney: number }): Promise<MoneyCoupon> {
   const body = await fetchJson<unknown>('/api/promotions/money-coupons', {
@@ -84,12 +84,7 @@ export function toMoneyDiscounts(promotions: PromotionsResponse): MoneyDiscount[
   }))
 }
 
-/**
- * PercentDiscount.discountMoney 其實存的是折數（例如 0.95），跟欄位
- * 名稱字面意義不一致——這是既有前端型別的命名方式（P0 如實保留，不
- * 重新命名，見 types/discount.ts 的說明），伺服端用誠實的
- * `discountPercent` 命名，這裡是唯一需要轉換欄位名稱的地方。
- */
+/** 前端型別 PercentDiscount.discountMoney 實為折數，於此轉換伺服端 discountPercent。 */
 export function toPercentDiscounts(promotions: PromotionsResponse): PercentDiscount[] {
   return promotions.percentCoupons.map((coupon) => ({
     id: coupon.id,

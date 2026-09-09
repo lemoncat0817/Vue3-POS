@@ -108,9 +108,7 @@ describe('syncOnce', () => {
     expect(createOrder).not.toHaveBeenCalled()
     const row = await offlineDb.outboxOrders.get('01ARZ3NDEKTSV4RRFFQ69G5FA5')
     expect(row).toMatchObject({ status: 'pending', attempts: 0 })
-    // 跳過嘗試不代表跳過狀態更新：離線時新入列的項目一樣要反映在
-    // pendingCount 上，同步狀態列（見 layout/header/index.vue）才顯示
-    // 得出「有東西還沒送出去」。
+    // 離線時新入列項目仍需反映在 pendingCount。
     expect(syncStatus.pendingCount).toBe(1)
 
     onLineSpy.mockRestore()
