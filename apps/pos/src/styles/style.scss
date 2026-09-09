@@ -32,9 +32,19 @@ body {
     @apply border border-surface-300 bg-white text-surface-700 hover:bg-surface-100
       dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700;
   }
+  /* 淡色版主要動作：表格列內的操作按鈕一排並排時，實心 .pos-btn-primary
+     太搶眼；這個變體維持同一套主色語意，但份量對齊 secondary/danger/warning。 */
+  .pos-btn-primary-tint {
+    @apply border border-primary-200 bg-primary-50/50 text-primary-700 hover:bg-primary-100
+      dark:border-primary-800 dark:bg-primary-950/40 dark:text-primary-300 dark:hover:bg-primary-900/60;
+  }
   .pos-btn-danger {
     @apply border border-danger-200/80 bg-danger-50 text-danger-600 hover:bg-danger-100
       dark:border-danger-800 dark:bg-danger-950/40 dark:text-danger-400;
+  }
+  .pos-btn-warning {
+    @apply border border-warning-200/80 bg-warning-50 text-warning-700 hover:bg-warning-100
+      dark:border-warning-800 dark:bg-warning-950/40 dark:text-warning-400;
   }
   .pos-btn-ghost {
     @apply text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800;

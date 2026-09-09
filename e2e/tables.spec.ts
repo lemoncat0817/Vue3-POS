@@ -88,5 +88,5 @@ test('點餐頁選內用時可以輸入桌號，送單後訂單帶著這個桌�
   const row = page.getByTestId('order-row').filter({ hasText: orderBody.orderId })
   await expect(row).toBeVisible()
   await row.locator('button[aria-label="展開明細"]').click()
-  await expect(page.getByText('內用桌號：B3')).toBeVisible()
+  await expect(page.getByText('桌號 B3')).toBeVisible()
 })

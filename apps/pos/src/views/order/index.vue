@@ -3,27 +3,18 @@
     <div class="flex w-full max-w-7xl flex-col gap-6">
       <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <div class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-primary-100 dark:bg-primary-950/60 px-3 py-1 text-xs font-semibold text-primary-700 dark:text-primary-300 border border-primary-200/50 dark:border-primary-800/40">
-              <Receipt class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
-              ORDER MANAGEMENT
-            </span>
-            <span class="inline-flex items-center gap-1 rounded-full bg-success-100 dark:bg-success-950/60 px-2.5 py-0.5 text-[11px] font-semibold text-success-700 dark:text-success-400 border border-success-200/50 dark:border-success-800/40">
-              <span class="h-1.5 w-1.5 rounded-full bg-success-500 animate-pulse"></span>
-              雲端連線同步中
-            </span>
-          </div>
-          <h1 class="mt-2 text-2xl sm:text-3xl font-black tracking-tight text-surface-900 dark:text-surface-100">訂單</h1>
+          <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-surface-900 dark:text-surface-100">訂單</h1>
           <p class="mt-1 text-sm text-surface-500 dark:text-surface-400">查看、篩選、管理已送出的訂單</p>
         </div>
 
-        <!-- Quick Status Chips Filter -->
+        <!-- Quick Status Chips：只對「狀態」這種封閉小集合（全部/已完成/已取消）提供快捷鍵，
+             付款方式已經是後台可自由新增的清單，不適合再挑一種寫死成快捷鍵，交給下面的下拉篩選。 -->
         <div class="flex flex-wrap items-center gap-1.5 bg-surface-100 dark:bg-surface-900 p-1.5 rounded-xl border border-surface-200 dark:border-surface-800 text-xs font-semibold">
           <button
             type="button"
             class="rounded-lg px-3 py-1.5 transition-all"
-            :class="!filterOrderStatus && !filterOrderPayMethod ? 'bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 shadow-sm font-bold' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'"
-            @click="resetFilter">
+            :class="!filterOrderStatus ? 'bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 shadow-sm font-bold' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'"
+            @click="filterOrderStatus = ''">
             全部訂單
           </button>
           <button
@@ -42,14 +33,6 @@
             <AlertTriangle class="h-3.5 w-3.5" />
             已取消 / 作廢
           </button>
-          <button
-            type="button"
-            class="rounded-lg px-3 py-1.5 transition-all flex items-center gap-1"
-            :class="filterOrderPayMethod === '現金' ? 'bg-primary-500 text-white shadow-sm font-bold' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'"
-            @click="quickFilterPayment('現金')">
-            <DollarSign class="h-3.5 w-3.5" />
-            現金付款
-          </button>
         </div>
       </div>
 
@@ -57,12 +40,7 @@
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
         <!-- Card 1: 訂單總量 -->
         <div class="relative overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm transition-all hover:shadow-md">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">總訂單筆數</span>
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 border border-primary-200/50 dark:border-primary-800/40">
-              <ShoppingBag class="h-4.5 w-4.5" />
-            </div>
-          </div>
+          <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">總訂單筆數</span>
           <div class="mt-3 flex items-baseline gap-2">
             <span class="text-2xl font-black text-surface-900 dark:text-surface-100">{{ orderStats.totalCount }}</span>
             <span class="text-xs font-semibold text-surface-500 dark:text-surface-400">筆</span>
@@ -72,12 +50,7 @@
 
         <!-- Card 2: 營收淨額 -->
         <div class="relative overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm transition-all hover:shadow-md">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">營收淨額</span>
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-success-50 dark:bg-success-950/60 text-success-600 dark:text-success-400 border border-success-200/50 dark:border-success-800/40">
-              <DollarSign class="h-4.5 w-4.5" />
-            </div>
-          </div>
+          <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">營收淨額</span>
           <div class="mt-3 flex items-baseline gap-1">
             <span class="text-xs font-bold text-success-600 dark:text-success-400">$</span>
             <span class="text-2xl font-black text-surface-900 dark:text-surface-100">{{ orderStats.totalRevenue.toLocaleString() }}</span>
@@ -88,12 +61,7 @@
 
         <!-- Card 3: 訂單完成率 -->
         <div class="relative overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm transition-all hover:shadow-md">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">有效完成</span>
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-info-50 dark:bg-info-950/60 text-info-600 dark:text-info-400 border border-info-200/50 dark:border-info-800/40">
-              <CheckCircle2 class="h-4.5 w-4.5" />
-            </div>
-          </div>
+          <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">有效完成</span>
           <div class="mt-3 flex items-baseline gap-2">
             <span class="text-2xl font-black text-surface-900 dark:text-surface-100">{{ orderStats.completedCount }}</span>
             <span class="text-xs font-bold text-success-600 dark:text-success-400">({{ orderStats.completeRate }}%)</span>
@@ -103,12 +71,7 @@
 
         <!-- Card 4: 異常紀錄 -->
         <div class="relative overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm transition-all hover:shadow-md">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">異常流向</span>
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-warning-50 dark:bg-warning-950/60 text-warning-600 dark:text-warning-400 border border-warning-200/50 dark:border-warning-800/40">
-              <RotateCcw class="h-4.5 w-4.5" />
-            </div>
-          </div>
+          <span class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">異常流向</span>
           <div class="mt-3 flex items-baseline gap-1">
             <span class="text-2xl font-black text-surface-900 dark:text-surface-100">{{ orderStats.voidCount }}</span>
             <span class="text-xs font-semibold text-danger-500">作廢</span>
@@ -123,8 +86,7 @@
       <!-- Filter Card -->
       <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm">
         <div class="mb-3 flex items-center justify-between">
-          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">
-            <Filter class="h-3.5 w-3.5 text-primary-500" />
+          <div class="text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400">
             進階條件篩選
           </div>
           <span v-if="hasActiveFilter" class="rounded-md bg-primary-50 dark:bg-primary-950/50 px-2 py-0.5 text-[11px] font-semibold text-primary-600 dark:text-primary-400">
@@ -180,20 +142,14 @@
 
         <div class="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
-              <Search class="h-3 w-3" />
-              關鍵字
-            </span>
+            <span class="text-surface-500 dark:text-surface-400">關鍵字</span>
             <input
               v-model="filterKeyword"
               class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
               placeholder="輸入訂單編號" />
           </label>
           <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300 sm:col-span-2">
-            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
-              <Clock class="h-3 w-3" />
-              訂單期間
-            </span>
+            <span class="text-surface-500 dark:text-surface-400">訂單期間</span>
             <div class="flex items-center gap-1.5">
               <input
                 type="date" aria-label="起始日期" :value="filterDateFrom ? toNativeDate(filterDateFrom) : ''"
@@ -207,10 +163,7 @@
             </div>
           </label>
           <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
-              <Tag class="h-3 w-3" />
-              通路
-            </span>
+            <span class="text-surface-500 dark:text-surface-400">通路</span>
             <select
               v-model="filterChannel"
               class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20">
@@ -220,10 +173,7 @@
             </select>
           </label>
           <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
-              <User class="h-3 w-3" />
-              服務人員
-            </span>
+            <span class="text-surface-500 dark:text-surface-400">服務人員</span>
             <select
               v-model="filterStaff"
               class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20">
@@ -232,10 +182,7 @@
             </select>
           </label>
           <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
-              <CreditCard class="h-3 w-3" />
-              付款方式
-            </span>
+            <span class="text-surface-500 dark:text-surface-400">付款方式</span>
             <select
               v-model="filterOrderPayMethod"
               class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20">
@@ -244,10 +191,7 @@
             </select>
           </label>
           <div class="flex items-end">
-            <button
-              type="button"
-              class="flex w-full items-center justify-center gap-1.5 rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 px-3 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 transition-all hover:bg-surface-200 dark:hover:bg-surface-700 active:scale-95"
-              @click="resetFilter">
+            <button type="button" class="pos-btn pos-btn-secondary w-full py-2 text-sm" @click="resetFilter">
               <RotateCcw class="h-3.5 w-3.5" />
               重置篩選
             </button>
@@ -326,47 +270,41 @@
                   <td :colspan="leafHeaders.length + 2" class="px-6 py-5">
                     <div class="rounded-2xl border border-surface-200/80 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm">
                       
-                      <!-- Order Key Information Badges -->
-                      <div class="mb-4 flex flex-wrap items-center gap-2 border-b border-surface-100 dark:border-surface-800 pb-4">
-                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
-                          包材份數：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderBagCount }}</span> 份
-                        </span>
-                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
-                          出餐份數：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderCupCount }}</span> 份
-                        </span>
-                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
-                          訂單原始金額：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderTotalPrice }}</span>
-                        </span>
-                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
-                          已使用的優惠券：<span class="text-primary-600 dark:text-primary-400">{{ row.original.discountName }}</span>
-                        </span>
-                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
-                          優惠券折抵：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderDiscount }}</span>
-                        </span>
-                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
-                          顧客應付金額：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderPaymentPrice }}</span>
-                        </span>
-                        <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
-                          發票號碼：<span class="text-primary-600 dark:text-primary-400">{{ row.original.invoiceNumber || '（無，此功能上線前建立）' }}</span>
-                          <template v-if="row.original.invoiceCarrier && row.original.invoiceCarrier.type !== '無載具'">
-                            ．{{ row.original.invoiceCarrier.type }} {{ row.original.invoiceCarrier.value }}
-                          </template>
-                        </span>
-                        <span
-                          v-if="row.original.tableNumber"
-                          class="inline-flex items-center gap-1 rounded-lg bg-info-50 dark:bg-info-950/60 px-3 py-1.5 text-xs font-bold text-info-700 dark:text-info-300 border border-info-200/50">
-                          內用桌號：<span class="text-info-600 dark:text-info-400">{{ row.original.tableNumber }}</span>
-                        </span>
-                        <span
-                          v-if="(row.original.refundedAmount ?? 0) > 0"
-                          class="inline-flex items-center gap-1 rounded-lg bg-warning-50 dark:bg-warning-950/60 px-3 py-1.5 text-xs font-bold text-warning-700 dark:text-warning-300 border border-warning-200/50">
-                          已退款：${{ row.original.refundedAmount }}
-                        </span>
-                        <span
-                          v-if="row.original.voidReason"
-                          class="inline-flex items-center gap-1 rounded-lg bg-danger-50 dark:bg-danger-950/60 px-3 py-1.5 text-xs font-bold text-danger-700 dark:text-danger-300 border border-danger-200/50">
-                          作廢原因：{{ row.original.voidReason }}（{{ row.original.voidedBy }}）
-                        </span>
+                      <!-- Order Key Information：一般事實用純文字＋分隔線呈現，只有真正的
+                           例外狀態（退款／作廢）才用色塊標示，避免每一項資料都套上同一種
+                           「badge」樣式反而讓真正需要注意的例外被淹沒。 -->
+                      <div class="mb-4 border-b border-surface-100 dark:border-surface-800 pb-4">
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-surface-600 dark:text-surface-400">
+                          <span>出餐 <b class="font-bold text-surface-900 dark:text-surface-100">{{ row.original.orderCupCount }}</b> 份</span>
+                          <span v-if="row.original.orderBagCount > 0">包材 <b class="font-bold text-surface-900 dark:text-surface-100">{{ row.original.orderBagCount }}</b> 份</span>
+                          <span class="text-surface-300 dark:text-surface-700">·</span>
+                          <span>原始金額 <b class="font-bold text-surface-900 dark:text-surface-100">${{ row.original.orderTotalPrice }}</b></span>
+                          <span v-if="row.original.orderDiscount > 0" class="text-danger-600 dark:text-danger-400">
+                            －折抵 ${{ row.original.orderDiscount }}（{{ row.original.discountName }}）
+                          </span>
+                          <span>應付 <b class="font-bold text-primary-600 dark:text-primary-400">${{ row.original.orderPaymentPrice }}</b></span>
+                          <span class="text-surface-300 dark:text-surface-700">·</span>
+                          <span>
+                            發票 {{ row.original.invoiceNumber || '（無，此功能上線前建立）' }}
+                            <template v-if="row.original.invoiceCarrier && row.original.invoiceCarrier.type !== '無載具'">
+                              ．{{ row.original.invoiceCarrier.type }} {{ row.original.invoiceCarrier.value }}
+                            </template>
+                          </span>
+                          <span v-if="row.original.tableNumber">桌號 {{ row.original.tableNumber }}</span>
+                        </div>
+
+                        <div v-if="(row.original.refundedAmount ?? 0) > 0 || row.original.voidReason" class="mt-2 flex flex-wrap gap-2">
+                          <span
+                            v-if="(row.original.refundedAmount ?? 0) > 0"
+                            class="inline-flex items-center gap-1 rounded-lg bg-warning-50 dark:bg-warning-950/60 px-3 py-1.5 text-xs font-bold text-warning-700 dark:text-warning-300 border border-warning-200/50">
+                            已退款：${{ row.original.refundedAmount }}
+                          </span>
+                          <span
+                            v-if="row.original.voidReason"
+                            class="inline-flex items-center gap-1 rounded-lg bg-danger-50 dark:bg-danger-950/60 px-3 py-1.5 text-xs font-bold text-danger-700 dark:text-danger-300 border border-danger-200/50">
+                            作廢原因：{{ row.original.voidReason }}（{{ row.original.voidedBy }}）
+                          </span>
+                        </div>
                       </div>
 
                       <!-- Sub-table for Order Items -->
@@ -448,21 +386,13 @@
             當前頁面有 <span class="font-bold text-primary-600 dark:text-primary-400">{{ table.getRowModel().rows.length }}</span> 筆訂單
           </div>
           <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3.5 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-300 shadow-sm transition-all hover:bg-surface-50 dark:hover:bg-surface-700 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
-              :disabled="!table.getCanPreviousPage()"
-              @click="table.previousPage()">
+            <button type="button" class="pos-btn pos-btn-secondary px-3.5 py-1.5 text-sm" :disabled="!table.getCanPreviousPage()" @click="table.previousPage()">
               上一頁
             </button>
             <span class="px-3 text-sm font-bold text-surface-700 dark:text-surface-300 font-mono">
               {{ table.getState().pagination.pageIndex + 1 }} / {{ Math.max(table.getPageCount(), 1) }}
             </span>
-            <button
-              type="button"
-              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3.5 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-300 shadow-sm transition-all hover:bg-surface-50 dark:hover:bg-surface-700 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
-              :disabled="!table.getCanNextPage()"
-              @click="table.nextPage()">
+            <button type="button" class="pos-btn pos-btn-secondary px-3.5 py-1.5 text-sm" :disabled="!table.getCanNextPage()" @click="table.nextPage()">
               下一頁
             </button>
           </div>
@@ -484,17 +414,9 @@ import {
 } from '@tanstack/vue-table'
 import {
   Receipt,
-  DollarSign,
   CheckCircle2,
   AlertTriangle,
-  ShoppingBag,
   RotateCcw,
-  Filter,
-  Search,
-  Clock,
-  User,
-  Tag,
-  CreditCard,
   ChevronRight,
   X,
 } from 'lucide-vue-next'
@@ -623,14 +545,6 @@ const quickFilterStatus = (status: string) => {
   }
 }
 
-const quickFilterPayment = (payment: string) => {
-  if (filterOrderPayMethod.value === payment) {
-    filterOrderPayMethod.value = ''
-  } else {
-    filterOrderPayMethod.value = payment
-  }
-}
-
 // 以 orderId 管理展開狀態，避免換頁或篩選時因 row index 變動錯位。
 const expandedOrderId = ref<string | null>(null)
 function toggleExpand(orderId: string) {
@@ -744,7 +658,8 @@ const columns = [
   }),
   columnHelper.accessor('orderPayment', {
     header: '付款方式',
-    cell: (info) => h('span', { class: 'rounded-md bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-xs font-semibold text-surface-700 dark:text-surface-300' }, info.getValue()),
+    // 單純的付款方式名稱不是狀態值，不需要再套一層 badge 樣式。
+    cell: (info) => h('span', { class: 'text-surface-700 dark:text-surface-300' }, info.getValue()),
   }),
   columnHelper.display({
     id: 'actions',
@@ -758,31 +673,22 @@ const columns = [
       return h('div', { class: 'flex flex-wrap justify-end gap-1.5' }, [
         h('button', {
           type: 'button',
-          class: 'rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1 text-xs font-bold text-surface-700 dark:text-surface-300 shadow-sm transition-all hover:bg-surface-50 dark:hover:bg-surface-700 active:scale-95',
+          class: 'pos-btn pos-btn-secondary px-2.5 py-1 text-xs',
           onClick: () => showReceipt(order),
         }, '收據'),
         h('button', {
           type: 'button',
-          class: [
-            'rounded-lg border border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-950/40 px-2.5 py-1 text-xs font-bold text-primary-700 dark:text-primary-300 transition-all hover:bg-primary-100 dark:hover:bg-primary-900/60 active:scale-95',
-            canEditStatus ? '' : 'pointer-events-none opacity-40',
-          ],
+          class: ['pos-btn pos-btn-primary-tint px-2.5 py-1 text-xs', canEditStatus ? '' : 'pointer-events-none opacity-40'],
           onClick: () => editOrderStatus(order.orderId),
         }, '編輯訂單狀態'),
         h('button', {
           type: 'button',
-          class: [
-            'rounded-lg border border-warning-200 px-2.5 py-1 text-xs font-bold text-warning-700 transition-all hover:bg-warning-50 dark:border-warning-800 dark:text-warning-400 dark:hover:bg-warning-950 active:scale-95',
-            canRefund ? '' : 'pointer-events-none opacity-40',
-          ],
+          class: ['pos-btn pos-btn-warning px-2.5 py-1 text-xs', canRefund ? '' : 'pointer-events-none opacity-40'],
           onClick: () => refundOrder(order),
         }, '退款'),
         h('button', {
           type: 'button',
-          class: [
-            'rounded-lg border border-danger-200 px-2.5 py-1 text-xs font-bold text-danger-600 transition-all hover:bg-danger-50 dark:border-danger-800 dark:text-danger-400 dark:hover:bg-danger-950 active:scale-95',
-            canDelete ? '' : 'pointer-events-none opacity-40',
-          ],
+          class: ['pos-btn pos-btn-danger px-2.5 py-1 text-xs', canDelete ? '' : 'pointer-events-none opacity-40'],
           onClick: () => deleteOrder(order.orderId),
         }, '刪除訂單'),
       ])
