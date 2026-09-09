@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createStaffRequestSchema, operatorLoginRequestSchema, pinSchema } from './staff'
+import { createRoleRequestSchema, createStaffRequestSchema, operatorLoginRequestSchema, pinSchema } from './staff'
 
 describe('pinSchema', () => {
   it('接受 4 到 6 碼數字', () => {
@@ -19,7 +19,7 @@ describe('createStaffRequestSchema', () => {
     name: 'Emily',
     jobTitle: '工讀生',
     account: 'emily',
-    capabilities: ['canCheckOrder'],
+    roleId: 'role-part-timer',
     pin: '3456',
   }
 
@@ -31,6 +31,20 @@ describe('createStaffRequestSchema', () => {
     const withoutPin: Partial<typeof validInput> = { ...validInput }
     delete withoutPin.pin
     expect(createStaffRequestSchema.safeParse(withoutPin).success).toBe(false)
+  })
+})
+
+describe('createRoleRequestSchema', () => {
+  it('接受名稱與權限清單', () => {
+    expect(createRoleRequestSchema.safeParse({ name: '值班經理', capabilities: ['canCheckOrder'] }).success).toBe(true)
+  })
+
+  it('拒絕空名稱', () => {
+    expect(createRoleRequestSchema.safeParse({ name: '', capabilities: [] }).success).toBe(false)
+  })
+
+  it('拒絕未知的權限鍵值', () => {
+    expect(createRoleRequestSchema.safeParse({ name: '值班經理', capabilities: ['notARealKey'] }).success).toBe(false)
   })
 })
 

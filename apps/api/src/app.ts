@@ -13,6 +13,7 @@ import { orderRoutes } from './routes/orders'
 import { paymentMethodRoutes } from './routes/payment-methods'
 import { promotionRoutes } from './routes/promotions'
 import { reportRoutes } from './routes/reports'
+import { roleRoutes } from './routes/roles'
 import { shiftRoutes } from './routes/shifts'
 import { staffRoutes } from './routes/staff'
 import { tableRoutes } from './routes/tables'
@@ -65,6 +66,7 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string; allow
   app.route('/api/payment-methods', paymentMethodRoutes)
   app.route('/api/promotions', promotionRoutes)
   app.route('/api/reports', reportRoutes)
+  app.route('/api/roles', roleRoutes)
   app.route('/api/shifts', shiftRoutes)
   app.route('/api/staff', staffRoutes)
   app.route('/api/tables', tableRoutes)

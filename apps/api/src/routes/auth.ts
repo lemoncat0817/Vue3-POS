@@ -2,7 +2,7 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { operatorLoginRequestSchema, operatorLoginResponseSchema } from '@pos/contract'
 import { verifySecret } from '../auth/hash'
-import { staff } from '../db/schema'
+import { roles, staff } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
@@ -58,13 +58,19 @@ export const authRoutes = new OpenAPIHono<AppEnv>().openapi(operatorLoginRoute, 
   // 登入成功，重置錯誤次數與鎖定狀態。
   await db.update(staff).set({ failedPinAttempts: 0, lockedUntil: null }).where(eq(staff.account, account))
 
+  // 權限只存在角色身上，登入回應的 capabilities／roleName 是依 roleId 解析出的結果（見 db/schema.ts）。
+  const role = await db.select().from(roles).where(eq(roles.id, row.roleId)).get()
+  if (!role) return c.json({ error: '帳號設定異常，請聯絡管理者' }, 401)
+
   return c.json(
     operatorLoginResponseSchema.parse({
       id: row.id,
       name: row.name,
       jobTitle: row.jobTitle,
       account: row.account,
-      capabilities: row.capabilities,
+      roleId: role.id,
+      roleName: role.name,
+      capabilities: role.capabilities,
     }),
     200,
   )

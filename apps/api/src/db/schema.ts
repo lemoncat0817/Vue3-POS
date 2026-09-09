@@ -110,7 +110,22 @@ export const devices = sqliteTable('devices', {
   revokedAt: text('revoked_at'),
 })
 
-// ---------- 員工 ----------
+// ---------- 員工與權限群組 ----------
+
+// 權限群組（角色）。權限只掛在角色身上，員工只認 roleId——不是每個員工各自一份
+// 權限陣列，改動角色即時套用到底下所有員工，不會有「有些人改了、有些人沒改」
+// 的雙重來源問題。isSystem 標記三個內建範本（店長／值班經理／工讀生），不可
+// 刪除，但權限內容仍可調整。
+export const roles = sqliteTable(
+  'roles',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    capabilities: text('capabilities', { mode: 'json' }).$type<AuthorityKey[]>().notNull(),
+    isSystem: integer('is_system', { mode: 'boolean' }).notNull().default(false),
+  },
+  (table) => [uniqueIndex('roles_name_idx').on(table.name)],
+)
 
 export const staff = sqliteTable(
   'staff',
@@ -119,8 +134,10 @@ export const staff = sqliteTable(
     name: text('name').notNull(),
     jobTitle: text('job_title').notNull(),
     account: text('account').notNull(),
-    // 權限只有這一份陣列來源，不是 16 個獨立布林欄位加一份平行陣列的雙重來源。
-    capabilities: text('capabilities', { mode: 'json' }).$type<AuthorityKey[]>().notNull(),
+    // 權限只認角色（見上方 roles），不是每個員工各自一份權限陣列。
+    roleId: text('role_id')
+      .notNull()
+      .references(() => roles.id),
     // 操作員 PIN，只存雜湊值＋鹽，明碼只在登入請求當下經手。
     pinHash: text('pin_hash').notNull(),
     pinSalt: text('pin_salt').notNull(),
@@ -359,6 +376,7 @@ export const schema = {
   orderCoupons,
   quickDiscounts,
   devices,
+  roles,
   staff,
   paymentMethods,
   orders,
