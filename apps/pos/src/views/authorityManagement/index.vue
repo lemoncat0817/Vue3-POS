@@ -10,7 +10,7 @@
             </span>
           </div>
           <p class="mt-1 text-xs lg:text-sm text-surface-500 dark:text-surface-400">
-            門市操作人員帳號、職稱權限分配與支援支付管道維護
+            門市操作人員帳號、職稱與權限分配
           </p>
         </div>
       </div>

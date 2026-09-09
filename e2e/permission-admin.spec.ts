@@ -59,15 +59,16 @@ test('後台新增／刪除付款方式會真的呼叫伺服端，重新整理�
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
-  await page.getByRole('button', { name: '權限管理', exact: true }).click()
-  await expect(page).toHaveURL(/\/authorityManagement$/)
+  await page.getByRole('button', { name: '後台設定', exact: true }).click()
+  await expect(page).toHaveURL(/\/backgroundSetting$/)
+  await page.getByRole('button', { name: '付款方式', exact: true }).click()
 
   const methodName = `E2E測試付款-${Date.now()}`
 
   const createResponse = page.waitForResponse(
     (res) => res.url().includes('/api/payment-methods') && res.request().method() === 'POST' && res.ok(),
   )
-  await page.getByRole('button', { name: '新增', exact: true }).nth(1).click()
+  await page.getByRole('button', { name: '＋ 新增付款方式', exact: true }).click()
   const addDialog = page.getByRole('dialog', { name: '新增付款方式' })
   await addDialog.getByPlaceholder('例如: 現金、LinePay...').fill(methodName)
   await addDialog.getByText('選擇支付方式').click()
@@ -83,20 +84,21 @@ test('後台新增／刪除付款方式會真的呼叫伺服端，重新整理�
   await expect(page.getByText(methodName)).toBeVisible()
 
   await page.reload()
-  await page.getByRole('button', { name: '權限管理', exact: true }).click()
+  await page.getByRole('button', { name: '後台設定', exact: true }).click()
+  await page.getByRole('button', { name: '付款方式', exact: true }).click()
   await expect(page.getByText(methodName)).toBeVisible()
 
   const deleteResponse = page.waitForResponse(
     (res) => res.url().includes(`/api/payment-methods/${createBody.id}`) && res.request().method() === 'DELETE' && res.status() === 204,
   )
-  await page.getByText(methodName, { exact: true }).click()
-  await page.getByRole('button', { name: '刪除', exact: true }).nth(1).click()
+  await page.getByRole('row', { name: methodName }).getByRole('button', { name: '刪除', exact: true }).click()
   await page.getByRole('button', { name: '確定' }).click()
   await deleteResponse
   await expect(page.getByTestId('toast-message')).toHaveText('刪除成功')
   await expect(page.getByText(methodName)).toHaveCount(0)
 
   await page.reload()
-  await page.getByRole('button', { name: '權限管理', exact: true }).click()
+  await page.getByRole('button', { name: '後台設定', exact: true }).click()
+  await page.getByRole('button', { name: '付款方式', exact: true }).click()
   await expect(page.getByText(methodName)).toHaveCount(0)
 })
