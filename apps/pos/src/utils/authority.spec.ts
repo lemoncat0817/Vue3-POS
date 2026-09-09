@@ -19,8 +19,8 @@ describe('deriveStaffRole', () => {
     expect(deriveStaffRole(AUTHORITY_FIELDS.map((f) => f.value))).toBe('店長')
     // James（值班經理）。
     expect(deriveStaffRole([
-      'canFreeDrink', 'canOpenCashier', 'canCheckOrder', 'canEditOrderStatus',
-      'canCheckBackgroundSetting', 'canSetDrinkType', 'canSetDrink', 'canSetIngredients',
+      'canCompItem', 'canOpenCashier', 'canCheckOrder', 'canEditOrderStatus',
+      'canCheckBackgroundSetting', 'canSetCategory', 'canSetProduct', 'canSetAddOns',
       'canCheckDataAnalysis',
     ])).toBe('值班經理')
     // Emily（工讀生）。
@@ -39,12 +39,12 @@ describe('deriveStaffRole', () => {
 
 describe('cascadeAuthorityCheckList', () => {
   it('取消母權限時，連帶取消所有依附在它底下的子權限', () => {
-    const result = cascadeAuthorityCheckList(['canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder', 'canFreeDrink'])
+    const result = cascadeAuthorityCheckList(['canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder', 'canCompItem'])
     // 沒取消 canCheckOrder，子權限應該原封不動保留。
-    expect(result).toEqual(['canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder', 'canFreeDrink'])
+    expect(result).toEqual(['canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder', 'canCompItem'])
 
-    const cascaded = cascadeAuthorityCheckList(['canEditOrderStatus', 'canDeleteOrder', 'canFreeDrink'])
-    expect(cascaded).toEqual(['canFreeDrink'])
+    const cascaded = cascadeAuthorityCheckList(['canEditOrderStatus', 'canDeleteOrder', 'canCompItem'])
+    expect(cascaded).toEqual(['canCompItem'])
   })
 })
 

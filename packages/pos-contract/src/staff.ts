@@ -2,18 +2,18 @@ import { z } from 'zod'
 
 /** 權限能力鍵值。以單一陣列管理，取代舊版獨立布林欄位與重複清單。 */
 export const authorityKeySchema = z.enum([
-  'canFreeDrink',
+  'canCompItem',
   'canOpenCashier',
   'canCheckOrder',
   'canEditOrderStatus',
   'canDeleteOrder',
   'canCheckBackgroundSetting',
-  'canSetDrinkType',
-  'canSetDrink',
-  'canSetIngredients',
+  'canSetCategory',
+  'canSetProduct',
+  'canSetAddOns',
   'canSetMoneyDiscount',
   'canSetPercentDiscount',
-  'canSetOftenUseDiscount',
+  'canSetQuickDiscount',
   'canCheckDataAnalysis',
   'canCheckAuthority',
   'canSetAuthority',

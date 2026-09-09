@@ -362,7 +362,7 @@ function apiErrorMessage(err: unknown): string {
 
 const canSetMoneyDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetMoneyDiscount'))
 const canSetPercentDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetPercentDiscount'))
-const canSetQuickDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetOftenUseDiscount'))
+const canSetQuickDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetQuickDiscount'))
 
 // ---------- 現金折扣券 ----------
 const currentMoneyDiscount = ref<MaybeSelected<MoneyDiscount>>({})

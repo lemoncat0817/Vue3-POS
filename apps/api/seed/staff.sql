@@ -9,14 +9,14 @@
 
 INSERT INTO staff (id, name, job_title, account, capabilities, pin_hash, pin_salt) VALUES (
   'staff-lemon', 'Lemon', '店長', 'lemon',
-  '["canFreeDrink","canOpenCashier","canCheckOrder","canEditOrderStatus","canDeleteOrder","canCheckBackgroundSetting","canSetDrinkType","canSetDrink","canSetIngredients","canSetMoneyDiscount","canSetPercentDiscount","canSetOftenUseDiscount","canCheckDataAnalysis","canCheckAuthority","canSetAuthority","canSetPayMethod","canCheckMembers","canManageTables"]',
+  '["canCompItem","canOpenCashier","canCheckOrder","canEditOrderStatus","canDeleteOrder","canCheckBackgroundSetting","canSetCategory","canSetProduct","canSetAddOns","canSetMoneyDiscount","canSetPercentDiscount","canSetQuickDiscount","canCheckDataAnalysis","canCheckAuthority","canSetAuthority","canSetPayMethod","canCheckMembers","canManageTables"]',
   '6a9d56b3fd4939c6492e2c16531a1f5b43260d0ac8dc89e11f8e365248d2dd0e',
   '53439827c69c581215c737ffa40ee650'
 );
 
 INSERT INTO staff (id, name, job_title, account, capabilities, pin_hash, pin_salt) VALUES (
   'staff-james', 'James', '值班經理', 'james',
-  '["canFreeDrink","canOpenCashier","canCheckOrder","canEditOrderStatus","canCheckBackgroundSetting","canSetDrinkType","canSetDrink","canSetIngredients","canCheckDataAnalysis"]',
+  '["canCompItem","canOpenCashier","canCheckOrder","canEditOrderStatus","canCheckBackgroundSetting","canSetCategory","canSetProduct","canSetAddOns","canCheckDataAnalysis"]',
   'bce969d1e0069bb9e04670d55e7ef2a86f072296c4c0eecca3e4f8a5d1aae86d',
   '927f14e2973c6028bcefbee87f3183df'
 );

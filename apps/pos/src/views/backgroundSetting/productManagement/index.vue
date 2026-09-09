@@ -375,9 +375,9 @@ function stockClass(stock: number | null | undefined): string {
   return ''
 }
 
-const canSetCategory = computed(() => hasCapability(loginStore.userInfo, 'canSetDrinkType'))
-const canSetProduct = computed(() => hasCapability(loginStore.userInfo, 'canSetDrink'))
-const canSetAddOns = computed(() => hasCapability(loginStore.userInfo, 'canSetIngredients'))
+const canSetCategory = computed(() => hasCapability(loginStore.userInfo, 'canSetCategory'))
+const canSetProduct = computed(() => hasCapability(loginStore.userInfo, 'canSetProduct'))
+const canSetAddOns = computed(() => hasCapability(loginStore.userInfo, 'canSetAddOns'))
 
 const tabs = [
   { key: 'categories', label: '分類' },

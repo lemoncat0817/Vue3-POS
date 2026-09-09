@@ -8,22 +8,22 @@ export interface AuthorityField {
 }
 
 export const AUTHORITY_FIELDS: AuthorityField[] = [
-  { label: '免費招待', value: 'canFreeDrink' },
+  { label: '招待', value: 'canCompItem' },
   { label: '開收銀機', value: 'canOpenCashier' },
   { label: '查看訂單', value: 'canCheckOrder' },
   { label: '編輯訂單狀態', value: 'canEditOrderStatus', dependsOn: 'canCheckOrder' },
   { label: '刪除訂單', value: 'canDeleteOrder', dependsOn: 'canCheckOrder' },
   { label: '查看後台設定', value: 'canCheckBackgroundSetting' },
-  { label: '設定飲品類型', value: 'canSetDrinkType', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定飲料品項', value: 'canSetDrink', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定配料', value: 'canSetIngredients', dependsOn: 'canCheckBackgroundSetting' },
+  { label: '設定分類', value: 'canSetCategory', dependsOn: 'canCheckBackgroundSetting' },
+  { label: '設定品項', value: 'canSetProduct', dependsOn: 'canCheckBackgroundSetting' },
+  { label: '設定加購選項', value: 'canSetAddOns', dependsOn: 'canCheckBackgroundSetting' },
   { label: '設定現金折扣券', value: 'canSetMoneyDiscount', dependsOn: 'canCheckBackgroundSetting' },
   { label: '設定折數折扣券', value: 'canSetPercentDiscount', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定常用優惠', value: 'canSetOftenUseDiscount', dependsOn: 'canCheckBackgroundSetting' },
+  { label: '設定快速折扣', value: 'canSetQuickDiscount', dependsOn: 'canCheckBackgroundSetting' },
+  { label: '設定付款方式', value: 'canSetPayMethod', dependsOn: 'canCheckBackgroundSetting' },
   { label: '查看數據分析', value: 'canCheckDataAnalysis' },
   { label: '查看權限管理', value: 'canCheckAuthority' },
   { label: '設定人員名單', value: 'canSetAuthority', dependsOn: 'canCheckAuthority' },
-  { label: '設定付款方式', value: 'canSetPayMethod', dependsOn: 'canCheckAuthority' },
   { label: '查看會員管理', value: 'canCheckMembers' },
   { label: '查看桌況管理', value: 'canManageTables' },
 ]
@@ -70,8 +70,8 @@ export function groupAuthorityFields(): AuthorityGroup[] {
 export const STAFF_ROLE_PRESETS: Record<string, AuthorityKey[]> = {
   店長: AUTHORITY_FIELDS.map((field) => field.value),
   值班經理: [
-    'canFreeDrink', 'canOpenCashier', 'canCheckOrder', 'canEditOrderStatus',
-    'canCheckBackgroundSetting', 'canSetDrinkType', 'canSetDrink', 'canSetIngredients',
+    'canCompItem', 'canOpenCashier', 'canCheckOrder', 'canEditOrderStatus',
+    'canCheckBackgroundSetting', 'canSetCategory', 'canSetProduct', 'canSetAddOns',
     'canCheckDataAnalysis',
   ],
   工讀生: ['canCheckOrder', 'canEditOrderStatus', 'canCheckBackgroundSetting'],

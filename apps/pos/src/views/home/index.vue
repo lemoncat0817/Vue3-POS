@@ -184,7 +184,7 @@
           <button
             type="button"
             class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canFreeDrink') }"
+            :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canCompItem') }"
             @click="applyFreeDiscount">
             招待
           </button>
