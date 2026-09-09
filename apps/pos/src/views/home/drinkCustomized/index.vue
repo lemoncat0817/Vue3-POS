@@ -1,6 +1,5 @@
 <template>
   <div class="w-full flex flex-col rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-3 shadow-sm">
-    <!-- 頂部客製化項目標籤與控制列 -->
     <div class="flex items-center justify-between pb-2 mb-2 border-b border-surface-100 dark:border-surface-800">
       <div class="flex items-center gap-2">
         <span class="text-xs font-black text-surface-900 dark:text-surface-100">規格客製</span>
@@ -9,7 +8,6 @@
         </span>
       </div>
 
-      <!-- 分頁切換與重置 -->
       <div class="flex items-center gap-1.5">
         <div class="flex rounded-xl bg-surface-100 dark:bg-surface-800 p-0.5 text-xs font-bold">
           <button
@@ -41,10 +39,8 @@
       </div>
     </div>
 
-    <!-- 糖度/冰塊/大小 面板 -->
     <div v-if="drinkStore.drinkMenu === 0" class="flex flex-col gap-2.5 min-h-[140px] justify-center">
       <div v-if="fromSelection(drinkStore.drinkItem)?.customized != 'none'" class="flex flex-col gap-2.5">
-        <!-- 糖度 (Sugar) -->
         <div class="flex items-center gap-2">
           <span class="w-12 text-xs font-bold text-surface-500 dark:text-surface-400 shrink-0 text-center">糖度</span>
           <div class="flex flex-wrap items-center gap-1.5 flex-1">
@@ -61,7 +57,6 @@
           </div>
         </div>
 
-        <!-- 冰塊 (Ice) -->
         <div class="flex items-center gap-2">
           <span class="w-12 text-xs font-bold text-surface-500 dark:text-surface-400 shrink-0 text-center">冰度</span>
           <div class="flex flex-wrap items-center gap-1.5 flex-1">
@@ -78,7 +73,6 @@
           </div>
         </div>
 
-        <!-- 容量大小 (Size) -->
         <div class="flex items-center gap-2">
           <span class="w-12 text-xs font-bold text-surface-500 dark:text-surface-400 shrink-0 text-center">規格</span>
           <div class="flex flex-wrap items-center gap-1.5 flex-1">
@@ -96,13 +90,11 @@
         </div>
       </div>
 
-      <!-- 如果品項不可客製化 -->
       <div v-else class="flex flex-col items-center justify-center py-6 text-surface-400 dark:text-surface-500">
         <span class="text-sm font-bold">此飲品為黃金比例配方，糖度／冰塊／大小固定不可調整</span>
       </div>
     </div>
 
-    <!-- 加料面板 -->
     <div v-if="drinkStore.drinkMenu === 1" class="flex flex-col gap-2 min-h-[140px]">
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
         <button
@@ -123,7 +115,6 @@
         </button>
       </div>
 
-      <!-- 加料分頁 -->
       <div v-if="pageCount > 1" class="flex items-center justify-between pt-2 border-t border-surface-100 dark:border-surface-800 text-xs text-surface-500">
         <span>共 {{ drinkStore.drinkAdd.length }} 樣加料</span>
         <div class="flex items-center gap-1">
@@ -138,9 +129,7 @@
       </div>
     </div>
 
-    <!-- 底部：數量控制與加入清單主動作列 -->
     <div class="flex flex-wrap items-center justify-between gap-2 pt-2.5 mt-2 border-t border-surface-100 dark:border-surface-800">
-      <!-- 數量步進器與快捷鍵 -->
       <div class="flex items-center gap-1.5">
         <span class="text-xs font-bold text-surface-500 dark:text-surface-400 mr-1">杯數</span>
         <button
@@ -159,7 +148,6 @@
           +
         </button>
 
-        <!-- 快捷數量按鈕（包含 '1' 滿足 e2e 測試） -->
         <div class="flex items-center gap-1 ml-1">
           <button
             type="button"
@@ -192,7 +180,6 @@
         </div>
       </div>
 
-      <!-- 加入購物車主動作按鈕 -->
       <div class="flex items-center gap-2">
         <div class="text-right">
           <span class="text-[10px] text-surface-400 block leading-tight">單項小計</span>
@@ -243,8 +230,6 @@ const increaseCount = () => {
   drinkStore.drinkCount = String(current + 1)
 }
 
-// 判定當前飲品是否能做為熱飲或是是否可以使用瓶裝容器相關功能
-// 如果該品項不能做為熱飲，將熱飲選項篩選掉
 const filterIce = computed(() => {
   if (fromSelection(drinkStore.drinkItem)?.customized === 'cold') {
     return drinkStore.drinkIce.filter(item => item.name != '熱')
@@ -254,35 +239,26 @@ const filterIce = computed(() => {
 })
 
 const filterSize = computed(() => {
-  // 如果該品項不能做成瓶裝，將瓶裝選項篩選掉
   if (fromSelection(drinkStore.drinkItem)?.priceBottle === 'none') {
     return drinkStore.drinkSize.filter(item => item.name != '瓶裝')
-  } // 如果該品項不能做成L杯，將L杯選項篩選掉
-  else if (fromSelection(drinkStore.drinkItem)?.priceL === 'none') {
+  } else if (fromSelection(drinkStore.drinkItem)?.priceL === 'none') {
     return drinkStore.drinkSize.filter(item => item.name != 'L杯')
   } else {
     return drinkStore.drinkSize
   }
 })
 
-// 存入當前所選的糖度和冰塊以及杯子大小還有加料項目相關功能
-// 存入當前所選的糖度
 const changeSugar = (sugar: string) => {
   drinkStore.drinkSetSugar = sugar
 }
-// 存入當前所選的冰塊
 const changeIce = (ice: string) => {
   drinkStore.drinkSetIce = ice
 }
-// 存入當前所選的杯子大小
 const changeSize = (size: string) => {
   drinkStore.drinkSetSize = size
 }
-// P20（規劃書 §10 P20「基礎庫存管理」）：配料庫存扣到 0 視為缺貨，
-// 擋掉繼續加選——已經選了的（可能是庫存還沒歸零前選的）仍然可以移除，
-// 見下面 changeAdd 的說明。
+// 配料庫存歸零視為缺貨不可加選
 const isAddOnSoldOut = (item: DrinkAddOnOption) => item.stock === 0
-// 存入當前所選的加料項目，並判斷是否已存在於選項中，如果存在則刪除，反之則新增
 const changeAdd = (addItem: DrinkAddOnOption) => {
   if (drinkStore.drinkAddList.includes(addItem)) {
     drinkStore.drinkAddList = drinkStore.drinkAddList.filter(item => item != addItem)
@@ -292,23 +268,15 @@ const changeAdd = (addItem: DrinkAddOnOption) => {
   }
 }
 
-// 切換頁數相關功能
-// 頁數切換
 const handleCurrentChange = (page: number) => {
   currentPage.value = page
 }
-// 定義當前頁數
 const currentPage = ref(1)
-// 計算並切換當前頁面內容
 const sliceAddMenu = computed(() => {
   return drinkStore.drinkAdd.slice((currentPage.value - 1) * 10, currentPage.value * 10)
 })
 const pageCount = computed(() => Math.max(Math.ceil(drinkStore.drinkAdd.length / 10), 1))
 
-// 重置所有已選擇項目的相關功能
-// 重置所有選項
-// P8：ElMessageBox.confirm／ElMessage 改用 composables/useConfirm.ts／
-// useToast.ts（見 views/order/index.vue 的說明，同一套基礎設施）。
 const resetAll = async () => {
   const result = await confirm({
     title: '警告',

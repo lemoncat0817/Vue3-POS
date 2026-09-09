@@ -1,9 +1,6 @@
 <template>
-  <!-- UI-3（規劃書 B-7）：捲動改由 layout/admin/index.vue 的 <main>
-       統一負責，這裡不再自己 overflow-y-auto + min-h-[calc(100vh-64px)]。 -->
   <div class="w-full flex flex-col items-center bg-surface-50/50 dark:bg-surface-950 px-4 py-6">
     <div class="w-full max-w-7xl flex flex-col gap-5">
-      <!-- 頂部標題卡片 -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm">
         <div>
           <div class="flex items-center gap-2.5">
@@ -29,7 +26,6 @@
         </div>
       </div>
 
-      <!-- 桌況狀態卡片 -->
       <div class="w-full rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm p-4 overflow-hidden">
         <div class="flex items-center justify-between pb-3 border-b border-surface-100 dark:border-surface-800">
           <div class="flex items-center gap-4 text-xs font-bold text-surface-600 dark:text-surface-400">
@@ -58,7 +54,6 @@
       </div>
     </div>
 
-    <!-- 新增桌位 -->
     <ModalDialog v-model:open="addDialog" title="新增桌位">
       <Form v-slot="{ isSubmitting }" :validation-schema="toTypedSchema(addTableSchema)" :initial-values="{ tableNumber: '', seats: 4 }" @submit="onSubmitAdd">
         <FormField name="tableNumber" label="桌號" :disabled="isSubmitting" placeholder="例如: A1" />
@@ -70,7 +65,6 @@
       </Form>
     </ModalDialog>
 
-    <!-- 帶位／清空／預約：切換桌況＋備註 -->
     <ModalDialog v-model:open="statusDialog" :title="`${currentTable?.tableNumber ?? ''} 桌況`">
       <div class="flex flex-col gap-3">
         <div class="flex gap-2">
@@ -110,12 +104,6 @@
 
 <script setup lang="ts">
 import { Plus } from 'lucide-vue-next'
-// P24（規劃書 §10 P24「真實硬體整合與桌況管理」）：新增桌位欄位單純
-// （桌號＋座位數），用 VeeValidate + Zod 的 <Form> 元件，跟 members/
-// index.vue 是同一套模式。桌況切換（空桌／使用中／已預約＋備註）沒有
-// 用 <Form>，因為它本質上是一組互斥按鈕，不是傳統表單欄位——跟
-// productManagement/index.vue 手動 if/else 的理由相同：不是每個對話框
-// 都適合硬套 VeeValidate。
 import { onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -138,9 +126,7 @@ function apiErrorMessage(err: unknown): string {
   return '連不上伺服端，請確認網路連線'
 }
 
-// 桌況是後台管理專用資料，掛載時直接向伺服端拿最新清單——跟
-// members/index.vue 同樣的理由：沒有第二個地方（例如點餐頁）需要
-// 離線可用這份清單，不需要套 stores/drink.ts 那種 catalogSource 模式。
+// 桌況為後台管理專用資料，無需離線可用，掛載時直接向伺服端獲取最新清單。
 const tables = ref<DiningTable[]>([])
 onMounted(async () => {
   try {

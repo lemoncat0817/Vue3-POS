@@ -1,10 +1,7 @@
 <template>
-  <!-- UI-3（規劃書 B-7）：捲動改由 layout/admin/index.vue 的 <main>
-       統一負責，這裡不再自己 overflow-y-auto + min-h-[calc(100vh-64px)]。 -->
   <div class="w-full flex flex-col items-center px-4 py-6 bg-surface-50/50 dark:bg-surface-950">
     <div class="w-full max-w-7xl flex flex-col gap-6">
 
-      <!-- 頂部標題與時段控制列 -->
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-surface-900 p-4 rounded-2xl border border-surface-200 dark:border-surface-800 shadow-sm">
         <div>
           <div class="flex items-center gap-2.5">
@@ -18,7 +15,6 @@
           </p>
         </div>
 
-        <!-- 快捷日期標籤與原生選擇器 -->
         <div class="flex flex-wrap items-center gap-2">
           <div class="flex rounded-xl bg-surface-100 dark:bg-surface-800 p-0.5 text-xs font-bold">
             <button
@@ -43,7 +39,7 @@
               @click="setDatePreset('month')">本月</button>
           </div>
 
-          <!-- 自訂時間輸入 (嚴格保持 aria-label 與型別轉換供 e2e 使用) -->
+          <!-- 勿調整 aria-label 與型別轉換，供 e2e 測試定位 -->
           <div class="flex items-center gap-1.5 bg-surface-50 dark:bg-surface-800/80 px-2 py-1 rounded-xl border border-surface-200 dark:border-surface-700">
             <Calendar class="h-3.5 w-3.5 text-surface-400 shrink-0" />
             <input
@@ -57,7 +53,6 @@
               @change="(e) => selectTime = [selectTime[0], fromNativeDate((e.target as HTMLInputElement).value)]">
           </div>
 
-          <!-- 匯出與列印動作 -->
           <button
             type="button"
             class="flex items-center gap-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-50 shadow-sm transition-colors"
@@ -75,9 +70,7 @@
         </div>
       </div>
 
-      <!-- 核心營運指標卡 (KPI Metric Cards) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 總營業額 -->
         <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between relative overflow-hidden">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-surface-500 dark:text-surface-400">總營業額 GROSS SALES</span>
@@ -99,7 +92,6 @@
           </p>
         </div>
 
-        <!-- 總銷售杯數 -->
         <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-surface-500 dark:text-surface-400">熱門榜出杯總量</span>
@@ -118,7 +110,6 @@
           </p>
         </div>
 
-        <!-- 訂單交易筆數 -->
         <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-surface-500 dark:text-surface-400">完成交易筆數</span>
@@ -137,7 +128,6 @@
           </p>
         </div>
 
-        <!-- 平均客單價 (AOV) -->
         <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-surface-500 dark:text-surface-400">平均客單價 (AOV)</span>
@@ -157,17 +147,7 @@
         </div>
       </div>
 
-      <!-- UI-7（規劃書 §5.3「數據分析」）：原本四張圖表被切成四個
-           頁籤，一次只看得到其中一種——這是把「儀表板」硬做成「四個
-           單圖頁」，使用者無法一眼掌握全貌，而這正是儀表板存在的
-           理由。改成 12 欄網格的單頁儀表板：營業額走勢（主圖表，佔
-           8 欄）＋熱門飲品排行（4 欄）為第一列，熱門配料／支付通路
-           結構（各 6 欄）為第二列。三個排行榜原本各自搭一個 500px 的
-           圓餅圖，圓餅圖本身沒有比旁邊已經存在的排行清單多傳達什麼
-           訊息，直接拿掉——換來的版面空間讓四塊內容能同時攤開，不用
-           再切頁籤，也不再需要四個 500px 高的畫布搶首屏空間。 -->
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        <!-- 營業額走勢（主圖表） -->
         <div class="xl:col-span-8 card-panel p-5 flex flex-col gap-4">
           <div class="flex items-center justify-between">
             <h2 class="text-base font-black text-surface-900 dark:text-surface-100 flex items-center gap-2">
@@ -185,7 +165,6 @@
           <div v-else ref="rangeBusiness" class="w-full h-[clamp(260px,38vh,460px)]" />
         </div>
 
-        <!-- 熱門飲品排行榜 -->
         <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
           <span class="text-sm font-black text-surface-900 dark:text-surface-100">熱門飲品排行榜 (Top 5)</span>
           <div v-for="(item, idx) in salesReport?.topDrinks" :key="item.name" class="flex flex-col gap-1">
@@ -209,7 +188,6 @@
           <p v-if="!salesReport?.topDrinks.length" class="text-xs text-surface-400 py-4 text-center">目前無銷售紀錄</p>
         </div>
 
-        <!-- 熱門配料排行榜 -->
         <div class="xl:col-span-6 card-panel p-4 flex flex-col gap-3">
           <span class="text-sm font-black text-surface-900 dark:text-surface-100">加料選配榜單 (Top 5)</span>
           <div v-for="(item, idx) in salesReport?.topAddOns" :key="item.name" class="flex flex-col gap-1">
@@ -233,7 +211,6 @@
           <p v-if="!salesReport?.topAddOns.length" class="text-xs text-surface-400 py-4 text-center">目前無配料加購紀錄</p>
         </div>
 
-        <!-- 多元支付通路結構 -->
         <div class="xl:col-span-6 card-panel p-4 flex flex-col gap-3">
           <span class="text-sm font-black text-surface-900 dark:text-surface-100 flex items-center gap-1.5">
             <CreditCard class="h-4 w-4 text-info-500" />
@@ -262,7 +239,6 @@
       </div>
     </div>
 
-    <!-- 日結清單對話框 (Daily Settlement Z-Report) -->
     <ModalDialog v-model:open="dialogSettlement" title="日結營運清單預覽">
       <div class="flex flex-col gap-3 text-xs text-surface-700 dark:text-surface-200 p-2 font-mono">
         <div class="text-center border-b border-surface-200 dark:border-surface-700 pb-2">
@@ -330,10 +306,6 @@ import {
   CreditCard
 } from 'lucide-vue-next'
 
-// UI-7：三個排行榜原本各自搭一個 echarts 圓餅圖，改成單頁儀表板後
-// 拿掉了（見上方 template 的說明）——PieChart／BarChart（BarChart其實
-// 從沒被用過任何 'bar' 系列，是更早就存在的死 import）跟著一起移除，
-// 現在只剩營業額走勢這張折線圖真的在用 echarts。
 echarts.use([LineChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer])
 import { useQuery } from '@tanstack/vue-query'
 import { getDate, getTime, formatBusinessDate, toBusinessDate, toNativeDate, fromNativeDate } from '@/utils/time'
@@ -348,9 +320,6 @@ const dialogSettlement = ref(false)
 
 const selectTime = ref<[string, string]>([getDate(), getDate()])
 
-// 'YYYY/MM/DD' ⇄ Date 的共用轉換——原本 setDatePreset／isPresetActive
-// 各自重複定義一份一模一樣的 format()，這裡收斂成模組層級的兩個函式，
-// previousPeriod（下方新增的『vs 前期』比較）也共用同一份。
 function formatSlashDate(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -367,10 +336,7 @@ const { data: salesReport } = useQuery({
   queryFn: () => fetchSalesReport(toBusinessDate(selectTime.value[0]), toBusinessDate(selectTime.value[1])),
 })
 
-// UI-7（規劃書 §5.3「數據分析」）：KPI 卡「vs 前期」比較——緊接在目前
-// 區間之前、長度相同的一段區間（單日比昨日，7 天比再往前 7 天，以此
-// 類推），不需要後端另外提供聚合端點，直接對同一個 /api/reports/sales
-// 端點再查一次不同的 from/to。
+// 計算緊鄰前一段等長區間作為比較基準，複用 sales report API。
 const previousPeriod = computed<[string, string]>(() => {
   const start = parseSlashDate(selectTime.value[0])
   const end = parseSlashDate(selectTime.value[1])
@@ -386,8 +352,7 @@ const { data: previousSalesReport } = useQuery({
   queryFn: () => fetchSalesReport(toBusinessDate(previousPeriod.value[0]), toBusinessDate(previousPeriod.value[1])),
 })
 
-// KPI 統計計算：目前區間與前期各自套用同一套算法，避免兩份計算邏輯
-// 各自維護、悄悄產生不一致。
+// 當期與前期共用相同的 KPI 計算邏輯。
 function computeTotals(report: typeof salesReport.value, singleDay: boolean) {
   if (!report) return { totalRevenue: 0, totalCups: 0, totalOrders: 0, averageOrderValue: 0 }
   const totalRevenue = singleDay
@@ -408,7 +373,7 @@ const totalCups = computed(() => current.value.totalCups)
 const totalOrders = computed(() => current.value.totalOrders)
 const averageOrderValue = computed(() => current.value.averageOrderValue)
 
-/** 跟前期比的變動百分比與方向；前期是 0 時視為「無法比較」（避免除以 0 產生 Infinity/NaN）。 */
+// 計算前期變動率，前期為 0 時回傳 null 避免除以零。
 function trendOf(currentValue: number, previousValue: number): { pct: number; up: boolean } | null {
   if (!previousSalesReport.value || previousValue === 0) return null
   const pct = Math.round(((currentValue - previousValue) / previousValue) * 100)
@@ -433,7 +398,6 @@ const peakHourInfo = computed(() => {
   return `${String(maxPoint.hour).padStart(2, '0')}:00 (NT$ ${maxPoint.revenue.toLocaleString()})`
 })
 
-// 時間快捷鍵
 const setDatePreset = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
   const now = new Date()
   if (preset === 'today') {
@@ -460,7 +424,6 @@ const isPresetActive = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
   return false
 }
 
-// 匯出 CSV 功能
 const exportCsv = () => {
   if (!salesReport.value) return
   let csv = 'data:text/csv;charset=utf-8,\uFEFF'
@@ -499,7 +462,6 @@ const handlePrintSettlement = () => {
   dialogSettlement.value = false
 }
 
-// 圖表 DOM 節點
 const oneDayBusiness = ref<HTMLDivElement>()
 const rangeBusiness = ref<HTMLDivElement>()
 
@@ -510,13 +472,11 @@ const clearCharts = () => {
   activeCharts = []
 }
 
-// 主題感知色階
 const isDark = computed(() => theme.value === 'dark')
 const getTextColor = () => isDark.value ? '#cbd5e1' : '#475569'
 const getSubtextColor = () => isDark.value ? '#64748b' : '#94a3b8'
 const getSplitLineColor = () => isDark.value ? '#334155' : '#f1f5f9'
 
-// 渲染單日營業額時段折線面積圖
 const showOneDayBusiness = () => {
   if (!salesReport.value || !oneDayBusiness.value) return
   const chart = echarts.init(oneDayBusiness.value)
@@ -574,7 +534,6 @@ const showOneDayBusiness = () => {
   })
 }
 
-// 渲染跨日區間每日營業額走勢圖
 const showRangeBusiness = () => {
   if (!salesReport.value || !rangeBusiness.value) return
   const chart = echarts.init(rangeBusiness.value)
@@ -629,9 +588,6 @@ const showRangeBusiness = () => {
   })
 }
 
-// 圖表分發派送——UI-7 後只剩營業額走勢一張圖表需要初始化（見上方
-// template 的說明，三個排行榜的圓餅圖已經移除，改用旁邊本來就有的
-// 排行清單）。
 const initCharts = () => {
   clearCharts()
   if (!salesReport.value) return
@@ -643,7 +599,6 @@ const initCharts = () => {
   }
 }
 
-// 監聽重繪
 watch([salesReport, () => selectTime.value, isDark], () => {
   nextTick(() => {
     initCharts()

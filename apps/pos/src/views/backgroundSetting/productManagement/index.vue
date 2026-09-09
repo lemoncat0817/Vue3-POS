@@ -1,6 +1,5 @@
 <template>
   <div class="w-full flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-surface-200 dark:divide-surface-800">
-    <!-- 1. 飲品類型 -->
     <div class="w-full xl:w-[28%] p-4 flex flex-col justify-between">
       <div>
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
@@ -27,7 +26,6 @@
           </div>
         </div>
 
-        <!-- 新增飲品類型 Modal -->
         <ModalDialog v-model:open="addTypeDialog" title="新增飲品類型">
           <div class="flex flex-col gap-3 py-2">
             <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
@@ -51,7 +49,6 @@
           </div>
         </ModalDialog>
 
-        <!-- 編輯飲品類型 Modal -->
         <ModalDialog v-model:open="editTypeDialog" title="編輯飲品類型">
           <div class="flex flex-col gap-3 py-2">
             <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
@@ -75,12 +72,6 @@
           </div>
         </ModalDialog>
 
-        <!-- 飲品類型 Table -->
-        <!-- UI-5（規劃書 §2.3「三欄都沒有獨立捲動」）：原本靠「每欄
-             固定 10 筆分頁」限制高度，不是真的讓表格自己捲動。改成表格
-             區塊自己 max-h + overflow-y-auto，thead 加 sticky，捲動時
-             欄位標題留在原地——分頁器繼續保留（超過一頁時還是切頁比
-             一次捲一大串好操作），只是不再是唯一撐住高度的手段。 -->
         <div class="max-h-[420px] overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
           <table class="w-full text-center text-xs sm:text-sm">
             <thead class="sticky top-0 z-10 bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
@@ -118,7 +109,6 @@
       </div>
     </div>
 
-    <!-- 2. 飲料品項 -->
     <div class="w-full xl:w-[44%] p-4 flex flex-col justify-between">
       <div>
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
@@ -147,7 +137,6 @@
           </div>
         </div>
 
-        <!-- 新增飲料品項 Modal -->
         <ModalDialog v-model:open="addDrinkDialog" title="新增飲料品項">
           <div class="flex flex-col gap-3.5 py-2">
             <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
@@ -230,7 +219,6 @@
           </div>
         </ModalDialog>
 
-        <!-- 編輯飲料品項 Modal -->
         <ModalDialog v-model:open="editDrinkDialog" title="編輯飲料品項">
           <div class="flex flex-col gap-3.5 py-2">
             <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
@@ -313,7 +301,6 @@
           </div>
         </ModalDialog>
 
-        <!-- 飲料品項 Table -->
         <div class="max-h-[420px] overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
           <table class="w-full text-center text-xs sm:text-sm">
             <thead class="sticky top-0 z-10 bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
@@ -361,7 +348,6 @@
       </div>
     </div>
 
-    <!-- 3. 配料 -->
     <div class="w-full xl:w-[28%] p-4 flex flex-col justify-between">
       <div>
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
@@ -388,7 +374,6 @@
           </div>
         </div>
 
-        <!-- 新增配料 Modal -->
         <ModalDialog v-model:open="addIngredientsDialog" title="新增配料">
           <div class="flex flex-col gap-3.5 py-2">
             <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
@@ -419,7 +404,6 @@
           </div>
         </ModalDialog>
 
-        <!-- 編輯配料 Modal -->
         <ModalDialog v-model:open="editIngredientsDialog" title="編輯配料">
           <div class="flex flex-col gap-3.5 py-2">
             <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
@@ -450,7 +434,6 @@
           </div>
         </ModalDialog>
 
-        <!-- 配料 Table -->
         <div class="mt-4 max-h-[420px] overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800">
           <table class="w-full text-center text-xs">
             <thead class="sticky top-0 z-10 bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
@@ -533,17 +516,6 @@ import {
   updateCatalogItem,
 } from '@/api/catalog'
 
-// P18（規劃書 §10 P18「菜單與權限管理接上伺服端」）：這個頁面的新增／
-// 刪除／編輯改成真的呼叫 apps/api 的菜單寫入端點（見 api/catalog.ts），
-// 不再只是本機 drinkStore 陣列操作。Id 因此不再是這裡手動輸入的欄位
-// ——新增時由伺服端配發（crypto.randomUUID()，見 apps/api/src/routes/
-// catalog.ts），編輯只能改名稱／價格等欄位，不能改 Id。
-//
-// P8 當時的說明仍然成立：飲料品項的表單欄位之間有大量互相牽動的邏輯
-// （客製化選「無」會連動關掉瓶裝開關、清空瓶裝價格），這裡繼續維持
-// 原本 ref + if/else 的驗證方式，不改成 offerSetting.vue 那種
-// VeeValidate + Zod 的 <Form> 寫法，只把送出時的動作從「改本機陣列」
-// 換成「呼叫 API，成功後用伺服端回傳的資料更新本機陣列」。
 function apiErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 409) return '這個類型底下還有品項，請先清空品項再刪除'
@@ -551,23 +523,14 @@ function apiErrorMessage(err: unknown): string {
   }
   return '連不上伺服端，請確認網路連線'
 }
-// 伺服端的價格是「支援就填數字、不支援就是 null」，這個頁面既有的
-// 表單欄位沿用 D-19 那套「不支援用字面值 'none' 表示」的慣例，這兩個
-// 轉換函式只在跟 API 邊界銜接時各用一次。
+// 表單沿用 'none' 代表不支援，轉換函式用於銜接 API 邊界的 number | null。
 function toApiPrice(value: FormNumeric | 'none'): number | null {
   return value === 'none' ? null : Number(value)
 }
 function fromApiPrice(value: number | null): FormNumeric | 'none' {
   return value === null ? 'none' : value
 }
-// P20（規劃書 §10 P20「基礎庫存管理」）：庫存欄位是選填的表單輸入
-// （空字串代表「不追蹤庫存」，不是 0），跟價格欄位一樣需要在 API
-// 邊界轉成 `number | null`。這裡的 v-model 綁在 `<input type="number">`
-// 上——Vue 3 對 number input 的 v-model 在使用者清空欄位時會給空
-// 字串，但在有值時實際綁定的是瀏覽器解析過的數字（不是字面字串），
-// 兩種型別都可能出現，用 `String(value)` 統一轉成字串再判斷／轉換，
-// 不能假設一定是字串（曾經直接呼叫 `.trim()` 撞到執行期例外，
-// e2e/inventory.spec.ts 測到的）。
+// 庫存為選填（空字串代表不追蹤）。v-model 遇 number input 可能為 string 或 number，統一轉字串避免例外。
 const LOW_STOCK_THRESHOLD = 5
 function toApiStock(value: string | number): number | null {
   const text = String(value).trim()
@@ -584,30 +547,19 @@ function stockClass(stock: number | null | undefined): string {
   return ''
 }
 
-// 飲品類型相關功能
-// 存放當前已選類型
-// P8：組件庫替換——el-table 的 @current-change 事件改成模板上直接
-// @click="currentType = row"（見上方 template），不需要中介的
-// handleCurrentChange 函式，其餘兩個表格（飲料品項／配料）比照辦理。
 const currentType = ref<MaybeSelected<DrinkTypeGroup>>({})
-// 存放當前輸入的類型名稱
 const currentInputName = ref('')
-// 存放當前輸入的類型代號
 const currentInputType = ref('')
-// 控制新增dialog視窗開關
 const addTypeDialog = ref(false)
-// 開啟新增dialog視窗
 const openAddTypeDialog = () => {
   currentInputName.value = ''
   currentInputType.value = ''
   addTypeDialog.value = true
 }
-// 關閉新增dialog視窗
 const closeAddTypeDialog = () => {
   addTypeDialog.value = false
   showToast('取消操作', 'error')
 }
-// 新增茶品類型
 const addDrinkType = async () => {
   if (currentInputName.value === '' || currentInputType.value === '') {
     showToast('請輸入完整資訊', 'error')
@@ -630,18 +582,14 @@ const addDrinkType = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 存放當前茶品類型當前的頁數
 const drinkTypeCurrentPage = ref(1)
-// 控制茶品類型當前頁數
 const handleDrinkTypeCurrentChange = (page: number) => {
   drinkTypeCurrentPage.value = page
 }
-// 計算並切換當前頁面內容
 const sliceDrinkType = computed(() => {
   return drinkStore.drinkType.slice((drinkTypeCurrentPage.value - 1) * 10, drinkTypeCurrentPage.value * 10)
 })
 const drinkTypePageCount = computed(() => Math.max(Math.ceil(drinkStore.drinkType.length / 10), 1))
-// 刪除當前選擇的飲料類型
 const deleteDrinkType = async () => {
   if (drinkStore.drinkType.length == 1) {
     showToast('至少要留有一個飲料類型，需修改請善用編輯功能', 'error')
@@ -664,13 +612,9 @@ const deleteDrinkType = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 控制編輯dialog視窗開關
 const editTypeDialog = ref(false)
-// 存放當前編輯輸入的類型名稱
 const currentEditInputName = ref('')
-// 存放當前編輯輸入的類型代號
 const currentEditInputType = ref('')
-// 開啟編輯dialog視窗
 const openEditTypeDialog = () => {
   if (currentType.value.name) {
     currentEditInputName.value = currentType.value.name
@@ -680,12 +624,10 @@ const openEditTypeDialog = () => {
     void alert({ title: '通知', description: '請先選擇要編輯的類型', confirmText: '繼續選擇' })
   }
 }
-// 關閉編輯dialog視窗
 const closeEditTypeDialog = () => {
   editTypeDialog.value = false
   showToast('取消操作', 'error')
 }
-// 編輯茶品類型
 const editDrinkType = async () => {
   if (currentEditInputName.value === '' || currentEditInputType.value === '') {
     showToast('請輸入完整資訊', 'error')
@@ -717,12 +659,8 @@ const editDrinkType = async () => {
   }
 }
 
-// 飲料品項相關功能
-// 存放當前已選的飲料品項
 const currentDrink = ref<MaybeSelected<DrinkListItem>>({})
-// 控制新增飲料品項dialog視窗開關
 const addDrinkDialog = ref(false)
-// 打開新增飲料品項dialog視窗
 const openAddDrinkDialog = () => {
   if (currentType.value.name) {
     setPriceL.value = true
@@ -738,18 +676,11 @@ const openAddDrinkDialog = () => {
     return
   }
 }
-// 存放當前輸入的飲料品項名稱
 const currentDrinkInputName = ref('')
-// 存放當前輸入的飲料品項大杯價格
 const currentDrinkInputPriceL = ref<FormNumeric | 'none'>('')
-// 存放當前輸入的飲料品項瓶裝價格
 const currentDrinkInputPriceBottle = ref<FormNumeric | 'none'>('')
-// 存放當前客製化的選項
 const currentDrinkSelectCustomized = ref<DrinkCustomized | ''>('')
-// 存放當前輸入的庫存（P20：規劃書 §10 P20「基礎庫存管理」）——空字串
-// 代表不追蹤庫存，見 toApiStock 的說明。
 const currentDrinkInputStock = ref('')
-// 客製化選項
 const customized = [
   {
     value: 'none',
@@ -764,7 +695,6 @@ const customized = [
     label: '冷熱飲皆可',
   },
 ]
-// 判定當前客製化選項是否為none
 const checkAddDrinkSelectCustomized = () => {
   if (currentDrinkSelectCustomized.value === 'none') {
     setPriceL.value = true
@@ -774,22 +704,17 @@ const checkAddDrinkSelectCustomized = () => {
     return
   }
 }
-// 關閉新增飲料品項dialog視窗
 const closeAddDrinkDialog = () => {
   addDrinkDialog.value = false
   showToast('取消操作', 'error')
 }
-// 是否可以使用大杯裝
 const setPriceL = ref(true)
-// 判定是否可以使用大杯裝
 const checkPriceLSwitch = () => {
   if (setPriceL.value == false) {
     currentDrinkInputPriceL.value = 'none'
   }
 }
-// 是否可以使用瓶裝
 const setPriceBottle = ref(true)
-// 判定是否以使用瓶裝
 const checkPriceBottleSwitch = () => {
   if (setPriceBottle.value == false) {
     currentDrinkInputPriceBottle.value = 'none'
@@ -802,7 +727,6 @@ const checkPriceBottleSwitch = () => {
     return
   }
 }
-// 新增飲料品項
 const addDrink = async () => {
   if (currentDrinkInputName.value === '' || currentDrinkInputPriceL.value === '' || currentDrinkInputPriceBottle.value === '' || currentDrinkSelectCustomized.value === '') {
     showToast('請輸入完整資訊', 'error')
@@ -864,7 +788,6 @@ const addDrink = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 刪除當前選擇的飲料品項
 const deleteDrink = async () => {
   if (currentDrink.value == null || !currentDrink.value.name) {
     void alert({ title: '通知', description: '請先選擇要刪除的飲料品項', confirmText: '繼續選擇' })
@@ -881,27 +804,18 @@ const deleteDrink = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 存放當前編輯輸入的飲料名稱
 const currentEditDrinkInputName = ref('')
-// 存放當前編輯輸入的大杯價格
 const currentEditDrinkInputPriceL = ref<FormNumeric | 'none'>('')
-// 存放當前編輯輸入的瓶裝價格
 const currentEditDrinkInputPriceBottle = ref<FormNumeric | 'none'>('')
-// 存放當前客製化的選項
 const currentEditDrinkSelectCustomized = ref<DrinkCustomized | ''>('')
-// 存放當前編輯輸入的庫存（P20：規劃書 §10 P20「基礎庫存管理」）
 const currentEditDrinkInputStock = ref('')
-// 是否可以使用大杯裝
 const setEditPriceL = ref(true)
-// 判定是否可以使用大杯裝
 const checkEditPriceLSwitch = () => {
   if (setEditPriceL.value == false) {
     currentEditDrinkInputPriceL.value = 'none'
   }
 }
-// 是否可以使用瓶裝
 const setEditPriceBottle = ref(true)
-// 判定是否以使用瓶裝
 const checkEditPriceBottleSwitch = () => {
   if (setEditPriceBottle.value == false) {
     currentEditDrinkInputPriceBottle.value = 'none'
@@ -914,7 +828,6 @@ const checkEditPriceBottleSwitch = () => {
     return
   }
 }
-// 判定當前客製化選項是否為none
 const checkEditDrinkSelectCustomized = () => {
   if (currentEditDrinkSelectCustomized.value === 'none') {
     setEditPriceL.value = true
@@ -924,14 +837,11 @@ const checkEditDrinkSelectCustomized = () => {
     return
   }
 }
-// 控制編輯dialog視窗開關
 const editDrinkDialog = ref(false)
-// 關閉編輯dialog視窗
 const closeEditDrinkDialog = () => {
   editDrinkDialog.value = false
   showToast('取消操作', 'error')
 }
-// 開啟編輯dialog視窗
 const openEditDrinkDialog = () => {
   if (currentDrink.value != null && currentDrink.value.name) {
     currentEditDrinkInputName.value = currentDrink.value.name
@@ -947,7 +857,6 @@ const openEditDrinkDialog = () => {
   }
 }
 
-// 編輯飲料品項
 const editDrink = async () => {
   if (currentEditDrinkInputName.value === '' || currentEditDrinkInputPriceL.value === '' || currentEditDrinkInputPriceBottle.value === '' || currentEditDrinkSelectCustomized.value === '') {
     showToast('請輸入完整資訊', 'error')
@@ -1012,13 +921,10 @@ const editDrink = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 存放當前茶品類型當前的頁數
 const drinkCurrentPage = ref(1)
-// 控制茶品類型當前頁數
 const handleDrinkCurrentChange = (page: number) => {
   drinkCurrentPage.value = page
 }
-// 計算並切換當前頁面內容
 const sliceDrink = computed(() => {
   if (currentType.value.drinkList) {
     return currentType.value.drinkList.slice((drinkCurrentPage.value - 1) * 10, drinkCurrentPage.value * 10)
@@ -1028,30 +934,21 @@ const sliceDrink = computed(() => {
 })
 const drinkPageCount = computed(() => Math.max(Math.ceil((currentType.value.drinkList?.length ?? 0) / 10), 1))
 
-// 配料的相關功能
-// 存放當前所選的配料選項
 const currentIngredientsDrink = ref<MaybeSelected<DrinkAddOnOption>>({})
-// 控制新增配料dialog視窗開關
 const addIngredientsDialog = ref(false)
-// 打開新增配料dialog視窗
 const openAddIngredientsDialog = () => {
   currentIngredientsInputName.value = ''
   currentIngredientsInputPrice.value = ''
   currentIngredientsInputStock.value = ''
   addIngredientsDialog.value = true
 }
-// 關閉新增配料dialog視窗
 const closeAddIngredientsDialog = () => {
   addIngredientsDialog.value = false
   showToast('取消操作', 'error')
 }
-// 存放當前輸入的配料名稱
 const currentIngredientsInputName = ref('')
-// 存放當前輸入的配料價格
 const currentIngredientsInputPrice = ref<FormNumeric>('')
-// 存放當前輸入的庫存（P20：規劃書 §10 P20「基礎庫存管理」）
 const currentIngredientsInputStock = ref('')
-// 新增配料
 const addDrinkIngredients = async () => {
   if (currentIngredientsInputName.value === '' || currentIngredientsInputPrice.value === '') {
     showToast('請輸入完整資訊', 'error')
@@ -1078,7 +975,6 @@ const addDrinkIngredients = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 刪除配料
 const deleteDrinkIngredients = async () => {
   if (!currentIngredientsDrink.value.name) {
     void alert({ title: '通知', description: '請先選擇要刪除的配料', confirmText: '繼續選擇' })
@@ -1095,20 +991,14 @@ const deleteDrinkIngredients = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 控制編輯dialog視窗開關
 const editIngredientsDialog = ref(false)
-// 關閉編輯dialog視窗
 const closeEditIngredientsDialog = () => {
   editIngredientsDialog.value = false
   showToast('取消操作', 'error')
 }
-// 存放當前編輯輸入的配料名稱
 const currentEditIngredientsInputName = ref('')
-// 存放當前編輯輸入的配料價格
 const currentEditIngredientsInputPrice = ref<FormNumeric>('')
-// 存放當前編輯輸入的庫存（P20：規劃書 §10 P20「基礎庫存管理」）
 const currentEditIngredientsInputStock = ref('')
-// 開啟編輯dialog視窗
 const openEditIngredientsDialog = () => {
   if (currentIngredientsDrink.value.name) {
     currentEditIngredientsInputName.value = currentIngredientsDrink.value.name
@@ -1119,7 +1009,6 @@ const openEditIngredientsDialog = () => {
     void alert({ title: '通知', description: '請先選擇要編輯的配料', confirmText: '繼續選擇' })
   }
 }
-// 編輯配料
 const editDrinkIngredients = async () => {
   if (currentEditIngredientsInputName.value === '' || currentEditIngredientsInputPrice.value === '') {
     showToast('請輸入完整資訊', 'error')
@@ -1154,13 +1043,10 @@ const editDrinkIngredients = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 存放當前茶品類型當前的頁數
 const drinkIngredientsCurrentPage = ref(1)
-// 控制茶品類型當前頁數
 const handleIngredientsCurrentChange = (page: number) => {
   drinkIngredientsCurrentPage.value = page
 }
-// 計算並切換當前頁面內容
 const sliceIngredients = computed(() => {
   if (drinkStore.drinkAdd) {
     return drinkStore.drinkAdd.slice((drinkIngredientsCurrentPage.value - 1) * 10, drinkIngredientsCurrentPage.value * 10)

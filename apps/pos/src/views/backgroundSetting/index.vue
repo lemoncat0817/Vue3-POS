@@ -1,10 +1,7 @@
 <template>
-  <!-- UI-3（規劃書 B-7）：捲動改由 layout/admin/index.vue 的 <main>
-       統一負責，這裡不再自己 overflow-y-auto + min-h-[calc(100vh-64px)]，
-       避免巢狀捲動容器與重複硬編碼 header 高度。 -->
+  <!-- 捲動由外層 Shell 統一負責，避免巢狀捲動容器 -->
   <div class="w-full flex flex-col items-center bg-surface-50/50 dark:bg-surface-950 px-4 py-6">
     <div class="w-full max-w-7xl flex flex-col gap-5">
-      <!-- 頂部標題與分頁導航卡 -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm">
         <div>
           <div class="flex items-center gap-2.5">
@@ -18,7 +15,7 @@
           </p>
         </div>
 
-        <!-- 現代化分段標籤導覽 (精確維持按鈕文字以完全相容 e2e 測試) -->
+        <!-- 分段導覽：按鈕文字供 e2e 測試定位 -->
         <div class="flex items-center gap-1.5 rounded-xl bg-surface-100 dark:bg-surface-800 p-1">
           <button
             type="button"
@@ -53,7 +50,6 @@
         </div>
       </div>
 
-      <!-- 設定子內容卡片 (解除固定 h-[600px] 限制) -->
       <div class="w-full rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[640px] flex overflow-hidden">
         <ProductManagement v-if="settingStore.currentSettingPage === 0" class="w-full" />
         <OfferSetting v-if="settingStore.currentSettingPage === 1" class="w-full" />

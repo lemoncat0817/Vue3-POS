@@ -1,6 +1,5 @@
 <template>
   <div class="w-full flex flex-col">
-    <!-- 飲料品項標題與分頁控制 -->
     <div class="flex items-center justify-between mb-2 px-1">
       <div class="flex items-center gap-2">
         <span class="text-xs font-black uppercase tracking-wider text-surface-500 dark:text-surface-400">飲品選單</span>
@@ -11,7 +10,6 @@
       <AppPagination v-if="pageCount > 1" :page="currentPage" :page-count="pageCount" :total="currentDrinks.length" @update:page="handleCurrentChange" />
     </div>
 
-    <!-- 飲品卡片網格 -->
     <div v-if="currentDrinks.length === 0" class="flex flex-col items-center justify-center py-12 rounded-2xl border border-dashed border-surface-300 dark:border-surface-700 text-surface-400">
       <span class="text-sm font-bold">請先點選上方飲品系列以載入品項</span>
     </div>
@@ -27,7 +25,6 @@
           'cursor-not-allowed opacity-40 pointer-events-none': isSoldOut(item),
         }"
         @click="changeItem(item)">
-        <!-- 頂部標籤列 -->
         <div class="flex items-start justify-between w-full gap-1 mb-1.5">
           <span
             v-if="item.customized === 'none'"
@@ -43,12 +40,10 @@
             class="rounded-full bg-danger-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">缺貨</span>
         </div>
 
-        <!-- 品名 -->
         <p class="text-xs lg:text-sm font-black tracking-tight leading-snug line-clamp-2 select-none mb-2">
           {{ item.name }}
         </p>
 
-        <!-- 價格 -->
         <div class="flex items-center justify-between mt-auto pt-1 border-t border-surface-100 dark:border-surface-700/50 w-full">
           <span class="text-xs lg:text-sm font-black text-primary-600 dark:text-primary-400">
             NT$ {{ item.priceL !== 'none' ? item.priceL : item.priceBottle }}

@@ -1,10 +1,6 @@
 <template>
-  <!-- UI-3（規劃書 B-7）：捲動改由 layout/admin/index.vue 的 <main>
-       統一負責，這裡不再自己 overflow-y-auto，避免巢狀捲動容器。 -->
   <div class="flex w-full flex-col items-center bg-surface-50 dark:bg-surface-950 px-4 py-8">
     <div class="flex w-full max-w-7xl flex-col gap-6">
-      
-      <!-- Top Title & Quick Overview Banner -->
       <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <div class="flex items-center gap-2">
@@ -404,8 +400,6 @@
           </table>
         </div>
 
-        <!-- Batch Action Bar：規劃書 §5.1「查看訂單」的批次操作列。
-             只在有勾選時才出現，浮在分頁列上方，不佔用平常的版面。 -->
         <div
           v-if="selectedOrderIds.size > 0"
           class="flex flex-wrap items-center justify-between gap-3 border-t border-primary-200 dark:border-primary-800 bg-primary-50/60 dark:bg-primary-950/30 px-6 py-3">
@@ -535,13 +529,7 @@ const orderStats = computed(() => {
   }
 })
 
-// 訂單資料處理相關功能
-//
-// UI-4（規劃書 §3.3「篩選：常用外露、進階收合、已套用以 chip 呈現」）：
-// 篩選條件原本只存在元件內的 ref，重新整理、返回上一頁、分享連結都會
-// 讓篩選條件整組消失。改成初始值讀自 URL query，並且每次變動都同步
-// 寫回去（router.replace，不是 push，不會每打一個字就多一筆瀏覽紀錄）
-// ——網址列本身就是這組篩選條件唯一需要的「持久化」。
+// 篩選條件與 URL query 雙向同步以利狀態保存與分享。
 const route = useRoute()
 const router = useRouter()
 function queryString(key: string): string {
@@ -574,9 +562,7 @@ const hasActiveFilter = computed(() => {
   )
 })
 
-// D-05：篩選字串含正規表示式特殊字元（如 "("）時，String.match() 會把它當
-// pattern 編譯，丟出 SyntaxError 讓整頁掛掉。這裡只需要單純的子字串比對，
-// 改用 includes() 就不會誤把使用者輸入當成正規表示式解析。
+// 使用 includes 進行子字串比對，避免輸入特殊字元時被視為正規表示式出錯。
 const filterOrder = computed(() => {
   return orderStore.order.filter(item => {
     return item.orderId.includes(filterOrderId.value) &&
@@ -611,17 +597,13 @@ const quickFilterPayment = (payment: string) => {
   }
 }
 
-// 展開／收合明細：跟 TanStack Table 的 row model 分開管理（用 orderId
-// 而不是 row index），篩選／換頁不會讓「展開中」的判斷跑掉。
+// 以 orderId 管理展開狀態，避免換頁或篩選時因 row index 變動錯位。
 const expandedOrderId = ref<string | null>(null)
 function toggleExpand(orderId: string) {
   expandedOrderId.value = expandedOrderId.value === orderId ? null : orderId
 }
 
-// 列選取與批次操作（規劃書 §5.1「查看訂單」）：跟展開明細一樣用
-// orderId（不是 row index）當 key，篩選／換頁不會讓選取狀態錯位。
-// Vue 的 ref() 會把 Set 包成 reactive，.add()／.delete()／.clear() 這些
-// 內建集合方法直接觸發響應式更新，不需要每次都整個重建一份新 Set。
+// 以 orderId 管理選取狀態，避免篩選或分頁錯位。
 const selectedOrderIds = ref<Set<string>>(new Set())
 function toggleSelectOrder(orderId: string, checked: boolean) {
   if (checked) selectedOrderIds.value.add(orderId)
@@ -638,9 +620,7 @@ function toggleSelectAllVisible(checked: boolean) {
     else selectedOrderIds.value.delete(id)
   }
 }
-// 篩選條件變動後，篩選結果裡已經看不到的訂單也要跟著從選取狀態移除
-// ——不然會有『選取數字非 0，但畫面上哪一列被選都對不起來』的幽靈
-// 選取。
+// 篩選變動時同步移除已不可見的選取項目，避免選取狀態與畫面不一致。
 watch(filterOrder, (orders) => {
   const stillVisible = new Set(orders.map((o) => o.orderId))
   for (const id of selectedOrderIds.value) {
@@ -669,10 +649,7 @@ const statusBadgeClass = (status: OrderRecord['orderStatus']) =>
     ? 'rounded-full bg-success-100 px-2.5 py-1 text-xs font-bold text-success-700 dark:bg-success-950 dark:text-success-300 border border-success-200/60 dark:border-success-800/40'
     : 'rounded-full bg-danger-100 px-2.5 py-1 text-xs font-bold text-danger-700 dark:bg-danger-950 dark:text-danger-300 border border-danger-200/60 dark:border-danger-800/40'
 
-// P12（規劃書 §10 P0「退款／作廢」）：refundedAmount 只有伺服端算過
-// 一次才有真正的值（見 api/orders.ts 的 refundOrder 說明），golden
-// orders 這類舊資料（見 stores/order.ts 的 GOLDEN_ORDERS）沒有這個
-// 欄位，用 `?? 0` 兜底，不假設一定存在。
+// 舊資料可能無 refundedAmount 欄位，預設為 0。
 const refundedAmountOf = (order: OrderRecord) => order.refundedAmount ?? 0
 const remainingRefundableOf = (order: OrderRecord) => Math.max(0, order.orderPaymentPrice - refundedAmountOf(order))
 
@@ -690,9 +667,7 @@ const columns = [
     header: '服務人員',
     cell: (info) => h('span', { class: 'font-medium text-surface-800 dark:text-surface-200' }, info.getValue()),
   }),
-  // P13（規劃書 §10 P0「內用外帶」）：golden orders 這類舊資料沒有這
-  // 個欄位（見 stores/order.ts 的 GOLDEN_ORDERS 說明），用 `?? '外帶'`
-  // 兜底，理由跟 refundedAmountOf() 一致。
+  // 舊資料可能無 orderChannel 欄位，預設為 '外帶'。
   columnHelper.accessor((row) => row.orderChannel ?? '外帶', {
     id: 'orderChannel',
     header: '內用／外帶',
@@ -725,10 +700,6 @@ const columns = [
       return h('div', { class: 'flex flex-wrap items-center gap-1.5' }, badges)
     },
   }),
-  // UI-4（規劃書 §5.1「查看訂單」）：金額欄原本跟其他文字欄一樣置中，
-  // 直式掃描金額很吃力——業界慣例（Stripe 模式）金額一律靠右、用等寬
-  // 數字（tabular-nums）對齊千位數。header／cell 都用 render function
-  // 包一層 `block text-right`，不用改動共用的 <th>／<td> 外層 markup。
   columnHelper.accessor('orderPaymentPrice', {
     header: () => h('span', { class: 'block text-right' }, '訂單金額'),
     cell: (info) => h(
@@ -748,9 +719,7 @@ const columns = [
       const order = info.row.original
       const canEditStatus = hasCapability(loginStore.userInfo, 'canEditOrderStatus')
       const canDelete = hasCapability(loginStore.userInfo, 'canDeleteOrder')
-      // 退款沒有另外開一個授權欄位（見 types/staff.ts 的 AuthorityKey
-      // 說明），沿用「編輯訂單狀態」這一格權限——能改訂單狀態的人，
-      // 業務上本來就該有權限處理退款，兩者是同一個信任層級。
+      // 退款權限沿用「編輯訂單狀態」（canEditOrderStatus）。
       const canRefund = canEditStatus && order.orderStatus === '已完成' && remainingRefundableOf(order) > 0
       return h('div', { class: 'flex flex-wrap justify-end gap-1.5' }, [
         h('button', {
@@ -803,10 +772,8 @@ const tableRenderKey = computed(() => {
   return orderStore.order.map(o => `${o.orderId}_${o.orderStatus}_${o.refundedAmount}`).join('|')
 })
 
-// 訂單操作相關功能
 const currentOperator = () => `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`
 
-// P19（規劃書 §10 P19「退款／作廢主管二次授權」）
 async function requestRefundOrVoidApproval(title: string, description: string): Promise<string | null> {
   const credentials = await requestManagerAuth({ title, description })
   if (credentials === null) return null
@@ -827,7 +794,6 @@ async function requestRefundOrVoidApproval(title: string, description: string): 
   }
 }
 
-// 編輯訂單狀態
 const editOrderStatus = async (id: string) => {
   const result = await confirm({
     title: '修改訂單狀態',
@@ -871,7 +837,6 @@ const editOrderStatus = async (id: string) => {
   }
 }
 
-// 退款
 const refundOrder = async (order: OrderRecord) => {
   const max = remainingRefundableOf(order)
   if (max <= 0) return
@@ -898,7 +863,6 @@ const refundOrder = async (order: OrderRecord) => {
   }
 }
 
-// 刪除訂單
 const deleteOrder = async (id: string) => {
   const result = await confirm({
     title: '警告',

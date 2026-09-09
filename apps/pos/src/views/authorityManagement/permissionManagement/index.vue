@@ -1,6 +1,5 @@
 <template>
   <div class="w-full flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-surface-200 dark:divide-surface-800 min-h-[640px]">
-    <!-- 人員名單 -->
     <div class="xl:w-[68%] 2xl:w-[70%] p-5 flex flex-col justify-between overflow-hidden">
       <div>
         <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
@@ -14,19 +13,16 @@
             </div>
           </div>
           <div class="flex items-center gap-1.5">
-            <!-- 新增功能 -->
             <button
               type="button"
               class="pos-btn pos-btn-secondary px-3 py-1.5 text-xs font-bold"
               :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
               @click="openAddStaffDialog">新增</button>
-            <!-- 刪除功能 -->
             <button
               type="button"
               class="pos-btn pos-btn-danger px-3 py-1.5 text-xs font-bold"
               :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetAuthority') }"
               @click="deleteStaff">刪除</button>
-            <!-- 編輯功能 -->
             <button
               type="button"
               class="pos-btn pos-btn-primary px-3 py-1.5 text-xs font-bold"
@@ -35,14 +31,6 @@
           </div>
         </div>
 
-        <!-- UI-6（規劃書 §5.4「權限管理」）：人員名單原本是 4 + 18 = 22
-             欄的權限矩陣，整張表 whitespace-nowrap、永遠處於橫向捲動
-             狀態，且 18 個等權重的欄位讓權限之間的父子階層完全消失。
-             現在降到 5 欄，18 項權限的明細改用「角色」摘要（見
-             utils/authority.ts 的 deriveStaffRole）——角色是從既有的
-             authorityCheckList 反推出來的顯示層概念，跟三個角色範本
-             完全吻合就顯示範本名稱，對不上就是「自訂」，完整明細留到
-             編輯對話框（依父子關係分組呈現）才看得到。 -->
         <div class="mt-4 overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
           <table class="w-full text-center text-xs">
             <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
@@ -103,7 +91,6 @@
       </div>
     </div>
 
-    <!-- 付款方式 -->
     <div class="xl:w-[32%] 2xl:w-[30%] p-5 flex flex-col justify-between">
       <div>
         <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
@@ -117,19 +104,16 @@
             </div>
           </div>
           <div class="flex items-center gap-1.5">
-            <!-- 新增功能 -->
             <button
               type="button"
               class="pos-btn pos-btn-secondary px-3 py-1.5 text-xs font-bold"
               :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
               @click="openAddPayMethodDialog">新增</button>
-            <!-- 刪除功能 -->
             <button
               type="button"
               class="pos-btn pos-btn-danger px-3 py-1.5 text-xs font-bold"
               :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetPayMethod') }"
               @click="deletePayMethod">刪除</button>
-            <!-- 編輯功能 -->
             <button
               type="button"
               class="pos-btn pos-btn-primary px-3 py-1.5 text-xs font-bold"
@@ -186,7 +170,6 @@
     </div>
   </div>
 
-  <!-- 新增人員 -->
   <ModalDialog v-model:open="addStaffDialog" title="新增人員" size="lg">
     <div class="space-y-3.5 py-1">
       <div class="grid grid-cols-2 gap-3">
@@ -231,7 +214,6 @@
     </div>
   </ModalDialog>
 
-  <!-- 編輯人員 -->
   <ModalDialog v-model:open="editStaffDialog" title="編輯人員" size="lg">
     <div class="space-y-3.5 py-1">
       <div class="grid grid-cols-2 gap-3">
@@ -276,7 +258,6 @@
     </div>
   </ModalDialog>
 
-  <!-- 新增付款方式 -->
   <ModalDialog v-model:open="addPayMethodDialog" title="新增付款方式">
     <div class="space-y-4 py-1">
       <div>
@@ -322,7 +303,6 @@
     </div>
   </ModalDialog>
 
-  <!-- 編輯付款方式 -->
   <ModalDialog v-model:open="editPayMethodDialog" title="編輯付款方式">
     <div class="space-y-4 py-1">
       <div>
@@ -370,23 +350,6 @@
 </template>
 
 <script setup lang="ts">
-// P4：這個頁面顯示／編輯的「密碼」欄位是純本機狀態，跟登入（views/
-// login/index.vue 改用伺服端 PIN 驗證）已經沒有關聯，見 stores/
-// authorityManagement.ts 開頭的說明。
-//
-// P8：組件庫替換，跟 backgroundSetting/productManagement/index.vue
-// 一樣的範圍決定——ElMessage／ElMessageBox 改用 showToast／confirm／
-// alert，驗證邏輯維持原本的 if/else，不改成 VeeValidate + Zod。
-//
-// P18（規劃書 §10 P18「菜單與權限管理接上伺服端」）：人員名單、付款
-// 方式的新增／編輯／刪除改成真的呼叫 apps/api 的寫入端點（見
-// api/staff.ts、api/payment-methods.ts），不再只是本機陣列操作。Id
-// 因此不再是這裡手動輸入的欄位，新增時由伺服端配發；原本「人員的
-// 密碼」欄位本來就是純展示假資料（見 stores/authorityManagement.ts
-// 的說明），現在換成真正會送進伺服端、用來登入的 PIN 欄位。原本用
-// `id === 1` / `id === 1` 判斷「這是店長／這是現金支付，不可刪改」的
-// 寫法，改成用業務含意本身（職稱是店長／名稱是現金）判斷——伺服端的
-// id 是 UUID，不會再有「第一筆一定是 1」這件事。
 import { ref, computed } from 'vue'
 import { UserCheck, CreditCard, Pencil } from 'lucide-vue-next'
 import {
@@ -437,20 +400,10 @@ function apiErrorMessage(err: unknown): string {
 }
 const PIN_PATTERN = /^\d{4,6}$/
 
-// 人員名單、付款方式清單都在 App.vue 啟動時同步一次（見
-// stores/authorityManagement.ts 的 staffSource、stores/order.ts 的
-// paymentSource 說明），這裡不再另外掛載時整包覆蓋——這個頁面本身的
-// 新增／編輯／刪除已經會用伺服端回應直接更新對應的本機陣列，不需要
-// 也不應該再有第二個地方決定這兩份清單長怎樣（曾經在這裡掛載時整包
-// 重新 fetch 覆蓋，結果使用者剛送出新增表單，畫面上的新資料就被稍後
-// 才 resolve 的舊 fetch 蓋掉，見 authorityManagement.ts 的完整說明）。
+// 人員與付款方式由 App.vue 啟動時同步，CRUD 直接以 API 回應更新本機陣列，避免重複 fetch 覆蓋。
 
-// 人員名單相關的功能
-// 存放當前選擇的人員
 const currentStaff = ref<MaybeSelected<StaffMember>>({})
-// 控制新增人員Dialog
 const addStaffDialog = ref(false)
-// 開啟新增人員Dialog
 const openAddStaffDialog = () => {
   currentInputStaffName.value = ''
   currentInputStaffJobTitle.value = ''
@@ -459,30 +412,19 @@ const openAddStaffDialog = () => {
   authorityCheckList.value = []
   addStaffDialog.value = true
 }
-// 關閉新增人員Dialog
 const closeAddStaffDialog = () => {
   addStaffDialog.value = false
   showToast('操作取消', 'error')
 }
-// 定義當前新增人員的名稱
 const currentInputStaffName = ref('')
-// 定義當前新增人員的職稱
 const currentInputStaffJobTitle = ref('')
-// 定義當前新增人員的帳號
 const currentInputStaffAccount = ref('')
-// 定義當前新增人員的登入用 PIN
 const currentInputStaffPin = ref('')
-// 定義權限管理清單
 const authorityCheckList = ref<AuthorityKey[]>([])
-// 定義編輯人員的權限管理清單
 const editAuthorityCheckList = ref<AuthorityKey[]>([])
 
-// 權限欄位清單、分組與角色範本的定義都在 utils/authority.ts（規劃書
-// §5.4）——人員名單表格的「權限」欄摘要、AuthorityChecklist 共用元件
-// 都要用到同一份定義，不能各自維護一份。
+// 權限定義與角色範本收斂在 utils/authority.ts，供人員表格摘要與 AuthorityChecklist 共用。
 
-// 人員名單「權限」欄的角色徽章配色：角色範本各自一個顏色，「自訂」用
-// 中性色，一眼就能分辨這個人的權限是不是照著標準範本設定的。
 function staffRoleBadgeClass(authorityCheckList: AuthorityKey[]): string {
   const role = deriveStaffRole(authorityCheckList)
   if (role === CUSTOM_ROLE_LABEL) return 'bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400'
@@ -490,7 +432,6 @@ function staffRoleBadgeClass(authorityCheckList: AuthorityKey[]): string {
   return 'bg-info-50 text-info-600 dark:bg-info-950/50 dark:text-info-400'
 }
 
-// 新增人員
 const addStaff = async () => {
   if (currentInputStaffName.value == '' || currentInputStaffJobTitle.value == '' || currentInputStaffAccount.value == '' || currentInputStaffPin.value == '') {
     showToast('請輸入完整資訊', 'error')
@@ -512,14 +453,8 @@ const addStaff = async () => {
       capabilities: authorityCheckList.value,
       pin: currentInputStaffPin.value,
     })
-    // 用陣列重建取代 .push()，跟 addPayMethod 是同樣的原因（見那裡的
-    // 說明）——這個陣列同時被 App.vue 的 useQuery watch 盯著，保險起見
-    // 一律用重建而不是原地修改陣列的方法。
+    // 陣列重建以觸發 reactive 更新，並標記本機已異動以防背景同步覆蓋。
     authorityManagementStore.staffList = [...authorityManagementStore.staffList, toStaffMember(created)]
-    // App.vue 啟動時同步一次的 fetch 可能還沒 resolve 就先做了這次
-    // 新增——見 stores/authorityManagement.ts 的 staffSource 說明，這裡
-    // 標記「本機已經有異動」，稍後那個較舊的 fetch 結果 resolve 時
-    // 才不會蓋掉剛新增的這筆資料。
     authorityManagementStore.staffSource = 'server'
     showToast('新增人員成功', 'success')
     addStaffDialog.value = false
@@ -527,7 +462,6 @@ const addStaff = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 刪除人員
 const deleteStaff = async () => {
   if (currentStaff.value.jobTitle === '店長') {
     showToast('不可刪除店長', 'error')
@@ -553,18 +487,11 @@ const deleteStaff = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 控制編輯人員Dialog
 const editStaffDialog = ref(false)
-// 定義當前編輯人員的名稱
 const currentEditInputStaffName = ref('')
-// 定義當前編輯人員的職稱
 const currentEditInputStaffJobTitle = ref('')
-// 定義當前編輯人員的帳號
 const currentEditInputStaffAccount = ref('')
-// 定義當前編輯人員的登入用 PIN（留空代表不變更，見 api/staff.ts 的
-// updateStaff 說明）
 const currentEditInputStaffPin = ref('')
-// 開啟控制編輯人員Dialog人員Dialog
 const openEditStaffDialog = () => {
   if (currentStaff.value.jobTitle === '店長') {
     showToast('不可編輯店長', 'error')
@@ -585,12 +512,10 @@ const openEditStaffDialog = () => {
     void alert({ title: '通知', description: '請先選擇要編輯的人員', confirmText: '繼續選擇' })
   }
 }
-// 關閉編輯人員Dialog
 const closeEditStaffDialog = () => {
   editStaffDialog.value = false
   showToast('操作取消', 'error')
 }
-// 儲存編輯
 const editStaff = async () => {
   if (currentEditInputStaffName.value == '' || currentEditInputStaffJobTitle.value == '' || currentEditInputStaffAccount.value == '') {
     showToast('請輸入完整資訊', 'error')
@@ -632,41 +557,29 @@ const editStaff = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 分頁器
-// 定義當前的頁數
 const staffCurrentPage = ref(1)
-// 切換頁數
 const handleStaffCurrentChange = (page: number) => {
   staffCurrentPage.value = page
 }
-// 計算當前頁數並切換顯示內容
 const sliceStaffList = computed(() => {
   return authorityManagementStore.staffList.slice((staffCurrentPage.value - 1) * 10, staffCurrentPage.value * 10)
 })
 const staffPageCount = computed(() => Math.max(Math.ceil(authorityManagementStore.staffList.length / 10), 1))
 
-// 付款方式相關的功能
-// 存放當前選擇的付款方式
 const currentPayMethod = ref<MaybeSelected<PaymentMethod>>({})
-// 控制新增付款方式Dialog
 const addPayMethodDialog = ref(false)
-// 開啟新增付款方式Dialog
 const openAddPayMethodDialog = () => {
   currentInputPayMethodName.value = ''
   currentSelectPayMethod.value = ''
   isUsePayMethod.value = true
   addPayMethodDialog.value = true
 }
-// 關閉新增付款方式Dialog
 const closeAddPayMethodDialog = () => {
   addPayMethodDialog.value = false
   showToast('操作取消', 'error')
 }
-// 定義當前新增付款方式的名稱
 const currentInputPayMethodName = ref('')
-// 定義當前選擇付款方式
 const currentSelectPayMethod = ref<PaymentUseMethod | ''>('')
-// 定義付款方式
 const payMethodOptions = ref([{
   value: '紙鈔',
   label: '紙鈔',
@@ -679,9 +592,7 @@ const payMethodOptions = ref([{
   value: '掃描',
   label: '掃描',
 }])
-// 定義當前是否啟用付款方式
 const isUsePayMethod = ref(true)
-// 新增付款方式
 const addPayMethod = async () => {
   if (currentInputPayMethodName.value == '' || currentSelectPayMethod.value == '') {
     showToast('請輸入完整資訊', 'error')
@@ -697,17 +608,8 @@ const addPayMethod = async () => {
       disabled: !isUsePayMethod.value,
       useMethod: currentSelectPayMethod.value as PaymentUseMethod,
     })
-    // 這裡用陣列重建（spread）取代 .push()：orderStore.paymentList 同時被
-    // App.vue 的 useQuery watch（付款方式同步）盯著，實際測試中發現對
-    // 這個陣列呼叫 .push() 之後，陣列的 reactive 依賴沒有正確觸發、
-    // 畫面沒有反映新增的項目（.push() 回傳的新長度是對的，但重新讀取
-    // 陣列內容看不到新項目），改成整個陣列重建就正常了，跟下面
-    // deletePayMethod 的 filter 重建是同一種寫法，行為更可預期。
+    // 陣列重建以觸發 reactive 更新，並標記本機已異動以防背景同步覆蓋。
     orderStore.paymentList = [...orderStore.paymentList, created]
-    // App.vue 啟動時同步一次的 fetch 可能還沒 resolve 就先做了這次
-    // 新增——見 stores/order.ts 的 paymentSource 說明，這裡標記「本機
-    // 已經有異動」，稍後那個較舊的 fetch 結果 resolve 時才不會蓋掉
-    // 剛新增的這筆資料。
     orderStore.paymentSource = 'server'
     showToast('新增付款方式成功', 'success')
     addPayMethodDialog.value = false
@@ -715,7 +617,6 @@ const addPayMethod = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 刪除付款方式
 const deletePayMethod = async () => {
   if (currentPayMethod.value.name === '現金') {
     showToast('不可刪除現金支付', 'error')
@@ -737,26 +638,15 @@ const deletePayMethod = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 控制編輯付款方式Dialog
 const editPayMethodDialog = ref(false)
-// 定義當前編輯付款方式的名稱
 const currentEditInputPayMethodName = ref('')
-// 定義當前選擇付款方式
 const currentSelectEditPayMethod = ref<PaymentUseMethod | ''>('')
-// 定義當前是否啟用付款方式
 const isUseEditPayMethod = ref(true)
-// 開啟控制編輯付款方式Dialog
 const openEditPayMethodDialog = () => {
   if (currentPayMethod.value.name === '現金') {
     showToast('不可編輯現金支付', 'error')
     return
   }
-  // P6：這裡原本會順手把 orderStore.payment／currentSelectingUseMethod／
-  // useMethod 重置成現金——那是點餐頁「目前選取的付款方式」單選狀態，
-  // 跟這裡編輯付款方式清單的表單完全無關，看起來是防禦性地清掉點餐頁
-  // 可能殘留的選取狀態。結帳流程改用 PaymentPanel（見
-  // views/home/index.vue）之後，那組單選狀態已經整個移除，這裡的重置
-  // 也就沒有對象可重置，直接拿掉。
   if (currentPayMethod.value.name) {
     currentEditInputPayMethodName.value = currentPayMethod.value.name
     currentSelectEditPayMethod.value = currentPayMethod.value.useMethod!
@@ -766,12 +656,10 @@ const openEditPayMethodDialog = () => {
     void alert({ title: '通知', description: '請先選擇要編輯的付款方式', confirmText: '繼續選擇' })
   }
 }
-// 關閉編輯付款方式Dialog
 const closeEditPayMethodDialog = () => {
   editPayMethodDialog.value = false
   showToast('操作取消', 'error')
 }
-// 儲存編輯
 const editPayMethod = async () => {
   if (currentEditInputPayMethodName.value == '' || currentSelectEditPayMethod.value == '') {
     showToast('請輸入完整資訊', 'error')
@@ -803,14 +691,10 @@ const editPayMethod = async () => {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-// 分頁器
-// 定義當前的頁數
 const payMethodCurrentPage = ref(1)
-// 切換頁數
 const handlePayMethodCurrentChange = (page: number) => {
   payMethodCurrentPage.value = page
 }
-// 計算當前頁數並切換顯示內容
 const slicePayMethodList = computed(() => {
   return orderStore.paymentList.slice((payMethodCurrentPage.value - 1) * 10, payMethodCurrentPage.value * 10)
 })

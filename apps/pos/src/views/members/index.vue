@@ -1,9 +1,6 @@
 <template>
-  <!-- UI-3（規劃書 B-7）：捲動改由 layout/admin/index.vue 的 <main>
-       統一負責，這裡不再自己 overflow-y-auto + min-h-[calc(100vh-64px)]。 -->
   <div class="w-full flex flex-col items-center bg-surface-50/50 dark:bg-surface-950 px-4 py-6">
     <div class="w-full max-w-7xl flex flex-col gap-5">
-      <!-- 頂部標題卡片 -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm">
         <div>
           <div class="flex items-center gap-2.5">
@@ -29,7 +26,6 @@
         </div>
       </div>
 
-      <!-- 會員名單卡片 -->
       <div class="w-full rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm p-4 overflow-hidden">
         <div class="flex items-center justify-between pb-3 border-b border-surface-100 dark:border-surface-800">
           <div class="text-sm font-black text-surface-800 dark:text-surface-200">會員名單</div>
@@ -82,7 +78,6 @@
       </table>
     </div>
 
-    <!-- 新增會員 -->
     <ModalDialog v-model:open="addDialog" title="新增會員">
       <Form v-slot="{ isSubmitting }" :validation-schema="toTypedSchema(memberSchema())" :initial-values="{ name: '', phone: '' }" @submit="onSubmitAdd">
         <FormField name="name" label="姓名" :disabled="isSubmitting" placeholder="例如: 王小明" />
@@ -94,7 +89,6 @@
       </Form>
     </ModalDialog>
 
-    <!-- 編輯會員 -->
     <ModalDialog v-model:open="editDialog" title="編輯會員">
       <Form
         v-slot="{ isSubmitting }"
@@ -110,7 +104,6 @@
       </Form>
     </ModalDialog>
 
-    <!-- 消費紀錄 -->
     <ModalDialog v-model:open="detailDialog" :title="`${detail?.name ?? ''} 的消費紀錄`">
       <p class="text-sm text-surface-600 dark:text-surface-400">目前累積點數：<span class="font-bold text-primary-600 dark:text-primary-400">{{ detail?.points ?? 0 }}</span></p>
       <table class="mt-3 w-full text-center text-sm">
@@ -141,12 +134,6 @@
 
 <script setup lang="ts">
 import { UserPlus } from 'lucide-vue-next'
-// P22（規劃書 §10 P22「會員與顧客經營」）：新增／編輯用 VeeValidate +
-// Zod 的 <Form> 元件，跟 backgroundSetting/offerSetting/index.vue 是
-// 同一套模式（見該檔案關於「多個獨立表單各自用一個 <Form> 元件實例」
-// 的完整說明）——這裡只有新增／編輯兩個表單，欄位單純（姓名＋手機），
-// 沒有 productManagement 那種欄位間互相牽動的邏輯，適用 VeeValidate
-// 而不是手動 if/else。
 import { onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -178,12 +165,7 @@ function apiErrorMessage(err: unknown): string {
   return '連不上伺服端，請確認網路連線'
 }
 
-// 會員名單——這是後台管理專用資料，掛載時直接向伺服端拿最新清單，
-// 不需要跟 stores/drink.ts 那種「只同步一次」的 catalogSource 模式，
-// 理由跟 stores/authorityManagement.ts 曾經考慮過、後來改掉的做法
-// 相反：這裡沒有「點餐頁也要用這份資料、必須離線可用」的需求（見
-// 該檔案的完整說明——這裡刻意不採用那套 App.vue 啟動時同步的模式，
-// 因為根本沒有第二個地方會用到這份清單，不會有互相蓋掉的競態）。
+// 會員名單為後台管理專用資料，無需離線可用，掛載時直接向伺服端獲取最新清單。
 const members = ref<Member[]>([])
 onMounted(async () => {
   try {

@@ -1,9 +1,4 @@
 <template>
-  <!-- UI-5（規劃書 §5.2「後台設定」）：這個子頁原本是三個子頁裡唯一
-       沒有卡片外框、沒有圖示標題、表格沒有邊框、也沒有分頁footer的
-       一個——跟商品管理／優惠設定的視覺語言完全對不上。改用跟另外
-       兩個子頁一致的 card-panel ＋ 圖示標題列 ＋ 表格外框 ＋ 統計列，
-       按鈕也統一改用 pos-btn。 -->
   <div class="w-full p-4">
     <div class="card-panel p-5 flex flex-col gap-3.5">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-surface-200 dark:border-surface-800">
@@ -79,9 +74,6 @@
 </template>
 
 <script setup lang="ts">
-// P23（規劃書 §10 P23「電子發票平台串接」）：新增字軌用 VeeValidate +
-// Zod 的 <Form> 元件，跟 offerSetting/index.vue 是同一套模式——這裡
-// 只有新增一個表單，欄位單純，適用 VeeValidate 而不是手動 if/else。
 import { onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -123,8 +115,7 @@ async function onSubmit(values: Record<string, unknown>) {
   const input = values as { trackCode: string; periodLabel: string; rangeStart: number; rangeEnd: number }
   try {
     const created = await createInvoiceTrack(input)
-    // 新字軌會自動停用其他字軌（見 api/invoices.ts 的說明），本機也
-    // 同步把其他字軌標成停用，不用整包重新 fetch。
+    // 新增字軌會自動停用其他字軌，本機同步狀態避免重新 fetch
     tracks.value = [...tracks.value.map((track) => ({ ...track, isActive: false })), created]
     addDialog.value = false
     showToast('新增成功', 'success')

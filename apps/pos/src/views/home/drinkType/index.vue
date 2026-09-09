@@ -25,7 +25,6 @@
 import { useDrinkStore } from '@/stores/drink'
 const drinkStore = useDrinkStore()
 
-// 切換飲料系列相關功能
 const changeType = (type: string) => {
   drinkStore.drinkTypeMenu = type
 }
