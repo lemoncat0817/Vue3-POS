@@ -6,7 +6,9 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "dev": "pnpm --filter @pos/app dev",
+    "dev": "pnpm -r --parallel --if-present run dev",
+    "dev:app": "pnpm --filter @pos/app dev",
+    "dev:api": "pnpm --filter @pos/api dev",
     "build": "pnpm -r --if-present run build",
     "preview": "pnpm --filter @pos/app preview",
     "typecheck": "pnpm -r --if-present run typecheck",
