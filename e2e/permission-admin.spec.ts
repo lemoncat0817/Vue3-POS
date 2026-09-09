@@ -17,12 +17,14 @@ test('後台新增／刪除人員會真的呼叫伺服端，重新整理後狀�
   const createResponse = page.waitForResponse(
     (res) => res.url().includes('/api/staff') && res.request().method() === 'POST' && res.ok(),
   )
-  await page.getByRole('button', { name: '新增', exact: true }).first().click()
+  await page.getByRole('button', { name: '＋ 新增人員', exact: true }).click()
   const addDialog = page.getByRole('dialog', { name: '新增人員' })
   await addDialog.getByPlaceholder('例如: Jensen、Jacky...').fill(staffName)
   await addDialog.getByPlaceholder('例如: 襄理、工讀生...').fill('E2E測試職稱')
   await addDialog.getByPlaceholder('請輸入帳號').fill(staffAccount)
   await addDialog.getByPlaceholder('4~6碼數字').fill('9999')
+  await addDialog.getByText('選擇權限群組').click()
+  await page.getByRole('option', { name: '工讀生' }).click()
   await addDialog.getByRole('button', { name: '新增', exact: true }).click()
 
   const createBody = (await (await createResponse).json()) as { id: string; name: string; account: string }
@@ -40,8 +42,7 @@ test('後台新增／刪除人員會真的呼叫伺服端，重新整理後狀�
   const deleteResponse = page.waitForResponse(
     (res) => res.url().includes(`/api/staff/${createBody.id}`) && res.request().method() === 'DELETE' && res.status() === 204,
   )
-  await page.getByText(staffName, { exact: true }).click()
-  await page.getByRole('button', { name: '刪除', exact: true }).first().click()
+  await page.getByRole('row', { name: new RegExp(staffName) }).getByRole('button', { name: '刪除', exact: true }).click()
   await page.getByRole('button', { name: '確定' }).click()
   await deleteResponse
   await expect(page.getByTestId('toast-message')).toHaveText('刪除成功')

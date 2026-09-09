@@ -29,8 +29,8 @@ test('D-04：登出後，PIN 一定會被清空，帳號則依「記住帳號」
   await expect(page.getByPlaceholder('請輸入 PIN')).toHaveValue('')
 })
 
-// 驗證人員權限變更即時反映於角色摘要與編輯表單，無多頭狀態不一致。
-test('D-10：編輯人員權限只有一份來源，取消勾選後名單角色摘要與編輯視窗立刻反映', async ({ page }) => {
+// 驗證權限群組（角色）的權限異動只有一份來源，即時反映在人員名單，無多頭狀態不一致。
+test('D-10：編輯權限群組的權限內容，人員名單即時反映，無多頭狀態不一致', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
   await page.getByPlaceholder('請輸入 PIN').fill('1234')
@@ -41,25 +41,27 @@ test('D-10：編輯人員權限只有一份來源，取消勾選後名單角色�
   await expect(page).toHaveURL(/\/authorityManagement$/)
 
   const jamesRow = page.getByRole('row', { name: /James/ })
-  await expect(jamesRow.getByText('值班經理', { exact: true }).first()).toBeVisible()
+  await expect(jamesRow.getByText('10/18')).toBeVisible()
 
-  await jamesRow.click()
-  await page.getByRole('button', { name: '編輯', exact: true }).first().click()
+  await page.getByRole('button', { name: '權限群組', exact: true }).click()
+  const dutyManagerRow = page.getByRole('row', { name: /值班經理/ })
+  await dutyManagerRow.getByRole('button', { name: '編輯', exact: true }).click()
   const checkbox = page.getByRole('dialog').getByRole('checkbox', { name: '查看數據分析' })
   await expect(checkbox).toBeChecked()
   await checkbox.uncheck()
   await page.getByRole('button', { name: '保存', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('保存成功')
 
-  await expect(jamesRow.getByText('自訂', { exact: true })).toBeVisible()
-
-  await jamesRow.click()
-  await page.getByRole('button', { name: '編輯', exact: true }).first().click()
-  await expect(page.getByRole('dialog').getByRole('checkbox', { name: '查看數據分析' })).not.toBeChecked()
+  await page.getByRole('button', { name: '人員管理', exact: true }).click()
+  await expect(jamesRow.getByText('9/18')).toBeVisible()
 
   // 恢復權限勾選以維持種子資料初始狀態。
+  await page.getByRole('button', { name: '權限群組', exact: true }).click()
+  await dutyManagerRow.getByRole('button', { name: '編輯', exact: true }).click()
   await page.getByRole('dialog').getByRole('checkbox', { name: '查看數據分析' }).check()
   await page.getByRole('button', { name: '保存', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('保存成功')
-  await expect(jamesRow.getByText('值班經理', { exact: true }).first()).toBeVisible()
+
+  await page.getByRole('button', { name: '人員管理', exact: true }).click()
+  await expect(jamesRow.getByText('10/18')).toBeVisible()
 })
