@@ -140,8 +140,7 @@
 
           <!-- 圖表高度改用 clamp()：隨視窗高度縮放，不再是不管視窗多矮
                都佔滿 500px、把下方內容全部擠出首屏之外的固定值。 -->
-          <div v-if="selectTime[0] === selectTime[1]" ref="oneDayBusiness" class="w-full h-[clamp(260px,38vh,460px)]" />
-          <div v-else ref="rangeBusiness" class="w-full h-[clamp(260px,38vh,460px)]" />
+          <div ref="businessChartRef" class="w-full h-[clamp(260px,38vh,460px)]" />
         </div>
 
         <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
@@ -456,26 +455,18 @@ const handlePrintSettlement = () => {
   dialogSettlement.value = false
 }
 
-const oneDayBusiness = ref<HTMLDivElement>()
-const rangeBusiness = ref<HTMLDivElement>()
-
-let activeCharts: echarts.ECharts[] = []
-
-const clearCharts = () => {
-  activeCharts.forEach(c => c.dispose())
-  activeCharts = []
-}
+const businessChartRef = ref<HTMLDivElement>()
+let chartInstance: echarts.ECharts | null = null
+let resizeObserver: ResizeObserver | null = null
 
 const isDark = computed(() => theme.value === 'dark')
 const getTextColor = () => isDark.value ? '#cbd5e1' : '#475569'
 const getSubtextColor = () => isDark.value ? '#64748b' : '#94a3b8'
 const getSplitLineColor = () => isDark.value ? '#334155' : '#f1f5f9'
 
-const showOneDayBusiness = () => {
-  if (!salesReport.value || !oneDayBusiness.value) return
-  const chart = echarts.init(oneDayBusiness.value)
-  activeCharts.push(chart)
-  chart.setOption({
+const getOneDayOption = () => {
+  if (!salesReport.value) return {}
+  return {
     title: {
       text: `${selectTime.value[0]} 各時段營業額動態 (Hourly Revenue)`,
       left: 'center',
@@ -525,14 +516,12 @@ const showOneDayBusiness = () => {
         data: salesReport.value.hourlyRevenue.map(point => point.revenue),
       }
     ]
-  })
+  }
 }
 
-const showRangeBusiness = () => {
-  if (!salesReport.value || !rangeBusiness.value) return
-  const chart = echarts.init(rangeBusiness.value)
-  activeCharts.push(chart)
-  chart.setOption({
+const getRangeOption = () => {
+  if (!salesReport.value) return {}
+  return {
     title: {
       text: `${selectTime.value[0]} ~ ${selectTime.value[1]} 每日營業額趨勢 (Daily Revenue)`,
       left: 'center',
@@ -579,36 +568,51 @@ const showRangeBusiness = () => {
         data: salesReport.value.dailyRevenue.map(point => point.revenue),
       }
     ]
-  })
+  }
 }
 
-const initCharts = () => {
-  clearCharts()
-  if (!salesReport.value) return
-
-  if (selectTime.value[0] === selectTime.value[1]) {
-    showOneDayBusiness()
-  } else {
-    showRangeBusiness()
+const renderChart = () => {
+  if (!salesReport.value || !businessChartRef.value) return
+  if (!chartInstance) {
+    chartInstance = echarts.init(businessChartRef.value)
   }
+  const option = selectTime.value[0] === selectTime.value[1]
+    ? getOneDayOption()
+    : getRangeOption()
+
+  chartInstance.setOption(option, true)
 }
 
 watch([salesReport, () => selectTime.value, isDark], () => {
   nextTick(() => {
-    initCharts()
+    renderChart()
   })
-})
+}, { deep: true })
 
 const handleResize = () => {
-  activeCharts.forEach(c => c.resize())
+  chartInstance?.resize()
 }
 
 onMounted(() => {
   window.addEventListener('resize', handleResize)
+  if (businessChartRef.value && typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      chartInstance?.resize()
+    })
+    resizeObserver.observe(businessChartRef.value)
+  }
+  nextTick(() => {
+    renderChart()
+  })
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  clearCharts()
+  resizeObserver?.disconnect()
+  resizeObserver = null
+  if (chartInstance) {
+    chartInstance.dispose()
+    chartInstance = null
+  }
 })
 </script>
