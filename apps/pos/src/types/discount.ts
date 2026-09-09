@@ -7,13 +7,7 @@ export interface MoneyDiscount {
   discountMoney: FormNumeric
 }
 
-/**
- * 折數折價券（例如「整單95折」）。
- *
- * 欄位沿用種子資料的命名：即使代表的是折數（0.95），欄位名稱仍是
- * `discountMoney`，與 {@link MoneyDiscount} 同名但意義不同——這是既有資料
- * 的命名方式，P0 如實保留，不重新命名。
- */
+// 折數折價券（欄位沿用既有命名 discountMoney 存折數）。
 export interface PercentDiscount {
   id: FormNumeric
   name: string
@@ -28,13 +22,7 @@ export interface OftenUseDiscount {
   discountPercent: FormNumeric
 }
 
-/**
- * 常用折扣固定是 5 筆（環保杯、瓶裝、九折、八五折、員工八折），後台只能
- * 編輯內容、不能新增或刪除（見 offerSetting.vue 沒有對應的新增/刪除功能）。
- * 標成固定長度的 tuple，讓 `oftenUseDiscount[0]`～`[4]` 這類以字面索引
- * 存取的地方（home/index.vue 的六個折扣函式）不必因
- * `noUncheckedIndexedAccess` 而多包一層 undefined 判斷。
- */
+// 常用折扣固定為 5 筆，標為固定長度 tuple 避免索引存取時產生 undefined 檢查。
 export type OftenUseDiscountList = [
   OftenUseDiscount,
   OftenUseDiscount,
