@@ -189,14 +189,14 @@
           <RankedBarChart :items="salesReport?.topAddOns ?? []" unit="份" color="#10b981" empty-label="目前無加購紀錄" />
         </div>
 
-        <div class="xl:col-span-8 card-panel p-4 flex flex-col gap-3">
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">多元支付通路結構 (Top 5)</span>
-          <RankedBarChart :items="salesReport?.topPaymentMethods ?? []" unit="次交易" color="#0ea5e9" empty-label="目前無付款紀錄" />
-        </div>
-
         <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
           <span class="text-sm font-black text-surface-900 dark:text-surface-100">內用／外帶佔比</span>
           <ChannelDonutChart :items="salesReport?.channelBreakdown ?? []" />
+        </div>
+
+        <div class="xl:col-span-8 card-panel p-4 flex flex-col gap-3">
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">多元支付通路結構 (Top 5)</span>
+          <RankedBarChart :items="salesReport?.topPaymentMethods ?? []" unit="次交易" color="#0ea5e9" empty-label="目前無付款紀錄" />
         </div>
       </div>
     </div>
