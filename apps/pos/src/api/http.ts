@@ -25,7 +25,13 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
     },
   })
   if (!res.ok) {
-    throw new ApiError(`${init?.method ?? 'GET'} ${path} 失敗：HTTP ${res.status}`, res.status)
+    // 盡量帶上伺服端 { error: string } body 的實際訊息（見各 routes 的 errorSchema），
+    // 解析失敗（非 JSON、或沒有 error 欄位）時退回原本的通用訊息。
+    const serverMessage = await res
+      .json()
+      .then((body: unknown) => (body && typeof body === 'object' && 'error' in body ? String((body as { error: unknown }).error) : null))
+      .catch(() => null)
+    throw new ApiError(serverMessage ?? `${init?.method ?? 'GET'} ${path} 失敗：HTTP ${res.status}`, res.status)
   }
   // 204 No Content 無 body，直接回傳 undefined。
   if (res.status === 204) {

@@ -668,8 +668,7 @@ const columns = [
       const order = info.row.original
       const canEditStatus = hasCapability(loginStore.userInfo, 'canEditOrderStatus')
       const canDelete = hasCapability(loginStore.userInfo, 'canDeleteOrder')
-      // 退款權限沿用「編輯訂單狀態」（canEditOrderStatus）。
-      const canRefund = canEditStatus && order.orderStatus === '已完成' && remainingRefundableOf(order) > 0
+      const canRefund = hasCapability(loginStore.userInfo, 'canRefundOrVoid') && order.orderStatus === '已完成' && remainingRefundableOf(order) > 0
       return h('div', { class: 'flex flex-wrap justify-end gap-1.5' }, [
         h('button', {
           type: 'button',
@@ -719,7 +718,7 @@ async function requestRefundOrVoidApproval(title: string, description: string): 
   if (credentials === null) return null
   try {
     const staff = await operatorLogin(credentials.account, credentials.pin)
-    if (!staff.capabilities.includes('canEditOrderStatus')) {
+    if (!staff.capabilities.includes('canRefundOrVoid')) {
       showToast('這個帳號沒有退款／作廢的權限，操作已取消', 'error')
       return null
     }

@@ -7,6 +7,7 @@ export type AuthorityKey =
   | 'canCheckOrder'
   | 'canEditOrderStatus'
   | 'canDeleteOrder'
+  | 'canRefundOrVoid'
   | 'canCheckBackgroundSetting'
   | 'canSetCategory'
   | 'canSetProduct'
@@ -20,12 +21,18 @@ export type AuthorityKey =
   | 'canCheckMembers'
   | 'canManageTables'
 
-/** 員工資料。權限統一由 `authorityCheckList` 維護，透過 `hasCapability()` 判斷。 */
+/**
+ * 員工資料。權限只存在角色（權限群組）身上，員工只認 roleId；
+ * authorityCheckList 是伺服端依 roleId 解析出的 capabilities 快照，
+ * 供 `hasCapability()` 直接判斷，不必每次都另外查角色。
+ */
 export interface StaffMember {
   id: FormNumeric
   name: string
   jobTitle: string
   account: string
   password: string
+  roleId: string
+  roleName: string
   authorityCheckList: AuthorityKey[]
 }

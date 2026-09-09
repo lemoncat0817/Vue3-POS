@@ -22,10 +22,12 @@ import { useCatalogStore } from '@/stores/catalog'
 import { useDiscountStore } from '@/stores/discount'
 import { useOrderStore } from '@/stores/order'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
+import { useRolesStore } from '@/stores/roles'
 import { fetchCatalog, toLocalAddOns, toLocalCategories, toLocalModifierGroups, toLocalProducts } from '@/api/catalog'
 import { fetchPromotions, toOrderCoupons, toQuickDiscounts } from '@/api/promotions'
 import { fetchPaymentMethods } from '@/api/payment-methods'
 import { fetchStaffList } from '@/api/staff'
+import { fetchRoleList } from '@/api/roles'
 import { toStaffMember } from '@/api/auth'
 import { useOrderSync } from '@/offline/useOrderSync'
 // 根元件匯入以提早套用深色模式 class，避免主題閃爍。
@@ -90,6 +92,19 @@ const { data: staffListResponse } = useQuery({
 watch(staffListResponse, (value) => {
   if (!value) return
   authorityManagementStore.hydrateStaffFromServer(value.map(toStaffMember))
+})
+
+// 應用啟動時一次性同步權限群組（角色）清單。
+const rolesStore = useRolesStore()
+const { data: roleListResponse } = useQuery({
+  queryKey: ['roles'],
+  queryFn: fetchRoleList,
+  staleTime: Infinity,
+  retry: 1,
+})
+watch(roleListResponse, (value) => {
+  if (!value) return
+  rolesStore.hydrateRolesFromServer(value)
 })
 
 // 根元件常駐啟動離線送單背景同步 worker。

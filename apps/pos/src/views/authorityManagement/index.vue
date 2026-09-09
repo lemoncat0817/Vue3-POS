@@ -8,17 +8,46 @@
             門市操作人員帳號、職稱與權限分配
           </p>
         </div>
+
+        <!-- 分段導覽：按鈕文字供 e2e 測試定位 -->
+        <div class="flex items-center gap-1.5 rounded-xl bg-surface-100 dark:bg-surface-800 p-1">
+          <button
+            type="button"
+            class="flex items-center gap-2 rounded-lg px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none"
+            :class="authorityManagementStore.currentTab === 'staff'
+              ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm ring-1 ring-black/5 dark:ring-white/5'
+              : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-200'"
+            @click="authorityManagementStore.currentTab = 'staff'">
+            <Users class="h-4 w-4" />
+            <span>人員管理</span>
+          </button>
+          <button
+            type="button"
+            class="flex items-center gap-2 rounded-lg px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none"
+            :class="authorityManagementStore.currentTab === 'roles'
+              ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm ring-1 ring-black/5 dark:ring-white/5'
+              : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-200'"
+            @click="authorityManagementStore.currentTab = 'roles'">
+            <ShieldCheck class="h-4 w-4" />
+            <span>權限群組</span>
+          </button>
+        </div>
       </div>
 
       <div class="w-full rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[640px] flex overflow-hidden">
-        <PermissionManagement class="w-full" />
+        <StaffManagement v-if="authorityManagementStore.currentTab === 'staff'" class="w-full" />
+        <RoleGroupManagement v-else class="w-full" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import PermissionManagement from './permissionManagement/index.vue'
+import { Users, ShieldCheck } from 'lucide-vue-next'
+import StaffManagement from './staffManagement/index.vue'
+import RoleGroupManagement from './roleGroupManagement/index.vue'
+import { useAuthorityManagementStore } from '@/stores/authorityManagement'
+const authorityManagementStore = useAuthorityManagementStore()
 </script>
 
 <style scoped></style>

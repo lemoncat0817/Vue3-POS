@@ -30,6 +30,18 @@ describe('fetchJson', () => {
     )
   })
 
+  it('非 2xx 回應的 body 帶 error 欄位時，ApiError 訊息採用伺服端的原話', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve({ ok: false, status: 409, json: () => Promise.resolve({ error: '此變更會讓沒有人擁有權限管理能力' }) } as Response),
+      ),
+    )
+    await expect(fetchJson('/api/roles/role-1', { method: 'PUT' })).rejects.toMatchObject(
+      new ApiError('此變更會讓沒有人擁有權限管理能力', 409),
+    )
+  })
+
   it('正常回應照樣解析 JSON body', async () => {
     vi.stubGlobal(
       'fetch',

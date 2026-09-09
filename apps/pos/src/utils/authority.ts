@@ -1,6 +1,6 @@
 import type { AuthorityKey } from '@/types'
 
-/** 權限欄位清單、依附關係與角色範本共用定義。 */
+/** 權限欄位清單、依附關係共用定義。權限的實際分組（角色）改由後端 roles 管理，見 stores/roles.ts。 */
 export interface AuthorityField {
   label: string
   value: AuthorityKey
@@ -13,6 +13,7 @@ export const AUTHORITY_FIELDS: AuthorityField[] = [
   { label: '查看訂單', value: 'canCheckOrder' },
   { label: '編輯訂單狀態', value: 'canEditOrderStatus', dependsOn: 'canCheckOrder' },
   { label: '刪除訂單', value: 'canDeleteOrder', dependsOn: 'canCheckOrder' },
+  { label: '退款／作廢', value: 'canRefundOrVoid', dependsOn: 'canCheckOrder' },
   { label: '查看後台設定', value: 'canCheckBackgroundSetting' },
   { label: '設定分類', value: 'canSetCategory', dependsOn: 'canCheckBackgroundSetting' },
   { label: '設定品項', value: 'canSetProduct', dependsOn: 'canCheckBackgroundSetting' },
@@ -63,32 +64,4 @@ export function groupAuthorityFields(): AuthorityGroup[] {
     grouped.push({ title: '其他', children: others })
   }
   return grouped
-}
-
-/** 角色預設範本：純前端顯示層依據 authorityCheckList 組合反推，不額外新增 DB 欄位。 */
-export const STAFF_ROLE_PRESETS: Record<string, AuthorityKey[]> = {
-  店長: AUTHORITY_FIELDS.map((field) => field.value),
-  值班經理: [
-    'canCompItem', 'canOpenCashier', 'canCheckOrder', 'canEditOrderStatus',
-    'canCheckBackgroundSetting', 'canSetCategory', 'canSetProduct', 'canSetAddOns',
-    'canCheckDataAnalysis',
-  ],
-  工讀生: ['canCheckOrder', 'canEditOrderStatus', 'canCheckBackgroundSetting'],
-}
-export const STAFF_ROLE_NAMES = Object.keys(STAFF_ROLE_PRESETS) as Array<keyof typeof STAFF_ROLE_PRESETS>
-export type StaffRoleName = keyof typeof STAFF_ROLE_PRESETS
-export const CUSTOM_ROLE_LABEL = '自訂'
-
-function sameAuthoritySet(a: AuthorityKey[], b: AuthorityKey[]): boolean {
-  if (a.length !== b.length) return false
-  const set = new Set(b)
-  return a.every((key) => set.has(key))
-}
-
-/** 從一組 authorityCheckList 反推最接近的角色範本；完全對不上任何範本就是「自訂」。 */
-export function deriveStaffRole(authorityCheckList: AuthorityKey[]): string {
-  for (const [role, preset] of Object.entries(STAFF_ROLE_PRESETS)) {
-    if (sameAuthoritySet(authorityCheckList, preset)) return role
-  }
-  return CUSTOM_ROLE_LABEL
 }

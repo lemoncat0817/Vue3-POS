@@ -1,23 +1,9 @@
 <template>
   <div class="flex flex-col gap-2.5">
-    <!-- 角色範本快速套用列 -->
-    <div class="flex flex-wrap items-center gap-1.5">
-      <span class="text-[11px] font-bold text-surface-400">角色範本：</span>
-      <button
-        v-for="role in STAFF_ROLE_NAMES" :key="role" type="button"
-        class="rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors border"
-        :class="currentRole === role
-          ? 'border-primary-500 bg-primary-600 text-white'
-          : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700'"
-        @click="applyRole(role)">
-        {{ role }}
-      </button>
-      <span
-        class="ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold"
-        :class="currentRole === CUSTOM_ROLE_LABEL
-          ? 'bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400'
-          : 'bg-success-50 text-success-600 dark:bg-success-950/50 dark:text-success-400'">
-        目前：{{ currentRole }} · {{ modelValue.length }}/{{ AUTHORITY_FIELDS.length }} 項
+    <div class="flex items-center justify-between px-0.5">
+      <span class="text-[11px] font-bold text-surface-400">勾選此角色擁有的權限：</span>
+      <span class="rounded-full bg-surface-100 px-2 py-0.5 text-[11px] font-bold text-surface-500 dark:bg-surface-800 dark:text-surface-400">
+        {{ modelValue.length }}/{{ AUTHORITY_FIELDS.length }} 項
       </span>
     </div>
 
@@ -54,25 +40,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { AuthorityKey } from '@/types'
-import {
-  AUTHORITY_FIELDS,
-  STAFF_ROLE_NAMES,
-  STAFF_ROLE_PRESETS,
-  CUSTOM_ROLE_LABEL,
-  cascadeAuthorityCheckList,
-  deriveStaffRole,
-  groupAuthorityFields,
-  type AuthorityField,
-  type StaffRoleName,
-} from '@/utils/authority'
+import { AUTHORITY_FIELDS, cascadeAuthorityCheckList, groupAuthorityFields, type AuthorityField } from '@/utils/authority'
 
 const props = defineProps<{ modelValue: AuthorityKey[] }>()
 const emit = defineEmits<{ 'update:modelValue': [AuthorityKey[]] }>()
 
 const groups = groupAuthorityFields()
-const currentRole = computed(() => deriveStaffRole(props.modelValue))
 
 function isDisabled(field: AuthorityField): boolean {
   return !!field.dependsOn && !props.modelValue.includes(field.dependsOn)
@@ -81,10 +55,5 @@ function isDisabled(field: AuthorityField): boolean {
 function toggle(key: AuthorityKey, checked: boolean) {
   const next = checked ? [...props.modelValue, key] : props.modelValue.filter((item) => item !== key)
   emit('update:modelValue', cascadeAuthorityCheckList(next))
-}
-
-function applyRole(role: StaffRoleName) {
-  // role 保證存在於 STAFF_ROLE_PRESETS，! 滿足 noUncheckedIndexedAccess
-  emit('update:modelValue', [...STAFF_ROLE_PRESETS[role]!])
 }
 </script>

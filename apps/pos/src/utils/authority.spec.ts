@@ -1,41 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  AUTHORITY_FIELDS,
-  STAFF_ROLE_PRESETS,
-  cascadeAuthorityCheckList,
-  deriveStaffRole,
-  groupAuthorityFields,
-} from './authority'
-
-describe('deriveStaffRole', () => {
-  it('三個角色範本各自對應到自己的角色名稱', () => {
-    for (const [role, preset] of Object.entries(STAFF_ROLE_PRESETS)) {
-      expect(deriveStaffRole(preset)).toBe(role)
-    }
-  })
-
-  it('與 apps/api/seed/staff.sql 的三筆示範帳號權限組合一一對應', () => {
-    // Lemon（店長）：全部 18 項權限。
-    expect(deriveStaffRole(AUTHORITY_FIELDS.map((f) => f.value))).toBe('店長')
-    // James（值班經理）。
-    expect(deriveStaffRole([
-      'canCompItem', 'canOpenCashier', 'canCheckOrder', 'canEditOrderStatus',
-      'canCheckBackgroundSetting', 'canSetCategory', 'canSetProduct', 'canSetAddOns',
-      'canCheckDataAnalysis',
-    ])).toBe('值班經理')
-    // Emily（工讀生）。
-    expect(deriveStaffRole(['canCheckOrder', 'canEditOrderStatus', 'canCheckBackgroundSetting'])).toBe('工讀生')
-  })
-
-  it('少了或多了任何一項權限都不再是「已自訂」以外的角色', () => {
-    const modified = STAFF_ROLE_PRESETS['值班經理'].filter((key) => key !== 'canCheckDataAnalysis')
-    expect(deriveStaffRole(modified)).toBe('自訂')
-  })
-
-  it('空陣列不對應任何角色範本', () => {
-    expect(deriveStaffRole([])).toBe('自訂')
-  })
-})
+import { AUTHORITY_FIELDS, cascadeAuthorityCheckList, groupAuthorityFields } from './authority'
 
 describe('cascadeAuthorityCheckList', () => {
   it('取消母權限時，連帶取消所有依附在它底下的子權限', () => {
