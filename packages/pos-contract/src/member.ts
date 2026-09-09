@@ -1,15 +1,6 @@
 import { z } from 'zod'
 
-/**
- * 會員（P22：規劃書 §10 P22「會員與顧客經營」）。手機號碼是結帳當下
- * 查會員唯一合理的輸入方式（收銀機沒有讀卡機、也不會要求顧客記會員
- * 編號），因此是唯一鍵——見 routes/members.ts 的查詢／建立流程。
- *
- * points 是最基礎的點數規則：訂單完成時依應付金額累加（見 routes/
- * orders.ts 的 accrueMemberPoints），沒有兌換／折抵機制——那屬於
- * 「常用優惠」（P5）已經有的折價券系統可以之後再擴充銜接的範圍，這裡
- * 先把「消費會累積點數、看得到累積了多少」這個基礎做出來。
- */
+/** 會員 schema。手機號碼為唯一識別鍵，消費依應付金額累積點數。 */
 export const memberSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),

@@ -105,7 +105,7 @@ describe('createOrderRequestSchema', () => {
     ).toBe(false)
   })
 
-  it('orderChannel 只接受內用／外帶（P13：規劃書 §10 P0「內用外帶」）', () => {
+  it('orderChannel 只接受內用／外帶', () => {
     expect(createOrderRequestSchema.safeParse({ ...validRequest, orderChannel: '內用' }).success).toBe(true)
     expect(createOrderRequestSchema.safeParse({ ...validRequest, orderChannel: '外送' }).success).toBe(false)
     const withoutChannel: Record<string, unknown> = { ...validRequest }
@@ -113,14 +113,14 @@ describe('createOrderRequestSchema', () => {
     expect(createOrderRequestSchema.safeParse(withoutChannel).success).toBe(false)
   })
 
-  it('沒有帶 invoiceCarrier 時拒絕（P15：規劃書 §10 P0「發票」）', () => {
+  it('沒有帶 invoiceCarrier 時拒絕', () => {
     const withoutCarrier: Record<string, unknown> = { ...validRequest }
     delete withoutCarrier.invoiceCarrier
     expect(createOrderRequestSchema.safeParse(withoutCarrier).success).toBe(false)
   })
 })
 
-describe('invoiceCarrierSchema（P15：規劃書 §10 P0「發票」）', () => {
+describe('invoiceCarrierSchema', () => {
   it('無載具不需要 value', () => {
     expect(invoiceCarrierSchema.safeParse({ type: '無載具' }).success).toBe(true)
   })
@@ -153,7 +153,7 @@ describe('tenderInputSchema', () => {
     expect(tenderInputSchema.safeParse({ method: '現金', amount: 88, receivedAmount: 50 }).success).toBe(false)
   })
 
-  it('接受 amount 為 0（折抵到 0 元的訂單仍需要一筆 tender 結案，見 order.ts 的說明）', () => {
+  it('接受 amount 為 0（折抵到 0 元時仍需一筆 tender 結案）', () => {
     expect(tenderInputSchema.safeParse({ method: '現金', amount: 0 }).success).toBe(true)
   })
 

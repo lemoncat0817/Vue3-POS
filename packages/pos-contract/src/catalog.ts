@@ -1,23 +1,11 @@
 import { z } from 'zod'
 
-/**
- * 菜單相關的 schema。
- *
- * 這是伺服端的新設計，不是照搬 apps/pos 現行的 FormNumeric／'none'
- * 字面值那套（那是既有前端表單輸入造成的型別混用，見 apps/pos/src/
- * types/drink.ts 的說明）。伺服端資料一律由 Zod 解析成乾淨的型別：
- * 價格是 number，容器不支援時是 null，不是字串 'none'。
- */
+// 伺服端菜單 schema：價格為 number，不支援容器時為 null，避免前端表單舊有 'none' 字面值混用。
 
 export const drinkCustomizedSchema = z.enum(['none', 'cold', 'both'])
 export type DrinkCustomized = z.infer<typeof drinkCustomizedSchema>
 
-/**
- * 庫存數量（P20：規劃書 §10 P20「基礎庫存管理」）。`null` 代表「不追蹤
- * 這個品項的庫存」（大部分現做飲料本來就沒有這個概念），數字代表目前
- * 還剩多少可以賣——送單成功會扣掉對應的數量（見 routes/orders.ts 的
- * deductStock），扣到 0 之後點餐頁會標成缺貨、擋掉繼續加入購物車。
- */
+/** 庫存數量。`null` 代表不追蹤庫存，非負整數代表剩餘可售量。扣至 0 會標示缺貨。 */
 export const catalogStockSchema = z.number().int().nonnegative().nullable()
 
 export const catalogItemSchema = z.object({
@@ -57,15 +45,7 @@ export const catalogResponseSchema = z.object({
 })
 export type CatalogResponse = z.infer<typeof catalogResponseSchema>
 
-/**
- * 菜單管理寫入 API 的請求（P18：規劃書 §10 P18「菜單與權限管理接上
- * 伺服端」）。productManagement.vue 原本的新增／編輯／刪除只改本機
- * Pinia 狀態，從來沒有呼叫過任何 API——換一台裝置或清掉瀏覽器資料
- * 就會遺失異動。id 一律由伺服端配發（見 routes/catalog.ts 的
- * crypto.randomUUID()），不像舊版讓使用者自己輸入數字 id：伺服端資源
- * 的主鍵不應該是使用者填的表單欄位，這裡順便修掉這個既有的設計缺口，
- * 不是刻意要跟舊版行為一致。
- */
+/** 菜單管理寫入 API 請求 schema。資源 ID 一律由伺服端配發。 */
 export const createCatalogGroupRequestSchema = z.object({
   name: z.string().min(1),
   type: z.string().min(1),
