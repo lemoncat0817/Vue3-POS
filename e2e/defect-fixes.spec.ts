@@ -60,7 +60,7 @@ test('D-10：編輯人員權限只有一份來源，取消勾選後名單角色�
   // James 種子資料的權限組合完全對應「值班經理」角色範本（見
   // apps/api/seed/staff.sql）。
   const jamesRow = page.getByRole('row', { name: /James/ })
-  await expect(jamesRow.getByText('值班經理', { exact: true })).toBeVisible()
+  await expect(jamesRow.getByText('值班經理', { exact: true }).first()).toBeVisible()
 
   // 選「James」這一列，開編輯視窗，取消勾選「查看數據分析」。
   await jamesRow.click()
@@ -88,5 +88,5 @@ test('D-10：編輯人員權限只有一份來源，取消勾選後名單角色�
   await page.getByRole('dialog').getByRole('checkbox', { name: '查看數據分析' }).check()
   await page.getByRole('button', { name: '保存', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('保存成功')
-  await expect(jamesRow.getByText('值班經理', { exact: true })).toBeVisible()
+  await expect(jamesRow.getByText('值班經理', { exact: true }).first()).toBeVisible()
 })

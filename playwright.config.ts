@@ -18,9 +18,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: 'list',
   use: {
-    // vite.config.ts 設定了 base: '/Vue3-POS/'（GitHub Pages 部署路徑），
-    // preview 伺服器的實際頁面也掛在這個子路徑下。
-    baseURL: 'http://localhost:4173/Vue3-POS/',
+    // 對齊 Vite 的 base 設定（本機預設為根路徑 '/'；若建置時指定了 VITE_BASE_PATH 則動態對齊）。
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:4173${process.env.VITE_BASE_PATH || '/'}`,
     trace: 'on-first-retry',
   },
   // shift.spec.ts 斷言的是一個絕對數字（收班時算出的 expectedCash），

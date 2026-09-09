@@ -6,7 +6,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/Vue3-POS/',
+  // 業界標準：本機開發與一般伺服器部署預設使用根路徑 '/'。
+  // 若需部署至 GitHub Pages 等子路徑環境，可透過環境變數 VITE_BASE_PATH 動態指定（例如：/Vue3-POS/）。
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [
     vue(),
     // P3（規劃書 §14）：PWA 外殼——目標環境是「沒有真正硬體」的桌機
