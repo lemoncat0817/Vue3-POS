@@ -309,10 +309,10 @@
                       <!-- Order Key Information Badges -->
                       <div class="mb-4 flex flex-wrap items-center gap-2 border-b border-surface-100 dark:border-surface-800 pb-4">
                         <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
-                          已買袋子數量：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderBagCount }}</span> 個
+                          包材份數：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderBagCount }}</span> 份
                         </span>
                         <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
-                          飲料杯數：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderCupCount }}</span> 杯
+                          出餐份數：<span class="text-primary-600 dark:text-primary-400">{{ row.original.orderCupCount }}</span> 份
                         </span>
                         <span class="inline-flex items-center gap-1 rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-300">
                           訂單原始金額：<span class="text-primary-600 dark:text-primary-400">${{ row.original.orderTotalPrice }}</span>
@@ -357,8 +357,8 @@
                               <th class="px-3 py-2.5">序號</th>
                               <th class="px-3 py-2.5 text-left">商品</th>
                               <th class="px-3 py-2.5">單價</th>
-                              <th class="px-3 py-2.5">加料</th>
-                              <th class="px-3 py-2.5">配料金額</th>
+                              <th class="px-3 py-2.5">加購</th>
+                              <th class="px-3 py-2.5">加購金額</th>
                               <th class="px-3 py-2.5">數量</th>
                               <th class="px-3 py-2.5">折扣金額</th>
                               <th class="px-3 py-2.5">使用的折扣</th>
@@ -375,16 +375,15 @@
                               <td class="px-3 py-2.5 text-surface-600 dark:text-surface-400">{{ line.price }} 元</td>
                               <td class="px-3 py-2.5 text-surface-600 dark:text-surface-400">{{ line.addList || '-' }}</td>
                               <td class="px-3 py-2.5 text-surface-600 dark:text-surface-400">{{ line.addListPrice }} 元</td>
-                              <td class="px-3 py-2.5 font-bold text-surface-800 dark:text-surface-200">{{ line.count }} 杯</td>
+                              <td class="px-3 py-2.5 font-bold text-surface-800 dark:text-surface-200">{{ line.count }} 份</td>
                               <td class="px-3 py-2.5 text-surface-600 dark:text-surface-400">{{ line.discount }} 元</td>
                               <td class="px-3 py-2.5">
-                                <div v-if="line.useDiscountPercent === '' && line.useDiscountMoney === '' && line.useDiscountFree === ''" class="text-surface-400">
+                                <div v-if="!line.freeDiscount && !line.quickDiscountName" class="text-surface-400">
                                   目前無使用折扣
                                 </div>
                                 <div v-else class="flex flex-wrap justify-center gap-1">
-                                  <span v-if="line.useDiscountFree != ''" class="rounded-md bg-info-100 px-2 py-0.5 text-[11px] font-bold text-info-700 dark:bg-info-950 dark:text-info-300 border border-info-200 dark:border-info-800">{{ line.useDiscountFree }}</span>
-                                  <span v-if="line.useDiscountPercent != ''" class="rounded-md bg-danger-100 px-2 py-0.5 text-[11px] font-bold text-danger-700 dark:bg-danger-950 dark:text-danger-300 border border-danger-200 dark:border-danger-800">{{ line.useDiscountPercent }}</span>
-                                  <span v-if="line.useDiscountMoney != ''" class="rounded-md bg-warning-100 px-2 py-0.5 text-[11px] font-bold text-warning-700 dark:bg-warning-950 dark:text-warning-300 border border-warning-200 dark:border-warning-800">{{ line.useDiscountMoney }}</span>
+                                  <span v-if="line.freeDiscount" class="rounded-md bg-info-100 px-2 py-0.5 text-[11px] font-bold text-info-700 dark:bg-info-950 dark:text-info-300 border border-info-200 dark:border-info-800">招待</span>
+                                  <span v-if="line.quickDiscountName" class="rounded-md bg-warning-100 px-2 py-0.5 text-[11px] font-bold text-warning-700 dark:bg-warning-950 dark:text-warning-300 border border-warning-200 dark:border-warning-800">{{ line.quickDiscountName }}</span>
                                 </div>
                               </td>
                               <td class="px-3 py-2.5 text-right font-black text-primary-600 dark:text-primary-400 font-mono">{{ line.totalPrice }} 元</td>

@@ -11,8 +11,8 @@ test('作廢訂單需要填寫原因，畫面與伺服端都記錄下這個原�
   const createResponse = page.waitForResponse(
     (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
   )
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('雞塊六入', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
   await page.getByTestId('checkout-button').click()
@@ -67,8 +67,8 @@ test('部分退款：訂單維持已完成，畫面顯示已退款金額，超�
   const createResponse = page.waitForResponse(
     (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
   )
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('雞塊六入', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
   await page.getByTestId('checkout-button').click()
@@ -125,8 +125,8 @@ test('作廢主管授權帳號或 PIN 錯誤時，整個作廢操作取消，不
   const createResponse = page.waitForResponse(
     (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
   )
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('雞塊六入', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
   await page.getByTestId('checkout-button').click()

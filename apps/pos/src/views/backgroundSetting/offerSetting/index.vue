@@ -23,7 +23,7 @@
               type="button"
               class="pos-btn pos-btn-danger px-2.5 py-1.5 text-xs font-bold"
               :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
-              @click="deleteDrinkMoneyDiscount">刪除</button>
+              @click="deleteCurrentMoneyDiscount">刪除</button>
             <button
               type="button"
               class="pos-btn pos-btn-primary px-2.5 py-1.5 text-xs font-bold"
@@ -90,7 +90,7 @@
               type="button"
               class="pos-btn pos-btn-danger px-2.5 py-1.5 text-xs font-bold"
               :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
-              @click="deleteDrinkPercentDiscount">刪除</button>
+              @click="deleteCurrentPercentDiscount">刪除</button>
             <button
               type="button"
               class="pos-btn pos-btn-primary px-2.5 py-1.5 text-xs font-bold"
@@ -134,7 +134,7 @@
       </div>
     </div>
 
-    <!-- 常用優惠 -->
+    <!-- 快速折扣 -->
     <div class="card-panel p-5 flex flex-col justify-between flex-1">
       <div>
         <div class="flex items-center justify-between pb-3.5 border-b border-surface-200 dark:border-surface-800">
@@ -143,15 +143,27 @@
               <Sparkles class="h-4 w-4" />
             </div>
             <div>
-              <h3 class="text-sm font-bold text-surface-900 dark:text-surface-100 tracking-tight">常用優惠</h3>
-              <p class="text-[11px] text-surface-400">收銀台快捷優惠按鈕對應</p>
+              <h3 class="text-sm font-bold text-surface-900 dark:text-surface-100 tracking-tight">快速折扣</h3>
+              <p class="text-[11px] text-surface-400">點餐頁購物車的快捷折扣按鈕，可自由新增/刪除</p>
             </div>
           </div>
-          <button
-            type="button"
-            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs font-bold"
-            :class="{ 'pointer-events-none opacity-40': !canSetOftenUseDiscount }"
-            @click="openEditOftenUseDiscountDialog">編輯</button>
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              class="pos-btn pos-btn-secondary px-2.5 py-1.5 text-xs font-bold"
+              :class="{ 'pointer-events-none opacity-40': !canSetQuickDiscount }"
+              @click="openAddQuickDiscountDialog">新增</button>
+            <button
+              type="button"
+              class="pos-btn pos-btn-danger px-2.5 py-1.5 text-xs font-bold"
+              :class="{ 'pointer-events-none opacity-40': !canSetQuickDiscount }"
+              @click="deleteCurrentQuickDiscount">刪除</button>
+            <button
+              type="button"
+              class="pos-btn pos-btn-primary px-2.5 py-1.5 text-xs font-bold"
+              :class="{ 'pointer-events-none opacity-40': !canSetQuickDiscount }"
+              @click="openEditQuickDiscountDialog">編輯</button>
+          </div>
         </div>
 
         <div class="mt-3.5 overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800">
@@ -160,23 +172,28 @@
               <tr>
                 <th class="px-3 py-2.5">序號</th>
                 <th class="px-3 py-2.5 text-left">優惠名稱</th>
-                <th class="px-3 py-2.5 text-right">折價金額</th>
-                <th class="px-3 py-2.5 text-right">折價折數</th>
+                <th class="px-3 py-2.5">類型</th>
+                <th class="px-3 py-2.5 text-right">折抵值</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr v-if="sliceQuickDiscount.length === 0">
+                <td colspan="4" class="px-3 py-8 text-surface-400 dark:text-surface-500">無快速折扣</td>
+              </tr>
               <tr
-                v-for="(row, index) in discountStore.oftenUseDiscount" :key="row.id"
+                v-for="(row, index) in sliceQuickDiscount" :key="row.id"
                 class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentOftenUseDiscount.id === row.id }"
-                @click="currentOftenUseDiscount = row">
+                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentQuickDiscount.id === row.id }"
+                @click="currentQuickDiscount = row">
                 <td class="px-3 py-2.5 font-mono text-surface-400">{{ index + 1 }}</td>
                 <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
-                <td class="px-3 py-2.5 text-right font-mono font-bold" :class="Number(row.discountMoney) > 0 ? 'text-success-600 dark:text-success-400' : 'text-surface-400'">
-                  {{ Number(row.discountMoney) > 0 ? `-$${row.discountMoney}` : '-' }}
+                <td class="px-3 py-2.5">
+                  <span class="rounded-md px-1.5 py-0.5 text-[10px] font-bold" :class="row.kind === 'amount' ? 'bg-success-50 text-success-600 dark:bg-success-950/40 dark:text-success-400' : 'bg-info-50 text-info-600 dark:bg-info-950/40 dark:text-info-400'">
+                    {{ row.kind === 'amount' ? '定額' : '折數' }}
+                  </span>
                 </td>
-                <td class="px-3 py-2.5 text-right font-mono font-bold" :class="Number(row.discountPercent) > 0 ? 'text-info-600 dark:text-info-400' : 'text-surface-400'">
-                  {{ Number(row.discountPercent) > 0 ? `${row.discountPercent}` : '-' }}
+                <td class="px-3 py-2.5 text-right font-mono font-bold text-primary-600 dark:text-primary-400">
+                  {{ row.kind === 'amount' ? `-$${row.value}` : row.value }}
                 </td>
               </tr>
             </tbody>
@@ -185,8 +202,8 @@
       </div>
 
       <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
-        <p>共 {{ discountStore.oftenUseDiscount.length }} 樣</p>
-        <span class="font-mono text-[11px]">1 / 1</span>
+        <p>{{ `共 ${discountStore.quickDiscounts.length} 樣` }}</p>
+        <AppPagination :page="quickDiscountCurrentPage" :page-count="quickDiscountPageCount" :total="discountStore.quickDiscounts.length" @update:page="(value) => quickDiscountCurrentPage = value" />
       </div>
     </div>
   </div>
@@ -253,23 +270,53 @@
     </Form>
   </ModalDialog>
 
-  <ModalDialog v-model:open="editOftenUseDiscountDialog" title="編輯常用優惠">
-    <Form
-      v-slot="{ isSubmitting }"
-      :validation-schema="toTypedSchema(oftenUseRateSchema())"
-      :initial-values="{
-        name: currentOftenUseDiscount.name,
-        discountMoney: Number(currentOftenUseDiscount.discountMoney),
-        discountPercent: Number(currentOftenUseDiscount.discountPercent),
-      }"
-      @submit="onSubmitEditOftenUseDiscount">
+  <!-- 新增快速折扣 -->
+  <ModalDialog v-model:open="addQuickDiscountDialog" title="新增快速折扣">
+    <Form v-slot="{ isSubmitting }" :validation-schema="toTypedSchema(quickDiscountSchema())" :initial-values="{ name: '', kind: addQuickDiscountKind, value: 0 }" @submit="onSubmitAddQuickDiscount">
       <div class="space-y-4 py-2">
-        <FormField name="name" label="優惠名稱" :disabled="nameDisabled || isSubmitting" placeholder="例如: 九折,員工八折..." />
-        <FormField name="discountMoney" label="折扣的金額" type="number" step="1" :disabled="moneyDisabled || isSubmitting" placeholder="純數字,例如:1,2,3..." />
-        <FormField name="discountPercent" label="折扣的折數" type="number" step="0.01" :disabled="percentDisabled || isSubmitting" placeholder="純數字,例如:0.95,0.85..." />
+        <FormField name="name" label="優惠名稱" :disabled="isSubmitting" placeholder="例如: 常客優惠、員工優惠..." />
+        <label class="mb-4 block text-sm font-bold text-surface-700 dark:text-surface-300">
+          類型
+          <select v-model="addQuickDiscountKind" class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm font-normal text-surface-900 dark:text-surface-100 outline-none">
+            <option value="amount">定額折抵</option>
+            <option value="percent">折數折抵</option>
+          </select>
+        </label>
+        <FormField
+          name="value" :label="addQuickDiscountKind === 'amount' ? '折抵金額' : '折抵折數'"
+          type="number" :step="addQuickDiscountKind === 'amount' ? '1' : '0.01'" :disabled="isSubmitting"
+          :placeholder="addQuickDiscountKind === 'amount' ? '純數字,例如:5,10...' : '純數字,例如:0.9,0.85...'" />
       </div>
       <div class="mt-6 flex justify-end gap-2.5">
-        <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="editOftenUseDiscountDialog = false">取消</button>
+        <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="addQuickDiscountDialog = false">取消</button>
+        <button type="submit" :disabled="isSubmitting" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold">新增</button>
+      </div>
+    </Form>
+  </ModalDialog>
+
+  <!-- 編輯快速折扣 -->
+  <ModalDialog v-model:open="editQuickDiscountDialog" title="編輯快速折扣">
+    <Form
+      v-slot="{ isSubmitting }"
+      :validation-schema="toTypedSchema(quickDiscountSchema(currentQuickDiscount.id))"
+      :initial-values="{ name: currentQuickDiscount.name, kind: editQuickDiscountKind, value: Number(currentQuickDiscount.value) }"
+      @submit="onSubmitEditQuickDiscount">
+      <div class="space-y-4 py-2">
+        <FormField name="name" label="優惠名稱" :disabled="isSubmitting" placeholder="例如: 常客優惠、員工優惠..." />
+        <label class="mb-4 block text-sm font-bold text-surface-700 dark:text-surface-300">
+          類型
+          <select v-model="editQuickDiscountKind" class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm font-normal text-surface-900 dark:text-surface-100 outline-none">
+            <option value="amount">定額折抵</option>
+            <option value="percent">折數折抵</option>
+          </select>
+        </label>
+        <FormField
+          name="value" :label="editQuickDiscountKind === 'amount' ? '折抵金額' : '折抵折數'"
+          type="number" :step="editQuickDiscountKind === 'amount' ? '1' : '0.01'" :disabled="isSubmitting"
+          :placeholder="editQuickDiscountKind === 'amount' ? '純數字,例如:5,10...' : '純數字,例如:0.9,0.85...'" />
+      </div>
+      <div class="mt-6 flex justify-end gap-2.5">
+        <button type="button" class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold" @click="editQuickDiscountDialog = false">取消</button>
         <button type="submit" :disabled="isSubmitting" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold">保存</button>
       </div>
     </Form>
@@ -289,7 +336,7 @@ import { useDiscountStore } from '@/stores/discount'
 const discountStore = useDiscountStore()
 import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
-import type { MaybeSelected, MoneyDiscount, OftenUseDiscount, PercentDiscount } from '@/types'
+import type { MaybeSelected, MoneyDiscount, PercentDiscount, QuickDiscount } from '@/types'
 import { hasCapability } from '@/utils/selection'
 import { ApiError } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
@@ -297,11 +344,13 @@ import { showToast } from '@/composables/useToast'
 import {
   createMoneyCoupon,
   createPercentCoupon,
+  createQuickDiscount,
   deleteMoneyCoupon,
   deletePercentCoupon,
+  deleteQuickDiscount,
   updateMoneyCoupon,
-  updateOftenUseRate,
   updatePercentCoupon,
+  updateQuickDiscount,
 } from '@/api/promotions'
 
 // 單頁多表單需使用 <Form> 元件避免 useForm() provide context 相互覆蓋；
@@ -313,7 +362,7 @@ function apiErrorMessage(err: unknown): string {
 
 const canSetMoneyDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetMoneyDiscount'))
 const canSetPercentDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetPercentDiscount'))
-const canSetOftenUseDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetOftenUseDiscount'))
+const canSetQuickDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetOftenUseDiscount'))
 
 // ---------- 現金折扣券 ----------
 const currentMoneyDiscount = ref<MaybeSelected<MoneyDiscount>>({})
@@ -369,7 +418,7 @@ async function onSubmitEditMoneyDiscount(values: Record<string, unknown>) {
   }
 }
 
-async function deleteDrinkMoneyDiscount() {
+async function deleteCurrentMoneyDiscount() {
   if (!currentMoneyDiscount.value.name) {
     showToast('請先選擇要刪除的折扣券', 'error')
     return
@@ -447,7 +496,7 @@ async function onSubmitEditPercentDiscount(values: Record<string, unknown>) {
   }
 }
 
-async function deleteDrinkPercentDiscount() {
+async function deleteCurrentPercentDiscount() {
   if (!currentPercentDiscount.value.name) {
     showToast('請先選擇要刪除的折扣券', 'error')
     return
@@ -468,54 +517,82 @@ async function deleteDrinkPercentDiscount() {
   }
 }
 
-// ---------- 常用優惠 ----------
-const currentOftenUseDiscount = ref<MaybeSelected<OftenUseDiscount>>({})
-const editOftenUseDiscountDialog = ref(false)
-// slot 0-1 僅可調整金額，slot 2-4 僅可調整名稱與折數
-const nameDisabled = ref(false)
-const moneyDisabled = ref(false)
-const percentDisabled = ref(false)
+// ---------- 快速折扣 ----------
+const currentQuickDiscount = ref<MaybeSelected<QuickDiscount>>({})
+const quickDiscountCurrentPage = ref(1)
+const quickDiscountPageCount = computed(() => Math.max(Math.ceil(discountStore.quickDiscounts.length / 10), 1))
+const sliceQuickDiscount = computed(() =>
+  discountStore.quickDiscounts.slice((quickDiscountCurrentPage.value - 1) * 10, quickDiscountCurrentPage.value * 10))
 
-function oftenUseRateSchema() {
+function quickDiscountSchema(excludeId?: QuickDiscount['id']) {
   return z.object({
-    name: nameDisabled.value
-      ? z.union([z.string(), z.number()]).transform(String)
-      : z.string().trim().min(1, '請輸入優惠名稱').refine(
-        (name) => !discountStore.oftenUseDiscount.some((item) => item.name === name && item.id !== currentOftenUseDiscount.value.id),
-        '此優惠名稱已存在,請重新輸入',
-      ),
-    discountMoney: moneyDisabled.value
-      ? z.coerce.number()
-      : z.coerce.number().positive('折抵金額不可為負數且需大於0,請重新輸入'),
-    discountPercent: percentDisabled.value
-      ? z.coerce.number()
-      : z.coerce.number().min(0, '折抵折數不可為負數,請重新輸入').lt(1, '折抵折數不可大於等於1,請重新輸入'),
+    name: z.string().trim().min(1, '請輸入優惠名稱').refine(
+      (name) => !discountStore.quickDiscounts.some((item) => item.name === name && item.id !== excludeId),
+      '此優惠名稱已存在,請重新輸入',
+    ),
+    kind: z.enum(['amount', 'percent']),
+    value: z.coerce.number().min(0, '折抵值不可為負數,請重新輸入'),
   })
 }
-function openEditOftenUseDiscountDialog() {
-  if (!currentOftenUseDiscount.value.name) {
+
+const addQuickDiscountDialog = ref(false)
+const addQuickDiscountKind = ref<'amount' | 'percent'>('amount')
+function openAddQuickDiscountDialog() {
+  addQuickDiscountKind.value = 'amount'
+  addQuickDiscountDialog.value = true
+}
+async function onSubmitAddQuickDiscount(values: Record<string, unknown>) {
+  const input = values as { name: string; kind: 'amount' | 'percent'; value: number }
+  try {
+    const created = await createQuickDiscount(input)
+    discountStore.quickDiscounts.push(created)
+    addQuickDiscountDialog.value = false
+    showToast('新增成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
+}
+
+const editQuickDiscountDialog = ref(false)
+const editQuickDiscountKind = ref<'amount' | 'percent'>('amount')
+function openEditQuickDiscountDialog() {
+  if (!currentQuickDiscount.value.name) {
     showToast('請先選擇要編輯的優惠', 'error')
     return
   }
-  const isContainerGroup = Number(currentOftenUseDiscount.value.id) <= 1
-  nameDisabled.value = isContainerGroup
-  percentDisabled.value = isContainerGroup
-  moneyDisabled.value = !isContainerGroup
-  editOftenUseDiscountDialog.value = true
+  editQuickDiscountKind.value = currentQuickDiscount.value.kind ?? 'amount'
+  editQuickDiscountDialog.value = true
 }
-async function onSubmitEditOftenUseDiscount(values: Record<string, unknown>) {
-  const input = values as { name: string | number; discountMoney: number; discountPercent: number }
+async function onSubmitEditQuickDiscount(values: Record<string, unknown>) {
+  const input = values as { name: string; kind: 'amount' | 'percent'; value: number }
   try {
-    const updated = await updateOftenUseRate(Number(currentOftenUseDiscount.value.id), {
-      name: String(input.name),
-      discountMoney: Number(input.discountMoney),
-      discountPercent: Number(input.discountPercent),
-    })
-    currentOftenUseDiscount.value.name = updated.name
-    currentOftenUseDiscount.value.discountMoney = updated.discountMoney
-    currentOftenUseDiscount.value.discountPercent = updated.discountPercent
-    editOftenUseDiscountDialog.value = false
+    const updated = await updateQuickDiscount(String(currentQuickDiscount.value.id), input)
+    currentQuickDiscount.value.name = updated.name
+    currentQuickDiscount.value.kind = updated.kind
+    currentQuickDiscount.value.value = updated.value
+    editQuickDiscountDialog.value = false
     showToast('保存成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
+}
+
+async function deleteCurrentQuickDiscount() {
+  if (!currentQuickDiscount.value.name) {
+    showToast('請先選擇要刪除的優惠', 'error')
+    return
+  }
+  const result = await confirm({
+    title: '警告',
+    description: `是否刪除快速折扣 ${currentQuickDiscount.value.name}？`,
+    variant: 'danger',
+  })
+  if (result !== 'confirm') return
+  try {
+    await deleteQuickDiscount(String(currentQuickDiscount.value.id))
+    discountStore.quickDiscounts = discountStore.quickDiscounts.filter((item) => item.id !== currentQuickDiscount.value.id)
+    currentQuickDiscount.value = {}
+    showToast('刪除成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }

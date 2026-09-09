@@ -4,7 +4,7 @@
       <div class="receipt-print-area rounded-xl border border-dashed border-surface-300 bg-white p-4 font-mono text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-100">
         <div class="text-center">
           <p class="text-lg font-bold">POS 系統</p>
-          <p class="text-xs text-surface-500 dark:text-surface-400">手搖飲收據</p>
+          <p class="text-xs text-surface-500 dark:text-surface-400">銷售收據</p>
         </div>
         <div class="my-2 border-t border-dashed border-surface-300 dark:border-surface-700" />
         <div class="flex flex-col gap-0.5 text-xs">
@@ -33,7 +33,7 @@
           <tbody>
             <tr v-for="(line, index) in state.order.orderData" :key="index">
               <td class="py-0.5 align-top">
-                {{ line.name }}（{{ line.size }}）
+                {{ line.name }}
                 <span v-if="line.addList !== '無添加配料' && line.addList.length > 0" class="block text-surface-500 dark:text-surface-400">
                   ＋{{ Array.isArray(line.addList) ? line.addList.join('、') : line.addList }}
                 </span>
@@ -45,7 +45,7 @@
         </table>
         <div class="my-2 border-t border-dashed border-surface-300 dark:border-surface-700" />
         <div class="flex flex-col gap-0.5 text-xs">
-          <div class="flex justify-between"><span>已買袋子數量</span><span>{{ state.order.orderBagCount }} 個</span></div>
+          <div class="flex justify-between"><span>包材份數</span><span>{{ state.order.orderBagCount }} 份</span></div>
           <div class="flex justify-between"><span>訂單原始金額</span><span>${{ state.order.orderTotalPrice }}</span></div>
           <div v-if="state.order.orderDiscount > 0" class="flex justify-between">
             <span>優惠折抵（{{ state.order.discountName }}）</span><span>−${{ state.order.orderDiscount }}</span>

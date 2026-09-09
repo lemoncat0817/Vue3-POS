@@ -1,40 +1,51 @@
 import { describe, expect, it } from 'vitest'
 import type { CatalogResponse } from '@pos/contract'
-import { toDrinkAddOnOptions, toDrinkTypeGroups } from './catalog'
+import { toLocalAddOns, toLocalCategories, toLocalModifierGroups, toLocalProducts } from './catalog'
 
-/** 驗證伺服端菜單資料轉為前端既有形狀時的轉換規則（null 轉為 'none'）。 */
 const sampleCatalog: CatalogResponse = {
-  groups: [
+  categories: [{ id: 'cat-1', name: '主餐' }],
+  products: [
+    { id: 'prod-1', categoryId: 'cat-1', name: '招牌牛肉漢堡', basePrice: 180, stock: 20, modifierGroupIds: ['mg-1'] },
+    { id: 'prod-2', categoryId: 'cat-1', name: '烤雞三明治', basePrice: 150, stock: null, modifierGroupIds: [] },
+  ],
+  modifierGroups: [
     {
-      id: 'group-1',
-      name: '原味茶',
-      type: 'drinkOriginal',
-      items: [
-        { id: 'item-1', name: '翡翠綠茶', priceL: 30, priceBottle: 45, customized: 'both' },
-        { id: 'item-2', name: '錫蘭紅茶', priceL: 30, priceBottle: null, customized: 'none' },
-      ],
+      id: 'mg-1',
+      name: '熟度',
+      selectionType: 'single',
+      required: true,
+      options: [{ id: 'mo-1', name: '五分熟', priceDelta: 0 }],
     },
   ],
-  addOns: [{ id: 'addon-1', name: '珍珠', price: 10 }],
+  addOns: [{ id: 'addon-1', name: '加起司', price: 20, stock: null }],
 }
 
-describe('toDrinkTypeGroups', () => {
-  it('保留 groups／items 的 id、name 等欄位', () => {
-    const groups = toDrinkTypeGroups(sampleCatalog)
-    expect(groups).toHaveLength(1)
-    expect(groups[0]).toMatchObject({ id: 'group-1', name: '原味茶', type: 'drinkOriginal' })
-  })
-
-  it('priceBottle 為 null（不支援瓶裝）時轉成字面值 \'none\'', () => {
-    const groups = toDrinkTypeGroups(sampleCatalog)
-    const [teaWithBottle, teaWithoutBottle] = groups[0]!.drinkList
-    expect(teaWithBottle).toMatchObject({ priceL: 30, priceBottle: 45 })
-    expect(teaWithoutBottle).toMatchObject({ priceL: 30, priceBottle: 'none' })
+describe('toLocalCategories / toLocalProducts', () => {
+  it('保留分類與品項的完整欄位', () => {
+    expect(toLocalCategories(sampleCatalog)).toEqual([{ id: 'cat-1', name: '主餐' }])
+    expect(toLocalProducts(sampleCatalog)).toEqual([
+      { id: 'prod-1', categoryId: 'cat-1', name: '招牌牛肉漢堡', basePrice: 180, stock: 20, modifierGroupIds: ['mg-1'] },
+      { id: 'prod-2', categoryId: 'cat-1', name: '烤雞三明治', basePrice: 150, stock: null, modifierGroupIds: [] },
+    ])
   })
 })
 
-describe('toDrinkAddOnOptions', () => {
-  it('轉成前端加料選項形狀', () => {
-    expect(toDrinkAddOnOptions(sampleCatalog)).toEqual([{ id: 'addon-1', name: '珍珠', price: 10 }])
+describe('toLocalModifierGroups', () => {
+  it('保留規格群組與選項的完整欄位', () => {
+    expect(toLocalModifierGroups(sampleCatalog)).toEqual([
+      {
+        id: 'mg-1',
+        name: '熟度',
+        selectionType: 'single',
+        required: true,
+        options: [{ id: 'mo-1', name: '五分熟', priceDelta: 0 }],
+      },
+    ])
+  })
+})
+
+describe('toLocalAddOns', () => {
+  it('轉成前端加購選項形狀', () => {
+    expect(toLocalAddOns(sampleCatalog)).toEqual([{ id: 'addon-1', name: '加起司', price: 20, stock: null }])
   })
 })

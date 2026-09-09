@@ -14,19 +14,10 @@ export interface PercentDiscount {
   discountMoney: FormNumeric
 }
 
-/** 常用折扣（環保杯、瓶裝、九折…），可同時帶定額與折數兩種折抵方式。 */
-export interface OftenUseDiscount {
+/** 快速折扣（常客優惠、員工優惠……），後台可自由新增/刪除任意筆數。 */
+export interface QuickDiscount {
   id: FormNumeric
   name: string
-  discountMoney: FormNumeric
-  discountPercent: FormNumeric
+  kind: 'amount' | 'percent'
+  value: FormNumeric
 }
-
-// 常用折扣固定為 5 筆，標為固定長度 tuple 避免索引存取時產生 undefined 檢查。
-export type OftenUseDiscountList = [
-  OftenUseDiscount,
-  OftenUseDiscount,
-  OftenUseDiscount,
-  OftenUseDiscount,
-  OftenUseDiscount,
-]

@@ -18,12 +18,12 @@ import PromptDialogHost from '@/components/ui/PromptDialogHost.vue'
 import RefundDialogHost from '@/components/ui/RefundDialogHost.vue'
 import ManagerAuthDialogHost from '@/components/ui/ManagerAuthDialogHost.vue'
 import ReceiptPreviewDialogHost from '@/components/ui/ReceiptPreviewDialogHost.vue'
-import { useDrinkStore } from '@/stores/drink'
+import { useCatalogStore } from '@/stores/catalog'
 import { useDiscountStore } from '@/stores/discount'
 import { useOrderStore } from '@/stores/order'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
-import { fetchCatalog, toDrinkAddOnOptions, toDrinkTypeGroups } from '@/api/catalog'
-import { fetchPromotions, toMoneyDiscounts, toOftenUseDiscountList, toPercentDiscounts } from '@/api/promotions'
+import { fetchCatalog, toLocalAddOns, toLocalCategories, toLocalModifierGroups, toLocalProducts } from '@/api/catalog'
+import { fetchPromotions, toMoneyDiscounts, toPercentDiscounts, toQuickDiscounts } from '@/api/promotions'
 import { fetchPaymentMethods } from '@/api/payment-methods'
 import { fetchStaffList } from '@/api/staff'
 import { toStaffMember } from '@/api/auth'
@@ -33,7 +33,7 @@ import { useTheme } from '@/composables/useTheme'
 useTheme()
 
 // 應用啟動時一次性同步菜單目錄（離線或失敗時保留本機資料）。
-const drinkStore = useDrinkStore()
+const catalogStore = useCatalogStore()
 const { data: catalog } = useQuery({
   queryKey: ['catalog'],
   queryFn: fetchCatalog,
@@ -42,9 +42,11 @@ const { data: catalog } = useQuery({
 })
 watch(catalog, (value) => {
   if (!value) return
-  drinkStore.hydrateCatalogFromServer({
-    groups: toDrinkTypeGroups(value),
-    addOns: toDrinkAddOnOptions(value),
+  catalogStore.hydrateCatalogFromServer({
+    categories: toLocalCategories(value),
+    products: toLocalProducts(value),
+    modifierGroups: toLocalModifierGroups(value),
+    addOns: toLocalAddOns(value),
   })
 })
 
@@ -61,7 +63,7 @@ watch(promotions, (value) => {
   discountStore.hydratePromotionsFromServer({
     moneyDiscount: toMoneyDiscounts(value),
     percentDiscount: toPercentDiscounts(value),
-    oftenUseDiscount: toOftenUseDiscountList(value),
+    quickDiscounts: toQuickDiscounts(value),
   })
 })
 

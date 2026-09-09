@@ -1,15 +1,15 @@
 import {
   moneyCouponSchema,
-  oftenUseRateSchema,
   percentCouponSchema,
   promotionsResponseSchema,
+  quickDiscountSchema,
   type MoneyCoupon,
-  type OftenUseRateEntry,
   type PercentCoupon,
   type PromotionsResponse,
+  type QuickDiscount as ApiQuickDiscount,
 } from '@pos/contract'
 import { fetchJson } from './http'
-import type { MoneyDiscount, OftenUseDiscountList, PercentDiscount } from '@/types/discount'
+import type { MoneyDiscount, PercentDiscount, QuickDiscount } from '@/types/discount'
 
 /** 查詢促銷設定（GET /api/promotions）。 */
 export async function fetchPromotions(): Promise<PromotionsResponse> {
@@ -17,7 +17,7 @@ export async function fetchPromotions(): Promise<PromotionsResponse> {
   return promotionsResponseSchema.parse(body)
 }
 
-// 後台優惠設定 API（現金券、折數券、常用折扣之 CRUD）。
+// 後台優惠設定 API（現金券、折數券、快速折扣之 CRUD）。
 
 export async function createMoneyCoupon(input: { name: string; discountMoney: number }): Promise<MoneyCoupon> {
   const body = await fetchJson<unknown>('/api/promotions/money-coupons', {
@@ -65,15 +65,27 @@ export async function deletePercentCoupon(id: string): Promise<void> {
   await fetchJson<null>(`/api/promotions/percent-coupons/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
-export async function updateOftenUseRate(
-  slot: number,
-  input: { name: string; discountMoney: number; discountPercent: number },
-): Promise<OftenUseRateEntry> {
-  const body = await fetchJson<unknown>(`/api/promotions/often-use-rates/${slot}`, {
+export async function createQuickDiscount(input: { name: string; kind: 'amount' | 'percent'; value: number }): Promise<ApiQuickDiscount> {
+  const body = await fetchJson<unknown>('/api/promotions/quick-discounts', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+  return quickDiscountSchema.parse(body)
+}
+
+export async function updateQuickDiscount(
+  id: string,
+  input: { name: string; kind: 'amount' | 'percent'; value: number },
+): Promise<ApiQuickDiscount> {
+  const body = await fetchJson<unknown>(`/api/promotions/quick-discounts/${encodeURIComponent(id)}`, {
     method: 'PUT',
     body: JSON.stringify(input),
   })
-  return oftenUseRateSchema.parse(body)
+  return quickDiscountSchema.parse(body)
+}
+
+export async function deleteQuickDiscount(id: string): Promise<void> {
+  await fetchJson<null>(`/api/promotions/quick-discounts/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
 export function toMoneyDiscounts(promotions: PromotionsResponse): MoneyDiscount[] {
@@ -93,13 +105,11 @@ export function toPercentDiscounts(promotions: PromotionsResponse): PercentDisco
   }))
 }
 
-export function toOftenUseDiscountList(promotions: PromotionsResponse): OftenUseDiscountList {
-  const [r0, r1, r2, r3, r4] = promotions.oftenUseRates
-  const toEntry = (rate: PromotionsResponse['oftenUseRates'][number]) => ({
-    id: rate.slot,
-    name: rate.name,
-    discountMoney: rate.discountMoney,
-    discountPercent: rate.discountPercent,
-  })
-  return [toEntry(r0), toEntry(r1), toEntry(r2), toEntry(r3), toEntry(r4)]
+export function toQuickDiscounts(promotions: PromotionsResponse): QuickDiscount[] {
+  return promotions.quickDiscounts.map((discount) => ({
+    id: discount.id,
+    name: discount.name,
+    kind: discount.kind,
+    value: discount.value,
+  }))
 }

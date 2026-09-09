@@ -1,5 +1,5 @@
 import type { InvoiceCarrier } from '@pos/contract'
-import type { CartLineItem } from './drink'
+import type { CartLineItem } from './catalog'
 
 /** 訂單狀態——`editOrderStatus` 只會把它設成這兩者之一。 */
 export type OrderStatus = '已完成' | '已取消'

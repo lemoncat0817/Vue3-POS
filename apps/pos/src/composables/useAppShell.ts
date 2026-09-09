@@ -9,7 +9,7 @@ import {
   Users,
   LayoutGrid,
 } from 'lucide-vue-next'
-import { useDrinkStore } from '@/stores/drink'
+import { useCatalogStore } from '@/stores/catalog'
 import { useLoginStore } from '@/stores/login'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
@@ -29,7 +29,7 @@ export const navItems = [
 ]
 
 export function useAppShell() {
-  const drinkStore = useDrinkStore()
+  const catalogStore = useCatalogStore()
   const loginStore = useLoginStore()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
@@ -41,7 +41,7 @@ export function useAppShell() {
   })
 
   const changePage = async (path: string) => {
-    if (path === '/backgroundSetting' && drinkStore.drinkNotPay.length != 0) {
+    if (path === '/backgroundSetting' && catalogStore.cartLines.length != 0) {
       const result = await confirm({
         title: '警告',
         description: '前往後台設定頁面後將清空點餐頁面,是否要前往後台設定頁面?',
@@ -52,7 +52,7 @@ export function useAppShell() {
         showToast('取消前往後台設定頁面', 'error')
         return
       }
-      drinkStore.drinkNotPay = []
+      catalogStore.cartLines = []
     }
     router.push(path)
   }

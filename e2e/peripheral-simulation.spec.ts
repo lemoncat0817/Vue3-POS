@@ -32,8 +32,8 @@ test('訂單列表可以看到收據預覽，內容包含品項、金額與發�
   const createResponse = page.waitForResponse(
     (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
   )
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('薯條', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
   await page.getByTestId('checkout-button').click()
@@ -53,7 +53,7 @@ test('訂單列表可以看到收據預覽，內容包含品項、金額與發�
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByRole('heading', { name: '收據預覽' })).toBeVisible()
   await expect(dialog.getByText(createBody.orderId)).toBeVisible()
-  await expect(dialog.getByText('楊枝甘露2.0（L）')).toBeVisible()
+  await expect(dialog.getByText('薯條')).toBeVisible()
   await expect(dialog.getByText(createBody.invoiceNumber)).toBeVisible()
   await expect(dialog.getByTestId('print-receipt')).toBeVisible()
 })

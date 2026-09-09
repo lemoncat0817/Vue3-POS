@@ -4,25 +4,16 @@ import { buildCreateOrderRequest } from './orders'
 
 const sampleLine: CartLineItem = {
   id: 1,
-  name: '楊枝甘露2.0',
+  name: '招牌牛肉漢堡',
   price: '80',
-  size: 'L',
   count: 1,
   discount: 0,
   addList: '無添加配料',
   addListPrice: 0,
   totalPrice: 80,
-  currentDiscountPercent: 0,
-  currentDiscountMoney: 0,
-  useDiscountPercent: '',
-  useDiscountMoney: '',
-  useDiscountFree: '',
   freeDiscount: false,
-  ecoDiscount: false,
-  bottleDiscount: false,
-  oftenUseDiscount1: false,
-  oftenUseDiscount2: false,
-  oftenUseDiscount3: false,
+  quickDiscountId: null,
+  quickDiscountName: '',
 }
 
 describe('buildCreateOrderRequest', () => {

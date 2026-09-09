@@ -1,5 +1,5 @@
 export * from './common'
-export * from './drink'
+export * from './catalog'
 export * from './discount'
 export * from './staff'
 export * from './payment'

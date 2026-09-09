@@ -1,18 +1,21 @@
 import {
   addOnOptionSchema,
-  catalogGroupSummarySchema,
-  catalogItemSchema,
+  categorySchema,
   catalogResponseSchema,
+  modifierGroupSchema,
+  productSchema,
   type AddOnOption,
-  type CatalogGroupSummary,
-  type CatalogItem,
+  type Category,
   type CatalogResponse,
   type CreateAddOnOptionRequest,
-  type CreateCatalogGroupRequest,
-  type CreateCatalogItemRequest,
+  type CreateCategoryRequest,
+  type CreateModifierGroupRequest,
+  type CreateProductRequest,
+  type ModifierGroup,
+  type Product,
 } from '@pos/contract'
 import { fetchJson } from './http'
-import type { DrinkAddOnOption, DrinkTypeGroup } from '@/types/drink'
+import type { AddOnOption as LocalAddOnOption, Category as LocalCategory, ModifierGroup as LocalModifierGroup, Product as LocalProduct } from '@/types/catalog'
 
 /** 查詢菜單目錄（GET /api/catalog）。 */
 export async function fetchCatalog(): Promise<CatalogResponse> {
@@ -20,66 +23,86 @@ export async function fetchCatalog(): Promise<CatalogResponse> {
   return catalogResponseSchema.parse(body)
 }
 
-/** 將伺服端 catalog 資料轉為前端既有形狀（空價格映射為 'none'）。 */
-export function toDrinkTypeGroups(catalog: CatalogResponse): DrinkTypeGroup[] {
-  return catalog.groups.map((group) => ({
+export function toLocalCategories(catalog: CatalogResponse): LocalCategory[] {
+  return catalog.categories.map((category) => ({ id: category.id, name: category.name }))
+}
+
+export function toLocalProducts(catalog: CatalogResponse): LocalProduct[] {
+  return catalog.products.map((product) => ({
+    id: product.id,
+    categoryId: product.categoryId,
+    name: product.name,
+    basePrice: product.basePrice,
+    stock: product.stock,
+    modifierGroupIds: product.modifierGroupIds,
+  }))
+}
+
+export function toLocalModifierGroups(catalog: CatalogResponse): LocalModifierGroup[] {
+  return catalog.modifierGroups.map((group) => ({
     id: group.id,
     name: group.name,
-    type: group.type,
-    drinkList: group.items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      priceL: item.priceL ?? 'none',
-      priceBottle: item.priceBottle ?? 'none',
-      customized: item.customized,
-      stock: item.stock,
-    })),
+    selectionType: group.selectionType,
+    required: group.required,
+    options: group.options.map((option) => ({ id: option.id, name: option.name, priceDelta: option.priceDelta })),
   }))
 }
 
-export function toDrinkAddOnOptions(catalog: CatalogResponse): DrinkAddOnOption[] {
-  return catalog.addOns.map((addOn) => ({
-    id: addOn.id,
-    name: addOn.name,
-    price: addOn.price,
-    stock: addOn.stock,
-  }))
+export function toLocalAddOns(catalog: CatalogResponse): LocalAddOnOption[] {
+  return catalog.addOns.map((addOn) => ({ id: addOn.id, name: addOn.name, price: addOn.price, stock: addOn.stock }))
 }
 
-// 後台菜單管理 API（類別、品項、配料之 CRUD）。
+// 後台商品管理 API（分類、品項、規格群組、加購選項之 CRUD）。
 
-export async function createCatalogGroup(input: CreateCatalogGroupRequest): Promise<CatalogGroupSummary> {
-  const body = await fetchJson<unknown>('/api/catalog/groups', { method: 'POST', body: JSON.stringify(input) })
-  return catalogGroupSummarySchema.parse(body)
+export async function createCategory(input: CreateCategoryRequest): Promise<Category> {
+  const body = await fetchJson<unknown>('/api/catalog/categories', { method: 'POST', body: JSON.stringify(input) })
+  return categorySchema.parse(body)
 }
 
-export async function updateCatalogGroup(id: string, input: CreateCatalogGroupRequest): Promise<CatalogGroupSummary> {
-  const body = await fetchJson<unknown>(`/api/catalog/groups/${encodeURIComponent(id)}`, {
+export async function updateCategory(id: string, input: CreateCategoryRequest): Promise<Category> {
+  const body = await fetchJson<unknown>(`/api/catalog/categories/${encodeURIComponent(id)}`, {
     method: 'PUT',
     body: JSON.stringify(input),
   })
-  return catalogGroupSummarySchema.parse(body)
+  return categorySchema.parse(body)
 }
 
-export async function deleteCatalogGroup(id: string): Promise<void> {
-  await fetchJson<null>(`/api/catalog/groups/${encodeURIComponent(id)}`, { method: 'DELETE' })
+export async function deleteCategory(id: string): Promise<void> {
+  await fetchJson<null>(`/api/catalog/categories/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
-export async function createCatalogItem(input: CreateCatalogItemRequest): Promise<CatalogItem> {
-  const body = await fetchJson<unknown>('/api/catalog/items', { method: 'POST', body: JSON.stringify(input) })
-  return catalogItemSchema.parse(body)
+export async function createProduct(input: CreateProductRequest): Promise<Product> {
+  const body = await fetchJson<unknown>('/api/catalog/products', { method: 'POST', body: JSON.stringify(input) })
+  return productSchema.parse(body)
 }
 
-export async function updateCatalogItem(id: string, input: CreateCatalogItemRequest): Promise<CatalogItem> {
-  const body = await fetchJson<unknown>(`/api/catalog/items/${encodeURIComponent(id)}`, {
+export async function updateProduct(id: string, input: CreateProductRequest): Promise<Product> {
+  const body = await fetchJson<unknown>(`/api/catalog/products/${encodeURIComponent(id)}`, {
     method: 'PUT',
     body: JSON.stringify(input),
   })
-  return catalogItemSchema.parse(body)
+  return productSchema.parse(body)
 }
 
-export async function deleteCatalogItem(id: string): Promise<void> {
-  await fetchJson<null>(`/api/catalog/items/${encodeURIComponent(id)}`, { method: 'DELETE' })
+export async function deleteProduct(id: string): Promise<void> {
+  await fetchJson<null>(`/api/catalog/products/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+export async function createModifierGroup(input: CreateModifierGroupRequest): Promise<ModifierGroup> {
+  const body = await fetchJson<unknown>('/api/catalog/modifier-groups', { method: 'POST', body: JSON.stringify(input) })
+  return modifierGroupSchema.parse(body)
+}
+
+export async function updateModifierGroup(id: string, input: CreateModifierGroupRequest): Promise<ModifierGroup> {
+  const body = await fetchJson<unknown>(`/api/catalog/modifier-groups/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+  return modifierGroupSchema.parse(body)
+}
+
+export async function deleteModifierGroup(id: string): Promise<void> {
+  await fetchJson<null>(`/api/catalog/modifier-groups/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
 export async function createAddOnOption(input: CreateAddOnOptionRequest): Promise<AddOnOption> {

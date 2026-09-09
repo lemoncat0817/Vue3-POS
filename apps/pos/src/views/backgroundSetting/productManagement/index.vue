@@ -1,536 +1,364 @@
 <template>
-  <div class="w-full flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-surface-200 dark:divide-surface-800">
-    <div class="w-full xl:w-[28%] p-4 flex flex-col justify-between">
-      <div>
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-black text-surface-900 dark:text-surface-100">飲品類型</span>
-            <span class="rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[10px] font-bold text-surface-600 dark:text-surface-300">共 {{ drinkStore.drinkType.length }} 樣</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button
-              type="button"
-              class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
-              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
-              @click="openAddTypeDialog">新增</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-primary px-2.5 py-1 text-xs"
-              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
-              @click="openEditTypeDialog">編輯</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-danger px-2.5 py-1 text-xs"
-              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrinkType') }"
-              @click="deleteDrinkType">刪除</button>
-          </div>
-        </div>
+  <div class="w-full flex flex-col p-4">
+    <div class="flex items-center gap-1.5 rounded-xl bg-surface-100 dark:bg-surface-800 p-1 mb-4 self-start">
+      <button
+        v-for="tab in tabs" :key="tab.key"
+        type="button"
+        class="rounded-lg px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none"
+        :class="activeTab === tab.key
+          ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm'
+          : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-200'"
+        @click="activeTab = tab.key">
+        {{ tab.label }}
+      </button>
+    </div>
 
-        <ModalDialog v-model:open="addTypeDialog" title="新增飲品類型">
-          <div class="flex flex-col gap-3 py-2">
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              飲品類型
-              <input
-                v-model="currentInputName"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
-                placeholder="例如: 原味茶,芝芝系列..." />
-            </label>
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              飲品類型的代號
-              <input
-                v-model="currentInputType"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
-                placeholder="例如: drinkMilk..." />
-            </label>
-          </div>
-          <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeAddTypeDialog">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addDrinkType">新增</button>
-          </div>
-        </ModalDialog>
-
-        <ModalDialog v-model:open="editTypeDialog" title="編輯飲品類型">
-          <div class="flex flex-col gap-3 py-2">
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              飲品類型
-              <input
-                v-model="currentEditInputName"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
-                placeholder="例如: 原味茶,芝芝系列..." />
-            </label>
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              飲品類型的代號
-              <input
-                v-model="currentEditInputType"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
-                placeholder="例如: drinkMilk..." />
-            </label>
-          </div>
-          <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeEditTypeDialog">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editDrinkType">保存</button>
-          </div>
-        </ModalDialog>
-
-        <div class="max-h-[420px] overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
-          <table class="w-full text-center text-xs sm:text-sm">
-            <thead class="sticky top-0 z-10 bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
-              <tr>
-                <th class="px-2 py-2.5">序號</th>
-                <th class="px-2 py-2.5">Id</th>
-                <th class="px-2 py-2.5">類型</th>
-                <th class="px-2 py-2.5">類型代號</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-              <tr v-if="sliceDrinkType.length === 0">
-                <td colspan="4" class="px-2 py-8 text-surface-400 dark:text-surface-500">無飲品類型</td>
-              </tr>
-              <tr
-                v-for="(row, index) in sliceDrinkType" :key="row.id"
-                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentType.id === row.id }"
-                @click="currentType = row">
-                <td class="px-2 py-2.5 font-mono text-surface-500">{{ index + 1 }}</td>
-                <td class="px-2 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
-                <td class="px-2 py-2.5 font-bold">{{ row.name }}</td>
-                <td class="px-2 py-2.5 font-mono text-xs text-surface-500">{{ row.type }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    <!-- 分類 -->
+    <div v-if="activeTab === 'categories'" class="flex flex-col">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
+        <span class="text-sm font-black text-surface-900 dark:text-surface-100">
+          分類<span class="ml-2 rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[10px] font-bold text-surface-600 dark:text-surface-300">共 {{ catalogStore.categories.length }} 樣</span>
+        </span>
+        <button
+          type="button" class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+          :class="{ 'opacity-50 pointer-events-none': !canSetCategory }"
+          @click="openAddCategoryDialog">＋ 新增分類</button>
       </div>
 
-      <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
-        <p>{{ `共 ${drinkStore.drinkType.length} 樣` }}</p>
-        <div class="flex items-center gap-1.5">
-          <AppPagination :page="drinkTypeCurrentPage" :page-count="drinkTypePageCount" :total="drinkStore.drinkType.length" @update:page="handleDrinkTypeCurrentChange" />
-        </div>
+      <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+        <table class="w-full text-center text-sm">
+          <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+            <tr>
+              <th class="px-3 py-2.5 text-left">名稱</th>
+              <th class="px-3 py-2.5">品項數</th>
+              <th class="px-3 py-2.5">操作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+            <tr v-if="sliceCategories.length === 0">
+              <td colspan="3" class="px-2 py-8 text-surface-400 dark:text-surface-500">無分類</td>
+            </tr>
+            <tr v-for="row in sliceCategories" :key="row.id" class="hover:bg-surface-50 dark:hover:bg-surface-950/40">
+              <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
+              <td class="px-3 py-2.5 font-mono text-surface-500">{{ productCountOf(row.id) }}</td>
+              <td class="px-3 py-2.5">
+                <div class="flex items-center justify-center gap-1.5">
+                  <button type="button" class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs" :class="{ 'opacity-50 pointer-events-none': !canSetCategory }" @click="openEditCategoryDialog(row)">編輯</button>
+                  <button type="button" class="pos-btn pos-btn-danger px-2.5 py-1 text-xs" :class="{ 'opacity-50 pointer-events-none': !canSetCategory }" @click="removeCategory(row)">刪除</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-3 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
+        <p>共 {{ catalogStore.categories.length }} 樣</p>
+        <AppPagination :page="categoryPage" :page-count="categoryPageCount" :total="catalogStore.categories.length" @update:page="(v) => categoryPage = v" />
       </div>
     </div>
 
-    <div class="w-full xl:w-[44%] p-4 flex flex-col justify-between">
-      <div>
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-black text-surface-900 dark:text-surface-100">飲料品項</span>
-            <span class="rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[10px] font-bold text-surface-600 dark:text-surface-300">
-              共 {{ currentType.drinkList ? currentType.drinkList.length : 0 }} 樣
-            </span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button
-              type="button"
-              class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
-              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
-              @click="openAddDrinkDialog">新增</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-primary px-2.5 py-1 text-xs"
-              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
-              @click="openEditDrinkDialog">編輯</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-danger px-2.5 py-1 text-xs"
-              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetDrink') }"
-              @click="deleteDrink">刪除</button>
-          </div>
-        </div>
-
-        <ModalDialog v-model:open="addDrinkDialog" title="新增飲料品項">
-          <div class="flex flex-col gap-3.5 py-2">
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              飲料名稱
-              <input
-                v-model="currentDrinkInputName"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
-                placeholder="例如: 芝芝金萱,金萱雙Q..." />
-            </label>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-                <span>大杯價格</span>
-                <div class="flex items-center gap-2">
-                  <SwitchRoot
-                    v-model="setPriceL" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500 shrink-0"
-                    @update:model-value="checkPriceLSwitch">
-                    <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
-                  </SwitchRoot>
-                  <input
-                    v-if="setPriceL" v-model="currentDrinkInputPriceL" type="number" min="1" step="1"
-                    class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100" placeholder="無此容器，請關左側開關" />
-                  <div v-else class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-400 text-center font-mono">
-                    none
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-                <span>瓶裝價格</span>
-                <div class="flex items-center gap-2">
-                  <SwitchRoot
-                    v-model="setPriceBottle" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500 shrink-0"
-                    @update:model-value="checkPriceBottleSwitch">
-                    <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
-                  </SwitchRoot>
-                  <input
-                    v-if="setPriceBottle" v-model="currentDrinkInputPriceBottle" type="number" min="1" step="1"
-                    class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100" placeholder="無此容器，請關左側開關" />
-                  <div v-else class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-400 text-center font-mono">
-                    none
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              <span>客製化</span>
-              <SelectRoot v-model="currentDrinkSelectCustomized" @update:model-value="checkAddDrinkSelectCustomized">
-                <SelectTrigger class="flex w-full items-center justify-between rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-left text-sm text-surface-900 dark:text-surface-100">
-                  <SelectValue placeholder="請選擇飲料的客製化設定" />
-                  <span aria-hidden="true">▾</span>
-                </SelectTrigger>
-                <SelectPortal>
-                  <SelectContent class="z-50 w-[280px] rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-800 shadow-xl" position="popper">
-                    <SelectViewport class="p-1">
-                      <SelectItem
-                        v-for="item in customized" :key="item.value" :value="item.value"
-                        class="flex cursor-pointer justify-between rounded-lg px-3 py-2 text-sm outline-none hover:bg-surface-100 dark:hover:bg-surface-700 data-[state=checked]:bg-primary-50 dark:data-[state=checked]:bg-primary-950/40">
-                        <SelectItemText>{{ item.label }}</SelectItemText>
-                        <span class="text-xs text-surface-400 dark:text-surface-500">{{ item.value }}</span>
-                      </SelectItem>
-                    </SelectViewport>
-                  </SelectContent>
-                </SelectPortal>
-              </SelectRoot>
-            </div>
-
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              庫存
-              <input
-                v-model="currentDrinkInputStock" type="number" min="0" step="1"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
-                placeholder="留空代表不追蹤庫存" />
-            </label>
-          </div>
-          <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeAddDrinkDialog">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addDrink">新增</button>
-          </div>
-        </ModalDialog>
-
-        <ModalDialog v-model:open="editDrinkDialog" title="編輯飲料品項">
-          <div class="flex flex-col gap-3.5 py-2">
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              飲料名稱
-              <input
-                v-model="currentEditDrinkInputName"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
-                placeholder="例如: 芝芝金萱,金萱雙Q..." />
-            </label>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-                <span>大杯價格</span>
-                <div class="flex items-center gap-2">
-                  <SwitchRoot
-                    v-model="setEditPriceL" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500 shrink-0"
-                    @update:model-value="checkEditPriceLSwitch">
-                    <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
-                  </SwitchRoot>
-                  <input
-                    v-if="setEditPriceL" v-model="currentEditDrinkInputPriceL" type="number" min="1" step="1"
-                    class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100" placeholder="無此容器，請關左側開關" />
-                  <div v-else class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-400 text-center font-mono">
-                    none
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-                <span>瓶裝價格</span>
-                <div class="flex items-center gap-2">
-                  <SwitchRoot
-                    v-model="setEditPriceBottle" class="relative h-6 w-11 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500 shrink-0"
-                    @update:model-value="checkEditPriceBottleSwitch">
-                    <SwitchThumb class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
-                  </SwitchRoot>
-                  <input
-                    v-if="setEditPriceBottle" v-model="currentEditDrinkInputPriceBottle" type="number" min="1" step="1"
-                    class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100" placeholder="純數字,例如:1,2,3..." />
-                  <div v-else class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-400 text-center font-mono">
-                    none
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              <span>客製化</span>
-              <SelectRoot v-model="currentEditDrinkSelectCustomized" @update:model-value="checkEditDrinkSelectCustomized">
-                <SelectTrigger class="flex w-full items-center justify-between rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-left text-sm text-surface-900 dark:text-surface-100">
-                  <SelectValue placeholder="請選擇飲料的客製化設定" />
-                  <span aria-hidden="true">▾</span>
-                </SelectTrigger>
-                <SelectPortal>
-                  <SelectContent class="z-50 w-[280px] rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-800 shadow-xl" position="popper">
-                    <SelectViewport class="p-1">
-                      <SelectItem
-                        v-for="item in customized" :key="item.value" :value="item.value"
-                        class="flex cursor-pointer justify-between rounded-lg px-3 py-2 text-sm outline-none hover:bg-surface-100 dark:hover:bg-surface-700 data-[state=checked]:bg-primary-50 dark:data-[state=checked]:bg-primary-950/40">
-                        <SelectItemText>{{ item.label }}</SelectItemText>
-                        <span class="text-xs text-surface-400 dark:text-surface-500">{{ item.value }}</span>
-                      </SelectItem>
-                    </SelectViewport>
-                  </SelectContent>
-                </SelectPortal>
-              </SelectRoot>
-            </div>
-
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              庫存
-              <input
-                v-model="currentEditDrinkInputStock" type="number" min="0" step="1"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
-                placeholder="留空代表不追蹤庫存" />
-            </label>
-          </div>
-          <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeEditDrinkDialog">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editDrink">保存</button>
-          </div>
-        </ModalDialog>
-
-        <div class="max-h-[420px] overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
-          <table class="w-full text-center text-xs sm:text-sm">
-            <thead class="sticky top-0 z-10 bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
-              <tr>
-                <th class="px-2 py-2.5">序號</th>
-                <th class="px-2 py-2.5">Id</th>
-                <th class="px-2 py-2.5">飲料名稱</th>
-                <th class="px-2 py-2.5">大杯價格</th>
-                <th class="px-2 py-2.5">瓶裝價格</th>
-                <th class="px-2 py-2.5">客製化</th>
-                <th class="px-2 py-2.5">庫存</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-              <tr v-if="sliceDrink.length === 0">
-                <td colspan="7" class="px-2 py-8 text-surface-400 dark:text-surface-500">請先選擇飲品類型</td>
-              </tr>
-              <tr
-                v-for="(row, index) in sliceDrink" :key="row.id"
-                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentDrink.id === row.id }"
-                @click="currentDrink = row">
-                <td class="px-2 py-2.5 font-mono text-surface-500">{{ index + 1 }}</td>
-                <td class="px-2 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
-                <td class="px-2 py-2.5 font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
-                <td class="px-2 py-2.5 font-mono">${{ row.priceL }}</td>
-                <td class="px-2 py-2.5 font-mono">{{ row.priceBottle === 'none' ? '-' : `$${row.priceBottle}` }}</td>
-                <td class="px-2 py-2.5">
-                  <span class="rounded-md px-1.5 py-0.5 text-[10px] font-bold" :class="row.customized === 'none' ? 'bg-surface-100 text-surface-500 dark:bg-surface-800' : 'bg-success-50 text-success-600 dark:bg-success-950/40 dark:text-success-400'">
-                    {{ row.customized }}
-                  </span>
-                </td>
-                <td class="px-2 py-2.5" :class="stockClass(row.stock)">{{ stockLabel(row.stock) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    <!-- 品項 -->
+    <div v-if="activeTab === 'products'" class="flex flex-col">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
+        <span class="text-sm font-black text-surface-900 dark:text-surface-100">
+          品項<span class="ml-2 rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[10px] font-bold text-surface-600 dark:text-surface-300">共 {{ catalogStore.products.length }} 樣</span>
+        </span>
+        <button
+          type="button" class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+          :class="{ 'opacity-50 pointer-events-none': !canSetProduct }"
+          @click="openAddProductDialog">＋ 新增品項</button>
       </div>
 
-      <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
-        <p>{{ `共 ${currentType.drinkList ? currentType.drinkList.length : 0} 樣` }}</p>
-        <div class="flex items-center gap-1.5">
-          <AppPagination :page="drinkCurrentPage" :page-count="drinkPageCount" :total="currentType.drinkList?.length ?? 0" @update:page="handleDrinkCurrentChange" />
-        </div>
+      <div class="overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800">
+        <table class="w-full text-center text-sm">
+          <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+            <tr>
+              <th class="px-3 py-2.5 text-left">名稱</th>
+              <th class="px-3 py-2.5">分類</th>
+              <th class="px-3 py-2.5">底價</th>
+              <th class="px-3 py-2.5">規格群組</th>
+              <th class="px-3 py-2.5">庫存</th>
+              <th class="px-3 py-2.5">操作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+            <tr v-if="sliceProducts.length === 0">
+              <td colspan="6" class="px-2 py-8 text-surface-400 dark:text-surface-500">無品項</td>
+            </tr>
+            <tr v-for="row in sliceProducts" :key="row.id" class="hover:bg-surface-50 dark:hover:bg-surface-950/40">
+              <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
+              <td class="px-3 py-2.5 text-surface-600 dark:text-surface-300">{{ categoryNameOf(row.categoryId) }}</td>
+              <td class="px-3 py-2.5 font-mono">${{ row.basePrice }}</td>
+              <td class="px-3 py-2.5 text-surface-500 max-w-[160px] truncate" :title="modifierGroupNamesOf(row).join('、')">
+                {{ modifierGroupNamesOf(row).join('、') || '無' }}
+              </td>
+              <td class="px-3 py-2.5" :class="stockClass(row.stock)">{{ stockLabel(row.stock) }}</td>
+              <td class="px-3 py-2.5">
+                <div class="flex items-center justify-center gap-1.5">
+                  <button type="button" class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs" :class="{ 'opacity-50 pointer-events-none': !canSetProduct }" @click="openEditProductDialog(row)">編輯</button>
+                  <button type="button" class="pos-btn pos-btn-danger px-2.5 py-1 text-xs" :class="{ 'opacity-50 pointer-events-none': !canSetProduct }" @click="removeProduct(row)">刪除</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-3 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
+        <p>共 {{ catalogStore.products.length }} 樣</p>
+        <AppPagination :page="productPage" :page-count="productPageCount" :total="catalogStore.products.length" @update:page="(v) => productPage = v" />
       </div>
     </div>
 
-    <div class="w-full xl:w-[28%] p-4 flex flex-col justify-between">
-      <div>
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-black text-surface-900 dark:text-surface-100">配料</span>
-            <span class="rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[10px] font-bold text-surface-600 dark:text-surface-300">共 {{ drinkStore.drinkAdd.length }} 樣</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button
-              type="button"
-              class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
-              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
-              @click="openAddIngredientsDialog">新增</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-primary px-2.5 py-1 text-xs"
-              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
-              @click="openEditIngredientsDialog">編輯</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-danger px-2.5 py-1 text-xs"
-              :class="{ 'opacity-50 pointer-events-none': !hasCapability(loginStore.userInfo, 'canSetIngredients') }"
-              @click="deleteDrinkIngredients">刪除</button>
-          </div>
-        </div>
-
-        <ModalDialog v-model:open="addIngredientsDialog" title="新增配料">
-          <div class="flex flex-col gap-3.5 py-2">
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              配料名稱
-              <input
-                v-model="currentIngredientsInputName"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
-                placeholder="例如: 波霸,雙Q果..." />
-            </label>
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              配料的價錢
-              <input
-                v-model="currentIngredientsInputPrice" type="number" min="1" step="1"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
-                placeholder="純數字,例如:1,2,3..." />
-            </label>
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              庫存
-              <input
-                v-model="currentIngredientsInputStock" type="number" min="0" step="1"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
-                placeholder="留空代表不追蹤庫存" />
-            </label>
-          </div>
-          <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeAddIngredientsDialog">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="addDrinkIngredients">新增</button>
-          </div>
-        </ModalDialog>
-
-        <ModalDialog v-model:open="editIngredientsDialog" title="編輯配料">
-          <div class="flex flex-col gap-3.5 py-2">
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              配料名稱
-              <input
-                v-model="currentEditIngredientsInputName"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all"
-                placeholder="例如: 波霸,雙Q果..." />
-            </label>
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              配料的價錢
-              <input
-                v-model="currentEditIngredientsInputPrice" type="number" min="1" step="1"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
-                placeholder="純數字,例如:1,2,3..." />
-            </label>
-            <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-              庫存
-              <input
-                v-model="currentEditIngredientsInputStock" type="number" min="0" step="1"
-                class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 transition-all font-mono"
-                placeholder="留空代表不追蹤庫存" />
-            </label>
-          </div>
-          <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closeEditIngredientsDialog">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="editDrinkIngredients">保存</button>
-          </div>
-        </ModalDialog>
-
-        <div class="mt-4 max-h-[420px] overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800">
-          <table class="w-full text-center text-xs">
-            <thead class="sticky top-0 z-10 bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
-              <tr>
-                <th class="px-2 py-2.5">序號</th>
-                <th class="px-2 py-2.5">Id</th>
-                <th class="px-2 py-2.5 text-left">配料名稱</th>
-                <th class="px-2 py-2.5 text-right">價錢</th>
-                <th class="px-2 py-2.5">庫存</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-              <tr v-if="sliceIngredients.length === 0">
-                <td colspan="5" class="px-2 py-8 text-surface-400 dark:text-surface-500">無配料</td>
-              </tr>
-              <tr
-                v-for="(row, index) in sliceIngredients" :key="row.id"
-                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentIngredientsDrink.id === row.id }"
-                @click="currentIngredientsDrink = row">
-                <td class="px-2 py-2.5 font-mono text-surface-500">{{ index + 1 }}</td>
-                <td class="px-2 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
-                <td class="px-2 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
-                <td class="px-2 py-2.5 text-right font-mono font-bold text-primary-600 dark:text-primary-400">${{ row.price }}</td>
-                <td class="px-2 py-2.5 font-mono" :class="stockClass(row.stock)">
-                  <span class="rounded-md px-1.5 py-0.5 text-[10px] font-bold">
-                    {{ stockLabel(row.stock) }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    <!-- 規格群組 -->
+    <div v-if="activeTab === 'modifierGroups'" class="flex flex-col">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
+        <span class="text-sm font-black text-surface-900 dark:text-surface-100">
+          規格群組<span class="ml-2 rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[10px] font-bold text-surface-600 dark:text-surface-300">共 {{ catalogStore.modifierGroups.length }} 樣</span>
+        </span>
+        <button
+          type="button" class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+          :class="{ 'opacity-50 pointer-events-none': !canSetProduct }"
+          @click="openAddModifierGroupDialog">＋ 新增規格群組</button>
       </div>
 
-      <div class="mt-4 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
-        <p>{{ `共 ${drinkStore.drinkAdd.length} 樣` }}</p>
-        <div class="flex items-center gap-1.5">
-          <AppPagination :page="drinkIngredientsCurrentPage" :page-count="drinkIngredientsPageCount" :total="drinkStore.drinkAdd.length" @update:page="handleIngredientsCurrentChange" />
-        </div>
+      <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+        <table class="w-full text-center text-sm">
+          <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+            <tr>
+              <th class="px-3 py-2.5 text-left">名稱</th>
+              <th class="px-3 py-2.5">選擇方式</th>
+              <th class="px-3 py-2.5">必選</th>
+              <th class="px-3 py-2.5 text-left">選項</th>
+              <th class="px-3 py-2.5">操作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+            <tr v-if="catalogStore.modifierGroups.length === 0">
+              <td colspan="5" class="px-2 py-8 text-surface-400 dark:text-surface-500">無規格群組</td>
+            </tr>
+            <tr v-for="row in catalogStore.modifierGroups" :key="row.id" class="hover:bg-surface-50 dark:hover:bg-surface-950/40">
+              <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
+              <td class="px-3 py-2.5 text-surface-600 dark:text-surface-300">{{ row.selectionType === 'single' ? '單選' : '多選' }}</td>
+              <td class="px-3 py-2.5">
+                <span class="rounded-md px-1.5 py-0.5 text-[10px] font-bold" :class="row.required ? 'bg-danger-50 text-danger-600 dark:bg-danger-950/40 dark:text-danger-400' : 'bg-surface-100 text-surface-500 dark:bg-surface-800'">
+                  {{ row.required ? '必選' : '選填' }}
+                </span>
+              </td>
+              <td class="px-3 py-2.5 text-left text-surface-500 max-w-[220px] truncate" :title="optionSummary(row)">{{ optionSummary(row) }}</td>
+              <td class="px-3 py-2.5">
+                <div class="flex items-center justify-center gap-1.5">
+                  <button type="button" class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs" :class="{ 'opacity-50 pointer-events-none': !canSetProduct }" @click="openEditModifierGroupDialog(row)">編輯</button>
+                  <button type="button" class="pos-btn pos-btn-danger px-2.5 py-1 text-xs" :class="{ 'opacity-50 pointer-events-none': !canSetProduct }" @click="removeModifierGroup(row)">刪除</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
+
+    <!-- 加購選項 -->
+    <div v-if="activeTab === 'addOns'" class="flex flex-col">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800">
+        <span class="text-sm font-black text-surface-900 dark:text-surface-100">
+          加購選項<span class="ml-2 rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[10px] font-bold text-surface-600 dark:text-surface-300">共 {{ catalogStore.addOns.length }} 樣</span>
+        </span>
+        <button
+          type="button" class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+          :class="{ 'opacity-50 pointer-events-none': !canSetAddOns }"
+          @click="openAddAddOnDialog">＋ 新增加購選項</button>
+      </div>
+
+      <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+        <table class="w-full text-center text-sm">
+          <thead class="bg-surface-100 dark:bg-surface-800 text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+            <tr>
+              <th class="px-3 py-2.5 text-left">名稱</th>
+              <th class="px-3 py-2.5">價錢</th>
+              <th class="px-3 py-2.5">庫存</th>
+              <th class="px-3 py-2.5">操作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+            <tr v-if="sliceAddOns.length === 0">
+              <td colspan="4" class="px-2 py-8 text-surface-400 dark:text-surface-500">無加購選項</td>
+            </tr>
+            <tr v-for="row in sliceAddOns" :key="row.id" class="hover:bg-surface-50 dark:hover:bg-surface-950/40">
+              <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
+              <td class="px-3 py-2.5 font-mono font-bold text-primary-600 dark:text-primary-400">${{ row.price }}</td>
+              <td class="px-3 py-2.5" :class="stockClass(row.stock)">{{ stockLabel(row.stock) }}</td>
+              <td class="px-3 py-2.5">
+                <div class="flex items-center justify-center gap-1.5">
+                  <button type="button" class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs" :class="{ 'opacity-50 pointer-events-none': !canSetAddOns }" @click="openEditAddOnDialog(row)">編輯</button>
+                  <button type="button" class="pos-btn pos-btn-danger px-2.5 py-1 text-xs" :class="{ 'opacity-50 pointer-events-none': !canSetAddOns }" @click="removeAddOn(row)">刪除</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-3 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
+        <p>共 {{ catalogStore.addOns.length }} 樣</p>
+        <AppPagination :page="addOnPage" :page-count="addOnPageCount" :total="catalogStore.addOns.length" @update:page="(v) => addOnPage = v" />
+      </div>
+    </div>
+
+    <!-- 分類新增/編輯 -->
+    <ModalDialog v-model:open="categoryDialog.open" :title="categoryDialog.editingId ? '編輯分類' : '新增分類'">
+      <div class="flex flex-col gap-3 py-2">
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+          分類名稱
+          <input v-model="categoryDialog.name" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500" placeholder="例如: 主餐、飲品..." />
+        </label>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="categoryDialog.open = false">取消</button>
+        <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="submitCategory">{{ categoryDialog.editingId ? '保存' : '新增' }}</button>
+      </div>
+    </ModalDialog>
+
+    <!-- 品項新增/編輯 -->
+    <ModalDialog v-model:open="productDialog.open" :title="productDialog.editingId ? '編輯品項' : '新增品項'" size="lg">
+      <div class="flex flex-col gap-3.5 py-2">
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+          品項名稱
+          <input v-model="productDialog.name" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500" placeholder="例如: 招牌牛肉漢堡..." />
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+            分類
+            <select v-model="productDialog.categoryId" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none">
+              <option value="">請選擇分類</option>
+              <option v-for="c in catalogStore.categories" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+            底價
+            <input v-model="productDialog.basePrice" type="number" min="0" step="1" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono" placeholder="純數字" />
+          </label>
+        </div>
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+          庫存
+          <input v-model="productDialog.stock" type="number" min="0" step="1" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono" placeholder="留空代表不追蹤庫存" />
+        </label>
+        <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+          規格群組（可複選）
+          <div class="flex flex-wrap gap-1.5 mt-1">
+            <label
+              v-for="group in catalogStore.modifierGroups" :key="group.id"
+              class="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 cursor-pointer select-none"
+              :class="productDialog.modifierGroupIds.includes(String(group.id)) ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300' : 'border-surface-200 dark:border-surface-700'">
+              <input type="checkbox" class="rounded text-primary-600" :checked="productDialog.modifierGroupIds.includes(String(group.id))" @change="toggleProductModifierGroup(group.id)">
+              {{ group.name }}
+            </label>
+            <span v-if="catalogStore.modifierGroups.length === 0" class="text-surface-400 text-xs">尚未建立規格群組</span>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="productDialog.open = false">取消</button>
+        <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="submitProduct">{{ productDialog.editingId ? '保存' : '新增' }}</button>
+      </div>
+    </ModalDialog>
+
+    <!-- 規格群組新增/編輯 -->
+    <ModalDialog v-model:open="modifierGroupDialog.open" :title="modifierGroupDialog.editingId ? '編輯規格群組' : '新增規格群組'" size="lg">
+      <div class="flex flex-col gap-3.5 py-2">
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+          群組名稱
+          <input v-model="modifierGroupDialog.name" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500" placeholder="例如: 甜度、熟度、容器大小..." />
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+            選擇方式
+            <select v-model="modifierGroupDialog.selectionType" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none">
+              <option value="single">單選</option>
+              <option value="multiple">多選</option>
+            </select>
+          </label>
+          <label class="flex items-center gap-2 text-xs font-bold text-surface-600 dark:text-surface-300 mt-5">
+            <input v-model="modifierGroupDialog.required" type="checkbox" class="rounded text-primary-600">
+            點餐時必選
+          </label>
+        </div>
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between text-xs font-bold text-surface-600 dark:text-surface-300">
+            <span>選項</span>
+            <button type="button" class="pos-btn pos-btn-secondary px-2 py-1 text-xs" @click="addModifierOptionRow">＋ 新增選項</button>
+          </div>
+          <div v-for="(option, index) in modifierGroupDialog.options" :key="index" class="flex items-center gap-2">
+            <input v-model="option.name" class="flex-1 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none" placeholder="選項名稱，例如：大杯" />
+            <input v-model="option.priceDelta" type="number" step="1" class="w-28 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono" placeholder="加減價" />
+            <button type="button" class="rounded-lg border border-danger-200 px-2 py-1.5 text-xs font-bold text-danger-600 hover:bg-danger-50 dark:border-danger-800 dark:text-danger-400" @click="modifierGroupDialog.options.splice(index, 1)">移除</button>
+          </div>
+          <p v-if="modifierGroupDialog.options.length === 0" class="text-xs text-surface-400">尚未新增任何選項</p>
+        </div>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="modifierGroupDialog.open = false">取消</button>
+        <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="submitModifierGroup">{{ modifierGroupDialog.editingId ? '保存' : '新增' }}</button>
+      </div>
+    </ModalDialog>
+
+    <!-- 加購選項新增/編輯 -->
+    <ModalDialog v-model:open="addOnDialog.open" :title="addOnDialog.editingId ? '編輯加購選項' : '新增加購選項'">
+      <div class="flex flex-col gap-3.5 py-2">
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+          名稱
+          <input v-model="addOnDialog.name" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500" placeholder="例如: 加起司、珍珠..." />
+        </label>
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+          價錢
+          <input v-model="addOnDialog.price" type="number" min="0" step="1" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono" placeholder="純數字" />
+        </label>
+        <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+          庫存
+          <input v-model="addOnDialog.stock" type="number" min="0" step="1" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono" placeholder="留空代表不追蹤庫存" />
+        </label>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="addOnDialog.open = false">取消</button>
+        <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="submitAddOn">{{ addOnDialog.editingId ? '保存' : '新增' }}</button>
+      </div>
+    </ModalDialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import {
-  SelectContent,
-  SelectItem,
-  SelectItemText,
-  SelectPortal,
-  SelectRoot,
-  SelectTrigger,
-  SelectValue,
-  SelectViewport,
-  SwitchRoot,
-  SwitchThumb,
-} from 'reka-ui'
+import { computed, reactive, ref } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import { alert, confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
-import { useDrinkStore } from '@/stores/drink'
-const drinkStore = useDrinkStore()
+import { useCatalogStore } from '@/stores/catalog'
+const catalogStore = useCatalogStore()
 import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
-import type { DrinkAddOnOption, DrinkCustomized, DrinkListItem, DrinkTypeGroup, FormNumeric, MaybeSelected } from '@/types'
+import type { AddOnOption, Category, ModifierGroup, ModifierSelectionType, Product } from '@/types'
 import { hasCapability } from '@/utils/selection'
 import { ApiError } from '@/api/http'
 import {
   createAddOnOption,
-  createCatalogGroup,
-  createCatalogItem,
+  createCategory,
+  createModifierGroup,
+  createProduct,
   deleteAddOnOption,
-  deleteCatalogGroup,
-  deleteCatalogItem,
+  deleteCategory,
+  deleteModifierGroup,
+  deleteProduct,
   updateAddOnOption,
-  updateCatalogGroup,
-  updateCatalogItem,
+  updateCategory,
+  updateModifierGroup,
+  updateProduct,
 } from '@/api/catalog'
 
 function apiErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.status === 409) return '這個類型底下還有品項，請先清空品項再刪除'
+    if (err.status === 409) return '這個分類底下還有品項，請先清空品項再刪除'
     return `操作失敗：${err.message}`
   }
   return '連不上伺服端，請確認網路連線'
 }
-// 表單沿用 'none' 代表不支援，轉換函式用於銜接 API 邊界的 number | null。
-function toApiPrice(value: FormNumeric | 'none'): number | null {
-  return value === 'none' ? null : Number(value)
-}
-function fromApiPrice(value: number | null): FormNumeric | 'none' {
-  return value === null ? 'none' : value
-}
-// 庫存為選填（空字串代表不追蹤）。v-model 遇 number input 可能為 string 或 number，統一轉字串避免例外。
 const LOW_STOCK_THRESHOLD = 5
 function toApiStock(value: string | number): number | null {
   const text = String(value).trim()
@@ -547,514 +375,302 @@ function stockClass(stock: number | null | undefined): string {
   return ''
 }
 
-const currentType = ref<MaybeSelected<DrinkTypeGroup>>({})
-const currentInputName = ref('')
-const currentInputType = ref('')
-const addTypeDialog = ref(false)
-const openAddTypeDialog = () => {
-  currentInputName.value = ''
-  currentInputType.value = ''
-  addTypeDialog.value = true
-}
-const closeAddTypeDialog = () => {
-  addTypeDialog.value = false
-  showToast('取消操作', 'error')
-}
-const addDrinkType = async () => {
-  if (currentInputName.value === '' || currentInputType.value === '') {
-    showToast('請輸入完整資訊', 'error')
-    return
-  }
-  if (drinkStore.drinkType.find((item) => item.name == currentInputName.value)) {
-    showToast('此類型已存在,請重新輸入', 'error')
-    return
-  }
-  if (drinkStore.drinkType.find((item) => item.type == currentInputType.value)) {
-    showToast('此類型代碼已存在,請重新輸入', 'error')
-    return
-  }
-  try {
-    const created = await createCatalogGroup({ name: currentInputName.value, type: currentInputType.value })
-    drinkStore.drinkType.push({ id: created.id, name: created.name, type: created.type, drinkList: [] })
-    addTypeDialog.value = false
-    showToast('新增成功', 'success')
-  } catch (err) {
-    showToast(apiErrorMessage(err), 'error')
-  }
-}
-const drinkTypeCurrentPage = ref(1)
-const handleDrinkTypeCurrentChange = (page: number) => {
-  drinkTypeCurrentPage.value = page
-}
-const sliceDrinkType = computed(() => {
-  return drinkStore.drinkType.slice((drinkTypeCurrentPage.value - 1) * 10, drinkTypeCurrentPage.value * 10)
-})
-const drinkTypePageCount = computed(() => Math.max(Math.ceil(drinkStore.drinkType.length / 10), 1))
-const deleteDrinkType = async () => {
-  if (drinkStore.drinkType.length == 1) {
-    showToast('至少要留有一個飲料類型，需修改請善用編輯功能', 'error')
-    return
-  }
-  if (!currentType.value.name) {
-    void alert({ title: '通知', description: '請先選擇要刪除的類型', confirmText: '繼續選擇' })
-    return
-  }
-  const result = await confirm({ title: '警告', description: `是否刪除 ${currentType.value.name} 類型?` })
-  if (result !== 'confirm') return
-  try {
-    await deleteCatalogGroup(String(currentType.value.id))
-    drinkStore.drinkTypeMenu = ''
-    drinkStore.drinkType = drinkStore.drinkType.filter((item) => item.id !== currentType.value.id)
-    currentType.value = {}
-    currentDrink.value = {}
-    showToast('刪除成功', 'success')
-  } catch (err) {
-    showToast(apiErrorMessage(err), 'error')
-  }
-}
-const editTypeDialog = ref(false)
-const currentEditInputName = ref('')
-const currentEditInputType = ref('')
-const openEditTypeDialog = () => {
-  if (currentType.value.name) {
-    currentEditInputName.value = currentType.value.name
-    currentEditInputType.value = currentType.value.type!
-    editTypeDialog.value = true
-  } else {
-    void alert({ title: '通知', description: '請先選擇要編輯的類型', confirmText: '繼續選擇' })
-  }
-}
-const closeEditTypeDialog = () => {
-  editTypeDialog.value = false
-  showToast('取消操作', 'error')
-}
-const editDrinkType = async () => {
-  if (currentEditInputName.value === '' || currentEditInputType.value === '') {
-    showToast('請輸入完整資訊', 'error')
-    return
-  }
-  if (currentEditInputName.value == currentType.value.name && currentEditInputType.value == currentType.value.type) {
-    editTypeDialog.value = false
-    showToast('保存成功', 'success')
-    return
-  }
-  const anotherName = drinkStore.drinkType.filter(item => item.id != currentType.value.id)
-  if (anotherName.some(item => item.name == currentEditInputName.value)) {
-    showToast('此類型已存在,請重新輸入', 'error')
-    return
-  }
-  const anotherType = drinkStore.drinkType.filter(item => item.id != currentType.value.id)
-  if (anotherType.some(item => item.type == currentEditInputType.value)) {
-    showToast('此類型代號已存在,請重新輸入', 'error')
-    return
-  }
-  try {
-    const updated = await updateCatalogGroup(String(currentType.value.id), { name: currentEditInputName.value, type: currentEditInputType.value })
-    currentType.value.name = updated.name
-    currentType.value.type = updated.type
-    editTypeDialog.value = false
-    showToast('保存成功', 'success')
-  } catch (err) {
-    showToast(apiErrorMessage(err), 'error')
-  }
-}
+const canSetCategory = computed(() => hasCapability(loginStore.userInfo, 'canSetDrinkType'))
+const canSetProduct = computed(() => hasCapability(loginStore.userInfo, 'canSetDrink'))
+const canSetAddOns = computed(() => hasCapability(loginStore.userInfo, 'canSetIngredients'))
 
-const currentDrink = ref<MaybeSelected<DrinkListItem>>({})
-const addDrinkDialog = ref(false)
-const openAddDrinkDialog = () => {
-  if (currentType.value.name) {
-    setPriceL.value = true
-    setPriceBottle.value = true
-    currentDrinkInputName.value = ''
-    currentDrinkInputPriceL.value = ''
-    currentDrinkInputPriceBottle.value = ''
-    currentDrinkSelectCustomized.value = ''
-    currentDrinkInputStock.value = ''
-    addDrinkDialog.value = true
-  } else {
-    void alert({ title: '通知', description: '請先選擇要新增飲料品項的的飲品類型', confirmText: '繼續選擇' })
-    return
-  }
+const tabs = [
+  { key: 'categories', label: '分類' },
+  { key: 'products', label: '品項' },
+  { key: 'modifierGroups', label: '規格群組' },
+  { key: 'addOns', label: '加購選項' },
+] as const
+const activeTab = ref<(typeof tabs)[number]['key']>('categories')
+
+// ---------- 分類 ----------
+const categoryPage = ref(1)
+const categoryPageCount = computed(() => Math.max(Math.ceil(catalogStore.categories.length / 10), 1))
+const sliceCategories = computed(() => catalogStore.categories.slice((categoryPage.value - 1) * 10, categoryPage.value * 10))
+const productCountOf = (categoryId: Category['id']) => catalogStore.products.filter((p) => String(p.categoryId) === String(categoryId)).length
+
+const categoryDialog = reactive<{ open: boolean; editingId: Category['id'] | null; name: string }>({ open: false, editingId: null, name: '' })
+function openAddCategoryDialog() {
+  categoryDialog.editingId = null
+  categoryDialog.name = ''
+  categoryDialog.open = true
 }
-const currentDrinkInputName = ref('')
-const currentDrinkInputPriceL = ref<FormNumeric | 'none'>('')
-const currentDrinkInputPriceBottle = ref<FormNumeric | 'none'>('')
-const currentDrinkSelectCustomized = ref<DrinkCustomized | ''>('')
-const currentDrinkInputStock = ref('')
-const customized = [
-  {
-    value: 'none',
-    label: '無客製化，容器限大杯',
-  },
-  {
-    value: 'cold',
-    label: '僅可做冷飲',
-  },
-  {
-    value: 'both',
-    label: '冷熱飲皆可',
-  },
-]
-const checkAddDrinkSelectCustomized = () => {
-  if (currentDrinkSelectCustomized.value === 'none') {
-    setPriceL.value = true
-    setPriceBottle.value = false
-    currentDrinkInputPriceBottle.value = 'none'
-    showToast('容器僅限大杯,已關閉瓶裝價格輸入', 'error')
-    return
-  }
+function openEditCategoryDialog(row: Category) {
+  categoryDialog.editingId = row.id
+  categoryDialog.name = row.name
+  categoryDialog.open = true
 }
-const closeAddDrinkDialog = () => {
-  addDrinkDialog.value = false
-  showToast('取消操作', 'error')
-}
-const setPriceL = ref(true)
-const checkPriceLSwitch = () => {
-  if (setPriceL.value == false) {
-    currentDrinkInputPriceL.value = 'none'
-  }
-}
-const setPriceBottle = ref(true)
-const checkPriceBottleSwitch = () => {
-  if (setPriceBottle.value == false) {
-    currentDrinkInputPriceBottle.value = 'none'
-  }
-  if (currentDrinkSelectCustomized.value === 'none') {
-    setPriceL.value = true
-    setPriceBottle.value = false
-    currentDrinkInputPriceBottle.value = 'none'
-    showToast('因為無客製化，容器僅限大杯,請調整客製化設定', 'error')
+async function submitCategory() {
+  if (categoryDialog.name.trim() === '') {
+    showToast('請輸入分類名稱', 'error')
     return
   }
-}
-const addDrink = async () => {
-  if (currentDrinkInputName.value === '' || currentDrinkInputPriceL.value === '' || currentDrinkInputPriceBottle.value === '' || currentDrinkSelectCustomized.value === '') {
-    showToast('請輸入完整資訊', 'error')
+  if (catalogStore.categories.some((item) => item.name === categoryDialog.name && item.id !== categoryDialog.editingId)) {
+    showToast('此分類已存在,請重新輸入', 'error')
     return
   }
-  if (currentType.value.drinkList!.find((item) => item.name == currentDrinkInputName.value)) {
-    showToast('此飲料名稱已存在,請重新輸入', 'error')
-    return
-  }
-  if (currentDrinkInputPriceL.value === 'none' && currentDrinkInputPriceBottle.value === 'none') {
-    showToast('請至少選擇一種飲料容器，請重新輸入', 'error')
-    return
-  }
-  if (setPriceL.value == true && currentDrinkInputPriceL.value === 'none') {
-    showToast('大杯價格不可為空，請重新輸入', 'error')
-    return
-  }
-  if (setPriceBottle.value == true && currentDrinkInputPriceBottle.value === 'none') {
-    showToast('瓶裝價格不可為空，請重新輸入', 'error')
-    return
-  }
-  if (currentDrinkSelectCustomized.value === 'none') {
-    if (currentDrinkInputPriceBottle.value !== 'none' && setPriceBottle.value !== false) {
-      setPriceL.value = true
-      setPriceBottle.value = false
-      currentDrinkInputPriceBottle.value = 'none'
-      showToast('因為無客製化，容器僅限大杯,已關閉瓶裝價格輸入', 'error')
-      return
+  try {
+    if (categoryDialog.editingId === null) {
+      const created = await createCategory({ name: categoryDialog.name })
+      catalogStore.categories.push({ id: created.id, name: created.name })
+    } else {
+      const updated = await updateCategory(String(categoryDialog.editingId), { name: categoryDialog.name })
+      const target = catalogStore.categories.find((item) => item.id === categoryDialog.editingId)
+      if (target) target.name = updated.name
     }
-  }
-  if (setPriceL.value == true && Number(currentDrinkInputPriceL.value) < 0) {
-    showToast('大杯價格不可為負數,請重新輸入', 'error')
-    return
-  }
-  if (setPriceBottle.value == true && Number(currentDrinkInputPriceBottle.value) < 0) {
-    showToast('瓶裝價格不可為負數,請重新輸入', 'error')
-    return
-  }
-  try {
-    const created = await createCatalogItem({
-      groupId: String(currentType.value.id),
-      name: currentDrinkInputName.value,
-      priceL: toApiPrice(currentDrinkInputPriceL.value),
-      priceBottle: toApiPrice(currentDrinkInputPriceBottle.value),
-      customized: currentDrinkSelectCustomized.value as DrinkCustomized,
-      stock: toApiStock(currentDrinkInputStock.value),
-    })
-    currentType.value.drinkList!.push({
-      id: created.id,
-      name: created.name,
-      priceL: fromApiPrice(created.priceL),
-      priceBottle: fromApiPrice(created.priceBottle),
-      customized: created.customized,
-      stock: created.stock,
-    })
-    addDrinkDialog.value = false
-    showToast('新增成功', 'success')
+    categoryDialog.open = false
+    showToast(categoryDialog.editingId === null ? '新增成功' : '保存成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-const deleteDrink = async () => {
-  if (currentDrink.value == null || !currentDrink.value.name) {
-    void alert({ title: '通知', description: '請先選擇要刪除的飲料品項', confirmText: '繼續選擇' })
-    return
-  }
-  const result = await confirm({ title: '警告', description: `是否刪除飲料品項 ${currentDrink.value.name} ?` })
+async function removeCategory(row: Category) {
+  const result = await confirm({ title: '警告', description: `是否刪除分類 ${row.name}？`, variant: 'danger' })
   if (result !== 'confirm') return
   try {
-    await deleteCatalogItem(String(currentDrink.value.id))
-    currentType.value.drinkList = currentType.value.drinkList!.filter((item) => item.id !== currentDrink.value.id)
-    currentDrink.value = {}
+    await deleteCategory(String(row.id))
+    catalogStore.categories = catalogStore.categories.filter((item) => item.id !== row.id)
     showToast('刪除成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-const currentEditDrinkInputName = ref('')
-const currentEditDrinkInputPriceL = ref<FormNumeric | 'none'>('')
-const currentEditDrinkInputPriceBottle = ref<FormNumeric | 'none'>('')
-const currentEditDrinkSelectCustomized = ref<DrinkCustomized | ''>('')
-const currentEditDrinkInputStock = ref('')
-const setEditPriceL = ref(true)
-const checkEditPriceLSwitch = () => {
-  if (setEditPriceL.value == false) {
-    currentEditDrinkInputPriceL.value = 'none'
-  }
-}
-const setEditPriceBottle = ref(true)
-const checkEditPriceBottleSwitch = () => {
-  if (setEditPriceBottle.value == false) {
-    currentEditDrinkInputPriceBottle.value = 'none'
-  }
-  if (currentEditDrinkSelectCustomized.value === 'none') {
-    setEditPriceL.value = true
-    setEditPriceBottle.value = false
-    currentEditDrinkInputPriceBottle.value = 'none'
-    showToast('因為無客製化，容器僅限大杯,請調整客製化設定', 'error')
-    return
-  }
-}
-const checkEditDrinkSelectCustomized = () => {
-  if (currentEditDrinkSelectCustomized.value === 'none') {
-    setEditPriceL.value = true
-    setEditPriceBottle.value = false
-    currentEditDrinkInputPriceBottle.value = 'none'
-    showToast('容器僅限大杯,已關閉瓶裝價格輸入', 'error')
-    return
-  }
-}
-const editDrinkDialog = ref(false)
-const closeEditDrinkDialog = () => {
-  editDrinkDialog.value = false
-  showToast('取消操作', 'error')
-}
-const openEditDrinkDialog = () => {
-  if (currentDrink.value != null && currentDrink.value.name) {
-    currentEditDrinkInputName.value = currentDrink.value.name
-    setEditPriceL.value = currentDrink.value.priceL == 'none' ? false : true
-    setEditPriceBottle.value = currentDrink.value.priceBottle == 'none' ? false : true
-    currentEditDrinkInputPriceL.value = currentDrink.value.priceL == 'none' ? 'none' : currentDrink.value.priceL!
-    currentEditDrinkInputPriceBottle.value = currentDrink.value.priceBottle == 'none' ? 'none' : currentDrink.value.priceBottle!
-    currentEditDrinkSelectCustomized.value = currentDrink.value.customized!
-    currentEditDrinkInputStock.value = currentDrink.value.stock == null ? '' : String(currentDrink.value.stock)
-    editDrinkDialog.value = true
-  } else {
-    void alert({ title: '通知', description: '請先選擇要編輯的飲料品項', confirmText: '繼續選擇' })
-  }
-}
 
-const editDrink = async () => {
-  if (currentEditDrinkInputName.value === '' || currentEditDrinkInputPriceL.value === '' || currentEditDrinkInputPriceBottle.value === '' || currentEditDrinkSelectCustomized.value === '') {
+// ---------- 品項 ----------
+const productPage = ref(1)
+const productPageCount = computed(() => Math.max(Math.ceil(catalogStore.products.length / 10), 1))
+const sliceProducts = computed(() => catalogStore.products.slice((productPage.value - 1) * 10, productPage.value * 10))
+const categoryNameOf = (categoryId: Product['categoryId']) => catalogStore.categories.find((c) => String(c.id) === String(categoryId))?.name ?? '未分類'
+const modifierGroupNamesOf = (product: Product) => catalogStore.modifierGroupsOf(product).map((g) => g.name)
+
+const productDialog = reactive<{
+  open: boolean
+  editingId: Product['id'] | null
+  name: string
+  categoryId: string
+  basePrice: string
+  stock: string
+  modifierGroupIds: string[]
+}>({ open: false, editingId: null, name: '', categoryId: '', basePrice: '', stock: '', modifierGroupIds: [] })
+function openAddProductDialog() {
+  if (catalogStore.categories.length === 0) {
+    void alert({ title: '通知', description: '請先新增至少一個分類', confirmText: '我知道了' })
+    return
+  }
+  productDialog.editingId = null
+  productDialog.name = ''
+  productDialog.categoryId = ''
+  productDialog.basePrice = ''
+  productDialog.stock = ''
+  productDialog.modifierGroupIds = []
+  productDialog.open = true
+}
+function openEditProductDialog(row: Product) {
+  productDialog.editingId = row.id
+  productDialog.name = row.name
+  productDialog.categoryId = String(row.categoryId)
+  productDialog.basePrice = String(row.basePrice)
+  productDialog.stock = row.stock == null ? '' : String(row.stock)
+  productDialog.modifierGroupIds = row.modifierGroupIds.map(String)
+  productDialog.open = true
+}
+function toggleProductModifierGroup(groupId: ModifierGroup['id']) {
+  const id = String(groupId)
+  productDialog.modifierGroupIds = productDialog.modifierGroupIds.includes(id)
+    ? productDialog.modifierGroupIds.filter((item) => item !== id)
+    : [...productDialog.modifierGroupIds, id]
+}
+async function submitProduct() {
+  if (productDialog.name.trim() === '' || productDialog.categoryId === '' || productDialog.basePrice === '') {
     showToast('請輸入完整資訊', 'error')
     return
   }
-  if (setEditPriceL.value == true && currentEditDrinkInputPriceL.value === 'none') {
-    showToast('大杯價格不可為空，請重新輸入', 'error')
+  if (Number(productDialog.basePrice) < 0) {
+    showToast('底價不可為負數,請重新輸入', 'error')
     return
   }
-  if (setEditPriceBottle.value == true && currentEditDrinkInputPriceBottle.value === 'none') {
-    showToast('瓶裝價格不可為空，請重新輸入', 'error')
+  if (catalogStore.products.some((item) => item.name === productDialog.name && item.id !== productDialog.editingId)) {
+    showToast('此品項名稱已存在,請重新輸入', 'error')
     return
   }
-  if (currentEditDrinkInputName.value == currentDrink.value.name && currentEditDrinkInputPriceL.value == currentDrink.value.priceL && currentEditDrinkInputPriceBottle.value == currentDrink.value.priceBottle && currentEditDrinkSelectCustomized.value == currentDrink.value.customized && toApiStock(currentEditDrinkInputStock.value) === (currentDrink.value.stock ?? null)) {
-    editDrinkDialog.value = false
-    showToast('保存成功', 'success')
-    return
+  const payload = {
+    categoryId: productDialog.categoryId,
+    name: productDialog.name,
+    basePrice: Number(productDialog.basePrice),
+    stock: toApiStock(productDialog.stock),
+    modifierGroupIds: productDialog.modifierGroupIds,
   }
-  const anotherName = currentType.value.drinkList!.filter(item => item.id != currentDrink.value.id)
-  if (anotherName.some(item => item.name == currentEditDrinkInputName.value)) {
-    showToast('此飲料名稱已存在,請重新輸入', 'error')
-    return
-  }
-  if (currentEditDrinkInputPriceL.value == 'none' && currentEditDrinkInputPriceBottle.value == 'none') {
-    showToast('請至少選擇一種飲料容器,請重新輸入', 'error')
-    return
-  }
-  if (currentEditDrinkSelectCustomized.value === 'none') {
-    if (currentEditDrinkInputPriceBottle.value !== 'none' && setPriceBottle.value !== false) {
-      setEditPriceL.value = true
-      setEditPriceBottle.value = false
-      currentEditDrinkInputPriceBottle.value = 'none'
-      showToast('因為無客製化，容器僅限大杯,已關閉瓶裝價格輸入', 'error')
-      return
+  try {
+    if (productDialog.editingId === null) {
+      const created = await createProduct(payload)
+      catalogStore.products.push(created)
+    } else {
+      const updated = await updateProduct(String(productDialog.editingId), payload)
+      const index = catalogStore.products.findIndex((item) => item.id === productDialog.editingId)
+      if (index !== -1) catalogStore.products[index] = updated
     }
-  }
-  if (setEditPriceL.value == true && Number(currentEditDrinkInputPriceL.value) < 0) {
-    showToast('大杯價格不可為負數,請重新輸入', 'error')
-    return
-  }
-  if (setEditPriceBottle.value == true && Number(currentEditDrinkInputPriceBottle.value) < 0) {
-    showToast('瓶裝價格不可為負數,請重新輸入', 'error')
-    return
-  }
-  try {
-    const updated = await updateCatalogItem(String(currentDrink.value.id), {
-      groupId: String(currentType.value.id),
-      name: currentEditDrinkInputName.value,
-      priceL: toApiPrice(currentEditDrinkInputPriceL.value),
-      priceBottle: toApiPrice(currentEditDrinkInputPriceBottle.value),
-      customized: currentEditDrinkSelectCustomized.value as DrinkCustomized,
-      stock: toApiStock(currentEditDrinkInputStock.value),
-    })
-    currentDrink.value.name = updated.name
-    currentDrink.value.priceL = fromApiPrice(updated.priceL)
-    currentDrink.value.priceBottle = fromApiPrice(updated.priceBottle)
-    currentDrink.value.customized = updated.customized
-    currentDrink.value.stock = updated.stock
-    editDrinkDialog.value = false
-    showToast('保存成功', 'success')
+    productDialog.open = false
+    showToast(productDialog.editingId === null ? '新增成功' : '保存成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-const drinkCurrentPage = ref(1)
-const handleDrinkCurrentChange = (page: number) => {
-  drinkCurrentPage.value = page
-}
-const sliceDrink = computed(() => {
-  if (currentType.value.drinkList) {
-    return currentType.value.drinkList.slice((drinkCurrentPage.value - 1) * 10, drinkCurrentPage.value * 10)
-  } else {
-    return []
-  }
-})
-const drinkPageCount = computed(() => Math.max(Math.ceil((currentType.value.drinkList?.length ?? 0) / 10), 1))
-
-const currentIngredientsDrink = ref<MaybeSelected<DrinkAddOnOption>>({})
-const addIngredientsDialog = ref(false)
-const openAddIngredientsDialog = () => {
-  currentIngredientsInputName.value = ''
-  currentIngredientsInputPrice.value = ''
-  currentIngredientsInputStock.value = ''
-  addIngredientsDialog.value = true
-}
-const closeAddIngredientsDialog = () => {
-  addIngredientsDialog.value = false
-  showToast('取消操作', 'error')
-}
-const currentIngredientsInputName = ref('')
-const currentIngredientsInputPrice = ref<FormNumeric>('')
-const currentIngredientsInputStock = ref('')
-const addDrinkIngredients = async () => {
-  if (currentIngredientsInputName.value === '' || currentIngredientsInputPrice.value === '') {
-    showToast('請輸入完整資訊', 'error')
-    return
-  }
-  if (drinkStore.drinkAdd.find((item) => item.name == currentIngredientsInputName.value)) {
-    showToast('此配料名稱已存在,請重新輸入', 'error')
-    return
-  }
-  if (Number(currentIngredientsInputPrice.value) < 0) {
-    showToast('配料價格不可為負數,請重新輸入', 'error')
-    return
-  }
-  try {
-    const created = await createAddOnOption({
-      name: currentIngredientsInputName.value,
-      price: Number(currentIngredientsInputPrice.value),
-      stock: toApiStock(currentIngredientsInputStock.value),
-    })
-    drinkStore.drinkAdd.push({ id: created.id, name: created.name, price: created.price, stock: created.stock })
-    addIngredientsDialog.value = false
-    showToast('新增成功', 'success')
-  } catch (err) {
-    showToast(apiErrorMessage(err), 'error')
-  }
-}
-const deleteDrinkIngredients = async () => {
-  if (!currentIngredientsDrink.value.name) {
-    void alert({ title: '通知', description: '請先選擇要刪除的配料', confirmText: '繼續選擇' })
-    return
-  }
-  const result = await confirm({ title: '警告', description: `是否刪除配料 ${currentIngredientsDrink.value.name} ?` })
+async function removeProduct(row: Product) {
+  const result = await confirm({ title: '警告', description: `是否刪除品項 ${row.name}？`, variant: 'danger' })
   if (result !== 'confirm') return
   try {
-    await deleteAddOnOption(String(currentIngredientsDrink.value.id))
-    drinkStore.drinkAdd = drinkStore.drinkAdd.filter((item) => item.id !== currentIngredientsDrink.value.id)
-    currentIngredientsDrink.value = {}
+    await deleteProduct(String(row.id))
+    catalogStore.products = catalogStore.products.filter((item) => item.id !== row.id)
     showToast('刪除成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-const editIngredientsDialog = ref(false)
-const closeEditIngredientsDialog = () => {
-  editIngredientsDialog.value = false
-  showToast('取消操作', 'error')
+
+// ---------- 規格群組 ----------
+function optionSummary(group: ModifierGroup) {
+  return group.options.map((o) => (Number(o.priceDelta) !== 0 ? `${o.name}(${Number(o.priceDelta) > 0 ? '+' : ''}${o.priceDelta})` : o.name)).join('、')
 }
-const currentEditIngredientsInputName = ref('')
-const currentEditIngredientsInputPrice = ref<FormNumeric>('')
-const currentEditIngredientsInputStock = ref('')
-const openEditIngredientsDialog = () => {
-  if (currentIngredientsDrink.value.name) {
-    currentEditIngredientsInputName.value = currentIngredientsDrink.value.name
-    currentEditIngredientsInputPrice.value = currentIngredientsDrink.value.price!
-    currentEditIngredientsInputStock.value = currentIngredientsDrink.value.stock == null ? '' : String(currentIngredientsDrink.value.stock)
-    editIngredientsDialog.value = true
-  } else {
-    void alert({ title: '通知', description: '請先選擇要編輯的配料', confirmText: '繼續選擇' })
-  }
+
+const modifierGroupDialog = reactive<{
+  open: boolean
+  editingId: ModifierGroup['id'] | null
+  name: string
+  selectionType: ModifierSelectionType
+  required: boolean
+  options: { name: string; priceDelta: string }[]
+}>({ open: false, editingId: null, name: '', selectionType: 'single', required: true, options: [] })
+function addModifierOptionRow() {
+  modifierGroupDialog.options.push({ name: '', priceDelta: '0' })
 }
-const editDrinkIngredients = async () => {
-  if (currentEditIngredientsInputName.value === '' || currentEditIngredientsInputPrice.value === '') {
-    showToast('請輸入完整資訊', 'error')
+function openAddModifierGroupDialog() {
+  modifierGroupDialog.editingId = null
+  modifierGroupDialog.name = ''
+  modifierGroupDialog.selectionType = 'single'
+  modifierGroupDialog.required = true
+  modifierGroupDialog.options = [{ name: '', priceDelta: '0' }]
+  modifierGroupDialog.open = true
+}
+function openEditModifierGroupDialog(row: ModifierGroup) {
+  modifierGroupDialog.editingId = row.id
+  modifierGroupDialog.name = row.name
+  modifierGroupDialog.selectionType = row.selectionType
+  modifierGroupDialog.required = row.required
+  modifierGroupDialog.options = row.options.map((o) => ({ name: o.name, priceDelta: String(o.priceDelta) }))
+  modifierGroupDialog.open = true
+}
+async function submitModifierGroup() {
+  if (modifierGroupDialog.name.trim() === '') {
+    showToast('請輸入群組名稱', 'error')
     return
   }
-  if (currentEditIngredientsInputName.value == currentIngredientsDrink.value.name && currentEditIngredientsInputPrice.value == currentIngredientsDrink.value.price && toApiStock(currentEditIngredientsInputStock.value) === (currentIngredientsDrink.value.stock ?? null)) {
-    editIngredientsDialog.value = false
-    showToast('保存成功', 'success')
+  const options = modifierGroupDialog.options.filter((o) => o.name.trim() !== '')
+  if (options.length === 0) {
+    showToast('請至少新增一個選項', 'error')
     return
   }
-  const anotherName = drinkStore.drinkAdd.filter(item => item.id != currentIngredientsDrink.value.id)
-  if (anotherName.some(item => item.name == currentEditIngredientsInputName.value)) {
-    showToast('此配料名稱已存在,請重新輸入', 'error')
-    return
-  }
-  if (Number(currentEditIngredientsInputPrice.value) < 0) {
-    showToast('配料價格不可為負數,請重新輸入', 'error')
-    return
+  const payload = {
+    name: modifierGroupDialog.name,
+    selectionType: modifierGroupDialog.selectionType,
+    required: modifierGroupDialog.required,
+    options: options.map((o) => ({ name: o.name, priceDelta: Number(o.priceDelta) || 0 })),
   }
   try {
-    const updated = await updateAddOnOption(String(currentIngredientsDrink.value.id), {
-      name: currentEditIngredientsInputName.value,
-      price: Number(currentEditIngredientsInputPrice.value),
-      stock: toApiStock(currentEditIngredientsInputStock.value),
-    })
-    currentIngredientsDrink.value.name = updated.name
-    currentIngredientsDrink.value.price = updated.price
-    currentIngredientsDrink.value.stock = updated.stock
-    editIngredientsDialog.value = false
-    showToast('保存成功', 'success')
+    if (modifierGroupDialog.editingId === null) {
+      const created = await createModifierGroup(payload)
+      catalogStore.modifierGroups.push(created)
+    } else {
+      const updated = await updateModifierGroup(String(modifierGroupDialog.editingId), payload)
+      const index = catalogStore.modifierGroups.findIndex((item) => item.id === modifierGroupDialog.editingId)
+      if (index !== -1) catalogStore.modifierGroups[index] = updated
+    }
+    modifierGroupDialog.open = false
+    showToast(modifierGroupDialog.editingId === null ? '新增成功' : '保存成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }
 }
-const drinkIngredientsCurrentPage = ref(1)
-const handleIngredientsCurrentChange = (page: number) => {
-  drinkIngredientsCurrentPage.value = page
-}
-const sliceIngredients = computed(() => {
-  if (drinkStore.drinkAdd) {
-    return drinkStore.drinkAdd.slice((drinkIngredientsCurrentPage.value - 1) * 10, drinkIngredientsCurrentPage.value * 10)
-  } else {
-    return []
+async function removeModifierGroup(row: ModifierGroup) {
+  const result = await confirm({ title: '警告', description: `是否刪除規格群組 ${row.name}？掛用這個群組的品項會一併移除該規格。`, variant: 'danger' })
+  if (result !== 'confirm') return
+  try {
+    await deleteModifierGroup(String(row.id))
+    catalogStore.modifierGroups = catalogStore.modifierGroups.filter((item) => item.id !== row.id)
+    catalogStore.products.forEach((product) => {
+      product.modifierGroupIds = product.modifierGroupIds.filter((id) => String(id) !== String(row.id))
+    })
+    showToast('刪除成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
   }
+}
+
+// ---------- 加購選項 ----------
+const addOnPage = ref(1)
+const addOnPageCount = computed(() => Math.max(Math.ceil(catalogStore.addOns.length / 10), 1))
+const sliceAddOns = computed(() => catalogStore.addOns.slice((addOnPage.value - 1) * 10, addOnPage.value * 10))
+
+const addOnDialog = reactive<{ open: boolean; editingId: AddOnOption['id'] | null; name: string; price: string; stock: string }>({
+  open: false, editingId: null, name: '', price: '', stock: '',
 })
-const drinkIngredientsPageCount = computed(() => Math.max(Math.ceil(drinkStore.drinkAdd.length / 10), 1))
+function openAddAddOnDialog() {
+  addOnDialog.editingId = null
+  addOnDialog.name = ''
+  addOnDialog.price = ''
+  addOnDialog.stock = ''
+  addOnDialog.open = true
+}
+function openEditAddOnDialog(row: AddOnOption) {
+  addOnDialog.editingId = row.id
+  addOnDialog.name = row.name
+  addOnDialog.price = String(row.price)
+  addOnDialog.stock = row.stock == null ? '' : String(row.stock)
+  addOnDialog.open = true
+}
+async function submitAddOn() {
+  if (addOnDialog.name.trim() === '' || addOnDialog.price === '') {
+    showToast('請輸入完整資訊', 'error')
+    return
+  }
+  if (Number(addOnDialog.price) < 0) {
+    showToast('價錢不可為負數,請重新輸入', 'error')
+    return
+  }
+  if (catalogStore.addOns.some((item) => item.name === addOnDialog.name && item.id !== addOnDialog.editingId)) {
+    showToast('此名稱已存在,請重新輸入', 'error')
+    return
+  }
+  const payload = { name: addOnDialog.name, price: Number(addOnDialog.price), stock: toApiStock(addOnDialog.stock) }
+  try {
+    if (addOnDialog.editingId === null) {
+      const created = await createAddOnOption(payload)
+      catalogStore.addOns.push(created)
+    } else {
+      const updated = await updateAddOnOption(String(addOnDialog.editingId), payload)
+      const index = catalogStore.addOns.findIndex((item) => item.id === addOnDialog.editingId)
+      if (index !== -1) catalogStore.addOns[index] = updated
+    }
+    addOnDialog.open = false
+    showToast(addOnDialog.editingId === null ? '新增成功' : '保存成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
+}
+async function removeAddOn(row: AddOnOption) {
+  const result = await confirm({ title: '警告', description: `是否刪除加購選項 ${row.name}？`, variant: 'danger' })
+  if (result !== 'confirm') return
+  try {
+    await deleteAddOnOption(String(row.id))
+    catalogStore.addOns = catalogStore.addOns.filter((item) => item.id !== row.id)
+    showToast('刪除成功', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
+}
 </script>
 
 <style lang="scss" scoped></style>

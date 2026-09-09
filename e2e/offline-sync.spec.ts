@@ -17,8 +17,8 @@ test('斷網時送出的 3 張訂單先落地本機佇列，重新連線後自�
   await context.setOffline(true)
 
   const submitOneOrder = async () => {
-    await page.getByText('季節限定', { exact: true }).click()
-    await page.getByText('楊枝甘露2.0', { exact: true }).click()
+    await page.getByText('輕食', { exact: true }).click()
+    await page.getByText('薯條', { exact: true }).click()
     await page.getByRole('button', { name: '1', exact: true }).click()
     await page.getByRole('button', { name: '新增', exact: true }).click()
     await page.getByTestId('checkout-button').click()

@@ -1,9 +1,6 @@
 import { expect, test } from '@playwright/test'
-import path from 'path'
 
-const artifactDir = '/home/jim/.gemini/antigravity-ide/brain/694ba1b5-4d63-43cf-93be-11a85f734d9e'
-
-test('Visual verification across viewports and dark mode without layout breaking', async ({ page }) => {
+test('Visual verification across viewports and dark mode without layout breaking', async ({ page }, testInfo) => {
   test.setTimeout(60000)
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('login')
@@ -18,14 +15,14 @@ test('Visual verification across viewports and dark mode without layout breaking
     await toastClose.first().click().catch(() => {})
   }
 
-  await page.getByRole('button', { name: /原味茶/ }).click()
+  await page.getByRole('button', { name: /飲品/ }).click()
   await page.waitForTimeout(300)
   await page.getByRole('button', { name: /翡翠綠茶/ }).click()
   await page.waitForTimeout(300)
 
   await page.getByRole('button', { name: '無糖', exact: true }).click()
   await page.getByRole('button', { name: '去冰', exact: true }).click()
-  await page.getByRole('button', { name: 'L杯', exact: true }).click()
+  await page.getByRole('button', { name: '中杯', exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.waitForTimeout(200)
 
@@ -34,7 +31,7 @@ test('Visual verification across viewports and dark mode without layout breaking
   await page.getByRole('button', { name: '新增', exact: true }).click()
   await page.waitForTimeout(300)
 
-  await page.screenshot({ path: path.join(artifactDir, 'pos_home_1440.png') })
+  await page.screenshot({ path: testInfo.outputPath('pos_home_1440.png') })
 
   const checkoutBtn = page.getByTestId('checkout-button')
   await expect(checkoutBtn).toBeVisible()
@@ -46,7 +43,7 @@ test('Visual verification across viewports and dark mode without layout breaking
 
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.waitForTimeout(300)
-  await page.screenshot({ path: path.join(artifactDir, 'pos_home_1280.png') })
+  await page.screenshot({ path: testInfo.outputPath('pos_home_1280.png') })
   const box1280 = await checkoutBtn.boundingBox()
   expect(box1280).not.toBeNull()
   if (box1280) {
@@ -57,12 +54,12 @@ test('Visual verification across viewports and dark mode without layout breaking
   const themeToggle = page.locator('button[aria-label*="模式"]')
   await themeToggle.click()
   await page.waitForTimeout(300)
-  await page.screenshot({ path: path.join(artifactDir, 'pos_home_dark_1440.png') })
+  await page.screenshot({ path: testInfo.outputPath('pos_home_dark_1440.png') })
 
   await page.getByRole('button', { name: '查看訂單' }).click()
   await expect(page).toHaveURL(/\/order$/)
   await page.waitForTimeout(500)
-  await page.screenshot({ path: path.join(artifactDir, 'pos_order_dark.png') })
+  await page.screenshot({ path: testInfo.outputPath('pos_order_dark.png') })
 
   await page.getByRole('button', { name: '後台設定' }).click()
   const confirmBtn = page.getByRole('button', { name: '確定前往' })
@@ -71,29 +68,29 @@ test('Visual verification across viewports and dark mode without layout breaking
   }
   await expect(page).toHaveURL(/\/backgroundSetting$/)
   await page.waitForTimeout(500)
-  await page.screenshot({ path: path.join(artifactDir, 'pos_background_setting_dark.png') })
+  await page.screenshot({ path: testInfo.outputPath('pos_background_setting_dark.png') })
 
   await page.getByText('優惠設定', { exact: true }).click()
   await page.waitForTimeout(500)
-  await page.screenshot({ path: path.join(artifactDir, 'pos_background_setting_offers_dark.png') })
+  await page.screenshot({ path: testInfo.outputPath('pos_background_setting_offers_dark.png') })
 
   await page.getByRole('button', { name: '數據分析' }).click()
   await expect(page).toHaveURL(/\/dataAnalysis$/)
   await page.waitForTimeout(500)
-  await page.screenshot({ path: path.join(artifactDir, 'pos_data_analysis_dark.png') })
+  await page.screenshot({ path: testInfo.outputPath('pos_data_analysis_dark.png') })
 
   await page.getByRole('button', { name: '權限管理' }).click()
   await expect(page).toHaveURL(/\/authorityManagement$/)
   await page.waitForTimeout(500)
-  await page.screenshot({ path: path.join(artifactDir, 'pos_authority_dark.png') })
+  await page.screenshot({ path: testInfo.outputPath('pos_authority_dark.png') })
 
   await page.getByRole('button', { name: '會員管理' }).click()
   await expect(page).toHaveURL(/\/members$/)
   await page.waitForTimeout(500)
-  await page.screenshot({ path: path.join(artifactDir, 'pos_members_dark.png') })
+  await page.screenshot({ path: testInfo.outputPath('pos_members_dark.png') })
 
   await page.getByRole('button', { name: '桌況管理' }).click()
   await expect(page).toHaveURL(/\/tables$/)
   await page.waitForTimeout(500)
-  await page.screenshot({ path: path.join(artifactDir, 'pos_tables_dark.png') })
+  await page.screenshot({ path: testInfo.outputPath('pos_tables_dark.png') })
 })

@@ -8,8 +8,8 @@ test('套用現金折價券後，畫面顯示與伺服端回應的折抵金額�
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('雞塊六入', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
 

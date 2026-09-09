@@ -19,26 +19,26 @@
 
         <div class="flex items-center gap-3 text-xs font-bold text-surface-600 dark:text-surface-300">
           <div class="flex items-center gap-1.5 rounded-lg bg-surface-50 dark:bg-surface-800 px-2.5 py-1">
-            <span class="text-surface-400">已選杯數:</span>
-            <span class="text-primary-600 dark:text-primary-400 font-black">{{ drinkStore.currentDrinkCount }}</span>
-            <span>杯</span>
+            <span class="text-surface-400">已選份數:</span>
+            <span class="text-primary-600 dark:text-primary-400 font-black">{{ catalogStore.currentItemCount }}</span>
+            <span>份</span>
           </div>
           <div class="flex items-center gap-1.5 rounded-lg bg-surface-50 dark:bg-surface-800 px-2.5 py-1">
-            <span class="text-surface-400">袋子:</span>
-            <span class="text-primary-600 dark:text-primary-400 font-black">{{ drinkStore.currentBagCount }}</span>
-            <span>個</span>
+            <span class="text-surface-400">包材:</span>
+            <span class="text-primary-600 dark:text-primary-400 font-black">{{ catalogStore.currentBagCount }}</span>
+            <span>份</span>
           </div>
         </div>
       </div>
 
       <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <DrinkType class="mb-2 shrink-0" />
+        <CategoryTabs class="mb-2 shrink-0" />
 
         <div class="flex-1 min-h-0 overflow-y-auto pr-1">
-          <DrinkMenu />
+          <ProductMenu />
         </div>
 
-        <DrinkCustomized class="mt-2 shrink-0" @add-drink="addNewDrink" />
+        <ProductModifiers class="mt-2 shrink-0" @add-product="addNewProduct" />
       </div>
     </div>
 
@@ -114,8 +114,8 @@
               <th class="px-1 py-2">序號</th>
               <th class="px-2 py-2">商品</th>
               <th class="px-1 py-2">單價</th>
-              <th class="px-2 py-2">加料</th>
-              <th class="px-1 py-2">配料金額</th>
+              <th class="px-2 py-2">加購</th>
+              <th class="px-1 py-2">加購金額</th>
               <th class="px-1 py-2">數量</th>
               <th class="px-1 py-2">折扣金額</th>
               <th class="px-2 py-2">使用折扣</th>
@@ -123,23 +123,23 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-            <tr v-if="drinkStore.drinkNotPay.length === 0">
+            <tr v-if="catalogStore.cartLines.length === 0">
               <td colspan="10" class="py-12 text-center text-surface-400 dark:text-surface-500">
                 <div class="flex flex-col items-center gap-2">
-                  <p class="font-bold text-sm">目前無待付款的飲品</p>
+                  <p class="font-bold text-sm">目前無待付款的品項</p>
                   <p class="text-xs">請點選左側選單加入購物車</p>
                 </div>
               </td>
             </tr>
             <tr
-              v-for="(row, index) in drinkStore.drinkNotPay"
+              v-for="(row, index) in catalogStore.cartLines"
               :key="row.id"
               data-testid="cart-row"
               class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
-              :class="{ 'bg-primary-50/40 dark:bg-primary-950/20': drinkSelectList.includes(row) }">
+              :class="{ 'bg-primary-50/40 dark:bg-primary-950/20': selectedLines.includes(row) }">
               <td class="px-2 py-2">
                 <input
-                  type="checkbox" :checked="drinkSelectList.includes(row)"
+                  type="checkbox" :checked="selectedLines.includes(row)"
                   class="rounded text-primary-600 focus:ring-primary-500 cursor-pointer"
                   @change="toggleSelect(row, ($event.target as HTMLInputElement).checked)" />
               </td>
@@ -151,13 +151,12 @@
               <td class="px-1 py-2 font-black text-primary-600 dark:text-primary-400">{{ row.count }}</td>
               <td class="px-1 py-2 font-mono text-danger-600 dark:text-danger-400">-${{ row.discount }}</td>
               <td class="px-2 py-2">
-                <div v-if="row.useDiscountPercent === '' && row.useDiscountMoney === '' && row.useDiscountFree === ''" class="text-surface-400 text-[10px]">
+                <div v-if="!row.freeDiscount && !row.quickDiscountName" class="text-surface-400 text-[10px]">
                   無
                 </div>
                 <div v-else class="flex flex-wrap gap-1 justify-center">
-                  <span v-if="row.useDiscountFree != ''" class="rounded-full bg-info-100 px-1.5 py-0.5 text-[10px] text-info-700 dark:bg-info-950 dark:text-info-300">{{ row.useDiscountFree }}</span>
-                  <span v-if="row.useDiscountPercent != ''" class="rounded-full bg-danger-100 px-1.5 py-0.5 text-[10px] text-danger-700 dark:bg-danger-950 dark:text-danger-300">{{ row.useDiscountPercent }}</span>
-                  <span v-if="row.useDiscountMoney != ''" class="rounded-full bg-warning-100 px-1.5 py-0.5 text-[10px] text-warning-700 dark:bg-warning-950 dark:text-warning-300">{{ row.useDiscountMoney }}</span>
+                  <span v-if="row.freeDiscount" class="rounded-full bg-info-100 px-1.5 py-0.5 text-[10px] text-info-700 dark:bg-info-950 dark:text-info-300">招待</span>
+                  <span v-if="row.quickDiscountName" class="rounded-full bg-warning-100 px-1.5 py-0.5 text-[10px] text-warning-700 dark:bg-warning-950 dark:text-warning-300">{{ row.quickDiscountName }}</span>
                 </div>
               </td>
               <!-- e2e 依賴第 10 欄 (index 9) 為 line total，勿調整欄位順序 -->
@@ -168,25 +167,12 @@
       </div>
 
       <div class="p-2.5 border-b border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-900/60 shrink-0 flex flex-col gap-1.5">
-        <!-- 按鈕文字為 e2e 依賴，勿調整 -->
-        <div class="grid grid-cols-4 gap-1.5">
-          <button
-            type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            @click="ecoDiscount">
-            {{ discountStore.oftenUseDiscount[0].name }}
-          </button>
-          <button
-            type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            @click="bottleDiscount">
-            {{ discountStore.oftenUseDiscount[1].name }}
-          </button>
+        <div class="grid grid-cols-3 gap-1.5">
           <button
             type="button"
             class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
             @click="openBagDialog">
-            加購袋子
+            加購包材
           </button>
           <button
             type="button"
@@ -194,6 +180,13 @@
             :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canOpenCashier') }"
             @click="openCashier">
             開收銀機
+          </button>
+          <button
+            type="button"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canFreeDrink') }"
+            @click="applyFreeDiscount">
+            招待
           </button>
         </div>
 
@@ -208,31 +201,14 @@
           </button>
         </div>
 
-        <div class="grid grid-cols-4 gap-1.5">
+        <!-- 快速折扣：依後台設定的清單動態渲染，筆數不固定 -->
+        <div v-if="discountStore.quickDiscounts.length > 0" class="flex flex-wrap gap-1.5">
           <button
+            v-for="quickDiscount in discountStore.quickDiscounts" :key="String(quickDiscount.id)"
             type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            @click="oftenUseDiscount1">
-            {{ discountStore.oftenUseDiscount[2].name }}
-          </button>
-          <button
-            type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            @click="oftenUseDiscount2">
-            {{ discountStore.oftenUseDiscount[3].name }}
-          </button>
-          <button
-            type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            @click="oftenUseDiscount3">
-            {{ discountStore.oftenUseDiscount[4].name }}
-          </button>
-          <button
-            type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canFreeDrink') }"
-            @click="freeDiscount">
-            免費招待
+            class="flex-1 min-w-[88px] rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            @click="applyQuickDiscount(quickDiscount.id)">
+            {{ quickDiscount.name }}
           </button>
         </div>
       </div>
@@ -241,19 +217,19 @@
         <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-surface-500">
           <div class="flex justify-between">
             <span>累積金額:</span>
-            <span class="font-bold text-surface-800 dark:text-surface-200">$ {{ drinkStore.drinkTotalMoney }}</span>
+            <span class="font-bold text-surface-800 dark:text-surface-200">$ {{ catalogStore.cartTotalMoney }}</span>
           </div>
           <div class="flex justify-between">
             <span>優惠折抵:</span>
-            <span class="font-bold text-danger-600 dark:text-danger-400">-$ {{ drinkStore.useDiscountPrice }}</span>
+            <span class="font-bold text-danger-600 dark:text-danger-400">-$ {{ catalogStore.useDiscountPrice }}</span>
           </div>
           <div class="flex justify-between">
-            <span>購物袋數:</span>
-            <span class="font-bold text-surface-800 dark:text-surface-200">{{ drinkStore.currentBagCount }} 個</span>
+            <span>包材份數:</span>
+            <span class="font-bold text-surface-800 dark:text-surface-200">{{ catalogStore.currentBagCount }} 份</span>
           </div>
           <div class="flex justify-between">
-            <span>總出杯數:</span>
-            <span class="font-bold text-surface-800 dark:text-surface-200">{{ drinkStore.currentDrinkCount }} 杯</span>
+            <span>總出餐數:</span>
+            <span class="font-bold text-surface-800 dark:text-surface-200">{{ catalogStore.currentItemCount }} 份</span>
           </div>
         </div>
 
@@ -261,7 +237,7 @@
           <div class="flex flex-col">
             <span class="text-[11px] font-bold uppercase tracking-wider text-surface-400">應付總額 DUE TOTAL</span>
             <span class="text-2xl font-black text-primary-600 dark:text-primary-400 font-mono">
-              $ {{ drinkStore.drinkPayPrice }} 元
+              $ {{ catalogStore.cartPayPrice }} 元
             </span>
           </div>
 
@@ -275,10 +251,10 @@
         </div>
 
         <PaymentPanel
-          :open="dialogPayment" :due-amount="drinkStore.drinkPayPrice" :payment-methods="orderStore.paymentList"
+          :open="dialogPayment" :due-amount="catalogStore.cartPayPrice" :payment-methods="orderStore.paymentList"
           @cancel="cancelPayment" @submit="submitPayment" />
 
-        <ModalDialog v-model:open="dialogBag" title="加購袋子數量">
+        <ModalDialog v-model:open="dialogBag" title="加購包材數量">
           <div class="mx-2 flex items-center gap-4">
             <SliderRoot
               :model-value="[bagCount]" :min="0" :max="100" :step="1"
@@ -357,9 +333,9 @@
 <script setup lang="ts">
 import { getDate, getTime } from '@/utils/time'
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import DrinkType from './drinkType/index.vue'
-import DrinkMenu from './drinkMenu/index.vue'
-import DrinkCustomized from './drinkCustomized/index.vue'
+import CategoryTabs from './categoryTabs/index.vue'
+import ProductMenu from './productMenu/index.vue'
+import ProductModifiers from './productModifiers/index.vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
@@ -371,8 +347,8 @@ import MemberPanel from '@/components/checkout/MemberPanel.vue'
 import { alert, confirm } from '@/composables/useConfirm'
 import { prompt } from '@/composables/usePrompt'
 import { showToast } from '@/composables/useToast'
-import { useDrinkStore } from '@/stores/drink'
-const drinkStore = useDrinkStore()
+import { useCatalogStore } from '@/stores/catalog'
+const catalogStore = useCatalogStore()
 import { useDiscountStore } from '@/stores/discount'
 const discountStore = useDiscountStore()
 import { useOrderStore } from '@/stores/order'
@@ -381,7 +357,7 @@ import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { CartLineItem, FormNumeric, OrderChannel, OrderRecord } from '@/types'
 import { fromSelection, hasCapability } from '@/utils/selection'
-import { getBusinessDate, priceLine, toggleContainer, toggleFree, toggleRate, type LineDiscountFlags, type OftenUseRates } from '@pos/domain'
+import { getBusinessDate, priceLine, toggleFree, toggleQuickDiscount, type LineDiscountFlags, type QuickDiscount } from '@pos/domain'
 import type { AppliedCoupon, InvoiceCarrier, Member } from '@pos/contract'
 import { buildCreateOrderRequest } from '@/api/orders'
 import { createAuditLog } from '@/api/audit-logs'
@@ -402,108 +378,82 @@ onUnmounted(() => {
   clearInterval(undefined)
 })
 
-// drinkStore 不直接彈窗，只在待付款清單清空時遞增 cartClearedNotice，這裡負責顯示提示。
-watch(() => drinkStore.cartClearedNotice, () => {
+// catalogStore 不直接彈窗，只在待付款清單清空時遞增 cartClearedNotice，這裡負責顯示提示。
+watch(() => catalogStore.cartClearedNotice, () => {
   void alert({
     title: '通知',
-    description: '待付款清單已無品項，套用優惠券以及加購的袋子數量已重置',
+    description: '待付款清單已無品項，套用優惠券以及加購的包材份數已重置',
     confirmText: '繼續選取品項',
   })
 })
 
-const addNewDrink = () => {
-  if (fromSelection(drinkStore.drinkItem) === undefined) {
-    void alert({ title: '通知', description: '飲品未選擇', confirmText: '繼續選取' })
+const addNewProduct = () => {
+  const selectedProduct = fromSelection(catalogStore.selectedProduct)
+  if (selectedProduct === undefined) {
+    void alert({ title: '通知', description: '品項未選擇', confirmText: '繼續選取' })
     return
   }
-  if (fromSelection(drinkStore.drinkItem)?.customized != 'none') {
-    if (drinkStore.drinkSetSugar === '') {
-      void alert({ title: '通知', description: '糖度未選擇', confirmText: '繼續選取' })
-      return
-    }
-  }
-  if (fromSelection(drinkStore.drinkItem)?.customized != 'none') {
-    if (drinkStore.drinkSetIce === '') {
-      void alert({ title: '通知', description: '冰塊未選擇', confirmText: '繼續選取' })
-      return
-    }
-  }
-  if (fromSelection(drinkStore.drinkItem)?.customized != 'none') {
-    if (drinkStore.drinkSetSize === '') {
-      void alert({ title: '通知', description: '容器大小未選擇', confirmText: '繼續選取' })
-      return
-    }
-  } else {
-    drinkStore.drinkSetSize = 'L杯'
-  }
-  if (Number(drinkStore.drinkCount) < 1) {
-    void alert({ title: '通知', description: '飲料杯數不能小於一杯', confirmText: '繼續設定' })
+  if (!catalogStore.requiredModifiersSatisfied) {
+    void alert({ title: '通知', description: '規格尚未選擇完整', confirmText: '繼續選取' })
     return
   }
-  const selectedDrink = fromSelection(drinkStore.drinkItem)!
-  const newDrink: CartLineItem = {
-    id: drinkStore.drinkNotPay.length + 1,
-    name: selectedDrink.customized === 'none' ? selectedDrink.name : `${selectedDrink.name},${drinkStore.drinkSetSugar}/${drinkStore.drinkSetIce},${drinkStore.drinkSetSize}`,
-    price: drinkStore.drinkSetSize === 'L杯' ? selectedDrink.priceL : selectedDrink.priceBottle,
-    size: drinkStore.drinkSetSize === 'L杯' ? 'L' : 'bottle',
-    count: parseInt(drinkStore.drinkCount),
+  if (Number(catalogStore.productCount) < 1) {
+    void alert({ title: '通知', description: '數量不能小於一份', confirmText: '繼續設定' })
+    return
+  }
+  const modifierNames = catalogStore.selectedModifierNames
+  const newLine: CartLineItem = {
+    id: catalogStore.cartLines.length + 1,
+    name: modifierNames.length === 0 ? selectedProduct.name : `${selectedProduct.name},${modifierNames.join('/')}`,
+    price: Number(selectedProduct.basePrice) + catalogStore.selectedModifierPriceDelta,
+    count: parseInt(catalogStore.productCount),
     discount: 0,
-    addList: drinkStore.drinkAddList.map(item => item.name).length === 0 ? '無添加配料' : drinkStore.drinkAddList.map(item => item.name),
-    addListPrice: drinkStore.drinkAddList.reduce((acc, cur) => acc + Number(cur.price), 0),
-    totalPrice: drinkStore.drinkCurrentTotal,
-    currentDiscountPercent: 1,
-    currentDiscountMoney: 0,
-    useDiscountPercent: '',
-    useDiscountMoney: '',
-    useDiscountFree: '',
+    addList: catalogStore.selectedAddOnList.map(item => item.name).length === 0 ? '無添加配料' : catalogStore.selectedAddOnList.map(item => item.name),
+    addListPrice: catalogStore.selectedAddOnList.reduce((acc, cur) => acc + Number(cur.price), 0),
+    totalPrice: catalogStore.productCurrentTotal,
     freeDiscount: false,
-    ecoDiscount: false,
-    bottleDiscount: false,
-    oftenUseDiscount1: false,
-    oftenUseDiscount2: false,
-    oftenUseDiscount3: false,
+    quickDiscountId: null,
+    quickDiscountName: '',
   }
-  drinkStore.drinkNotPay.push(newDrink)
-  drinkStore.drinkTypeMenu = ''
-  drinkStore.drinkItem = []
-  drinkStore.drinkSetSugar = ''
-  drinkStore.drinkSetIce = ''
-  drinkStore.drinkSetSize = ''
-  drinkStore.drinkAddList = []
-  drinkStore.drinkCount = '0'
+  catalogStore.cartLines.push(newLine)
+  catalogStore.selectedCategoryId = ''
+  catalogStore.selectedProduct = []
+  catalogStore.selectedModifiers = {}
+  catalogStore.selectedAddOnList = []
+  catalogStore.productCount = '0'
 }
 
 const clearNotPay = async () => {
-  if (drinkStore.drinkNotPay.length === 0) {
+  if (catalogStore.cartLines.length === 0) {
     void alert({ title: '通知', description: '待付款清單為空，無法清空項目', confirmText: '繼續選取品項' })
     return
   }
-  const result = await confirm({ title: '警告', description: '確定要清除所有待付款的飲品嗎?' })
+  const result = await confirm({ title: '警告', description: '確定要清除所有待付款的品項嗎?' })
   if (result !== 'confirm') return
-  drinkStore.drinkNotPay = []
+  catalogStore.cartLines = []
   showToast('清除成功', 'success')
 }
-const drinkSelectList = ref<CartLineItem[]>([])
+const selectedLines = ref<CartLineItem[]>([])
 const allNotPaySelected = computed(() =>
-  drinkStore.drinkNotPay.length > 0 && drinkSelectList.value.length === drinkStore.drinkNotPay.length)
+  catalogStore.cartLines.length > 0 && selectedLines.value.length === catalogStore.cartLines.length)
 const toggleSelectAll = (checked: boolean) => {
-  drinkSelectList.value = checked ? [...drinkStore.drinkNotPay] : []
+  selectedLines.value = checked ? [...catalogStore.cartLines] : []
 }
 const toggleSelect = (item: CartLineItem, checked: boolean) => {
   if (checked) {
-    if (!drinkSelectList.value.includes(item)) drinkSelectList.value.push(item)
+    if (!selectedLines.value.includes(item)) selectedLines.value.push(item)
   } else {
-    drinkSelectList.value = drinkSelectList.value.filter(selected => selected !== item)
+    selectedLines.value = selectedLines.value.filter(selected => selected !== item)
   }
 }
 const clearSelectNotPay = async () => {
-  if (drinkSelectList.value.length === 0) {
+  if (selectedLines.value.length === 0) {
     void alert({ title: '通知', description: '尚未選取品項', confirmText: '繼續選取品項' })
     return
   }
-  const result = await confirm({ title: '警告', description: '確定要清除所有已選的待付款的飲品嗎?' })
+  const result = await confirm({ title: '警告', description: '確定要清除所有已選的待付款品項嗎?' })
   if (result !== 'confirm') return
-  drinkStore.drinkNotPay = drinkStore.drinkNotPay.filter(item => !drinkSelectList.value.includes(item))
+  catalogStore.cartLines = catalogStore.cartLines.filter(item => !selectedLines.value.includes(item))
   showToast('清除成功', 'success')
 }
 
@@ -531,9 +481,9 @@ const closeBagCount = () => {
   dialogBag.value = false
 }
 const changeBagCount = () => {
-  drinkStore.currentBagCount = bagCount.value
+  catalogStore.currentBagCount = bagCount.value
   dialogBag.value = false
-  showToast('修改加購袋子數量成功', 'success')
+  showToast('修改包材份數成功', 'success')
 }
 
 // 沒有對應交易的開錢箱動作（例如換零錢、盤點現金）需要記錄理由，否則錢箱
@@ -560,25 +510,18 @@ const openCashier = async () => {
   }
 }
 
-// 把 discountStore.oftenUseDiscount（表單輸入可能是字串）轉成 pos-domain
-// 計價引擎要的固定 5 筆數值設定。
-const oftenUseRates = (): OftenUseRates => {
-  const toRate = (d: (typeof discountStore.oftenUseDiscount)[number]) => ({
-    name: d.name,
-    discountMoney: Number(d.discountMoney),
-    discountPercent: Number(d.discountPercent),
-  })
-  const [eco, bottle, rate1, rate2, rate3] = discountStore.oftenUseDiscount
-  return [toRate(eco), toRate(bottle), toRate(rate1), toRate(rate2), toRate(rate3)]
-}
+// 把 discountStore.quickDiscounts（表單輸入可能是字串）轉成 pos-domain
+// 計價引擎要的數值型快速折扣清單。
+const quickDiscountsForPricing = (): QuickDiscount[] =>
+  discountStore.quickDiscounts.map((d) => ({ id: String(d.id), name: d.name, kind: d.kind, value: Number(d.value) }))
 
 // 對目前已勾選的品項套用同一種旗標切換，並用 priceLine() 重新計算金額，
-// 取代六個函式各自手動改欄位的寫法。
+// 取代逐一折扣各自手動改欄位的寫法。
 const applyDiscountToggle = (toggle: (flags: LineDiscountFlags) => LineDiscountFlags) => {
-  const rates = oftenUseRates()
-  drinkSelectList.value.forEach(item => {
-    const nextFlags = toggle(item)
-    const priced = priceLine({ price: Number(item.price), count: item.count, addListPrice: item.addListPrice }, nextFlags, rates)
+  const discounts = quickDiscountsForPricing()
+  selectedLines.value.forEach(item => {
+    const nextFlags = toggle({ freeDiscount: item.freeDiscount, quickDiscountId: item.quickDiscountId })
+    const priced = priceLine({ price: Number(item.price), count: item.count, addListPrice: item.addListPrice }, nextFlags, discounts)
     Object.assign(item, nextFlags, priced)
   })
 }
@@ -587,85 +530,33 @@ const noSelectionAlert = () => {
   void alert({ title: '通知', description: '尚未選取品項', confirmText: '繼續選取品項' })
 }
 const stillFreeAlert = () => {
-  void alert({ title: '通知', description: '選取的品項中有品項尚未取消免費招待無法再添加折扣', confirmText: '重新選取' })
+  void alert({ title: '通知', description: '選取的品項中有品項尚未取消招待無法再套用折扣', confirmText: '重新選取' })
 }
 
 // 招待
-const freeDiscount = () => {
-  if (Number(drinkSelectList.value) <= 0) {
+const applyFreeDiscount = () => {
+  if (selectedLines.value.length <= 0) {
     noSelectionAlert()
     return
   }
   applyDiscountToggle(toggleFree)
 }
-// 環保折扣
-const ecoDiscount = () => {
-  if (Number(drinkSelectList.value) <= 0) {
+// 快速折扣：依後台設定的清單動態套用，同一時間每個品項只能套用一筆。
+const applyQuickDiscount = (id: FormNumeric) => {
+  if (selectedLines.value.length <= 0) {
     noSelectionAlert()
     return
   }
-  if (drinkSelectList.value.every(item => item.freeDiscount)) {
+  if (selectedLines.value.every(item => item.freeDiscount)) {
     stillFreeAlert()
     return
   }
-  applyDiscountToggle(flags => toggleContainer(flags, 'eco'))
-}
-// 瓶裝折扣
-const bottleDiscount = () => {
-  if (Number(drinkSelectList.value) <= 0) {
-    noSelectionAlert()
-    return
-  }
-  if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    stillFreeAlert()
-    return
-  }
-  if (!drinkSelectList.value.every(item => item.size === 'bottle')) {
-    void alert({ title: '通知', description: '選取的所有品項都要是瓶裝才可以使用此功能', confirmText: '重新選取品項' })
-    return
-  }
-  applyDiscountToggle(flags => toggleContainer(flags, 'bottle'))
-}
-// 常用折數折扣1（九折）
-const oftenUseDiscount1 = () => {
-  if (Number(drinkSelectList.value) <= 0) {
-    noSelectionAlert()
-    return
-  }
-  if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    stillFreeAlert()
-    return
-  }
-  applyDiscountToggle(flags => toggleRate(flags, 1))
-}
-// 常用折數折扣2（八五折）
-const oftenUseDiscount2 = () => {
-  if (Number(drinkSelectList.value) <= 0) {
-    noSelectionAlert()
-    return
-  }
-  if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    stillFreeAlert()
-    return
-  }
-  applyDiscountToggle(flags => toggleRate(flags, 2))
-}
-// 常用折數折扣3（員工八折）
-const oftenUseDiscount3 = () => {
-  if (Number(drinkSelectList.value) <= 0) {
-    noSelectionAlert()
-    return
-  }
-  if (drinkSelectList.value.every(item => item.freeDiscount)) {
-    stillFreeAlert()
-    return
-  }
-  applyDiscountToggle(flags => toggleRate(flags, 3))
+  applyDiscountToggle(flags => toggleQuickDiscount(flags, String(id)))
 }
 
 const dialogDiscount = ref(false)
 const openDiscountMenu = () => {
-  if (drinkStore.drinkNotPay.length <= 0) {
+  if (catalogStore.cartLines.length <= 0) {
     void alert({ title: '通知', description: '待付款清單是空的無法使用優惠券', confirmText: '繼續選取' })
   } else {
     discountStore.moneySelectingDiscountId = discountStore.moneyDiscountId
@@ -747,7 +638,7 @@ const useDiscount = () => {
 // 誤觸的確認動作，取代原本兩層各自獨立的通用確認框。
 const dialogPayment = ref(false)
 const openPaymentPanel = () => {
-  if (drinkStore.drinkNotPay.length <= 0 && drinkStore.currentBagCount <= 0) {
+  if (catalogStore.cartLines.length <= 0 && catalogStore.currentBagCount <= 0) {
     void alert({ title: '通知', description: '訂單內沒有品項無法送單', confirmText: '繼續添加品項' })
     return
   }
@@ -765,14 +656,14 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     orderStatus: '已完成',
     orderChannel: orderChannel.value,
     staff: `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name} `,
-    orderData: drinkStore.drinkNotPay,
-    orderBagCount: drinkStore.currentBagCount,
-    orderCupCount: drinkStore.currentDrinkCount,
-    orderTotalPrice: drinkStore.drinkTotalMoney,
+    orderData: catalogStore.cartLines,
+    orderBagCount: catalogStore.currentBagCount,
+    orderCupCount: catalogStore.currentItemCount,
+    orderTotalPrice: catalogStore.cartTotalMoney,
     // orderPayment 是顯示用摘要（多筆 tender 用頓號連接），需跟伺服端算出的摘要規則一致。
     orderPayment: tenders.map((tender) => tender.method).join('、'),
-    orderDiscount: drinkStore.useDiscountPrice,
-    orderPaymentPrice: drinkStore.drinkPayPrice,
+    orderDiscount: catalogStore.useDiscountPrice,
+    orderPaymentPrice: catalogStore.cartPayPrice,
     discountName: discountStore.currentDiscountName === '' ? '無' : discountStore.currentDiscountName,
     refundedAmount: 0,
     voidReason: null,
@@ -790,13 +681,13 @@ const submitPayment = async (tenders: TenderDraft[]) => {
   // 先在本機樂觀扣減庫存：訂單要等背景同步到伺服端才真的扣庫存，若不在
   // 這裡先扣，點餐頁在同步完成前仍能繼續選到已經賣完的品項。
   for (const line of toPayOrder.orderData) {
-    const item = drinkStore.drinkType.flatMap((group) => group.drinkList).find((drink) => drink.name === line.name)
+    const item = catalogStore.products.find((product) => product.name === line.name)
     if (item && typeof item.stock === 'number') {
       item.stock = Math.max(0, item.stock - line.count)
     }
     const addOnNames = Array.isArray(line.addList) ? line.addList : []
     for (const addOnName of addOnNames) {
-      const addOn = drinkStore.drinkAdd.find((option) => option.name === addOnName)
+      const addOn = catalogStore.addOns.find((option) => option.name === addOnName)
       if (addOn && typeof addOn.stock === 'number') {
         addOn.stock = Math.max(0, addOn.stock - line.count)
       }
@@ -814,7 +705,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
 
   // 訂單先入本機離線佇列，不管有沒有網路都會成功；SyncWorker 背景送到
   // 伺服端。這裡額外呼叫 syncNow() 只是「有網路時不用乾等下一次輪詢」，
-  // 不是同步成敗的必要步驟。用 toPayOrder.orderData 而非稍後會被清空的 drinkStore.drinkNotPay。
+  // 不是同步成敗的必要步驟。用 toPayOrder.orderData 而非稍後會被清空的 catalogStore.cartLines。
   const request = buildCreateOrderRequest({
     businessDate: getBusinessDate(new Date()),
     staff: toPayOrder.staff,
@@ -832,7 +723,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
   currentOrderMember.value = null
   tableNumberInput.value = ''
 
-  drinkStore.drinkNotPay = []
+  catalogStore.cartLines = []
 }
 </script>
 

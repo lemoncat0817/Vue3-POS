@@ -64,8 +64,8 @@ test('點餐頁選內用時可以輸入桌號，送單後訂單帶著這個桌�
   await page.getByTestId('order-channel-toggle').getByRole('button', { name: '內用', exact: true }).click()
   await page.getByTestId('table-number-input').fill('B3')
 
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('薯條', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
 

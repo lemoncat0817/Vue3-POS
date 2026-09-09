@@ -34,8 +34,8 @@ test('新增電子發票字軌後自動啟用，送單用新字軌配號；模�
   const createOrderResponse = page.waitForResponse(
     (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
   )
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('薯條', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
   await page.getByTestId('checkout-button').click()

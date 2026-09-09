@@ -8,8 +8,8 @@ test('訂單編號篩選輸入正規表示式特殊字元不會讓頁面出錯�
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('薯條', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
   await page.getByTestId('checkout-button').click()

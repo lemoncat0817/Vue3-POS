@@ -1,16 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { PromotionsResponse } from '@pos/contract'
-import { toMoneyDiscounts, toOftenUseDiscountList, toPercentDiscounts } from './promotions'
+import { toMoneyDiscounts, toPercentDiscounts, toQuickDiscounts } from './promotions'
 
 const samplePromotions: PromotionsResponse = {
   moneyCoupons: [{ id: 'money-1', name: '$50折價券', discountMoney: 50 }],
   percentCoupons: [{ id: 'percent-1', name: '整單95折', discountPercent: 0.95 }],
-  oftenUseRates: [
-    { slot: 0, name: '環保折扣', discountMoney: 5, discountPercent: 1 },
-    { slot: 1, name: '瓶裝折扣', discountMoney: 10, discountPercent: 1 },
-    { slot: 2, name: '九折', discountMoney: 0, discountPercent: 0.9 },
-    { slot: 3, name: '八五折', discountMoney: 0, discountPercent: 0.85 },
-    { slot: 4, name: '員工八折', discountMoney: 0, discountPercent: 0.8 },
+  quickDiscounts: [
+    { id: 'quick-1', name: '常客優惠', kind: 'amount', value: 5 },
+    { id: 'quick-2', name: '九折優惠', kind: 'percent', value: 0.9 },
   ],
 }
 
@@ -26,11 +23,11 @@ describe('toPercentDiscounts', () => {
   })
 })
 
-describe('toOftenUseDiscountList', () => {
-  it('slot 轉成前端既有的 id 欄位，保持 5 筆固定順序', () => {
-    const list = toOftenUseDiscountList(samplePromotions)
-    expect(list).toHaveLength(5)
-    expect(list[0]).toEqual({ id: 0, name: '環保折扣', discountMoney: 5, discountPercent: 1 })
-    expect(list[4]).toEqual({ id: 4, name: '員工八折', discountMoney: 0, discountPercent: 0.8 })
+describe('toQuickDiscounts', () => {
+  it('保留任意筆數的快速折扣清單，不受固定 5 筆限制', () => {
+    const list = toQuickDiscounts(samplePromotions)
+    expect(list).toHaveLength(2)
+    expect(list[0]).toEqual({ id: 'quick-1', name: '常客優惠', kind: 'amount', value: 5 })
+    expect(list[1]).toEqual({ id: 'quick-2', name: '九折優惠', kind: 'percent', value: 0.9 })
   })
 })

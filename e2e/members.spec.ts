@@ -11,8 +11,8 @@ test('結帳時查無會員可以直接建立，送單後依金額累加點數�
   const phone = `09${Date.now().toString().slice(-8)}`
   const memberName = `P22測試會員-${Date.now()}`
 
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('雞塊六入', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
 

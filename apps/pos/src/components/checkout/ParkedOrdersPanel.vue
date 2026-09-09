@@ -11,13 +11,13 @@ type="button"
       <div class="flex flex-col gap-2 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
         <p class="text-sm font-bold text-surface-700 dark:text-surface-300">
           掛起目前訂單
-          <span class="font-normal text-surface-400 dark:text-surface-500">（{{ drinkStore.currentDrinkCount }} 杯，$ {{ drinkStore.drinkTotalMoney }}）</span>
+          <span class="font-normal text-surface-400 dark:text-surface-500">（{{ catalogStore.currentItemCount }} 份，$ {{ catalogStore.cartTotalMoney }}）</span>
         </p>
         <input
 v-model="note" type="text" placeholder="備註（選填，例如：3號桌、王小姐）"
           class="w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100">
         <button
-type="button" :disabled="drinkStore.drinkNotPay.length === 0"
+type="button" :disabled="catalogStore.cartLines.length === 0"
           class="self-end rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
           data-testid="park-current-order" @click="parkCurrent">
           掛起
@@ -34,7 +34,7 @@ v-for="order in parkedOrders" :key="order.id" data-testid="parked-order-row"
             <div>
               <p class="text-sm font-bold text-surface-900 dark:text-surface-100">{{ order.note || '（無備註）' }}</p>
               <p class="text-xs text-surface-500 dark:text-surface-400">
-                {{ formatTime(order.createdAt) }}．{{ cupCount(order) }} 杯．$ {{ totalPrice(order) }}
+                {{ formatTime(order.createdAt) }}．{{ itemCount(order) }} 份．$ {{ totalPrice(order) }}
               </p>
             </div>
             <div class="flex gap-2">
@@ -62,7 +62,7 @@ type="button"
 // 掛單僅暫存於本機 Dexie，不佔用伺服端訂單序號
 import { nextTick, ref, watch } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
-import { useDrinkStore } from '@/stores/drink'
+import { useCatalogStore } from '@/stores/catalog'
 import { useDiscountStore } from '@/stores/discount'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
@@ -75,7 +75,7 @@ import type { OrderChannel } from '@/types'
 const props = defineProps<{ orderChannel: OrderChannel; invoiceCarrier: InvoiceCarrier }>()
 const emit = defineEmits<{ 'update:orderChannel': [OrderChannel]; 'update:invoiceCarrier': [InvoiceCarrier] }>()
 
-const drinkStore = useDrinkStore()
+const catalogStore = useCatalogStore()
 const discountStore = useDiscountStore()
 
 const open = ref(false)
@@ -97,7 +97,7 @@ function onOpenChange(value: boolean) {
   open.value = value
 }
 
-function cupCount(order: ParkedOrder) {
+function itemCount(order: ParkedOrder) {
   return order.lines.reduce((sum, line) => sum + line.count, 0)
 }
 
@@ -113,14 +113,14 @@ function formatTime(createdAt: number) {
 // 透過 nextTick 確保 Pinia watch 在微任務執行前維持 suppressClearedNotice；
 // reactive proxy 無法直接 structuredClone，故用 JSON 序列化複製純資料
 async function parkCurrent() {
-  if (drinkStore.drinkNotPay.length === 0) return
+  if (catalogStore.cartLines.length === 0) return
 
   await addParkedOrder({
     id: ulid(),
     createdAt: Date.now(),
     note: note.value.trim(),
-    lines: JSON.parse(JSON.stringify(drinkStore.drinkNotPay)),
-    bagCount: drinkStore.currentBagCount,
+    lines: JSON.parse(JSON.stringify(catalogStore.cartLines)),
+    bagCount: catalogStore.currentBagCount,
     orderChannel: props.orderChannel,
     invoiceCarrier: JSON.parse(JSON.stringify(props.invoiceCarrier)),
     moneyDiscountId: discountStore.moneyDiscountId,
@@ -130,10 +130,10 @@ async function parkCurrent() {
     currentDiscountName: discountStore.currentDiscountName,
   })
 
-  drinkStore.suppressClearedNotice = true
-  drinkStore.drinkNotPay = []
+  catalogStore.suppressClearedNotice = true
+  catalogStore.cartLines = []
   await nextTick()
-  drinkStore.suppressClearedNotice = false
+  catalogStore.suppressClearedNotice = false
   note.value = ''
   await refresh()
   showToast('已掛單', 'success')
@@ -141,7 +141,7 @@ async function parkCurrent() {
 
 // 取單前若待付款清單已有品項需確認覆蓋
 async function resumeOrder(order: ParkedOrder) {
-  if (drinkStore.drinkNotPay.length > 0) {
+  if (catalogStore.cartLines.length > 0) {
     const result = await confirm({
       title: '取單',
       description: '目前待付款清單還有品項，取單會覆蓋目前清單，是否繼續？',
@@ -152,8 +152,8 @@ async function resumeOrder(order: ParkedOrder) {
     if (result !== 'confirm') return
   }
 
-  drinkStore.drinkNotPay = JSON.parse(JSON.stringify(order.lines))
-  drinkStore.currentBagCount = order.bagCount
+  catalogStore.cartLines = JSON.parse(JSON.stringify(order.lines))
+  catalogStore.currentBagCount = order.bagCount
   discountStore.moneyDiscountId = order.moneyDiscountId
   discountStore.percentDiscountId = order.percentDiscountId
   discountStore.currentMoneyDiscount = order.currentMoneyDiscount

@@ -8,8 +8,8 @@ test('現金找零：實收金額大於應付金額時，面板與伺服端回�
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('薯條', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
 
@@ -19,7 +19,7 @@ test('現金找零：實收金額大於應付金額時，面板與伺服端回�
   await page.getByRole('button', { name: '加入', exact: true }).click()
   await expect(page.getByText('現金', { exact: true })).toBeVisible()
   await expect(page.getByText('（實收 $ 500）')).toBeVisible()
-  await expect(page.getByText('$ 420')).toBeVisible()
+  await expect(page.getByText('$ 440')).toBeVisible()
 
   const orderResponse = page.waitForResponse(
     (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
@@ -29,8 +29,8 @@ test('現金找零：實收金額大於應付金額時，面板與伺服端回�
     changeDue: number
     tenders: { method: string; amount: number; receivedAmount?: number }[]
   }
-  expect(body.changeDue).toBe(420)
-  expect(body.tenders).toEqual([{ method: '現金', amount: 80, receivedAmount: 500 }])
+  expect(body.changeDue).toBe(440)
+  expect(body.tenders).toEqual([{ method: '現金', amount: 60, receivedAmount: 500 }])
 
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
   await page.getByRole('button', { name: '繼續選取品項' }).click()
@@ -43,8 +43,8 @@ test('混合支付：現金＋信用卡各分擔一部分，伺服端摘要用�
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('薯條', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
 
@@ -52,7 +52,7 @@ test('混合支付：現金＋信用卡各分擔一部分，伺服端摘要用�
   await page.getByRole('button', { name: '現金', exact: true }).click()
   await page.getByLabel('分擔金額').fill('30')
   await page.getByRole('button', { name: '加入', exact: true }).click()
-  await expect(page.getByText('$ 50', { exact: true })).toBeVisible()
+  await expect(page.getByText('剩餘應付').locator('..').getByText('$ 30')).toBeVisible()
 
   await page.getByRole('button', { name: '信用卡', exact: true }).click()
   await page.getByRole('button', { name: '加入', exact: true }).click()

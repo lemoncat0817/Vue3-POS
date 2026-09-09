@@ -14,13 +14,13 @@ test('點餐頁掛載時會向 apps/api 要一份菜單，且點餐流程用得�
 
   const res = await catalogResponse
   expect(res.status()).toBe(200)
-  const body = (await res.json()) as { groups: unknown[]; addOns: unknown[] }
-  expect(body.groups.length).toBeGreaterThan(0)
+  const body = (await res.json()) as { categories: unknown[]; products: unknown[] }
+  expect(body.categories.length).toBeGreaterThan(0)
 
-  await page.getByText('季節限定', { exact: true }).click()
-  await page.getByText('楊枝甘露2.0', { exact: true }).click()
+  await page.getByText('輕食', { exact: true }).click()
+  await page.getByText('薯條', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
   const row = page.getByTestId('cart-row').first()
-  await expect(row).toContainText('80')
+  await expect(row).toContainText('60')
 })
