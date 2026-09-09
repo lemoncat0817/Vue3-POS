@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { priceLine, type LineDiscountFlags } from '../pricing'
 import { GOLDEN_ORDERS } from './golden-orders'
-import { DEFAULT_OFTEN_USE_RATES } from './often-use-rates'
+import { DEFAULT_QUICK_DISCOUNTS } from './quick-discounts'
 
 /** 用黃金資料集的品項組成重跑 priceLine()，驗證重算結果與歷史訂單金額一致。 */
 describe('priceLine() 對照黃金資料集', () => {
@@ -18,25 +18,17 @@ describe('priceLine() 對照黃金資料集', () => {
     (_label, line) => {
       const flags: LineDiscountFlags = {
         freeDiscount: line.freeDiscount,
-        ecoDiscount: line.ecoDiscount,
-        bottleDiscount: line.bottleDiscount,
-        oftenUseDiscount1: line.oftenUseDiscount1,
-        oftenUseDiscount2: line.oftenUseDiscount2,
-        oftenUseDiscount3: line.oftenUseDiscount3,
+        quickDiscountId: line.quickDiscountId,
       }
       const priced = priceLine(
         { price: line.price, count: line.count, addListPrice: line.addListPrice },
         flags,
-        DEFAULT_OFTEN_USE_RATES,
+        DEFAULT_QUICK_DISCOUNTS,
       )
 
       expect(priced.totalPrice).toBe(line.totalPrice)
       expect(priced.discount).toBe(line.discount)
-      expect(priced.currentDiscountMoney).toBe(line.currentDiscountMoney)
-      expect(priced.currentDiscountPercent).toBe(line.currentDiscountPercent)
-      expect(priced.useDiscountMoney).toBe(line.useDiscountMoney)
-      expect(priced.useDiscountPercent).toBe(line.useDiscountPercent)
-      expect(priced.useDiscountFree).toBe(line.useDiscountFree)
+      expect(priced.quickDiscountName).toBe(line.quickDiscountName)
     },
   )
 
@@ -45,15 +37,8 @@ describe('priceLine() 對照黃金資料集', () => {
       const recomputedLines = order.orderData.map((line) =>
         priceLine(
           { price: line.price, count: line.count, addListPrice: line.addListPrice },
-          {
-            freeDiscount: line.freeDiscount,
-            ecoDiscount: line.ecoDiscount,
-            bottleDiscount: line.bottleDiscount,
-            oftenUseDiscount1: line.oftenUseDiscount1,
-            oftenUseDiscount2: line.oftenUseDiscount2,
-            oftenUseDiscount3: line.oftenUseDiscount3,
-          },
-          DEFAULT_OFTEN_USE_RATES,
+          { freeDiscount: line.freeDiscount, quickDiscountId: line.quickDiscountId },
+          DEFAULT_QUICK_DISCOUNTS,
         ),
       )
       const recomputedTotal = recomputedLines.reduce((sum, l) => sum + l.totalPrice, 0) + order.orderBagCount

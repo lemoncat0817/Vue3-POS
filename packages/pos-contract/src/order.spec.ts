@@ -2,18 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { createOrderRequestSchema, invoiceCarrierSchema, tenderInputSchema } from './order'
 
 const validLine = {
-  name: '楊枝甘露2.0',
+  name: '招牌牛肉漢堡',
   price: 80,
-  size: 'L',
   count: 1,
   addList: '無添加配料' as const,
   addListPrice: 0,
   freeDiscount: false,
-  ecoDiscount: false,
-  bottleDiscount: false,
-  oftenUseDiscount1: false,
-  oftenUseDiscount2: false,
-  oftenUseDiscount3: false,
+  quickDiscountId: null,
 }
 
 const validRequest = {

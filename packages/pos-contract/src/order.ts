@@ -9,11 +9,8 @@ import { appliedCouponSchema } from './promotion'
 
 export const lineDiscountFlagsSchema = z.object({
   freeDiscount: z.boolean(),
-  ecoDiscount: z.boolean(),
-  bottleDiscount: z.boolean(),
-  oftenUseDiscount1: z.boolean(),
-  oftenUseDiscount2: z.boolean(),
-  oftenUseDiscount3: z.boolean(),
+  /** 套用哪一筆快速折扣（見 promotion.ts 的 quickDiscountSchema），沒套用是 null。 */
+  quickDiscountId: z.string().min(1).nullable(),
 })
 export type LineDiscountFlagsInput = z.infer<typeof lineDiscountFlagsSchema>
 
@@ -22,7 +19,6 @@ export const orderLineInputSchema = z
   .object({
     name: z.string().min(1),
     price: z.number().int().nonnegative(),
-    size: z.string().min(1),
     count: z.number().int().positive(),
     addList: z.union([z.literal('無添加配料'), z.array(z.string())]),
     addListPrice: z.number().int().nonnegative(),
@@ -110,11 +106,8 @@ export type OrderStatus = z.infer<typeof orderStatusSchema>
 export const orderLineSchema = orderLineInputSchema.extend({
   discount: z.number().int(),
   totalPrice: z.number().int().nonnegative(),
-  currentDiscountMoney: z.number().nonnegative(),
-  currentDiscountPercent: z.number().min(0).max(1),
-  useDiscountMoney: z.string(),
-  useDiscountPercent: z.string(),
-  useDiscountFree: z.string(),
+  /** 套用的快速折扣名稱快照（下單當下的名稱），沒套用或已招待則為空字串。 */
+  quickDiscountName: z.string(),
 })
 export type OrderLine = z.infer<typeof orderLineSchema>
 

@@ -22,28 +22,32 @@ export type PercentCoupon = z.infer<typeof percentCouponSchema>
 export const createPercentCouponRequestSchema = percentCouponSchema.omit({ id: true })
 export type CreatePercentCouponRequest = z.infer<typeof createPercentCouponRequestSchema>
 
-/** 常用折扣固定 5 筆（slot 0~1 容器群組互斥，2~4 折數群組互斥）。後台僅能編輯內容，無法增刪。 */
-export const oftenUseRateSchema = z.object({
-  slot: z.number().int().min(0).max(4),
+export const quickDiscountKindSchema = z.enum(['amount', 'percent'])
+export type QuickDiscountKind = z.infer<typeof quickDiscountKindSchema>
+
+/**
+ * 快速折扣：點餐頁購物車可直接套用在勾選品項上的具名折扣（例如「常客優惠」
+ * 「員工優惠」），後台可自由新增／刪除任意筆數，不綁定特定產業的折扣種類。
+ * `kind: 'amount'` 時 `value` 是每份扣減的金額；`kind: 'percent'` 時 `value`
+ * 是 0~1 的折數。
+ */
+export const quickDiscountSchema = z.object({
+  id: z.string().min(1),
   name: z.string().min(1),
-  discountMoney: z.number().int().nonnegative(),
-  discountPercent: z.number().min(0).max(1),
+  kind: quickDiscountKindSchema,
+  value: z.number().nonnegative(),
 })
-export type OftenUseRateEntry = z.infer<typeof oftenUseRateSchema>
-export const updateOftenUseRateRequestSchema = oftenUseRateSchema.omit({ slot: true })
-export type UpdateOftenUseRateRequest = z.infer<typeof updateOftenUseRateRequestSchema>
+export type QuickDiscount = z.infer<typeof quickDiscountSchema>
+export const createQuickDiscountRequestSchema = quickDiscountSchema.omit({ id: true })
+export type CreateQuickDiscountRequest = z.infer<typeof createQuickDiscountRequestSchema>
+export const updateQuickDiscountRequestSchema = createQuickDiscountRequestSchema
+export type UpdateQuickDiscountRequest = z.infer<typeof updateQuickDiscountRequestSchema>
 
 /** GET /api/promotions 的完整回應：點餐頁一次要用到的所有促銷資料。 */
 export const promotionsResponseSchema = z.object({
   moneyCoupons: z.array(moneyCouponSchema),
   percentCoupons: z.array(percentCouponSchema),
-  oftenUseRates: z.tuple([
-    oftenUseRateSchema,
-    oftenUseRateSchema,
-    oftenUseRateSchema,
-    oftenUseRateSchema,
-    oftenUseRateSchema,
-  ]),
+  quickDiscounts: z.array(quickDiscountSchema),
 })
 export type PromotionsResponse = z.infer<typeof promotionsResponseSchema>
 
