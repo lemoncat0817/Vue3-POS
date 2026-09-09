@@ -138,22 +138,28 @@
              等同於既有的重置篩選按鈕。 -->
         <div v-if="hasActiveFilter" class="mb-3 flex flex-wrap items-center gap-1.5">
           <button
-            v-if="filterOrderId" type="button"
+            v-if="filterKeyword" type="button"
             class="inline-flex items-center gap-1 rounded-full bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 text-[11px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/60"
-            @click="filterOrderId = ''">
-            訂單編號：{{ filterOrderId }}<X class="h-3 w-3" />
+            @click="filterKeyword = ''">
+            關鍵字：{{ filterKeyword }}<X class="h-3 w-3" />
           </button>
           <button
-            v-if="filterOrderTime" type="button"
+            v-if="filterDateFrom || filterDateTo" type="button"
             class="inline-flex items-center gap-1 rounded-full bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 text-[11px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/60"
-            @click="filterOrderTime = ''">
-            訂單時間：{{ filterOrderTime }}<X class="h-3 w-3" />
+            @click="filterDateFrom = ''; filterDateTo = ''">
+            期間：{{ filterDateFrom || '不限' }} ~ {{ filterDateTo || '不限' }}<X class="h-3 w-3" />
           </button>
           <button
-            v-if="filterOrderStaff" type="button"
+            v-if="filterChannel" type="button"
             class="inline-flex items-center gap-1 rounded-full bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 text-[11px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/60"
-            @click="filterOrderStaff = ''">
-            服務人員：{{ filterOrderStaff }}<X class="h-3 w-3" />
+            @click="filterChannel = ''">
+            通路：{{ filterChannel }}<X class="h-3 w-3" />
+          </button>
+          <button
+            v-if="filterStaff" type="button"
+            class="inline-flex items-center gap-1 rounded-full bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 text-[11px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/60"
+            @click="filterStaff = ''">
+            服務人員：{{ filterStaff }}<X class="h-3 w-3" />
           </button>
           <button
             v-if="filterOrderStatus" type="button"
@@ -176,52 +182,66 @@
           <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
             <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
               <Search class="h-3 w-3" />
-              訂單編號
+              關鍵字
             </span>
             <input
-              v-model="filterOrderId"
+              v-model="filterKeyword"
               class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
               placeholder="輸入訂單編號" />
           </label>
-          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300 sm:col-span-2">
             <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
               <Clock class="h-3 w-3" />
-              訂單時間
+              訂單期間
             </span>
-            <input
-              v-model="filterOrderTime"
-              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
-              placeholder="輸入訂單時間" />
+            <div class="flex items-center gap-1.5">
+              <input
+                type="date" aria-label="起始日期" :value="filterDateFrom ? toNativeDate(filterDateFrom) : ''"
+                class="w-full rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-2.5 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
+                @change="(e) => filterDateFrom = fromNativeDate((e.target as HTMLInputElement).value)">
+              <span class="text-surface-400">~</span>
+              <input
+                type="date" aria-label="結束日期" :value="filterDateTo ? toNativeDate(filterDateTo) : ''"
+                class="w-full rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-2.5 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
+                @change="(e) => filterDateTo = fromNativeDate((e.target as HTMLInputElement).value)">
+            </div>
+          </label>
+          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
+            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
+              <Tag class="h-3 w-3" />
+              通路
+            </span>
+            <select
+              v-model="filterChannel"
+              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20">
+              <option value="">不限通路</option>
+              <option value="外帶">外帶</option>
+              <option value="內用">內用</option>
+            </select>
           </label>
           <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
             <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
               <User class="h-3 w-3" />
               服務人員
             </span>
-            <input
-              v-model="filterOrderStaff"
-              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
-              placeholder="輸入服務人員" />
-          </label>
-          <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-            <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
-              <Tag class="h-3 w-3" />
-              訂單狀態
-            </span>
-            <input
-              v-model="filterOrderStatus"
-              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
-              placeholder="輸入訂單狀態" />
+            <select
+              v-model="filterStaff"
+              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20">
+              <option value="">不限人員</option>
+              <option v-for="staff in staffOptions" :key="staff" :value="staff">{{ staff }}</option>
+            </select>
           </label>
           <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
             <span class="flex items-center gap-1 text-surface-500 dark:text-surface-400">
               <CreditCard class="h-3 w-3" />
               付款方式
             </span>
-            <input
+            <select
               v-model="filterOrderPayMethod"
-              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
-              placeholder="輸入付款方式" />
+              class="rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20">
+              <option value="">不限付款方式</option>
+              <option v-for="method in orderStore.paymentList" :key="method.id" :value="method.name">{{ method.name }}</option>
+            </select>
           </label>
           <div class="flex items-end">
             <button
@@ -478,7 +498,7 @@ import {
   ChevronRight,
   X,
 } from 'lucide-vue-next'
-import { getDate } from '@/utils/time'
+import { fromNativeDate, getDate, toNativeDate } from '@/utils/time'
 import { useOrderStore } from "@/stores/order"
 const orderStore = useOrderStore()
 import { useLoginStore } from "@/stores/login"
@@ -535,17 +555,21 @@ function queryString(key: string): string {
   const value = route.query[key]
   return typeof value === 'string' ? value : ''
 }
-const filterOrderId = ref(queryString('orderId'))
-const filterOrderTime = ref(queryString('orderTime'))
-const filterOrderStaff = ref(queryString('staff'))
+const filterKeyword = ref(queryString('keyword'))
+const filterDateFrom = ref(queryString('from'))
+const filterDateTo = ref(queryString('to'))
+const filterChannel = ref(queryString('channel'))
+const filterStaff = ref(queryString('staff'))
 const filterOrderStatus = ref(queryString('status'))
 const filterOrderPayMethod = ref(queryString('payMethod'))
 
-watch([filterOrderId, filterOrderTime, filterOrderStaff, filterOrderStatus, filterOrderPayMethod], () => {
+watch([filterKeyword, filterDateFrom, filterDateTo, filterChannel, filterStaff, filterOrderStatus, filterOrderPayMethod], () => {
   const query: Record<string, string> = {}
-  if (filterOrderId.value) query.orderId = filterOrderId.value
-  if (filterOrderTime.value) query.orderTime = filterOrderTime.value
-  if (filterOrderStaff.value) query.staff = filterOrderStaff.value
+  if (filterKeyword.value) query.keyword = filterKeyword.value
+  if (filterDateFrom.value) query.from = filterDateFrom.value
+  if (filterDateTo.value) query.to = filterDateTo.value
+  if (filterChannel.value) query.channel = filterChannel.value
+  if (filterStaff.value) query.staff = filterStaff.value
   if (filterOrderStatus.value) query.status = filterOrderStatus.value
   if (filterOrderPayMethod.value) query.payMethod = filterOrderPayMethod.value
   void router.replace({ query })
@@ -553,29 +577,40 @@ watch([filterOrderId, filterOrderTime, filterOrderStaff, filterOrderStatus, filt
 
 const hasActiveFilter = computed(() => {
   return Boolean(
-    filterOrderId.value ||
-    filterOrderTime.value ||
-    filterOrderStaff.value ||
+    filterKeyword.value ||
+    filterDateFrom.value ||
+    filterDateTo.value ||
+    filterChannel.value ||
+    filterStaff.value ||
     filterOrderStatus.value ||
     filterOrderPayMethod.value,
   )
 })
 
-// 使用 includes 進行子字串比對，避免輸入特殊字元時被視為正規表示式出錯。
+// 服務人員選項只列出實際出現在訂單資料裡的人，避免打錯字篩不到。
+const staffOptions = computed(() => Array.from(new Set(orderStore.order.map((o) => o.staff))).sort())
+
+// 訂單期間用 orderTime 的日期前綴（YYYY/MM/DD）做字串區間比對；訂單編號
+// 用 includes 子字串比對，避免輸入特殊字元時被誤判為正規表示式出錯。
 const filterOrder = computed(() => {
   return orderStore.order.filter(item => {
-    return item.orderId.includes(filterOrderId.value) &&
-      item.orderTime.includes(filterOrderTime.value) &&
-      item.staff.includes(filterOrderStaff.value) &&
+    const orderDate = item.orderTime.slice(0, 10)
+    return item.orderId.includes(filterKeyword.value) &&
+      (filterDateFrom.value === '' || orderDate >= filterDateFrom.value) &&
+      (filterDateTo.value === '' || orderDate <= filterDateTo.value) &&
+      (filterChannel.value === '' || (item.orderChannel ?? '外帶') === filterChannel.value) &&
+      (filterStaff.value === '' || item.staff === filterStaff.value) &&
       item.orderStatus.includes(filterOrderStatus.value) &&
-      item.orderPayment.includes(filterOrderPayMethod.value)
+      (filterOrderPayMethod.value === '' || item.orderPayment.includes(filterOrderPayMethod.value))
   })
 })
 
 const resetFilter = () => {
-  filterOrderId.value = ''
-  filterOrderTime.value = ''
-  filterOrderStaff.value = ''
+  filterKeyword.value = ''
+  filterDateFrom.value = ''
+  filterDateTo.value = ''
+  filterChannel.value = ''
+  filterStaff.value = ''
   filterOrderStatus.value = ''
   filterOrderPayMethod.value = ''
 }
