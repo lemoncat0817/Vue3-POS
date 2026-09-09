@@ -2,14 +2,9 @@
   <div class="w-full p-4">
     <div class="card-panel p-5 flex flex-col gap-3.5">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-surface-200 dark:border-surface-800">
-        <div class="flex items-center gap-2.5">
-          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-info-50 text-info-600 dark:bg-info-950/50 dark:text-info-400 border border-info-200/50 dark:border-info-800/40">
-            <Receipt class="h-4 w-4" />
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-surface-900 dark:text-surface-100 tracking-tight">電子發票字軌</h3>
-            <p class="text-[11px] text-surface-400">財政部配發字軌與上傳狀態管理</p>
-          </div>
+        <div>
+          <h3 class="text-sm font-bold text-surface-900 dark:text-surface-100 tracking-tight">電子發票字軌</h3>
+          <p class="text-[11px] text-surface-400">財政部配發字軌與上傳狀態管理</p>
         </div>
         <div class="flex items-center gap-1.5">
           <button type="button" class="pos-btn pos-btn-secondary px-3 py-1.5 text-xs font-bold" @click="submitBatch">模擬上傳未上傳的發票</button>
@@ -78,7 +73,6 @@ import { onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form } from 'vee-validate'
-import { Receipt } from 'lucide-vue-next'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import FormField from '@/components/ui/FormField.vue'
 import { ApiError } from '@/api/http'
