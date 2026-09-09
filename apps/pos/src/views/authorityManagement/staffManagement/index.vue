@@ -157,8 +157,6 @@ import { alert, confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 const authorityManagementStore = useAuthorityManagementStore()
-import { useRolesStore } from '@/stores/roles'
-const rolesStore = useRolesStore()
 import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { StaffMember } from '@/types'
@@ -186,8 +184,6 @@ function canEdit(row: StaffMember): boolean {
   return canManage.value && row.account !== fromSelection(loginStore.userInfo)?.account
 }
 
-const defaultRoleId = () => rolesStore.roleList[0]?.id ?? ''
-
 const addStaffDialog = ref(false)
 const currentInputStaffName = ref('')
 const currentInputStaffJobTitle = ref('')
@@ -200,7 +196,8 @@ function openAddStaffDialog() {
   currentInputStaffJobTitle.value = ''
   currentInputStaffAccount.value = ''
   currentInputStaffPin.value = ''
-  currentInputRoleId.value = defaultRoleId()
+  // 刻意不預設角色（尤其不能偷懶挑第一筆——有可能剛好是「店長」），逼管理者每次都要明確選擇。
+  currentInputRoleId.value = ''
   addStaffDialog.value = true
 }
 function closeAddStaffDialog() {
