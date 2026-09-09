@@ -5,27 +5,17 @@ import type { CartLineItem, DrinkAddOnOption, DrinkListItem, DrinkSimpleOption, 
 import { fromSelection } from '@/utils/selection'
 
 export const useDrinkStore = defineStore('drink', () => {
-  // D-06：原本這行寫在 defineStore() 外面（模組頂層），執行時機早於
-  // app.use(pinia)，靠模組載入順序僥倖成立。移進 setup 函式內，確保
-  // 一定在 Pinia 初始化完成之後才呼叫。
+  // 必須在 setup 函式內呼叫，確保一定在 Pinia 初始化完成之後才執行。
   const discountStore = useDiscountStore()
 
-  // P3：菜單資料改由 apps/api 當唯一來源（見 src/api/catalog.ts）。這裡
-  // 保留的陣列是「第一次啟動、還沒有任何持久化狀態、且伺服端也連不到」
-  // 時的離線種子資料，不是常態資料來源。
-  //
-  // drinkType／drinkAdd 整包狀態都會被 persist:true 存進 localStorage
-  // （見檔尾），backgroundSetting/productManagement 頁面又是直接原地
-  // 修改這兩個陣列（新增／刪除系列與加料選項），還沒有對應的伺服端寫入
-  // API——如果每次啟動都無條件用伺服端資料覆蓋，管理員在背景設定頁做的
-  // 異動會在下次重新整理後消失。catalogSource 就是用來擋這件事：只在
-  // 「這個瀏覽器從來沒同步過伺服端菜單」時才套用一次 hydrateCatalogFromServer()
-  // 的結果，之後永遠以本機（可能已被管理員編輯過）的資料為準。等後續
-  // 階段把菜單管理也接上伺服端寫入 API，才需要真正的雙向同步。
+  // 這裡的陣列是離線種子資料，正常由 apps/api 當唯一來源（見
+  // src/api/catalog.ts）。drinkType／drinkAdd 整包會被 persist:true 存進
+  // localStorage，backgroundSetting/productManagement 頁面又直接原地
+  // 修改這兩個陣列、還沒有對應的伺服端寫入 API——catalogSource 只在
+  // 「這個瀏覽器從未同步過伺服端菜單」時套用一次 hydrateCatalogFromServer()，
+  // 之後永遠以本機（可能已被管理員編輯過）的資料為準，避免每次啟動都覆蓋管理員的異動。
   const catalogSource = ref<'seed' | 'server'>('seed')
 
-  // 定義飲料品項資料
-  // 定義各種系列的選項資料
   const drinkType = ref<DrinkTypeGroup[]>([
     {
       "id": 1,
@@ -524,8 +514,6 @@ export const useDrinkStore = defineStore('drink', () => {
     }
   ])
 
-  // 定義客製化內容的選項資料
-  // 定義冰塊的選項資料
   const drinkIce = ref<DrinkSimpleOption[]>([{
     "id": 1,
     "name": "熱",
@@ -546,7 +534,6 @@ export const useDrinkStore = defineStore('drink', () => {
     "id": 5,
     "name": "正常冰",
   }])
-  // 定義糖度的選項資料
   const drinkSugar = ref<DrinkSimpleOption[]>([{
     "id": 1,
     "name": "無糖",
@@ -571,7 +558,6 @@ export const useDrinkStore = defineStore('drink', () => {
     "id": 6,
     "name": "正常",
   }])
-  // 定義加料的選項資料
   const drinkAdd = ref<DrinkAddOnOption[]>([{
     "id": 1,
     "name": "波霸",
@@ -637,7 +623,6 @@ export const useDrinkStore = defineStore('drink', () => {
     "name": "芝芝",
     "price": 20,
   }])
-  // 定義飲料大小的選項資料
   const drinkSize = ref<DrinkSimpleOption[]>([{
     "id": 1,
     "name": "L杯",
@@ -647,27 +632,16 @@ export const useDrinkStore = defineStore('drink', () => {
     "name": "瓶裝",
   }])
 
-  // 存放當前所選的選項以及飲料相關資料
-  // 存放當前所選的是糖度/冰塊還是加料選單
-  // 預設為糖度/冰塊
+  // 0：糖度/冰塊選單；非 0：加料選單。
   const drinkMenu = ref(0)
-  // 存放當前所選的飲料系列
   const drinkTypeMenu = ref('')
-  // 存放當前所選的茶類
   const drinkItem = ref<DrinkListItem | []>([])
-  // 存放當前所選的糖度
   const drinkSetSugar = ref('')
-  // 存放當前所選的冰塊
   const drinkSetIce = ref('')
-  // 存放當前所選的杯子大小
   const drinkSetSize = ref('')
-  // 存放當前所選品項的飲料數量
   const drinkCount = ref('0')
-  // 存放當前所選加料項目
   const drinkAddList = ref<DrinkAddOnOption[]>([])
-  // 存放飲料待付款的飲料資料
   const drinkNotPay = ref<CartLineItem[]>([])
-  // 計算目前小計金額
   const drinkCurrentTotal = computed(() => {
     const addListTotal = drinkAddList.value.reduce((acc, cur) => acc + Number(cur.price), 0)
     if (drinkSetSize.value === 'L杯') {
@@ -676,18 +650,14 @@ export const useDrinkStore = defineStore('drink', () => {
       return Number(fromSelection(drinkItem.value)?.priceBottle) * Number(drinkCount.value) + addListTotal * Number(drinkCount.value)
     }
   })
-  // 計算目前總金額
   const drinkTotalMoney = computed(() => {
     return (Math.round(drinkNotPay.value.reduce((acc, cur) => acc
       + cur.totalPrice, 0)) + currentBagCount.value)
   })
-  // 計算當前飲料杯數
   const currentDrinkCount = computed(() => {
     return drinkNotPay.value.length > 0 ? drinkNotPay.value.reduce((acc, cur) => acc + cur.count, 0) : 0
   })
 
-  // 判定飲料選項菜單切換後重製其他客製化內容以及所選的品項
-  // 當飲料系列改變清空已選茶類以及糖冰還有杯子大小的選項
   watch(() => drinkTypeMenu.value, () => {
     drinkItem.value = []
     drinkSetSugar.value = ''
@@ -695,40 +665,29 @@ export const useDrinkStore = defineStore('drink', () => {
     drinkSetSize.value = ''
     drinkAddList.value = []
   })
-  // 當茶類改變清空已選糖冰還有杯子大小的選項
   watch(() => drinkItem.value, () => {
     drinkSetSugar.value = ''
     drinkSetIce.value = ''
     drinkSetSize.value = ''
     drinkAddList.value = []
   })
-  // 初始化標誌
   const initialized = ref(false)
-  // 組件掛載完成後設置為 true
   onMounted(() => {
     initialized.value = true
   })
-  // D-13：原本這裡直接呼叫 ElMessageBox.alert，讓 store（狀態層）依賴
-  // UI 套件，store 因此無法脫離瀏覽器測試。改為只遞增一個計數器，UI 提示
-  // 交給實際顯示畫面的元件（home/index.vue）自己 watch 這個計數器來彈窗。
-  // initialized 這個守衛仍然保留——它防的不是「掛載前彈窗」，而是
+  // store（狀態層）不直接彈窗，只遞增計數器；UI 提示交給實際顯示畫面的
+  // 元件（home/index.vue）自己 watch 這個計數器。initialized 守衛防的是
   // pinia-plugin-persistedstate 還原持久化狀態時，drinkNotPay 被重新賦值
   // 觸發這個 watch，搶在 discountStore 也還原完成前就把它重置成 0。
   const cartClearedNotice = ref(0)
-  // P14（規劃書 §10 P0「掛單取單」）：掛單也會把 drinkNotPay 清空（把
-  // 目前的購物車搬進 Dexie 之後清掉），跟結帳後清空是同一個 watch 觸發
-  // 點，但「已掛單」跟「已無品項，套用優惠券以及加購的袋子數量已重置」
-  // 這兩句話講的是完全不同的事——掛單當下已經另外彈過「已掛單」的
-  // toast（見 components/checkout/ParkedOrdersPanel.vue），不需要這裡
-  // 再疊加一次語意不符的提示。這個旗標只抑制「彈提示」這個動作本身，
-  // 「清空袋子數量／重置優惠券」這兩件事不論是哪種原因清空都照做
-  // ——掛單之後本來就要把工作區還原成可以服務下一位客人的乾淨狀態。
+  // 掛單也會清空 drinkNotPay（購物車搬進 Dexie 之後清掉），跟結帳後清空
+  // 是同一個 watch 觸發點，但掛單當下已經另外彈過「已掛單」的 toast（見
+  // components/checkout/ParkedOrdersPanel.vue），不需要再疊加一次語意
+  // 不符的提示——這個旗標只抑制「彈提示」，清空袋子數量／重置優惠券兩件
+  // 事仍照做。
   const suppressClearedNotice = ref(false)
-  // 判定待付款清單是否清空
   watch(() => drinkNotPay.value, () => {
-    // 如果未初始化，直接返回
     if (!initialized.value) return
-    // 如果清單是空的清楚已添加的袋子以及重置套用的優惠券
     if (drinkNotPay.value.length === 0) {
       currentBagCount.value = 0
       discountStore.moneySelectingDiscountId = 0
@@ -744,14 +703,8 @@ export const useDrinkStore = defineStore('drink', () => {
     }
   })
 
-  // 購物袋相關功能
-  // 定義目前加購的袋子數量
   const currentBagCount = ref(0)
-  // 送出訂單前顧客應付總額結算
-  // 顧客應付款金額
   const drinkPayPrice = computed(() => {
-
-    // 如果有套用優惠券
     if (discountStore.moneyDiscountId != 0) {
       if (Math.round(Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value - Number(discountStore.currentMoneyDiscount)) < 0) {
         return 0
@@ -764,13 +717,11 @@ export const useDrinkStore = defineStore('drink', () => {
       return Math.round(Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value)
     }
   })
-  // 優惠券折抵額度
   const useDiscountPrice = computed(() => {
     return Math.round(drinkNotPay.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value - drinkPayPrice.value
   })
 
-  // 見上方 catalogSource 的說明：只在第一次（本機從未同步過伺服端菜單）
-  // 時套用，之後就算重新呼叫也不會再覆蓋本機資料。
+  // 見上方 catalogSource 的說明：只在第一次套用，之後不會再覆蓋本機資料。
   const hydrateCatalogFromServer = (catalog: { groups: DrinkTypeGroup[]; addOns: DrinkAddOnOption[] }) => {
     if (catalogSource.value === 'server') return
     drinkType.value = catalog.groups
