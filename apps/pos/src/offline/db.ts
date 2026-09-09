@@ -30,10 +30,7 @@ export interface ParkedOrder {
   orderChannel: OrderChannel
   /** 發票載具設定。 */
   invoiceCarrier: InvoiceCarrier
-  moneyDiscountId: FormNumeric
-  percentDiscountId: FormNumeric
-  currentMoneyDiscount: FormNumeric
-  currentPercentDiscount: FormNumeric
+  orderCouponId: FormNumeric
   currentDiscountName: string
 }
 

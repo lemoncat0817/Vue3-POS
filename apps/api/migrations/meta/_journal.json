@@ -127,6 +127,13 @@
       "when": 1788932621414,
       "tag": "0017_clever_overlord",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1788941734205,
+      "tag": "0018_milky_molly_hayes",
+      "breakpoints": true
     }
   ]
 }

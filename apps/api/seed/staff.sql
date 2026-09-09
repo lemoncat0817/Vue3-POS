@@ -9,7 +9,7 @@
 
 INSERT INTO staff (id, name, job_title, account, capabilities, pin_hash, pin_salt) VALUES (
   'staff-lemon', 'Lemon', '店長', 'lemon',
-  '["canCompItem","canOpenCashier","canCheckOrder","canEditOrderStatus","canDeleteOrder","canCheckBackgroundSetting","canSetCategory","canSetProduct","canSetAddOns","canSetMoneyDiscount","canSetPercentDiscount","canSetQuickDiscount","canCheckDataAnalysis","canCheckAuthority","canSetAuthority","canSetPayMethod","canCheckMembers","canManageTables"]',
+  '["canCompItem","canOpenCashier","canCheckOrder","canEditOrderStatus","canDeleteOrder","canCheckBackgroundSetting","canSetCategory","canSetProduct","canSetAddOns","canSetOrderCoupon","canSetQuickDiscount","canCheckDataAnalysis","canCheckAuthority","canSetAuthority","canSetPayMethod","canCheckMembers","canManageTables"]',
   '6a9d56b3fd4939c6492e2c16531a1f5b43260d0ac8dc89e11f8e365248d2dd0e',
   '53439827c69c581215c737ffa40ee650'
 );

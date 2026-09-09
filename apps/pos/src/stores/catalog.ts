@@ -175,12 +175,8 @@ export const useCatalogStore = defineStore('catalog', () => {
     if (!initialized.value) return
     if (cartLines.value.length === 0) {
       currentBagCount.value = 0
-      discountStore.moneySelectingDiscountId = 0
-      discountStore.moneyDiscountId = 0
-      discountStore.currentMoneyDiscount = 0
-      discountStore.percentDiscountId = 0
-      discountStore.currentPercentDiscount = 0
-      discountStore.percentSelectingDiscountId = 0
+      discountStore.selectingOrderCouponId = 0
+      discountStore.orderCouponId = 0
       discountStore.currentDiscountName = ''
       if (!suppressClearedNotice.value) {
         cartClearedNotice.value++
@@ -193,13 +189,11 @@ export const useCatalogStore = defineStore('catalog', () => {
   const currentBagCount = ref(0)
   const cartPayPrice = computed(() => {
     const subtotal = Math.round(cartLines.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value
-    if (discountStore.moneyDiscountId != 0) {
-      return Math.max(0, Math.round(subtotal - Number(discountStore.currentMoneyDiscount)))
-    } else if (discountStore.percentDiscountId != 0) {
-      return Math.round(subtotal * Number(discountStore.currentPercentDiscount))
-    } else {
-      return subtotal
-    }
+    const coupon = discountStore.orderCoupons.find((item) => item.id === discountStore.orderCouponId)
+    if (!coupon) return subtotal
+    return coupon.kind === 'amount'
+      ? Math.max(0, Math.round(subtotal - Number(coupon.value)))
+      : Math.max(0, Math.round(subtotal * Number(coupon.value)))
   })
   const useDiscountPrice = computed(() => {
     return Math.round(cartLines.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value - cartPayPrice.value

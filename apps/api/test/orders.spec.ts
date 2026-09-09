@@ -358,7 +358,7 @@ describe('POST /api/orders（訂單層級折價券，伺服端重算折抵金額
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify(
         buildRequest({
-          appliedCoupon: { type: 'money', couponId: 'money-1' }, // 160 - 50
+          appliedCoupon: { type: 'coupon', couponId: 'money-1' }, // 160 - 50
           tenders: [{ method: '現金', amount: 110 }],
         }),
       ),
@@ -380,7 +380,7 @@ describe('POST /api/orders（訂單層級折價券，伺服端重算折抵金額
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify(
         buildRequest({
-          appliedCoupon: { type: 'percent', couponId: 'percent-1' }, // round(160*0.95)
+          appliedCoupon: { type: 'coupon', couponId: 'percent-1' }, // round(160*0.95)
           tenders: [{ method: '現金', amount: 152 }],
         }),
       ),
@@ -402,7 +402,7 @@ describe('POST /api/orders（訂單層級折價券，伺服端重算折抵金額
       body: JSON.stringify(
         buildRequest({
           lines: [{ ...validLine, count: 1 }], // 80 元
-          appliedCoupon: { type: 'money', couponId: 'money-2' }, // 折 100 元
+          appliedCoupon: { type: 'coupon', couponId: 'money-2' }, // 折 100 元
           tenders: [{ method: '現金', amount: 0 }],
         }),
       ),
@@ -420,7 +420,7 @@ describe('POST /api/orders（訂單層級折價券，伺服端重算折抵金額
     const res = await app.request('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify(buildRequest({ appliedCoupon: { type: 'money', couponId: 'does-not-exist' } })),
+      body: JSON.stringify(buildRequest({ appliedCoupon: { type: 'coupon', couponId: 'does-not-exist' } })),
     })
     expect(res.status).toBe(400)
   })
@@ -517,7 +517,7 @@ describe('POST /api/orders（混合支付）', () => {
       body: JSON.stringify(
         buildRequest({
           lines: [{ ...validLine, count: 1 }], // 80 元
-          appliedCoupon: { type: 'money', couponId: 'money-2' }, // 折 100 元 → 應付 0
+          appliedCoupon: { type: 'coupon', couponId: 'money-2' }, // 折 100 元 → 應付 0
           tenders: [{ method: '現金', amount: 0 }],
         }),
       ),

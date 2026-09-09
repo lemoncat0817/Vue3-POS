@@ -51,20 +51,16 @@ describe('createOrderRequestSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('appliedCoupon 接受 none／money／percent 三種形狀', () => {
+  it('appliedCoupon 接受 none／coupon 兩種形狀', () => {
     expect(createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'none' } }).success).toBe(true)
     expect(
-      createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'money', couponId: 'money-1' } })
-        .success,
-    ).toBe(true)
-    expect(
-      createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'percent', couponId: 'percent-1' } })
+      createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'coupon', couponId: 'coupon-1' } })
         .success,
     ).toBe(true)
   })
 
-  it('拒絕缺少 couponId 的 money／percent 折價券', () => {
-    expect(createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'money' } }).success).toBe(
+  it('拒絕缺少 couponId 的折價券', () => {
+    expect(createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'coupon' } }).success).toBe(
       false,
     )
   })

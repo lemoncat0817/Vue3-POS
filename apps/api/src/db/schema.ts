@@ -75,18 +75,14 @@ export const addOnOptions = sqliteTable('add_on_options', {
 
 // ---------- 促銷 ----------
 
-/** 現金折價券（例如「$50折價券」），後台可自由新增／刪除。 */
-export const moneyCoupons = sqliteTable('money_coupons', {
+// 訂單折價券：整張訂單套用一張的具名折扣（例如「$50折價券」「整單95折」），
+// 後台可自由新增／刪除任意筆數。跟下面的 quickDiscounts 同形狀，取代原本
+// 拆成 money_coupons／percent_coupons 兩張表的設計。
+export const orderCoupons = sqliteTable('order_coupons', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
-  discountMoney: integer('discount_money').notNull(),
-})
-
-/** 折數折價券（例如「整單95折」），後台可自由新增／刪除。 */
-export const percentCoupons = sqliteTable('percent_coupons', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  discountPercent: real('discount_percent').notNull(),
+  kind: text('kind').$type<QuickDiscountKind>().notNull(),
+  value: real('value').notNull(),
 })
 
 // 快速折扣：點餐頁購物車可直接套用在勾選品項上的具名折扣，後台可自由新增／
@@ -360,8 +356,7 @@ export const schema = {
   modifierOptions,
   productModifierGroups,
   addOnOptions,
-  moneyCoupons,
-  percentCoupons,
+  orderCoupons,
   quickDiscounts,
   devices,
   staff,

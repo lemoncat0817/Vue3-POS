@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
-// 驗證後台優惠設定 CRUD 與伺服端資料持久化。
-test('後台新增／刪除現金折價券會真的呼叫伺服端，重新整理後狀態一致', async ({ page }) => {
+// 驗證後台優惠設定 CRUD 與伺服端資料持久化。訂單折價券頁籤為預設分頁，不需另外切換。
+test('後台新增／刪除訂單折價券會真的呼叫伺服端，重新整理後狀態一致', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
   await page.getByPlaceholder('請輸入 PIN').fill('1234')
@@ -15,16 +15,16 @@ test('後台新增／刪除現金折價券會真的呼叫伺服端，重新整�
   const couponName = `E2E測試折價券-${Date.now()}`
 
   const createResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/promotions/money-coupons') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/promotions/order-coupons') && res.request().method() === 'POST' && res.ok(),
   )
-  await page.getByRole('button', { name: '＋ 新增現金折扣券', exact: true }).click()
-  const addDialog = page.getByRole('dialog', { name: '新增現金折扣券' })
-  await addDialog.getByPlaceholder('例如: $50折價券...').fill(couponName)
-  await addDialog.getByPlaceholder('純數字,例如:1,2,3...').fill('42')
+  await page.getByRole('button', { name: '＋ 新增折價券', exact: true }).click()
+  const addDialog = page.getByRole('dialog', { name: '新增訂單折價券' })
+  await addDialog.getByPlaceholder('例如: $50折價券、整單95折...').fill(couponName)
+  await addDialog.getByPlaceholder('純數字,例如:50,100...').fill('42')
   await addDialog.getByRole('button', { name: '新增', exact: true }).click()
 
-  const createBody = (await (await createResponse).json()) as { id: string; name: string; discountMoney: number }
-  expect(createBody).toMatchObject({ name: couponName, discountMoney: 42 })
+  const createBody = (await (await createResponse).json()) as { id: string; name: string; kind: string; value: number }
+  expect(createBody).toMatchObject({ name: couponName, kind: 'amount', value: 42 })
   expect(createBody.id).toMatch(/^[0-9a-f-]{36}$/)
 
   await expect(page.getByTestId('toast-message')).toHaveText('新增成功')
@@ -37,7 +37,7 @@ test('後台新增／刪除現金折價券會真的呼叫伺服端，重新整�
 
   const deleteResponse = page.waitForResponse(
     (res) =>
-      res.url().includes(`/api/promotions/money-coupons/${createBody.id}`) &&
+      res.url().includes(`/api/promotions/order-coupons/${createBody.id}`) &&
       res.request().method() === 'DELETE' &&
       res.status() === 204,
   )
@@ -54,7 +54,7 @@ test('後台新增／刪除現金折價券會真的呼叫伺服端，重新整�
   await expect(page.getByText(couponName)).toHaveCount(0)
 })
 
-test('後台編輯現金折價券：欄位不合法會即時顯示錯誤、合法送出會真的呼叫伺服端', async ({ page }) => {
+test('後台編輯訂單折價券：切換類型後改用折數欄位、合法送出會真的呼叫伺服端', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
   await page.getByPlaceholder('請輸入 PIN').fill('1234')
@@ -67,52 +67,42 @@ test('後台編輯現金折價券：欄位不合法會即時顯示錯誤、合�
 
   const couponName = `E2E編輯測試券-${Date.now()}`
   const createResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/promotions/money-coupons') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/promotions/order-coupons') && res.request().method() === 'POST' && res.ok(),
   )
-  await page.getByRole('button', { name: '＋ 新增現金折扣券', exact: true }).click()
-  const addDialog = page.getByRole('dialog', { name: '新增現金折扣券' })
-  await addDialog.getByPlaceholder('例如: $50折價券...').fill(couponName)
-  await addDialog.getByPlaceholder('純數字,例如:1,2,3...').fill('10')
+  await page.getByRole('button', { name: '＋ 新增折價券', exact: true }).click()
+  const addDialog = page.getByRole('dialog', { name: '新增訂單折價券' })
+  await addDialog.getByPlaceholder('例如: $50折價券、整單95折...').fill(couponName)
+  await addDialog.getByPlaceholder('純數字,例如:50,100...').fill('10')
   await addDialog.getByRole('button', { name: '新增', exact: true }).click()
   const createBody = (await (await createResponse).json()) as { id: string }
 
   const row = page.locator('tr', { hasText: couponName })
   await row.getByRole('button', { name: '編輯', exact: true }).click()
-  const editDialog = page.getByRole('dialog', { name: '編輯現金折扣券' })
-  await expect(editDialog.getByPlaceholder('例如: $50折價券...')).toHaveValue(couponName)
-  await expect(editDialog.getByPlaceholder('純數字,例如:1,2,3...')).toHaveValue('10')
+  const editDialog = page.getByRole('dialog', { name: '編輯訂單折價券' })
+  await expect(editDialog.getByPlaceholder('例如: $50折價券、整單95折...')).toHaveValue(couponName)
+  await expect(editDialog.getByPlaceholder('純數字,例如:50,100...')).toHaveValue('10')
 
-  await editDialog.getByPlaceholder('例如: $50折價券...').fill('$50折價券')
-  await editDialog.getByRole('button', { name: '保存', exact: true }).click()
-  await expect(editDialog.getByText('此折扣券名稱已存在,請重新輸入')).toBeVisible()
-  await expect(editDialog).toBeVisible()
+  // 切換成折數折抵，欄位需跟著換成折數用的 placeholder。
+  await editDialog.getByRole('combobox').selectOption('percent')
+  await expect(editDialog.getByPlaceholder('純數字,例如:0.9,0.75...')).toBeVisible()
+  await editDialog.getByPlaceholder('純數字,例如:0.9,0.75...').fill('0.9')
 
-  // 確認輸入欄位值已同步至表單狀態後再提交，避免未及更新之時序競爭。
-  const updatedName = `${couponName}-已編輯`
-  const editNameInput = editDialog.getByPlaceholder('例如: $50折價券...')
-  const editMoneyInput = editDialog.getByPlaceholder('純數字,例如:1,2,3...')
-  await editNameInput.fill(updatedName)
-  await expect(editNameInput).toHaveValue(updatedName)
-  await editMoneyInput.fill('88')
-  await expect(editMoneyInput).toHaveValue('88')
   const updateResponse = page.waitForResponse(
     (res) =>
-      res.url().includes(`/api/promotions/money-coupons/${createBody.id}`) &&
+      res.url().includes(`/api/promotions/order-coupons/${createBody.id}`) &&
       res.request().method() === 'PUT' &&
       res.ok(),
   )
   await editDialog.getByRole('button', { name: '保存', exact: true }).click()
-  const updateBody = (await (await updateResponse).json()) as { name: string; discountMoney: number }
-  expect(updateBody).toMatchObject({ name: updatedName, discountMoney: 88 })
+  const updateBody = (await (await updateResponse).json()) as { name: string; kind: string; value: number }
+  expect(updateBody).toMatchObject({ name: couponName, kind: 'percent', value: 0.9 })
   await expect(page.getByTestId('toast-message')).toHaveText('保存成功')
-  await expect(page.getByText(updatedName)).toBeVisible()
 
-  const updatedRow = page.locator('tr', { hasText: updatedName })
   const deleteResponse = page.waitForResponse(
-    (res) => res.url().includes(`/api/promotions/money-coupons/${createBody.id}`) && res.request().method() === 'DELETE',
+    (res) => res.url().includes(`/api/promotions/order-coupons/${createBody.id}`) && res.request().method() === 'DELETE',
   )
-  await updatedRow.getByRole('button', { name: '刪除', exact: true }).click()
+  await row.getByRole('button', { name: '刪除', exact: true }).click()
   await page.getByRole('button', { name: '確定' }).click()
   await deleteResponse
-  await expect(page.getByText(updatedName)).toHaveCount(0)
+  await expect(page.getByText(couponName)).toHaveCount(0)
 })

@@ -277,47 +277,24 @@
 
         <ModalDialog v-model:open="dialogDiscount" title="選擇優惠券">
           <div class="mx-2 max-h-[60vh] overflow-auto">
-            <div class="flex h-[85%] items-center justify-center">
+            <p v-if="discountStore.orderCoupons.length === 0" class="py-10 text-center text-sm text-surface-400">無可用優惠券</p>
+            <div v-else class="mb-2">
               <div
-                class="h-[85%] text-surface-700 dark:text-surface-100 bg-white dark:bg-surface-800 border rounded-lg border-surface-300 dark:border-surface-700 cursor-pointer px-1"
-                :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.discountMenu === 0 }"
-                @click="changeMoneyDiscount">
-                <p class="w-full h-full text-xl font-bold">現金折扣券</p>
-              </div>
-              <div
-                class="h-[85%] text-surface-700 dark:text-surface-100 bg-white dark:bg-surface-800 border rounded-lg border-surface-300 dark:border-surface-700 cursor-pointer px-1 mx-2 "
-                :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.discountMenu === 1 }"
-                @click="changePercentDiscount">
-                <p class="w-full h-full text-xl font-bold">折數折扣券</p>
+                v-for="item in sliceOrderCoupons" :key="item.id"
+                class="h-16 mb-1.5 flex items-center justify-between gap-3 px-4 cursor-pointer bg-white dark:bg-surface-800 border rounded-xl border-surface-200 dark:border-surface-700"
+                :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.selectingOrderCouponId === item.id }"
+                @click="selectOrderCoupon(item.id)">
+                <p class="text-xl font-bold select-none">{{ item.name }}</p>
+                <span
+                  class="shrink-0 rounded-md px-2 py-0.5 text-xs font-bold"
+                  :class="item.kind === 'amount' ? 'bg-success-50 text-success-600 dark:bg-success-950/40 dark:text-success-400' : 'bg-info-50 text-info-600 dark:bg-info-950/40 dark:text-info-400'">
+                  {{ item.kind === 'amount' ? '定額' : '折數' }}
+                </span>
               </div>
             </div>
-            <div v-if="discountStore.discountMenu === 0" class="my-2">
-              <div class="mb-2">
-                <div
-                  v-for="item in sliceMoneyDiscount" :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-white dark:bg-surface-800 rounded-xl"
-                  :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.moneySelectingDiscountId === item.id }"
-                  @click="selectMoneyDiscount(item.id)">
-                  <p class="text-3xl font-bold select-none">{{ item.name }}</p>
-                </div>
-              </div>
-              <div class="flex h-10 w-full items-center justify-between rounded-lg bg-surface-100 px-3 text-sm text-surface-600">
-                <p>{{ `共 ${discountStore.moneyDiscount.length} 樣` }}</p>
-                <AppPagination :page="moneyDiscountCurrentPage" :page-count="moneyDiscountPageCount" :total="discountStore.moneyDiscount.length" @update:page="handleMoneyDiscountCurrentChange" />
-              </div>
-            </div>
-            <div v-if="discountStore.discountMenu === 1" class="my-2">
-              <div class="mb-2">
-                <div
-                  v-for="item in slicePercentDiscount" :key="item.id" class="h-16 mb-1 flex justify-center items-center cursor-pointer bg-white dark:bg-surface-800 rounded-xl"
-                  :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.percentSelectingDiscountId === item.id }"
-                  @click="selectPercentDiscount(item.id)">
-                  <p class="text-3xl font-bold select-none">{{ item.name }}</p>
-                </div>
-              </div>
-              <div class="flex h-10 w-full items-center justify-between rounded-lg bg-surface-100 px-3 text-sm text-surface-600">
-                <p>{{ `共 ${discountStore.percentDiscount.length} 樣` }}</p>
-                <AppPagination :page="percentDiscountCurrentPage" :page-count="percentDiscountPageCount" :total="discountStore.percentDiscount.length" @update:page="handlePercentDiscountCurrentChange" />
-              </div>
+            <div class="flex h-10 w-full items-center justify-between rounded-lg bg-surface-100 px-3 text-sm text-surface-600">
+              <p>{{ `共 ${discountStore.orderCoupons.length} 樣` }}</p>
+              <AppPagination :page="orderCouponCurrentPage" :page-count="orderCouponPageCount" :total="discountStore.orderCoupons.length" @update:page="handleOrderCouponCurrentChange" />
             </div>
           </div>
           <div class="mt-4 flex justify-end gap-2">
@@ -559,75 +536,33 @@ const openDiscountMenu = () => {
   if (catalogStore.cartLines.length <= 0) {
     void alert({ title: '通知', description: '待付款清單是空的無法使用優惠券', confirmText: '繼續選取' })
   } else {
-    discountStore.moneySelectingDiscountId = discountStore.moneyDiscountId
-    discountStore.percentSelectingDiscountId = discountStore.percentDiscountId
+    discountStore.selectingOrderCouponId = discountStore.orderCouponId
     dialogDiscount.value = true
   }
 }
-const changeMoneyDiscount = () => {
-  discountStore.discountMenu = 0
-  discountStore.percentSelectingDiscountId = 0
+const selectOrderCoupon = (id: FormNumeric) => {
+  discountStore.selectingOrderCouponId = discountStore.selectingOrderCouponId === id ? 0 : id
 }
-const changePercentDiscount = () => {
-  discountStore.discountMenu = 1
-  discountStore.moneySelectingDiscountId = 0
+const orderCouponCurrentPage = ref(1)
+const handleOrderCouponCurrentChange = (page: number) => {
+  orderCouponCurrentPage.value = page
 }
-const selectMoneyDiscount = (id: FormNumeric) => {
-  if (discountStore.moneySelectingDiscountId === id) {
-    discountStore.moneySelectingDiscountId = 0
-  } else {
-    discountStore.moneySelectingDiscountId = id
-  }
-}
-const moneyDiscountCurrentPage = ref(1)
-const handleMoneyDiscountCurrentChange = (page: number) => {
-  moneyDiscountCurrentPage.value = page
-}
-const sliceMoneyDiscount = computed(() => {
-  return discountStore.moneyDiscount.slice((moneyDiscountCurrentPage.value - 1) * 5, moneyDiscountCurrentPage.value * 5)
+const sliceOrderCoupons = computed(() => {
+  return discountStore.orderCoupons.slice((orderCouponCurrentPage.value - 1) * 5, orderCouponCurrentPage.value * 5)
 })
-const moneyDiscountPageCount = computed(() => Math.max(Math.ceil(discountStore.moneyDiscount.length / 5), 1))
-const selectPercentDiscount = (id: FormNumeric) => {
-  if (discountStore.percentSelectingDiscountId === id) {
-    discountStore.percentSelectingDiscountId = 0
-  } else {
-    discountStore.percentSelectingDiscountId = id
-  }
-}
-const percentDiscountCurrentPage = ref(1)
-const handlePercentDiscountCurrentChange = (page: number) => {
-  percentDiscountCurrentPage.value = page
-}
-const slicePercentDiscount = computed(() => {
-  return discountStore.percentDiscount.slice((percentDiscountCurrentPage.value - 1) * 5, percentDiscountCurrentPage.value * 5)
-})
-const percentDiscountPageCount = computed(() => Math.max(Math.ceil(discountStore.percentDiscount.length / 5), 1))
+const orderCouponPageCount = computed(() => Math.max(Math.ceil(discountStore.orderCoupons.length / 5), 1))
 const closeDiscount = () => {
   dialogDiscount.value = false
 }
 const useDiscount = () => {
-  if (discountStore.moneySelectingDiscountId != 0) {
-    discountStore.moneyDiscountId = discountStore.moneySelectingDiscountId
-    discountStore.currentMoneyDiscount = discountStore.moneyDiscount.find(item => item.id === discountStore.moneyDiscountId)!.discountMoney
-    const currentMoneyDiscountName = discountStore.moneyDiscount.find(item => item.id === discountStore.moneyDiscountId)!.name
-    discountStore.currentDiscountName = currentMoneyDiscountName
-    discountStore.percentDiscountId = 0
+  if (discountStore.selectingOrderCouponId !== 0) {
+    discountStore.orderCouponId = discountStore.selectingOrderCouponId
+    const coupon = discountStore.orderCoupons.find(item => item.id === discountStore.orderCouponId)!
+    discountStore.currentDiscountName = coupon.name
     dialogDiscount.value = false
-    showToast(`使用${currentMoneyDiscountName}成功`, 'success')
-  }
-  if (discountStore.percentSelectingDiscountId != 0) {
-    discountStore.percentDiscountId = discountStore.percentSelectingDiscountId
-    discountStore.currentPercentDiscount = discountStore.percentDiscount.find(item => item.id === discountStore.percentDiscountId)!.discountMoney
-    const currentPercentDiscountName = discountStore.percentDiscount.find(item => item.id === discountStore.percentDiscountId)!.name
-    discountStore.currentDiscountName = currentPercentDiscountName
-    discountStore.moneyDiscountId = 0
-    dialogDiscount.value = false
-    showToast(`使用${currentPercentDiscountName}成功`, 'success')
-  }
-  if (discountStore.moneySelectingDiscountId === 0 && discountStore.percentSelectingDiscountId === 0) {
-    discountStore.currentMoneyDiscount = 0
-    discountStore.moneyDiscountId = 0
-    discountStore.percentDiscountId = 0
+    showToast(`使用${coupon.name}成功`, 'success')
+  } else {
+    discountStore.orderCouponId = 0
     discountStore.currentDiscountName = ''
     dialogDiscount.value = false
     showToast('成功取消已套用的優惠券', 'success')
@@ -697,11 +632,9 @@ const submitPayment = async (tenders: TenderDraft[]) => {
   // 訂單層級折價券只送「套用了哪張」，折抵金額由伺服端重算。要在清空
   // 待付款清單（連帶重置 discountStore 選取狀態）之前先讀出目前套用的是哪一張。
   const appliedCoupon: AppliedCoupon =
-    discountStore.moneyDiscountId !== 0
-      ? { type: 'money', couponId: String(discountStore.moneyDiscountId) }
-      : discountStore.percentDiscountId !== 0
-        ? { type: 'percent', couponId: String(discountStore.percentDiscountId) }
-        : { type: 'none' }
+    discountStore.orderCouponId !== 0
+      ? { type: 'coupon', couponId: String(discountStore.orderCouponId) }
+      : { type: 'none' }
 
   // 訂單先入本機離線佇列，不管有沒有網路都會成功；SyncWorker 背景送到
   // 伺服端。這裡額外呼叫 syncNow() 只是「有網路時不用乾等下一次輪詢」，

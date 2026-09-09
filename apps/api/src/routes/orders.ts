@@ -15,14 +15,13 @@ import { priceLine, summarizeOrderRefunds, type QuickDiscount } from '@pos/domai
 import {
   addOnOptions,
   members,
-  moneyCoupons,
+  orderCoupons,
   orderLines,
   orderRefunds,
   orders,
   orderTenders,
   products,
   quickDiscounts as quickDiscountsTable,
-  percentCoupons,
 } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AnyDb } from '../db/types'
@@ -314,17 +313,13 @@ async function resolveOrderPayment(
   if (appliedCoupon.type === 'none') {
     return { orderPaymentPrice: orderTotalPrice, discountName: '無' }
   }
-  if (appliedCoupon.type === 'money') {
-    const coupon = await db.select().from(moneyCoupons).where(eq(moneyCoupons.id, appliedCoupon.couponId)).get()
-    if (!coupon) return { error: '找不到這張現金折價券' }
-    return { orderPaymentPrice: Math.max(0, orderTotalPrice - coupon.discountMoney), discountName: coupon.name }
-  }
-  const coupon = await db.select().from(percentCoupons).where(eq(percentCoupons.id, appliedCoupon.couponId)).get()
-  if (!coupon) return { error: '找不到這張折數折價券' }
-  return {
-    orderPaymentPrice: Math.max(0, Math.round(orderTotalPrice * coupon.discountPercent)),
-    discountName: coupon.name,
-  }
+  const coupon = await db.select().from(orderCoupons).where(eq(orderCoupons.id, appliedCoupon.couponId)).get()
+  if (!coupon) return { error: '找不到這張折價券' }
+  const orderPaymentPrice =
+    coupon.kind === 'amount'
+      ? Math.max(0, orderTotalPrice - coupon.value)
+      : Math.max(0, Math.round(orderTotalPrice * coupon.value))
+  return { orderPaymentPrice, discountName: coupon.name }
 }
 
 // 驗證混合支付金額總和並算出找零，不信任用戶端自己算的合計。

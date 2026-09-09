@@ -59,29 +59,17 @@ describe('buildCreateOrderRequest', () => {
     expect(a.idempotencyKey).not.toBe(b.idempotencyKey)
   })
 
-  it('appliedCoupon 原封不動送出（money／percent 兩種形狀）', () => {
-    const money = buildCreateOrderRequest({
+  it('appliedCoupon 原封不動送出', () => {
+    const coupon = buildCreateOrderRequest({
       businessDate: '20240610',
       staff: '店長 - Lemon',
       lines: [sampleLine],
       bagCount: 0,
       tenders: [{ method: '現金', amount: 80 }],
-      appliedCoupon: { type: 'money', couponId: 'money-1' },
+      appliedCoupon: { type: 'coupon', couponId: 'coupon-1' },
       orderChannel: '外帶',
       invoiceCarrier: { type: '無載具' },
     })
-    expect(money.appliedCoupon).toEqual({ type: 'money', couponId: 'money-1' })
-
-    const percent = buildCreateOrderRequest({
-      businessDate: '20240610',
-      staff: '店長 - Lemon',
-      lines: [sampleLine],
-      bagCount: 0,
-      tenders: [{ method: '現金', amount: 80 }],
-      appliedCoupon: { type: 'percent', couponId: 'percent-1' },
-      orderChannel: '外帶',
-      invoiceCarrier: { type: '無載具' },
-    })
-    expect(percent.appliedCoupon).toEqual({ type: 'percent', couponId: 'percent-1' })
+    expect(coupon.appliedCoupon).toEqual({ type: 'coupon', couponId: 'coupon-1' })
   })
 })

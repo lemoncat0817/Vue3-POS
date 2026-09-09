@@ -4,7 +4,7 @@ import { createTestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
 
 describe('GET /api/promotions', () => {
-  it('不需要裝置憑證，回傳現金／折數折價券與快速折扣清單', async () => {
+  it('不需要裝置憑證，回傳訂單折價券與快速折扣清單', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const app = createTestApp(db)
@@ -12,12 +12,10 @@ describe('GET /api/promotions', () => {
     const res = await app.request('/api/promotions')
     expect(res.status).toBe(200)
     const body = (await res.json()) as {
-      moneyCoupons: unknown[]
-      percentCoupons: unknown[]
+      orderCoupons: unknown[]
       quickDiscounts: unknown[]
     }
-    expect(body.moneyCoupons).toHaveLength(2)
-    expect(body.percentCoupons).toHaveLength(1)
+    expect(body.orderCoupons).toHaveLength(3)
     expect(body.quickDiscounts).toHaveLength(3)
   })
 
@@ -25,54 +23,54 @@ describe('GET /api/promotions', () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/promotions')
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ moneyCoupons: [], percentCoupons: [], quickDiscounts: [] })
+    expect(await res.json()).toEqual({ orderCoupons: [], quickDiscounts: [] })
   })
 })
 
-describe('POST /api/promotions/money-coupons', () => {
+describe('POST /api/promotions/order-coupons', () => {
   it('沒有裝置憑證時拒絕', async () => {
     const app = createTestApp(createTestDb())
-    const res = await app.request('/api/promotions/money-coupons', {
+    const res = await app.request('/api/promotions/order-coupons', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: '$50折價券', discountMoney: 50 }),
+      body: JSON.stringify({ name: '$50折價券', kind: 'amount', value: 50 }),
     })
     expect(res.status).toBe(401)
   })
 
   it('有裝置憑證時建立成功', async () => {
     const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
-    const res = await app.request('/api/promotions/money-coupons', {
+    const res = await app.request('/api/promotions/order-coupons', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ name: '$50折價券', discountMoney: 50 }),
+      body: JSON.stringify({ name: '$50折價券', kind: 'amount', value: 50 }),
     })
     expect(res.status).toBe(201)
-    const body = (await res.json()) as { id: string; name: string; discountMoney: number }
-    expect(body).toMatchObject({ name: '$50折價券', discountMoney: 50 })
+    const body = (await res.json()) as { id: string; name: string; kind: string; value: number }
+    expect(body).toMatchObject({ name: '$50折價券', kind: 'amount', value: 50 })
     expect(body.id).toBeTruthy()
   })
 })
 
-describe('DELETE /api/promotions/money-coupons/:id', () => {
+describe('DELETE /api/promotions/order-coupons/:id', () => {
   it('刪除存在的折價券回傳 204，之後就不在清單裡', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken } = await createTestAppWithDevice(db)
 
-    const del = await app.request('/api/promotions/money-coupons/money-1', {
+    const del = await app.request('/api/promotions/order-coupons/money-1', {
       method: 'DELETE',
       headers: { 'X-Device-Token': deviceToken },
     })
     expect(del.status).toBe(204)
 
-    const list = (await (await app.request('/api/promotions')).json()) as { moneyCoupons: Array<{ id: string }> }
-    expect(list.moneyCoupons.find((c) => c.id === 'money-1')).toBeUndefined()
+    const list = (await (await app.request('/api/promotions')).json()) as { orderCoupons: Array<{ id: string }> }
+    expect(list.orderCoupons.find((c) => c.id === 'money-1')).toBeUndefined()
   })
 
   it('刪除不存在的折價券回傳 404', async () => {
     const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
-    const res = await app.request('/api/promotions/money-coupons/does-not-exist', {
+    const res = await app.request('/api/promotions/order-coupons/does-not-exist', {
       method: 'DELETE',
       headers: { 'X-Device-Token': deviceToken },
     })
@@ -80,47 +78,45 @@ describe('DELETE /api/promotions/money-coupons/:id', () => {
   })
 })
 
-describe('PUT /api/promotions/money-coupons/:id', () => {
-  it('更新存在的折價券', async () => {
+describe('PUT /api/promotions/order-coupons/:id', () => {
+  it('更新存在的現金折價券', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken } = await createTestAppWithDevice(db)
 
-    const res = await app.request('/api/promotions/money-coupons/money-1', {
+    const res = await app.request('/api/promotions/order-coupons/money-1', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ name: '$80折價券', discountMoney: 80 }),
+      body: JSON.stringify({ name: '$80折價券', kind: 'amount', value: 80 }),
     })
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { id: string; name: string; discountMoney: number }
-    expect(body).toMatchObject({ id: 'money-1', name: '$80折價券', discountMoney: 80 })
+    const body = (await res.json()) as { id: string; name: string; kind: string; value: number }
+    expect(body).toMatchObject({ id: 'money-1', name: '$80折價券', kind: 'amount', value: 80 })
+  })
+
+  it('更新存在的折數折價券', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    const res = await app.request('/api/promotions/order-coupons/percent-1', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ name: '整單9折', kind: 'percent', value: 0.9 }),
+    })
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { id: string; name: string; kind: string; value: number }
+    expect(body).toMatchObject({ id: 'percent-1', name: '整單9折', kind: 'percent', value: 0.9 })
   })
 
   it('更新不存在的折價券回傳 404', async () => {
     const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
-    const res = await app.request('/api/promotions/money-coupons/does-not-exist', {
+    const res = await app.request('/api/promotions/order-coupons/does-not-exist', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ name: 'x', discountMoney: 1 }),
+      body: JSON.stringify({ name: 'x', kind: 'amount', value: 1 }),
     })
     expect(res.status).toBe(404)
-  })
-})
-
-describe('PUT /api/promotions/percent-coupons/:id', () => {
-  it('更新存在的折價券', async () => {
-    const db = createTestDb()
-    await seedPromotions(db)
-    const { app, deviceToken } = await createTestAppWithDevice(db)
-
-    const res = await app.request('/api/promotions/percent-coupons/percent-1', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ name: '整單9折', discountPercent: 0.9 }),
-    })
-    expect(res.status).toBe(200)
-    const body = (await res.json()) as { id: string; name: string; discountPercent: number }
-    expect(body).toMatchObject({ id: 'percent-1', name: '整單9折', discountPercent: 0.9 })
   })
 })
 

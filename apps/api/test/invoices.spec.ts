@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
-import { moneyCoupons, percentCoupons } from '../src/db/schema'
+import { orderCoupons } from '../src/db/schema'
 import { createTestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
 
@@ -40,8 +40,7 @@ describe('沒有啟用中的字軌時，送單依號碼核發失敗', () => {
     // 這裡刻意不呼叫 seedPromotions（它現在會順便建立測試用字軌，見
     // helpers/promotions.ts），單獨測「完全沒有字軌」這個狀況。
     const db = createTestDb()
-    await db.insert(moneyCoupons).values([{ id: 'money-1', name: '$50折價券', discountMoney: 50 }])
-    await db.insert(percentCoupons).values([{ id: 'percent-1', name: '整單95折', discountPercent: 0.95 }])
+    await db.insert(orderCoupons).values([{ id: 'money-1', name: '$50折價券', kind: 'amount', value: 50 }])
     const { app, deviceToken } = await createTestAppWithDevice(db)
 
     const res = await app.request('/api/orders', {

@@ -1,29 +1,26 @@
 import { z } from 'zod'
 
-// 促銷 schema：命名使用 discountPercent（0~1）區隔 discountMoney，避免舊版欄位命名混淆。
-
-/** 現金折價券（例如「$50折價券」），後台可自由新增／刪除。 */
-export const moneyCouponSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  discountMoney: z.number().int().nonnegative(),
-})
-export type MoneyCoupon = z.infer<typeof moneyCouponSchema>
-export const createMoneyCouponRequestSchema = moneyCouponSchema.omit({ id: true })
-export type CreateMoneyCouponRequest = z.infer<typeof createMoneyCouponRequestSchema>
-
-/** 折數折價券（例如「整單95折」），後台可自由新增／刪除。 */
-export const percentCouponSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  discountPercent: z.number().min(0).max(1),
-})
-export type PercentCoupon = z.infer<typeof percentCouponSchema>
-export const createPercentCouponRequestSchema = percentCouponSchema.omit({ id: true })
-export type CreatePercentCouponRequest = z.infer<typeof createPercentCouponRequestSchema>
-
 export const quickDiscountKindSchema = z.enum(['amount', 'percent'])
 export type QuickDiscountKind = z.infer<typeof quickDiscountKindSchema>
+
+/**
+ * 訂單折價券：整張訂單套用一張的具名折扣（例如「$50折價券」「整單95折」），
+ * 後台可自由新增／刪除任意筆數。`kind: 'amount'` 時 `value` 是整筆折抵的
+ * 金額；`kind: 'percent'` 時 `value` 是 0~1 的折數。跟 quickDiscountSchema
+ * 同形狀是刻意的——原本現金／折數兩種各自獨立一張表，只是同一個「具名折
+ * 扣、依 kind 決定金額或折數」概念被拆成兩份，跟快速折扣一樣統一成一張表。
+ */
+export const orderCouponSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  kind: quickDiscountKindSchema,
+  value: z.number().nonnegative(),
+})
+export type OrderCoupon = z.infer<typeof orderCouponSchema>
+export const createOrderCouponRequestSchema = orderCouponSchema.omit({ id: true })
+export type CreateOrderCouponRequest = z.infer<typeof createOrderCouponRequestSchema>
+export const updateOrderCouponRequestSchema = createOrderCouponRequestSchema
+export type UpdateOrderCouponRequest = z.infer<typeof updateOrderCouponRequestSchema>
 
 /**
  * 快速折扣：點餐頁購物車可直接套用在勾選品項上的具名折扣（例如「常客優惠」
@@ -45,8 +42,7 @@ export type UpdateQuickDiscountRequest = z.infer<typeof updateQuickDiscountReque
 
 /** GET /api/promotions 的完整回應：點餐頁一次要用到的所有促銷資料。 */
 export const promotionsResponseSchema = z.object({
-  moneyCoupons: z.array(moneyCouponSchema),
-  percentCoupons: z.array(percentCouponSchema),
+  orderCoupons: z.array(orderCouponSchema),
   quickDiscounts: z.array(quickDiscountSchema),
 })
 export type PromotionsResponse = z.infer<typeof promotionsResponseSchema>
@@ -54,7 +50,6 @@ export type PromotionsResponse = z.infer<typeof promotionsResponseSchema>
 /** 訂單套用促銷意圖：只收券 ID，實際折抵金額由伺服端查詢折價券後重算，不信任用戶端數值。 */
 export const appliedCouponSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('none') }),
-  z.object({ type: z.literal('money'), couponId: z.string().min(1) }),
-  z.object({ type: z.literal('percent'), couponId: z.string().min(1) }),
+  z.object({ type: z.literal('coupon'), couponId: z.string().min(1) }),
 ])
 export type AppliedCoupon = z.infer<typeof appliedCouponSchema>

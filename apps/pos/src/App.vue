@@ -23,7 +23,7 @@ import { useDiscountStore } from '@/stores/discount'
 import { useOrderStore } from '@/stores/order'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 import { fetchCatalog, toLocalAddOns, toLocalCategories, toLocalModifierGroups, toLocalProducts } from '@/api/catalog'
-import { fetchPromotions, toMoneyDiscounts, toPercentDiscounts, toQuickDiscounts } from '@/api/promotions'
+import { fetchPromotions, toOrderCoupons, toQuickDiscounts } from '@/api/promotions'
 import { fetchPaymentMethods } from '@/api/payment-methods'
 import { fetchStaffList } from '@/api/staff'
 import { toStaffMember } from '@/api/auth'
@@ -61,8 +61,7 @@ const { data: promotions } = useQuery({
 watch(promotions, (value) => {
   if (!value) return
   discountStore.hydratePromotionsFromServer({
-    moneyDiscount: toMoneyDiscounts(value),
-    percentDiscount: toPercentDiscounts(value),
+    orderCoupons: toOrderCoupons(value),
     quickDiscounts: toQuickDiscounts(value),
   })
 })

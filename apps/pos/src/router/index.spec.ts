@@ -10,7 +10,7 @@ import type { AuthorityKey, StaffMember } from '@/types'
 const ALL_CAPABILITIES: AuthorityKey[] = [
   'canCompItem', 'canOpenCashier', 'canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder',
   'canCheckBackgroundSetting', 'canSetCategory', 'canSetProduct', 'canSetAddOns',
-  'canSetMoneyDiscount', 'canSetPercentDiscount', 'canSetQuickDiscount',
+  'canSetOrderCoupon', 'canSetQuickDiscount',
   'canCheckDataAnalysis', 'canCheckAuthority', 'canSetAuthority', 'canSetPayMethod', 'canCheckMembers',
   'canManageTables',
 ]

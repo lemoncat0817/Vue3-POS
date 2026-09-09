@@ -10,13 +10,12 @@ describe('useDiscountStore — hydratePromotionsFromServer()', () => {
 
     expect(discountStore.promotionSource).toBe('seed')
     discountStore.hydratePromotionsFromServer({
-      moneyDiscount: [{ id: 'money-1', name: '測試折價券', discountMoney: 99 }],
-      percentDiscount: [{ id: 'percent-1', name: '測試折數', discountMoney: 0.5 }],
+      orderCoupons: [{ id: 'money-1', name: '測試折價券', kind: 'amount', value: 99 }],
       quickDiscounts: [{ id: 'quick-1', name: '測試快速折扣', kind: 'amount', value: 5 }],
     })
 
     expect(discountStore.promotionSource).toBe('server')
-    expect(discountStore.moneyDiscount).toEqual([{ id: 'money-1', name: '測試折價券', discountMoney: 99 }])
+    expect(discountStore.orderCoupons).toEqual([{ id: 'money-1', name: '測試折價券', kind: 'amount', value: 99 }])
     expect(discountStore.quickDiscounts).toEqual([{ id: 'quick-1', name: '測試快速折扣', kind: 'amount', value: 5 }])
   })
 
@@ -26,20 +25,18 @@ describe('useDiscountStore — hydratePromotionsFromServer()', () => {
     const quickDiscounts = [{ id: 'quick-1', name: '測試快速折扣', kind: 'amount' as const, value: 5 }]
 
     discountStore.hydratePromotionsFromServer({
-      moneyDiscount: [{ id: 'money-1', name: '測試折價券', discountMoney: 99 }],
-      percentDiscount: [],
+      orderCoupons: [{ id: 'money-1', name: '測試折價券', kind: 'amount', value: 99 }],
       quickDiscounts: [...quickDiscounts],
     })
     // 模擬管理員在背景設定頁新增了一張折價券。
-    discountStore.moneyDiscount.push({ id: 'money-2', name: '管理員新增的折價券', discountMoney: 1 })
+    discountStore.orderCoupons.push({ id: 'money-2', name: '管理員新增的折價券', kind: 'amount', value: 1 })
 
     discountStore.hydratePromotionsFromServer({
-      moneyDiscount: [{ id: 'money-1', name: '測試折價券（伺服端又改了名字）', discountMoney: 99 }],
-      percentDiscount: [],
+      orderCoupons: [{ id: 'money-1', name: '測試折價券（伺服端又改了名字）', kind: 'amount', value: 99 }],
       quickDiscounts: [...quickDiscounts],
     })
 
-    expect(discountStore.moneyDiscount).toHaveLength(2)
-    expect(discountStore.moneyDiscount[1]).toMatchObject({ name: '管理員新增的折價券' })
+    expect(discountStore.orderCoupons).toHaveLength(2)
+    expect(discountStore.orderCoupons[1]).toMatchObject({ name: '管理員新增的折價券' })
   })
 })

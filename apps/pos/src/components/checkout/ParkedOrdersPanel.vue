@@ -123,10 +123,7 @@ async function parkCurrent() {
     bagCount: catalogStore.currentBagCount,
     orderChannel: props.orderChannel,
     invoiceCarrier: JSON.parse(JSON.stringify(props.invoiceCarrier)),
-    moneyDiscountId: discountStore.moneyDiscountId,
-    percentDiscountId: discountStore.percentDiscountId,
-    currentMoneyDiscount: discountStore.currentMoneyDiscount,
-    currentPercentDiscount: discountStore.currentPercentDiscount,
+    orderCouponId: discountStore.orderCouponId,
     currentDiscountName: discountStore.currentDiscountName,
   })
 
@@ -154,10 +151,7 @@ async function resumeOrder(order: ParkedOrder) {
 
   catalogStore.cartLines = JSON.parse(JSON.stringify(order.lines))
   catalogStore.currentBagCount = order.bagCount
-  discountStore.moneyDiscountId = order.moneyDiscountId
-  discountStore.percentDiscountId = order.percentDiscountId
-  discountStore.currentMoneyDiscount = order.currentMoneyDiscount
-  discountStore.currentPercentDiscount = order.currentPercentDiscount
+  discountStore.orderCouponId = order.orderCouponId
   discountStore.currentDiscountName = order.currentDiscountName
   emit('update:orderChannel', order.orderChannel)
   emit('update:invoiceCarrier', order.invoiceCarrier)

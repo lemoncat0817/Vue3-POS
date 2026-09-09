@@ -1,27 +1,29 @@
 import { describe, expect, it } from 'vitest'
 import {
   appliedCouponSchema,
-  createMoneyCouponRequestSchema,
-  createPercentCouponRequestSchema,
+  createOrderCouponRequestSchema,
   createQuickDiscountRequestSchema,
-  percentCouponSchema,
+  orderCouponSchema,
   promotionsResponseSchema,
   quickDiscountSchema,
   updateQuickDiscountRequestSchema,
 } from './promotion'
 
-describe('percentCouponSchema', () => {
-  it('discountPercent 必須介於 0～1 之間', () => {
-    expect(percentCouponSchema.safeParse({ id: 'p1', name: '九折', discountPercent: 0.9 }).success).toBe(true)
-    expect(percentCouponSchema.safeParse({ id: 'p1', name: '超過100%', discountPercent: 1.5 }).success).toBe(false)
-    expect(percentCouponSchema.safeParse({ id: 'p1', name: '負數', discountPercent: -0.1 }).success).toBe(false)
+describe('orderCouponSchema', () => {
+  it('kind 只接受 amount 或 percent', () => {
+    expect(orderCouponSchema.safeParse({ id: 'c1', name: '$50折價券', kind: 'amount', value: 50 }).success).toBe(true)
+    expect(orderCouponSchema.safeParse({ id: 'c1', name: '整單9折', kind: 'percent', value: 0.9 }).success).toBe(true)
+    expect(orderCouponSchema.safeParse({ id: 'c1', name: '不合法', kind: 'ratio', value: 1 }).success).toBe(false)
+  })
+
+  it('拒絕負數的折抵值', () => {
+    expect(orderCouponSchema.safeParse({ id: 'c1', name: '負數', kind: 'amount', value: -1 }).success).toBe(false)
   })
 })
 
-describe('createMoneyCouponRequestSchema / createPercentCouponRequestSchema', () => {
+describe('createOrderCouponRequestSchema', () => {
   it('不需要（也不接受）id 欄位——由伺服端核發', () => {
-    expect(createMoneyCouponRequestSchema.safeParse({ name: '$50折價券', discountMoney: 50 }).success).toBe(true)
-    expect(createPercentCouponRequestSchema.safeParse({ name: '九折', discountPercent: 0.9 }).success).toBe(true)
+    expect(createOrderCouponRequestSchema.safeParse({ name: '$50折價券', kind: 'amount', value: 50 }).success).toBe(true)
   })
 })
 
@@ -44,14 +46,13 @@ describe('quickDiscountSchema / updateQuickDiscountRequestSchema', () => {
 })
 
 describe('promotionsResponseSchema', () => {
-  it('quickDiscounts 可以是任意筆數（含 0 筆）', () => {
+  it('orderCoupons／quickDiscounts 可以是任意筆數（含 0 筆）', () => {
     const discount = (id: string) => ({ id, name: `discount-${id}`, kind: 'amount' as const, value: 5 })
-    expect(promotionsResponseSchema.safeParse({ moneyCoupons: [], percentCoupons: [], quickDiscounts: [] }).success).toBe(true)
+    expect(promotionsResponseSchema.safeParse({ orderCoupons: [], quickDiscounts: [] }).success).toBe(true)
     expect(
       promotionsResponseSchema.safeParse({
-        moneyCoupons: [],
-        percentCoupons: [],
-        quickDiscounts: [discount('a'), discount('b'), discount('c')],
+        orderCoupons: [discount('a'), discount('b')],
+        quickDiscounts: [discount('c')],
       }).success,
     ).toBe(true)
   })
@@ -62,9 +63,9 @@ describe('appliedCouponSchema', () => {
     expect(appliedCouponSchema.safeParse({ type: 'none' }).success).toBe(true)
   })
 
-  it('type 為 money／percent 時必須有 couponId', () => {
-    expect(appliedCouponSchema.safeParse({ type: 'money', couponId: 'money-1' }).success).toBe(true)
-    expect(appliedCouponSchema.safeParse({ type: 'money' }).success).toBe(false)
+  it('type 為 coupon 時必須有 couponId', () => {
+    expect(appliedCouponSchema.safeParse({ type: 'coupon', couponId: 'c1' }).success).toBe(true)
+    expect(appliedCouponSchema.safeParse({ type: 'coupon' }).success).toBe(false)
   })
 
   it('拒絕不認得的 type', () => {
