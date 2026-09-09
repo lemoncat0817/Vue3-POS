@@ -1,10 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-/**
- * P1 迴歸驗證：確認 home/index.vue 六個折扣函式改用
- * packages/pos-domain 的 priceLine()／toggle 函式後，實際畫面上的折扣
- * 計算仍然正確（見 pricing.ts 的說明）。
- */
+// 驗證點餐環保折扣套用與取消之計算正確性。
 test('環保折扣：勾選品項後套用，小計正確扣減，取消後恢復原價', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
@@ -12,24 +8,18 @@ test('環保折扣：勾選品項後套用，小計正確扣減，取消後恢�
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
-  // 選「季節限定」系列 →「楊枝甘露2.0」（priceL 80，customized: 'none'，
-  // 不需要選糖冰或容器大小）→ 數量設為 1 → 新增到待付款清單。
   await page.getByText('季節限定', { exact: true }).click()
   await page.getByText('楊枝甘露2.0', { exact: true }).click()
   await page.getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('button', { name: '新增', exact: true }).click()
 
-  // P8：待付款清單改用純 HTML table + 原生 checkbox，取代 el-table（見
-  // views/home/index.vue 的說明），row 用 data-testid="cart-row" 定位。
   const row = page.getByTestId('cart-row').first()
   await expect(row).toContainText('80')
 
-  // 勾選該列，套用環保折扣（每杯扣 5 元）。
   await row.locator('input[type="checkbox"]').click()
   await page.getByRole('button', { name: '環保折扣' }).click()
   await expect(row.locator('td').nth(9)).toContainText('75')
 
-  // 再點一次取消，應恢復原價 80。
   await page.getByRole('button', { name: '環保折扣' }).click()
   await expect(row.locator('td').nth(9)).toContainText('80')
 })

@@ -1,9 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-/**
- * P0 示範案例：驗證 Playwright 工具鏈本身能跑起來，並涵蓋登入這條現行
- * 就存在、不依賴任何 P1 之後才有的後端或功能的路徑。
- */
+// 登入功能 E2E 測試。
 test('店長帳號可以登入並看到點餐頁面', async ({ page }) => {
   await page.goto('login')
 

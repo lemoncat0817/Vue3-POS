@@ -1,10 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-/**
- * P13 迴歸驗證（規劃書 §10 P0「內用外帶」）：點餐頁可以切換內用／外帶，
- * 預設是外帶；送出的訂單會帶上這次選擇的頻道，訂單列表頁看得到對應
- * 的欄位。這裡用真正的 wrangler dev + 本機 D1 驗證，不 mock 任何請求。
- */
+// 驗證內用／外帶通路切換、送單記錄與訂單列表顯示。
 test('切換成內用後送單，伺服端記錄的 orderChannel 是內用，訂單列表顯示內用', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
@@ -12,7 +8,6 @@ test('切換成內用後送單，伺服端記錄的 orderChannel 是內用，訂
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
-  // 預設是外帶。
   const toggle = page.getByTestId('order-channel-toggle')
   await expect(toggle.getByRole('button', { name: '外帶' })).toHaveClass(/bg-primary-600/)
 

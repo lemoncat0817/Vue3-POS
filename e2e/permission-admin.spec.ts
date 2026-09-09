@@ -1,14 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-/**
- * P18 迴歸驗證（規劃書 §10 P18「菜單與權限管理接上伺服端」）：後台
- * 「權限管理」頁的人員新增／刪除改成真的呼叫 apps/api 的員工寫入端點
- * （見 views/authorityManagement/permissionManagement/index.vue 的
- * 說明），不再只是本機 authorityManagementStore 陣列操作。這裡驗證
- * 新增一個人員（帶登入用 PIN）後，Id 是伺服端配發的字串（不是使用者
- * 手動輸入的數字），且刪除後真的從伺服端的資料也消失（重新整理仍然
- * 看不到）。
- */
+// 驗證人員管理與付款方式設定之後台 CRUD 與狀態持久化。
 test('後台新增／刪除人員會真的呼叫伺服端，重新整理後狀態一致', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
@@ -35,19 +27,16 @@ test('後台新增／刪除人員會真的呼叫伺服端，重新整理後狀�
 
   const createBody = (await (await createResponse).json()) as { id: string; name: string; account: string }
   expect(createBody).toMatchObject({ name: staffName, account: staffAccount })
-  // Id 是伺服端配發的字串（staff-<ulid>），不是使用者輸入的小整數。
   expect(typeof createBody.id).toBe('string')
   expect(createBody.id.length).toBeGreaterThan(0)
 
   await expect(page.getByTestId('toast-message')).toHaveText('新增人員成功')
   await expect(page.getByText(staffName)).toBeVisible()
 
-  // 重新整理後仍然看得到（證明是真的存在伺服端，不是只在這個分頁的記憶體裡）。
   await page.reload()
   await page.getByRole('button', { name: '權限管理', exact: true }).click()
   await expect(page.getByText(staffName)).toBeVisible()
 
-  // 清掉這筆測試資料：選取該列 → 刪除 → 確認。
   const deleteResponse = page.waitForResponse(
     (res) => res.url().includes(`/api/staff/${createBody.id}`) && res.request().method() === 'DELETE' && res.status() === 204,
   )
@@ -63,11 +52,6 @@ test('後台新增／刪除人員會真的呼叫伺服端，重新整理後狀�
   await expect(page.getByText(staffName)).toHaveCount(0)
 })
 
-/**
- * P18 迴歸驗證：付款方式的新增／刪除同樣改成真的呼叫伺服端（見
- * api/payment-methods.ts），不再只是 orderStore.paymentList 的本機
- * 陣列操作。
- */
 test('後台新增／刪除付款方式會真的呼叫伺服端，重新整理後狀態一致', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
@@ -83,7 +67,6 @@ test('後台新增／刪除付款方式會真的呼叫伺服端，重新整理�
   const createResponse = page.waitForResponse(
     (res) => res.url().includes('/api/payment-methods') && res.request().method() === 'POST' && res.ok(),
   )
-  // 付款方式區塊的「新增」按鈕是頁面上第二個「新增」按鈕（第一個是人員名單的）。
   await page.getByRole('button', { name: '新增', exact: true }).nth(1).click()
   const addDialog = page.getByRole('dialog', { name: '新增付款方式' })
   await addDialog.getByPlaceholder('例如: 現金、LinePay...').fill(methodName)

@@ -1,17 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-/**
- * P24 迴歸驗證（規劃書 §10 P24「真實硬體整合與桌況管理」）：
- *
- * - 後台可以新增桌位、切換桌況（空桌／使用中／已預約）並帶備註、
- *   刪除桌位（見 apps/api/src/routes/tables.ts）。
- * - 點餐頁選「內用」時可以輸入桌號，送單後桌號會原封不動存進訂單、
- *   訂單列表看得到——純紀錄用途，不影響桌況本身（見 @pos/contract 的
- *   createOrderRequestSchema.tableNumber 說明）。
- *
- * 這裡用真正的 wrangler dev + 本機 D1 驗證，測試結束會刪除這個測試
- * 專用的桌位，不留下需要下次執行前手動清掉的資料。
- */
+// 驗證後台桌位 CRUD、桌況備註切換，以及點餐內用桌號記錄。
 test('後台新增桌位、切換桌況並帶備註、刪除桌位', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
@@ -39,7 +28,6 @@ test('後台新增桌位、切換桌況並帶備註、刪除桌位', async ({ pa
   const card = page.getByTestId('table-card').filter({ hasText: tableNumber })
   await expect(card).toContainText('空桌')
 
-  // 帶位：切成使用中，填備註。
   await card.click()
   const statusDialog = page.getByRole('dialog', { name: `${tableNumber} 桌況` })
   await statusDialog.getByRole('button', { name: '使用中', exact: true }).click()
@@ -53,7 +41,6 @@ test('後台新增桌位、切換桌況並帶備註、刪除桌位', async ({ pa
   await expect(card).toContainText('使用中')
   await expect(card).toContainText('4 位客人，帶位 14:00')
 
-  // 刪除桌位（從桌況對話框內的刪除按鈕）。
   await card.click()
   const statusDialog2 = page.getByRole('dialog', { name: `${tableNumber} 桌況` })
   const deleteResponse = page.waitForResponse(
@@ -72,7 +59,6 @@ test('點餐頁選內用時可以輸入桌號，送單後訂單帶著這個桌�
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
-  // 預設外帶，看不到桌號輸入框。
   await expect(page.getByTestId('table-number-input')).toHaveCount(0)
 
   await page.getByTestId('order-channel-toggle').getByRole('button', { name: '內用', exact: true }).click()
@@ -95,8 +81,6 @@ test('點餐頁選內用時可以輸入桌號，送單後訂單帶著這個桌�
   const orderBody = (await (await createResponse).json()) as { orderId: string; tableNumber: string | null }
   expect(orderBody.tableNumber).toBe('B3')
 
-  // 送單後桌號輸入框應該重置回空字串，不影響下一位客人；切回外帶則整個
-  // 輸入框都收起來。
   await expect(page.getByTestId('table-number-input')).toHaveValue('')
 
   await page.getByText('查看訂單', { exact: true }).click()

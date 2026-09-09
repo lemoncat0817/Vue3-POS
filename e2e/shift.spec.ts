@@ -1,13 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-/**
- * P6 迴歸驗證（規劃書 §10 P0「班別結帳」）：開帳、記錄中途現金存入，
- * 收班時輸入實際點鈔金額，畫面即時算出的帳差要跟伺服端回應一致。
- *
- * 全店同一時間只允許一筆開帳中的班別（見 apps/api/src/routes/
- * shifts.ts 的說明），這個檔案只放一條從開帳走到收班的完整流程，
- * 避免跟其他平行執行的測試搶同一個全域資源。
- */
+// 驗證班別開帳、現金異動存入與收班結算帳差計算。
 test('開帳、中途存入現金、收班：畫面顯示的帳差與伺服端回應一致', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
@@ -18,7 +11,6 @@ test('開帳、中途存入現金、收班：畫面顯示的帳差與伺服端�
   const shiftStatus = page.getByTestId('shift-status')
   await expect(shiftStatus).toContainText('尚未開帳')
 
-  // 開帳，零用金 3000 元。
   await shiftStatus.click()
   await page.getByRole('heading', { name: '班別結帳' }).waitFor()
   await page.getByRole('spinbutton').fill('3000')
@@ -32,7 +24,6 @@ test('開帳、中途存入現金、收班：畫面顯示的帳差與伺服端�
 
   await expect(shiftStatus).toContainText('營業中')
 
-  // 中途存入 500 元現金（例如追加零錢準備金）。
   await shiftStatus.click()
   await page.getByLabel('金額').fill('500')
   await page.getByLabel('原因').fill('追加零錢準備金')
@@ -43,8 +34,6 @@ test('開帳、中途存入現金、收班：畫面顯示的帳差與伺服端�
   const movementBody = (await (await movementResponse).json()) as { cashIn: number }
   expect(movementBody.cashIn).toBe(500)
 
-  // 收班：應有現金預覽 = 3000（開帳）+ 500（存入）= 3500（此時還沒有
-  // 任何現金訂單）。輸入剛好等於預覽值，帳差應該是 0。
   await page.getByRole('button', { name: '收班', exact: true }).click()
   await expect(page.getByText('$ 3500')).toBeVisible()
 

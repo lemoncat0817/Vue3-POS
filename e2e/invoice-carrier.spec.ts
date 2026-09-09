@@ -1,16 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-/**
- * P15 迴歸驗證（規劃書 §10 P0「發票」）：點餐頁可以選擇這張訂單的發票
- * 載具（無載具／手機條碼／統一編號），送出的訂單會帶上這次選擇，
- * 伺服端一律核發發票號碼；訂單列表看得到發票號碼與載具。這裡用真正的
- * wrangler dev + 本機 D1 驗證，不 mock 任何請求。
- *
- * 發票號碼只驗證格式（2 碼大寫英文字母字軌代號＋8 碼數字），不假設
- * 固定是哪個字軌——P23（規劃書 §10 P23「電子發票平台串接」）之後
- * 字軌是後台可以新增切換的設定資料，不再是寫死的單一前綴，見
- * e2e/invoice-tracks.spec.ts。
- */
+// 驗證點餐頁發票載具設定、伺服端發票號碼核發與格式校驗。
 test('選擇手機條碼載具後送單，伺服端記錄的載具與發票號碼都正確，畫面上看得到', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
@@ -18,16 +8,13 @@ test('選擇手機條碼載具後送單，伺服端記錄的載具與發票號�
   await page.getByRole('button', { name: '登入' }).click()
   await expect(page).toHaveURL(/\/home$/)
 
-  // 預設無載具。
   await expect(page.getByTestId('invoice-carrier-button')).toHaveText('載具')
 
-  // 打開載具面板，選手機條碼，先試錯誤格式（按鈕應該停用）。
   await page.getByTestId('invoice-carrier-button').click()
   await page.getByRole('button', { name: '手機條碼', exact: true }).click()
   await page.getByPlaceholder('/ABC1234').fill('bad-format')
   await expect(page.getByTestId('confirm-invoice-carrier')).toBeDisabled()
 
-  // 改成合法格式，確認。
   await page.getByPlaceholder('/ABC1234').fill('/ABC1234')
   await page.getByTestId('confirm-invoice-carrier').click()
   await expect(page.getByTestId('invoice-carrier-button')).toHaveText('載具：手機')
@@ -53,7 +40,6 @@ test('選擇手機條碼載具後送單，伺服端記錄的載具與發票號�
   expect(createBody.invoiceNumber).toMatch(/^[A-Z]{2}\d{8}$/)
   expect(createBody.invoiceCarrier).toEqual({ type: '手機條碼', value: '/ABC1234' })
 
-  // 送單後載具應該重置回無載具，不影響下一位客人。
   await expect(page.getByTestId('invoice-carrier-button')).toHaveText('載具')
 
   await page.getByText('查看訂單', { exact: true }).click()
