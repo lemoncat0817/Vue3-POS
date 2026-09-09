@@ -6,12 +6,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import App from './App.vue'
 
-// App.vue 掛載時也會啟動離線送單佇列的背景同步（見 src/offline/），
-// 需要 IndexedDB——jsdom 沒有原生實作，用 fake-indexeddb 補上。
-
-// App.vue 掛載時會嘗試呼叫 GET /api/catalog（見 P3 的菜單同步邏輯）。
-// 單元測試環境沒有真的後端可打，這裡固定讓 fetch 失敗，驗證的重點正是
-// 「連不到伺服端時，畫面仍然照常掛載，不會因為這個背景請求失敗而壞掉」。
+// 模擬離線環境以驗證後端連線失敗時根元件仍可正常掛載。
 beforeEach(() => {
   vi.stubGlobal(
     'fetch',
@@ -22,16 +17,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/**
- * 這是 P0 階段唯一的元件測試，目的是證明 jsdom + @vue/test-utils +
- * vue-router 這套工具鏈本身可用（見重構規劃書 §11、§13）。功能切片各自
- * 的元件測試留給後續階段依實際重構內容補上，這裡不預先寫尚不存在的
- * 測試案例。
- *
- * P7（D-12）：還原上次瀏覽頁籤的邏輯已經從這個元件移到 router/index.ts
- * 的導航守衛本身（見該檔案、router/index.spec.ts），App.vue 不再自己
- * 判斷要導去哪裡，這裡只需要驗證「掛載本身能正常運作、離線也不會壞」。
- */
+// 驗證 App 根元件掛載與離線容錯。
 describe('App', () => {
   it('掛載後能正常渲染目前的路由，連不到伺服端也不影響掛載', async () => {
     const router = createRouter({
@@ -54,8 +40,7 @@ describe('App', () => {
     expect(router.currentRoute.value.path).toBe('/home')
     expect(wrapper.html()).toContain('點餐')
 
-    // 卸載時要停掉背景同步（見 App.vue 的 onUnmounted），不然 setInterval
-    // 會在這個測試結束後繼續跑。
+    // 卸載元件以停止背景計時器。
     wrapper.unmount()
   })
 })

@@ -54,10 +54,7 @@
 </template>
 
 <script setup lang="ts">
-// P12（規劃書 §10 P0「退款／作廢」）：整個 App 只掛一個實例（見
-// App.vue），跟 ConfirmDialogHost／PromptDialogHost 同一套「click.
-// capture 先記下按了哪個按鈕」模式，理由見 ConfirmDialogHost.vue 的
-// 說明。
+// 全域退款對話框（掛載於 App.vue），透過 click.capture 預先記錄操作結果
 import { computed, ref } from 'vue'
 import { DialogClose, DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } from 'reka-ui'
 import { settleRefundPrompt, useRefundPromptState } from '@/composables/useRefund'

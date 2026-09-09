@@ -60,12 +60,7 @@ type="button" :disabled="newMemberName.trim() === ''" data-testid="create-member
 </template>
 
 <script setup lang="ts">
-// P22（規劃書 §10 P22「會員與顧客經營」）：結帳當下用手機號碼查會員、
-// 把這筆訂單掛上去（見 views/home/index.vue 的 submitPayment），跟
-// InvoiceCarrierPanel.vue 是同一種「自成一個小面板、擠在主要功能區
-// 固定尺寸方格網格裡」的做法。找不到會員時可以直接在這裡建立新會員，
-// 不用先跳去後台會員管理頁——結帳當下才發現顧客不是會員，是最常見
-// 的情境，不應該打斷結帳流程去別的分頁操作。
+// 結帳當下查會員或直接建檔，避免打斷結帳流程
 import { computed, ref } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { showToast } from '@/composables/useToast'

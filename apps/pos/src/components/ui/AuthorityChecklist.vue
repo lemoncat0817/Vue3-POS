@@ -1,9 +1,6 @@
 <template>
   <div class="flex flex-col gap-2.5">
-    <!-- 角色範本快速套用（規劃書 §5.4）：選一個範本直接套用整組權限，
-         不用 18 格逐一勾選。手動再調整任何一項，下方摘要就會變成
-         「自訂」——這一列本身沒有「選取狀態」，永遠即時反映目前的
-         authorityCheckList 到底符合哪個範本。 -->
+    <!-- 角色範本快速套用列 -->
     <div class="flex flex-wrap items-center gap-1.5">
       <span class="text-[11px] font-bold text-surface-400">角色範本：</span>
       <button
@@ -24,10 +21,7 @@
       </span>
     </div>
 
-    <!-- 依父子關係分組並階層縮排，取代原本 18 個等權重欄位平鋪成
-         grid-cols-2 的作法——母權限取消時子權限自動連帶取消（見
-         utils/authority.ts 的 cascadeAuthorityCheckList），這裡用
-         disabled + 視覺淡化讓「為什麼這格關掉」看得出來。 -->
+    <!-- 依父子階層分組，母權限取消時子權限連帶取消並 disabled -->
     <div class="max-h-64 overflow-y-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-800/40 p-2.5 flex flex-col gap-2.5">
       <div v-for="group in groups" :key="group.title">
         <label
@@ -60,10 +54,6 @@
 </template>
 
 <script setup lang="ts">
-// UI-6（規劃書 §5.4「權限管理」）：從 permissionManagement/index.vue
-// 抽出來的共用元件——新增人員／編輯人員兩個對話框原本各自重複一份
-// 幾乎一樣的「18 格 checkbox 平鋪 grid-cols-2」，現在共用同一份分組
-// ＋角色範本邏輯，不會有兩份互相漂移的風險。
 import { computed } from 'vue'
 import type { AuthorityKey } from '@/types'
 import {
@@ -94,8 +84,7 @@ function toggle(key: AuthorityKey, checked: boolean) {
 }
 
 function applyRole(role: StaffRoleName) {
-  // role 一定是 STAFF_ROLE_NAMES（= Object.keys(STAFF_ROLE_PRESETS)）裡的一個，
-  // 保證查得到；noUncheckedIndexedAccess 仍會把索引結果推成 T | undefined。
+  // role 保證存在於 STAFF_ROLE_PRESETS，! 滿足 noUncheckedIndexedAccess
   emit('update:modelValue', [...STAFF_ROLE_PRESETS[role]!])
 }
 </script>

@@ -15,13 +15,7 @@
 </template>
 
 <script setup lang="ts">
-// P8：規劃書「組件庫替換」示範——取代 ElMessage，見 composables/
-// useToast.ts 的說明。整個 App 只掛一個實例（見 App.vue）。
-//
-// ToastTitle 標了 data-testid：Reka Toast 為了無障礙會另外渲染一份
-// aria-live 的隱藏播報文字（跟畫面上看到的文字內容相同），e2e 測試若用
-// getByText() 找訊息文字，會同時比對到這份隱藏文字跟畫面上這份，出現
-// strict mode violation——用 testid 精準指到畫面上這一份。
+// ToastTitle 設 data-testid 避免 e2e getByText 同步比對到 Reka aria-live 隱藏文字
 import { ToastClose, ToastProvider, ToastRoot, ToastTitle, ToastViewport } from 'reka-ui'
 import { setToastOpen, useToastState } from '@/composables/useToast'
 

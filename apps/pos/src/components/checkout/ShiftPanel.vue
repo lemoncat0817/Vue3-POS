@@ -9,7 +9,6 @@ class="flex cursor-pointer items-center gap-1" role="button" tabindex="0" data-t
   </div>
 
   <ModalDialog :open="open" title="班別結帳" @update:open="(value) => (open = value)">
-    <!-- 尚未開帳：只能開帳，不能做任何其他操作。 -->
     <div v-if="!shift" class="flex flex-col gap-3">
       <p class="text-sm text-surface-500 dark:text-surface-400">開帳零用金（找零準備金）</p>
       <input
@@ -24,7 +23,6 @@ type="button" :disabled="isSubmitting"
       </div>
     </div>
 
-    <!-- 已開帳、還沒進入收班畫面：顯示班別概況、中途現金存入／提出。 -->
     <div v-else-if="!closing" class="flex flex-col gap-3">
       <div class="grid grid-cols-2 gap-2 rounded-lg bg-surface-50 dark:bg-surface-800 p-3 text-sm text-surface-900 dark:text-surface-100">
         <div><span class="text-surface-500 dark:text-surface-400">開帳人員：</span>{{ shift.openedBy }}</div>
@@ -59,7 +57,6 @@ type="button" :disabled="isSubmitting"
       </div>
     </div>
 
-    <!-- 收班：輸入依面額點鈔算出的實際現金，即時預覽應有現金與帳差。 -->
     <div v-else-if="shift" class="flex flex-col gap-3">
       <p class="text-sm text-surface-500 dark:text-surface-400">依面額點鈔後，實際清點到的現金總額</p>
       <input v-model.number="actualCash" type="number" min="0" class="w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
@@ -87,23 +84,7 @@ type="button" :disabled="isSubmitting"
 </template>
 
 <script setup lang="ts">
-// P6（規劃書 §10 P0「班別結帳」）：取代 home/index.vue 原本 getMoment()
-// 算出的「早班／中班／晚班」這種純裝飾性文字（跟真正的營運狀態無關）
-// ——這裡的「班別」是真的有開帳零用金、中途現金異動、收班點鈔算帳差
-// 的營運概念，見 apps/api/src/routes/shifts.ts、@pos/domain 的
-// summarizeShiftCash() 說明。
-//
-// 現金銷售額（cashSales）與退款總額（refunds，P12：規劃書 §10 P0
-// 「退款／作廢」）都只有收班當下才由伺服端算出（見 shiftSchema 的
-// 說明），因此收班前的「應有現金」預覽（previewExpectedCash）沒辦法
-// 精確到那一刻——用「開帳零用金 + 存入 − 提出」當底，不含尚未結算的
-// 現金訂單金額與退款，並在畫面上以「應有現金（不含尚未結算的現金訂單）」的
-// 標籤說明這個落差，避免誤導店員以為這就是最終帳差。
-//
-// P17（視覺重構收尾）：這個元件從 P6 建立以來就沒有補上深色模式與
-// 語意色 token（success／danger），是 P11 那一輪全站重構掃描時的
-// 漏網之魚——它剛好在 P11 之前就已經存在、之後也沒有再被修改過，
-// 沒有觸發那一輪的檢查，跟 PaymentPanel.vue 是同一種情況。
+// 收班前的應有現金預覽僅計算開帳零用金與現金存入/提出，實際現金銷售與退款於收班時由伺服端結算
 import { computed, ref, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
@@ -144,10 +125,7 @@ watch(open, (isOpen) => {
   actualCash.value = previewExpectedCash.value
 })
 
-// 從「班別概況」切到「收班」畫面時，重新帶入目前的應有現金預覽——
-// 光靠上面 watch(open) 在對話框剛打開那一刻算一次是不夠的：使用者
-// 可能先記錄了幾筆中途存入／提出，才按下收班，這中間 previewExpectedCash
-// 已經變了，收班畫面的預設值要用最新的，不是對話框剛打開時的舊值。
+// 切換至收班時重新同步最新應有現金預覽
 watch(closing, (isClosing) => {
   if (isClosing) {
     actualCash.value = previewExpectedCash.value

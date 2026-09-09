@@ -49,14 +49,7 @@ type="button" :disabled="!isValid"
 </template>
 
 <script setup lang="ts">
-// P15（規劃書 §10 P0「發票」）：取代原本「載具」按鈕的假操作
-// （scanCarrier() 只彈一句「請掃描載具條碼」，見 views/home/index.vue
-// 重構前的說明）。這裡讓店員真的能選擇這張訂單要用什麼方式開立發票，
-// 送單時一併帶給伺服端（見 api/orders.ts 的 buildCreateOrderRequest）。
-//
-// 格式驗證直接重用 @pos/contract 的 invoiceCarrierSchema，不在這裡
-// 手寫第二份規則——跟這個專案「同一份驗證邏輯只存在一個地方」的一貫
-// 做法一致（見 packages/pos-contract 對應 schema 的說明）。
+// 載具格式驗證重用 @pos/contract 的 invoiceCarrierSchema
 import { computed, ref } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { invoiceCarrierSchema, type InvoiceCarrier, type InvoiceCarrierType } from '@pos/contract'
@@ -70,9 +63,6 @@ const open = ref(false)
 const draftType = ref<InvoiceCarrierType>('無載具')
 const draftValue = ref('')
 
-// 這顆按鈕跟其他主要功能鍵擠在同一個固定尺寸的方格網格裡（見
-// views/home/index.vue），空間很小，選了手機條碼／統一編號時只顯示
-// 縮寫（手機／統編），完整名稱在對話框標題跟選項按鈕上看得到。
 const triggerLabel = computed(() => {
   if (props.modelValue.type === '無載具') return '載具'
   if (props.modelValue.type === '手機條碼') return '載具：手機'
@@ -95,9 +85,7 @@ const draft = computed<InvoiceCarrier>(() =>
 )
 const validation = computed(() => invoiceCarrierSchema.safeParse(draft.value))
 const isValid = computed(() => validation.value.success)
-// 只有在使用者確實打過字之後才顯示錯誤訊息——欄位一打開、value 還是
-// 空字串就顯示「格式錯誤」，對還沒開始輸入的人沒有意義，只會讓人以為
-// 系統本身壞了。
+// 避免輸入前即顯示格式錯誤
 const errorMessage = computed(() => {
   if (validation.value.success || draftType.value === '無載具' || draftValue.value === '') return null
   return validation.value.error.issues[0]?.message ?? '格式錯誤'

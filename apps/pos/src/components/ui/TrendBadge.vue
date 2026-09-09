@@ -11,9 +11,7 @@
 </template>
 
 <script setup lang="ts">
-// UI-7（規劃書 §5.3「數據分析」）：KPI 卡「vs 前期」比較的共用徽章。
-// trend 為 null 代表沒有前期資料可比（例如前期營業額是 0，除以 0 沒
-// 意義），這時什麼都不畫，不是硬湊一個 0% 或 Infinity%。
+// trend 為 null 時不繪製徽章（無前期資料可比）
 import { ArrowDown, ArrowUp } from 'lucide-vue-next'
 
 defineProps<{ trend: { pct: number; up: boolean } | null }>()

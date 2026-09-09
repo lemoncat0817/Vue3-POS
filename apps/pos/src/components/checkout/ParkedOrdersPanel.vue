@@ -59,11 +59,7 @@ type="button"
 </template>
 
 <script setup lang="ts">
-// P14（規劃書 §10 P0「掛單取單」）：讓店員把還沒送出的購物車暫存
-// 起來、先服務下一位客人，稍後再取單繼續——這個專案原本沒有這個
-// 概念，客人多的時候只能被迫按順序處理，或是靠腦袋記著上一位點到
-// 哪裡。掛單只存在本機（見 offline/db.ts 的 ParkedOrder 說明），不
-// 是一筆真正的訂單，不會出現在訂單列表，也不會佔用訂單序號。
+// 掛單僅暫存於本機 Dexie，不佔用伺服端訂單序號
 import { nextTick, ref, watch } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { useDrinkStore } from '@/stores/drink'
@@ -114,27 +110,8 @@ function formatTime(createdAt: number) {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
-// 掛起目前訂單：把購物車、袋子數量、套用中的優惠券（見 stores/
-// discount.ts 對應欄位的說明）連同備註存進 Dexie，再清空購物車——
-// 清空這件事本身會觸發 drink.ts 的 cartClearedNotice watch（重置
-// 袋子數量、優惠券選取狀態），這裡用 suppressClearedNotice 抑制那個
-// watch 原本會彈的「已無品項」提示，改成下面自己的「已掛單」toast，
-// 見 stores/drink.ts 的說明。
-//
-// suppressClearedNotice 設回 false 之前一定要 await nextTick()：Vue
-// 的 watch() 預設是 pre-flush（排進微任務佇列、不是同步執行），如果
-// 直接同步「設 true → 清空 drinkNotPay → 設 false」，drink.ts 那個
-// watch 實際跑的時候看到的已經是 false（三行同步程式碼跑完，微任務
-// 才輪到），等於完全沒抑制到，alert() 還是會跳出來——而且會用
-// AlertDialog 蓋掉目前這個 ModalDialog（兩個 Reka 對話框的 hideOthers
-// 互相干擾，導致這個對話框整個被標記 aria-hidden，畫面上看不出來但
-// 所有互動都會被判定為「隱藏元素」而找不到，是實際踩過的 bug）。
-//
-// drinkNotPay 是 Pinia（Vue reactivity）的 reactive proxy，直接對它
-// 呼叫 structuredClone() 會丟 DataCloneError（reactive proxy 本身不是
-// structured-clone 演算法認得的型別）——這裡的品項全部是計價引擎已經
-// 算好的純資料（數字／字串／陣列，見 CartLineItem 的定義），用
-// JSON 序列化一輪繞過這個限制即可，不需要真正的 structuredClone。
+// 透過 nextTick 確保 Pinia watch 在微任務執行前維持 suppressClearedNotice；
+// reactive proxy 無法直接 structuredClone，故用 JSON 序列化複製純資料
 async function parkCurrent() {
   if (drinkStore.drinkNotPay.length === 0) return
 
@@ -145,9 +122,6 @@ async function parkCurrent() {
     lines: JSON.parse(JSON.stringify(drinkStore.drinkNotPay)),
     bagCount: drinkStore.currentBagCount,
     orderChannel: props.orderChannel,
-    // props.invoiceCarrier 是 ref<object> 的值，一樣是 reactive proxy
-    // ——跟 drinkNotPay 同一個 DataCloneError 陷阱（見上面的說明），一併
-    // 用 JSON 序列化繞過。
     invoiceCarrier: JSON.parse(JSON.stringify(props.invoiceCarrier)),
     moneyDiscountId: discountStore.moneyDiscountId,
     percentDiscountId: discountStore.percentDiscountId,
@@ -165,9 +139,7 @@ async function parkCurrent() {
   showToast('已掛單', 'success')
 }
 
-// 取單：如果目前購物車還有品項，先確認是否要覆蓋——真的覆蓋掉還沒
-// 送出的品項是不可逆的，值得跟結帳／作廢一樣的確認框（見
-// composables/useConfirm.ts 的 danger variant 說明）。
+// 取單前若待付款清單已有品項需確認覆蓋
 async function resumeOrder(order: ParkedOrder) {
   if (drinkStore.drinkNotPay.length > 0) {
     const result = await confirm({
@@ -180,9 +152,6 @@ async function resumeOrder(order: ParkedOrder) {
     if (result !== 'confirm') return
   }
 
-  // order.lines 是從 Dexie 讀回來的資料，本身不是 reactive proxy，
-  // structuredClone() 在這個方向不會有上面說的問題；這裡仍然用同一種
-  // 方式複製只是保持兩個方向的寫法一致，不是必要的防禦。
   drinkStore.drinkNotPay = JSON.parse(JSON.stringify(order.lines))
   drinkStore.currentBagCount = order.bagCount
   discountStore.moneyDiscountId = order.moneyDiscountId

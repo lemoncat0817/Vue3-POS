@@ -42,12 +42,7 @@
 </template>
 
 <script setup lang="ts">
-// P12（規劃書 §10 P0「退款／作廢」）：取代 `window.prompt()`，見
-// composables/usePrompt.ts 的說明。整個 App 只掛一個實例（見
-// App.vue），呼叫端不用各自管理開關狀態——跟 ConfirmDialogHost.vue
-// 同一套模式，包含「用 click.capture 在同一個事件裡先記下按了哪個
-// 按鈕，onOpenChange 只負責讀這個結果」這個避免競態的做法（見
-// ConfirmDialogHost.vue 的說明，這裡是同一個問題、同一種解法）。
+// click.capture 捕獲點擊的按鈕結果，避免與 onOpenChange 關閉順序產生競態
 import { ref } from 'vue'
 import { DialogClose, DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } from 'reka-ui'
 import { settlePrompt, usePromptState } from '@/composables/usePrompt'

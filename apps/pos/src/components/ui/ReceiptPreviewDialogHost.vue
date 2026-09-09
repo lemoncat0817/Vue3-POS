@@ -1,7 +1,6 @@
 <template>
   <ModalDialog :open="state.open" title="收據預覽" @update:open="onOpenChange">
     <div v-if="state.order" class="flex flex-col gap-4">
-      <!-- 收據本體：只有這個區塊會被印出來，見下方 @media print 的說明。 -->
       <div class="receipt-print-area rounded-xl border border-dashed border-surface-300 bg-white p-4 font-mono text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-100">
         <div class="text-center">
           <p class="text-lg font-bold">POS 系統</p>
@@ -79,11 +78,7 @@ type="button"
 </template>
 
 <script setup lang="ts">
-// P16（規劃書 §10 P0「周邊模擬」）：這個專案原本「開收銀機」按鈕
-// （見 views/home/index.vue 的 openCashier）只彈一句話，沒有真的
-// 模擬任何周邊裝置的實際用途——收據要能真的印出來給客人，才是這個
-// 專案缺的那一半。全 App 只掛一個實例，跟 ConfirmDialogHost／
-// ToastHost 同一套模式，見 composables/useReceiptPreview.ts 的說明。
+// 全域收據預覽與列印視窗（掛載於 App.vue）
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { closeReceipt, useReceiptPreviewState } from '@/composables/useReceiptPreview'
 
@@ -93,10 +88,6 @@ function onOpenChange(value: boolean) {
   if (!value) closeReceipt()
 }
 
-// window.print() 是瀏覽器內建能力，出單機（熱感應印表機）在作業系統
-// 層級就是一台印表機，這裡不需要（也不可能在純網頁環境下）另外寫一套
-// 假的印表機驅動模擬——叫出系統列印對話框本身就是跟真正周邊裝置互動
-// 的正確方式。下面的 @media print 只印出收據本體，不印整個網頁介面。
 function print() {
   window.print()
 }

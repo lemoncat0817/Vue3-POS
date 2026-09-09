@@ -18,11 +18,7 @@
 </template>
 
 <script setup lang="ts">
-// P8：規劃書「組件庫替換」示範——VeeValidate 的欄位共用元件。原本
-// backgroundSetting/offerSetting 每個表單欄位的合法性都是送出當下才
-// 用一連串 if/else + ElMessage.error() 逐條檢查（只回報第一個不合法
-// 的規則），改成 VeeValidate + Zod（見 offerSetting/index.vue 的
-// schema 定義），錯誤即時顯示在欄位下方，送出時一次驗證所有欄位。
+// VeeValidate 表單欄位元件，提供即時錯誤提示
 import { useField } from 'vee-validate'
 
 const props = defineProps<{

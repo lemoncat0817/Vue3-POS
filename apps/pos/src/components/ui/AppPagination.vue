@@ -21,10 +21,7 @@
 </template>
 
 <script setup lang="ts">
-// UI-2（規劃書 §4.2「共用元件清單」）：8 份手刻分頁器——三種不同尺寸、
-// 三種 disabled 樣式、兩種資訊排列順序——收斂成這一個元件。呼叫端只
-// 需要提供目前頁數、總頁數、總筆數（total 只用來決定「筆數為 0 時
-// 顯示第 0 頁而不是第 1 頁」，是既有各頁面都有的邊界情況）。
+// 通用分頁元件；total 為 0 時頁碼顯示第 0 頁
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 defineProps<{ page: number; pageCount: number; total: number }>()

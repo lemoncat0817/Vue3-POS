@@ -55,10 +55,7 @@
 </template>
 
 <script setup lang="ts">
-// P19（規劃書 §10 P19「退款／作廢主管二次授權」）：整個 App 只掛一個
-// 實例（見 App.vue），跟 RefundDialogHost／PromptDialogHost 同一套
-// 「click.capture 先記下按了哪個按鈕」模式，理由見 ConfirmDialogHost.
-// vue 的說明。
+// 全域主管授權對話框（掛載於 App.vue），透過 click.capture 預先記錄操作結果
 import { computed, ref } from 'vue'
 import { DialogClose, DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } from 'reka-ui'
 import { settleManagerAuth, useManagerAuthState } from '@/composables/useManagerAuth'

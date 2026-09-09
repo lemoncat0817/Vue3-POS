@@ -37,11 +37,7 @@ type="button" class="text-xs font-bold text-danger-600 hover:text-danger-700 dar
         </div>
       </div>
 
-      <!-- 新增一筆支付：選方式、輸入分擔金額，現金另外可填實收金額算找零。 -->
-      <!-- remaining 為 0 但還沒加過任何 tender：應付金額本來就是 0（例如
-           折價券折到 0 元）的訂單，仍需要加一筆 amount:0 的 tender 才能
-           結案（見 @pos/contract 的 tenderInputSchema 說明），這裡不能
-           因為「已經付清」就直接把新增區塊藏起來。 -->
+      <!-- 應付 0 元訂單仍需加入一筆 amount: 0 的支付記錄以完成結案 -->
       <div v-if="remaining > 0 || tenders.length === 0" class="flex flex-col gap-2 rounded-lg border border-surface-200 dark:border-surface-700 p-3">
         <p class="text-xs font-bold text-surface-500 dark:text-surface-400">新增支付方式</p>
         <div class="flex flex-wrap gap-1">
@@ -87,23 +83,7 @@ type="button" :disabled="remaining > 0 || tenders.length === 0"
 </template>
 
 <script setup lang="ts">
-// P6：規劃書 §10 P0「混合支付」的結帳面板——取代原本「選一種付款方式
-// →彈出一次性確認框」的單一支付流程。這裡讓操作員可以加入多筆支付
-// （例如現金 60 元＋信用卡 100 元付一筆 160 元的單），現金支付可以另外
-// 填「實收金額」讓面板即時算出找零，實收與分擔金額分開輸入（見
-// @pos/contract 的 tenderInputSchema 說明：amount 是這筆支付分擔多少
-// 應付金額，receivedAmount 是客人實際給了多少，兩者不是同一件事）。
-//
-// 這個元件只管「湊出一組合法的 tenders」，實際送單（呼叫
-// buildCreateOrderRequest／enqueueOrder）留在 views/home/index.vue，
-// 面板本身不知道訂單的其他細節（品項、折扣），保持職責單一。
-//
-// P17（視覺重構收尾）：這個元件從 P6／P9 建立以來就沒有補上深色模式
-// 與語意色 token（success／danger），是 P11 那一輪全站重構掃描時的
-// 漏網之魚——它是結帳流程裡最常用的對話框，卻剛好在 P11 之前就已經
-// 存在、之後也沒有再被修改過，沒有觸發那一輪的檢查。找零／移除支付
-// 兩處原本直接寫死綠色／紅色的原生色階，改用語意色 token，跟
-// order/index.vue 等其他頁面一致。
+// 支援多筆支付方式分擔付款；元件僅負責蒐集合法 tenders，實際送單由呼叫端處理
 import { computed, ref, watch } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import type { PaymentMethod } from '@/types'
@@ -132,8 +112,7 @@ const draftReceivedAmount = ref<number | undefined>(undefined)
 
 const tenderedAmount = computed(() => tenders.value.reduce((sum, tender) => sum + tender.amount, 0))
 const remaining = computed(() => Math.max(0, props.dueAmount - tenderedAmount.value))
-// 找零只在剛好付清（remaining 為 0）時才有意義顯示——尚未付清前，
-// 提早顯示現金 tender 的找零容易被誤讀成「已經找過的零錢」。
+// 找零僅在已付清（remaining 為 0）時顯示，避免未付清前誤讀
 const changeDue = computed(() =>
   tenders.value.reduce((sum, tender) => sum + ((tender.receivedAmount ?? tender.amount) - tender.amount), 0),
 )
@@ -173,8 +152,6 @@ function submit() {
   emit('submit', tenders.value)
 }
 
-// 每次面板重新打開（例如上一筆訂單送出後，下一筆又點了付款）都要是
-// 全新的一組 tenders，不能延續上一筆訂單殘留的加入紀錄。
 watch(
   () => props.open,
   (isOpen) => {

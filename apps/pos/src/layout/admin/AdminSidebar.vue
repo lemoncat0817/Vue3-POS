@@ -2,7 +2,6 @@
   <aside
     class="flex h-screen shrink-0 flex-col border-r border-surface-200 bg-white transition-[width] duration-200 dark:border-surface-800 dark:bg-surface-900"
     :class="collapsed ? 'w-16' : 'w-56'">
-    <!-- 品牌識別 -->
     <div class="flex h-16 shrink-0 items-center gap-2.5 border-b border-surface-200 px-4 dark:border-surface-800">
       <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-xs font-black text-white">
         P
@@ -13,8 +12,6 @@
       </div>
     </div>
 
-    <!-- 導覽項目：跟點餐首頁頂部列共用同一份 navItems／changePage（見
-         composables/useAppShell.ts），只是這裡畫成縱向側邊欄。 -->
     <nav class="flex flex-1 flex-col gap-1 overflow-y-auto p-2">
       <button
         v-for="item in navItems" :key="item.path" type="button"
@@ -32,7 +29,6 @@
       </button>
     </nav>
 
-    <!-- 收合切換：狀態存 localStorage，重新整理後維持上次的收合狀態。 -->
     <div class="shrink-0 border-t border-surface-200 p-2 dark:border-surface-800">
       <button
         type="button"
@@ -49,12 +45,6 @@
 </template>
 
 <script setup lang="ts">
-// UI-3（規劃書 §4.1「後台 Shell」）：訂單／後台設定／數據分析／權限
-// 管理／會員管理／桌況管理這六個後台頁面共用的左側導覽——取代原本
-// 跟點餐首頁擠在同一條 64px 高頂部列的水平導覽（規劃書 §3.1：『三層
-// 導覽都擠在頂部列，1366px 寬度下會開始擠壓』）。點餐首頁（觸控主
-// 戰場，需要全寬）維持原本的頂部列，不套用這個側邊欄，見
-// layout/header/index.vue、router/routes.ts 的說明。
 import { ref, watch } from 'vue'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
 import { navItems, useAppShell } from '@/composables/useAppShell'
@@ -67,9 +57,7 @@ watch(collapsed, (value) => {
   try {
     localStorage.setItem(STORAGE_KEY, String(value))
   } catch {
-    // 私密瀏覽模式或使用者關閉了網站資料存取權限時，localStorage 可能
-    // 整個不可用——收合狀態只是體驗細節，存不了就記憶體內維持這一次
-    // session，不影響側邊欄本身正常運作。
+    // localStorage 不可用時（如無痕模式）維持 session 內狀態
   }
 })
 </script>

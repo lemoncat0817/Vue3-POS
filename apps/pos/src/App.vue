@@ -1,10 +1,5 @@
 <template>
   <RouterView />
-  <!-- P8：組件庫替換——確認框／提示訊息（Reka UI），全 App 只掛一個
-       實例，見 components/ui/ 的說明；已取代所有頁面原本的
-       ElMessage／ElMessageBox。P12：退款／作廢新增的文字輸入框、
-       退款金額框，同樣是全 App 單例。P19：退款／作廢主管二次授權
-       （帳號＋PIN）的對話框，同一套單例模式。 -->
   <ConfirmDialogHost />
   <ToastHost />
   <PromptDialogHost />
@@ -33,25 +28,11 @@ import { fetchPaymentMethods } from '@/api/payment-methods'
 import { fetchStaffList } from '@/api/staff'
 import { toStaffMember } from '@/api/auth'
 import { useOrderSync } from '@/offline/useOrderSync'
-// P11（規劃書 §12「深色模式」）：在根元件匯入一次即可——useTheme.ts
-// 的 watchEffect 是模組層級的副作用，只要這個模組被 import 過一次就會
-// 開始套用 class，不需要在模板裡用到回傳值。App.vue 一定會是第一個
-// 掛載的元件（不管使用者落在登入頁或已登入的任何頁面），這裡匯入能
-// 保證「畫面出現的第一刻」就是正確的主題，不會先閃一下淺色再切換。
+// 根元件匯入以提早套用深色模式 class，避免主題閃爍。
 import { useTheme } from '@/composables/useTheme'
 useTheme()
 
-// D-07／D-12 修復：還原上次瀏覽頁籤原本是這裡的 onMounted 副作用，靠
-// App.vue 一定會掛載這件事來保證會執行。P7 把這段邏輯改成直接掛在
-// router.beforeEach 本身（見 router/index.ts）——導航守衛本來就保證
-//「每一次導航都會跑」，比「根元件的 onMounted」更直接、也不用再繞經
-// pageStore 這個中介狀態去手動同步 vue-router 自己已經知道的路由。
-
-// P3：App.vue 是根元件，一定會掛載，適合當成「啟動時嘗試同步一次菜單」
-// 的單一進入點（GET /api/catalog 不需要登入即可呼叫）。staleTime:
-// Infinity + retry: 1——連不到伺服端（離線、還沒部署後端）時不用一直重
-// 試干擾使用者，失敗就直接留著 drinkStore 既有的資料（種子資料或上次
-// 同步過的本機資料，見 stores/drink.ts 的 catalogSource 說明）。
+// 應用啟動時一次性同步菜單目錄（離線或失敗時保留本機資料）。
 const drinkStore = useDrinkStore()
 const { data: catalog } = useQuery({
   queryKey: ['catalog'],
@@ -67,8 +48,7 @@ watch(catalog, (value) => {
   })
 })
 
-// P5：促銷資料（現金／折數折價券、常用折扣）同步，跟菜單同步採同一套
-// 邏輯（見 stores/discount.ts 的 promotionSource 說明）。
+// 應用啟動時一次性同步促銷資料。
 const discountStore = useDiscountStore()
 const { data: promotions } = useQuery({
   queryKey: ['promotions'],
@@ -85,8 +65,7 @@ watch(promotions, (value) => {
   })
 })
 
-// P18：付款方式清單同步，跟菜單／促銷同步採同一套邏輯（見
-// stores/order.ts 的 paymentSource 說明）。
+// 應用啟動時一次性同步付款方式清單。
 const orderStore = useOrderStore()
 const { data: paymentMethods } = useQuery({
   queryKey: ['payment-methods'],
@@ -99,12 +78,7 @@ watch(paymentMethods, (value) => {
   orderStore.hydratePaymentMethodsFromServer(value)
 })
 
-// P18：人員名單同步，跟菜單／促銷／付款方式同步採同一套邏輯（見
-// stores/authorityManagement.ts 的 staffSource 說明）——這裡改用
-// App.vue 啟動時就同步一次，取代原本在 permissionManagement/index.vue
-// 掛載時整包覆蓋 staffList 的做法：那個做法在使用者剛進頁面就送出
-// 新增／編輯表單時，可能被稍後才 resolve 的舊資料蓋掉剛做的異動
-// （見 authorityManagement.ts 的完整說明）。
+// 應用啟動時一次性同步人員名單。
 const authorityManagementStore = useAuthorityManagementStore()
 const { data: staffListResponse } = useQuery({
   queryKey: ['staff'],
@@ -117,9 +91,7 @@ watch(staffListResponse, (value) => {
   authorityManagementStore.hydrateStaffFromServer(value.map(toStaffMember))
 })
 
-// P3：離線送單佇列的背景同步（見 src/offline/sync-worker.ts）。App.vue
-// 是根元件，一定會掛載，適合當成常駐同步的啟動點，不綁定在點餐頁——
-// 就算使用者切到訂單列表或後台頁，佇列裡等待中的訂單也要繼續同步。
+// 根元件常駐啟動離線送單背景同步 worker。
 const orderSync = useOrderSync()
 onMounted(() => {
   orderSync.start()
