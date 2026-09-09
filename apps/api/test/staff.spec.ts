@@ -33,7 +33,7 @@ describe('GET /api/staff', () => {
   })
 })
 
-describe('POST /api/staff（權限拒絕案例，見重構規劃書 §14 P2 退出條件）', () => {
+describe('POST /api/staff（權限拒絕案例）', () => {
   it('沒有帶裝置憑證標頭時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/staff', {
@@ -92,7 +92,7 @@ describe('POST /api/staff（權限拒絕案例，見重構規劃書 §14 P2 退�
   })
 })
 
-describe('PUT /api/staff/:id（P18：規劃書 §10 P18「菜單與權限管理接上伺服端」）', () => {
+describe('PUT /api/staff/:id', () => {
   it('沒有帶裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/staff/does-not-exist', {

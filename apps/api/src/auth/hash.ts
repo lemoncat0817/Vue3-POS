@@ -1,15 +1,6 @@
 /**
- * 密鑰雜湊工具（P4：裝置憑證＋操作員 PIN 授權包）。
- *
- * 用 Web Crypto 的 PBKDF2-SHA256（Workers runtime 原生支援，底層是
- * BoringSSL，不是 JS 直譯迴圈，即使跑 10 萬次疊代也遠低於 Workers 免費
- * 額度的 CPU 時間限制），取代 P0～P3 一路沿用至今、apps/pos 前端明碼
- * 儲存密碼＋明碼比對的做法（見 stores/authorityManagement.ts 的說明）。
- * 裝置憑證與操作員 PIN 都只存這裡算出來的雜湊值＋鹽，原始明碼只在
- * 驗證的當下經手，不落地。
- *
- * 疊代次數選 100,000（OWASP 對 PBKDF2-SHA256 的建議下限），如果之後
- * 量測到免費額度的 CPU 時間吃緊，這是唯一需要調整的常數。
+ * 密鑰雜湊工具。採用 Web Crypto 原生 PBKDF2-SHA256（10 萬次疊代）處理裝置憑證與 PIN，
+ * 僅儲存雜湊值與鹽值，明碼不落地。
  */
 const PBKDF2_ITERATIONS = 100_000
 const HASH_BYTE_LENGTH = 32

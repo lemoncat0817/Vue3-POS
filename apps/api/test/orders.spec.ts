@@ -25,10 +25,7 @@ const validLine = {
   oftenUseDiscount3: false,
 }
 
-// 預設品項（validLine，2 杯 80 元）在沒有任何折扣／折價券時應付 160 元
-// ——buildRequest() 沒有另外指定 tenders 的測試都假設這個金額，改動
-// lines 或 appliedCoupon 而不跟著調整 tenders 的測試，見各自呼叫處
-// 另外指定的 tenders override。
+// validLine（2 杯 80 元）預設應付 160 元，更動 lines 或 coupon 時需同步指定 tenders。
 function buildRequest(overrides: Record<string, unknown> = {}) {
   return {
     idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
@@ -44,7 +41,7 @@ function buildRequest(overrides: Record<string, unknown> = {}) {
   }
 }
 
-describe('POST /api/orders（裝置憑證檢查，見 P4）', () => {
+describe('POST /api/orders（裝置憑證檢查）', () => {
   it('沒有帶裝置憑證標頭時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/orders', {
@@ -80,7 +77,7 @@ describe('POST /api/orders', () => {
     expect(body.orderId).toBe('202406101')
   })
 
-  it('orderChannel 原封不動存回並回傳（P13：規劃書 §10 P0「內用外帶」）', async () => {
+  it('orderChannel 原封不動存回並回傳', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken } = await createTestAppWithDevice(db)
@@ -97,7 +94,7 @@ describe('POST /api/orders', () => {
     expect(list.find((o: { orderId: string }) => o.orderId === body.orderId).orderChannel).toBe('內用')
   })
 
-  it('內用桌號原封不動存回並回傳，純紀錄用途（P24：規劃書 §10 P24「真實硬體整合與桌況管理」）', async () => {
+  it('內用桌號原封不動存回並回傳，純紀錄用途', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken } = await createTestAppWithDevice(db)
@@ -137,7 +134,7 @@ describe('POST /api/orders', () => {
     expect(res.status).toBe(400)
   })
 
-  it('每一筆訂單都會核發發票號碼，連續建立的訂單編號依序遞增（P15：規劃書 §10 P0「發票」）', async () => {
+  it('每一筆訂單都會核發發票號碼，連續建立的訂單編號依序遞增', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken } = await createTestAppWithDevice(db)
@@ -213,7 +210,7 @@ describe('POST /api/orders', () => {
     expect(body2.orderId).toBe('202406102')
   })
 
-  it('多筆訂單同時送出時，每筆都核發到不同的序號（P6：多終端情境，不會撞號）', async () => {
+  it('多筆訂單同時送出時，每筆都核發到不同的序號', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken } = await createTestAppWithDevice(db)
@@ -225,13 +222,6 @@ describe('POST /api/orders', () => {
       '01ARZ3NDEKTSV4RRFFQ69G5FA4',
       '01ARZ3NDEKTSV4RRFFQ69G5FA5',
     ]
-    // 用 Promise.all 同時送出——模擬多台終端幾乎同時送單。實測過這裡
-    // 用 better-sqlite3 的測試環境不一定能穩定重現舊版「查同一營業日
-    // 已有幾筆訂單、+1」的撞號 bug（better-sqlite3 是同步呼叫，這個
-    // 測試環境下的 await 交錯時機跟真正兩個獨立網路請求打進 Workers
-    // runtime 不完全一樣）；這裡當基本正確性檢查，實際撞號情境已經用
-    // wrangler dev 對本機 D1 手動送過真正並發的請求驗證過（見
-    // apps/api/README.md）。
     const responses = await Promise.all(
       idempotencyKeys.map((idempotencyKey) =>
         app.request('/api/orders', {
@@ -273,7 +263,8 @@ describe('POST /api/orders', () => {
     expect(list).toHaveLength(1)
   })
 
-  it('拒絕不合法的請求（Zod 驗證失敗，例如空的品項清單）', async () => {
+
+  it('lines 是空陣列時回傳 400', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken } = await createTestAppWithDevice(db)
@@ -286,7 +277,7 @@ describe('POST /api/orders', () => {
   })
 })
 
-describe('POST /api/orders（P20：規劃書 §10 P20「基礎庫存管理」，送單成功後扣庫存）', () => {
+describe('POST /api/orders（送單成功後扣庫存）', () => {
   it('品項與配料的庫存不是 null 時，送單成功後依數量扣減，扣到 0 就不再往下扣', async () => {
     const db = createTestDb()
     await seedPromotions(db)
@@ -298,15 +289,13 @@ describe('POST /api/orders（P20：規劃書 §10 P20「基礎庫存管理」，
     ])
     await db.insert(addOnOptions).values([{ id: 'a1', name: '珍珠', price: 10, stock: 1 }])
 
-    // 一次送 2 杯，帶 1 份珍珠——品項庫存 3 扣到 1，配料庫存 1（只夠
-    // 1 份，扣 2 份）floor 在 0，不會變負數。
+    // 扣庫存至 0 為下限，不為負數。
     const res = await app.request('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify(
         buildRequest({
           lines: [{ ...validLine, addList: ['珍珠'], addListPrice: 10 }],
-          // validLine 是 2 杯 80 元＋每杯 10 元的配料＝180 元。
           tenders: [{ method: '現金', amount: 180 }],
         }),
       ),
@@ -370,7 +359,7 @@ describe('POST /api/orders（P20：規劃書 §10 P20「基礎庫存管理」，
   })
 })
 
-describe('POST /api/orders（P5：訂單層級折價券，伺服端重算折抵金額，不信任用戶端）', () => {
+describe('POST /api/orders（訂單層級折價券，伺服端重算折抵金額）', () => {
   it('套用現金折價券：折抵金額查真正的折價券資料，不是用戶端說了算', async () => {
     const db = createTestDb()
     await seedPromotions(db)
@@ -457,7 +446,7 @@ describe('GET /api/orders', () => {
   })
 })
 
-describe('POST /api/orders（P6：混合支付，見 @pos/contract 的 tenderInputSchema 說明）', () => {
+describe('POST /api/orders（混合支付）', () => {
   it('單一 tender 剛好付清：changeDue 為 0，orderPayment 是該方式的名稱', async () => {
     const db = createTestDb()
     await seedPromotions(db)
@@ -565,7 +554,7 @@ async function createOne(
   return body.orderId
 }
 
-describe('PATCH /api/orders/:orderId/status（P6：多終端情境，取代 apps/pos 舊版只改本機狀態的做法）', () => {
+describe('PATCH /api/orders/:orderId/status', () => {
   it('沒有裝置憑證時拒絕', async () => {
     const db = createTestDb()
     await seedPromotions(db)
@@ -651,7 +640,7 @@ describe('PATCH /api/orders/:orderId/status（P6：多終端情境，取代 apps
   })
 })
 
-describe('POST /api/orders/:orderId/refunds（P12：規劃書 §10 P0「退款／作廢」）', () => {
+describe('POST /api/orders/:orderId/refunds（退款／作廢）', () => {
   it('沒有裝置憑證時拒絕', async () => {
     const db = createTestDb()
     await seedPromotions(db)
@@ -765,7 +754,7 @@ describe('POST /api/orders/:orderId/refunds（P12：規劃書 §10 P0「退款�
   })
 })
 
-describe('DELETE /api/orders/:orderId（P6：多終端情境，取代 apps/pos 舊版只改本機狀態的做法）', () => {
+describe('DELETE /api/orders/:orderId', () => {
   it('沒有裝置憑證時拒絕', async () => {
     const db = createTestDb()
     await seedPromotions(db)

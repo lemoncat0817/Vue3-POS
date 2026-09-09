@@ -7,12 +7,7 @@ import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
 
-/**
- * 付款方式管理（P18：規劃書 §10 P18「菜單與權限管理接上伺服端」）。
- * permissionManagement.vue 原本的付款方式新增／編輯／刪除只改本機
- * Pinia 狀態，這裡補上對應的伺服端端點，寫法跟 promotions.ts 的
- * 折價券 CRUD 是同一套模式。
- */
+/** 付款方式管理 API：支援後台付款方式設定之 CRUD。 */
 const listPaymentMethodsRoute = createRoute({
   method: 'get',
   path: '/',

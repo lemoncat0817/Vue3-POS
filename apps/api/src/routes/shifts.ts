@@ -12,12 +12,7 @@ import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
 
-/**
- * 班別結帳（P6：規劃書 §10 P0「班別結帳」）。單店單機情境（見規劃書
- * §3），同一時間全店只允許一筆 open 狀態的班別——開帳前先查有沒有
- * 別的班別還開著，有的話直接擋（409），不是資料庫層級的唯一索引（見
- * db/schema.ts 的說明）。
- */
+/** 班別結帳 API。單店單機情境下同一時間僅允許一筆 open 狀態班別。 */
 const errorSchema = z.object({ error: z.string() })
 
 const openShiftRoute = createRoute({
@@ -115,22 +110,10 @@ async function loadShiftWithMovements(db: AnyDb, shiftId: string) {
   return { shift, movements }
 }
 
-// 「現金類」付款方式只認字面值「現金」——apps/pos 的付款方式清單
-// （見 stores/order.ts 的 paymentList）目前是純本機設定，沒有同步到
-// 伺服端，伺服端無法得知哪些自訂方式應該算作現金。單店情境下「現金」
-// 這個名稱本身就是固定種子資料，直接比對字面值是務實的做法；未來若
-// 付款方式清單也搬到伺服端管理，這裡應該改成查那張表的「是否為現金
-// 類」旗標。
+// 現金類付款方式目前比對字面值「現金」，未來可擴充為查詢屬性旗標。
 const CASH_METHOD_NAME = '現金'
 
-/**
- * 統計 [openedAt, closedAt) 區間內，現金類 tender 的金額總和。
- *
- * P12（規劃書 §10 P0「退款／作廢」）修正：排除訂單狀態為「已取消」
- * 的訂單——作廢代表這筆訂單整筆不算數，繼續把它的現金 tender 算進
- * 現金營業額會讓應有現金虛高，收班點鈔對不起來（見 @pos/domain 的
- * refund.ts 對「作廢」跟「退款」的區分說明）。
- */
+/** 統計區間內現金 tender 總額。排除已取消訂單，避免虛增應有現金。 */
 async function sumCashSales(db: AnyDb, openedAt: string, closedAt: string): Promise<number> {
   const rows = await db
     .select({ amount: orderTenders.amount })
@@ -148,15 +131,7 @@ async function sumCashSales(db: AnyDb, openedAt: string, closedAt: string): Prom
   return rows.reduce((sum, row) => sum + row.amount, 0)
 }
 
-/**
- * 統計 [openedAt, closedAt) 區間內的退款總額。退款一律視為從現金抽屜
- * 退出去（見 @pos/domain 的 summarizeShiftCash() 說明），不區分原本
- * 訂單收的是不是現金——單店手搖飲情境下，退款幾乎都是店員直接從
- * 抽屜退現金給顧客，不論當初怎麼收款，這是務實的簡化，跟 sumCashSales
- * 只認「現金」字面值同樣性質的取捨。用退款紀錄自己的時間（at）判斷
- * 是否落在這個班別區間，不是訂單的建立時間——退款可能發生在訂單成立
- * 後的任何時候，甚至跨到下一個班別才處理。
- */
+/** 統計區間內退款總額。依退款紀錄發生時間（at）歸屬班別，退款均視為現金抽屜支出。 */
 async function sumCashRefunds(db: AnyDb, openedAt: string, closedAt: string): Promise<number> {
   const rows = await db
     .select({ amount: orderRefunds.amount })

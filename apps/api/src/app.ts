@@ -34,28 +34,11 @@ const healthRoute = createRoute({
   },
 })
 
-/**
- * 建立 Hono 應用程式。刻意不在這裡直接建立 db 實例，而是由呼叫端
- * （Worker 入口的 src/index.ts，或測試用的 test/helpers/db.ts）決定要
- * 傳入 D1 還是 better-sqlite3 版本的 Drizzle 實例——路由本身不需要知道
- * 底層是哪個 driver（見 db/client.ts 的說明）。
- */
+/** 建立 Hono 應用程式。由呼叫端傳入 Drizzle db 實例以相容 D1 與測試環境。 */
 export function createApp(db: AnyDb, config: { provisioningSecret: string; allowedOrigins: string[] }) {
   const app = new OpenAPIHono<AppEnv>()
 
-  // 單店單機使用（見規劃書 §1 的部署前提），前端（apps/pos）跟這個 API
-  // 執行在不同 origin／port（GitHub Pages 靜態站 vs. Cloudflare
-  // Workers），需要 CORS 才能跨源呼叫。
-  //
-  // P21（規劃書 §10 P21「API 安全加固」）：這裡原本是 `origin: '*'`，
-  // 理由是「沒有 cookie-based session 要保護」——但 `origin: '*'` 允許
-  // 的不只是「讀」，任何網站都能讓使用者的瀏覽器帶著使用者不知情的
-  // 請求打進這個 API（雖然 requireDeviceToken 會擋掉沒有裝置憑證的
-  // 寫入，但裝置憑證存在 apps/pos 的前端環境變數裡，惡意頁面理論上
-  // 還是能透過使用者已開著的 POS 分頁發起同源請求，`*` 沒有必要地
-  // 放寬了攻擊面）。改成白名單只允許 apps/pos 實際部署的來源，
-  // allowedOrigins 由 index.ts 從 ALLOWED_ORIGINS 環境變數（見
-  // env.ts）解析，本機測試則由 test/helpers/app.ts 帶入固定清單。
+  // CORS 限制僅允許白名單來源，避免萬用字元 '*' 放大攻擊面。
   app.use(
     '*',
     cors({ origin: config.allowedOrigins, allowHeaders: ['Content-Type', 'X-Device-Token', 'X-Provisioning-Secret'] }),
@@ -67,8 +50,7 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string; allow
     await next()
   })
 
-  // P21：速率限制，見 middleware/rate-limit.ts 的完整說明。放在 db
-  // 綁進 context 之後，因為計數器本身存在 D1。
+  // 速率限制需在 db 注入 context 後執行（計數器持久化於資料庫）。
   app.use('*', rateLimit)
 
   app.openapi(healthRoute, (c) => c.json({ ok: true as const }))

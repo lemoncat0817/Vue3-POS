@@ -3,14 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
 import { createTestDb } from './helpers/db'
 
-/**
- * P21 迴歸驗證（規劃書 §10 P21「API 安全加固」）：見
- * middleware/rate-limit.ts 的完整說明。門檻是 1000 次／分鐘，這裡不會
- * 真的送超過一千次請求去撞門檻（太慢也沒必要），改成直接操作
- * rate_limit_counters 表，把某把 key 的計數器灌到門檻，驗證下一次
- * 請求會被擋、且視窗過期後又能正常使用。
- */
-describe('速率限制（P21：規劃書 §10 P21「API 安全加固」）', () => {
+// 速率限制驗證：透過操作 rate_limit_counters 模擬計數器達標，避免實際發送大量請求。
+describe('速率限制', () => {
   it('GET 端點不受限制，就算計數器已經爆表也一樣能查詢', async () => {
     const db = createTestDb()
     const app = createTestApp(db)
@@ -22,8 +16,7 @@ describe('速率限制（P21：規劃書 §10 P21「API 安全加固」）', () 
   it('寫入端點的計數器超過門檻時拒絕，回傳 429 並帶 Retry-After', async () => {
     const db = createTestDb()
     const { app, deviceToken } = await createTestAppWithDevice(db)
-    // createTestAppWithDevice 建立裝置那一次請求已經佔用了 1 次額度，
-    // 直接把同一把 key（裝置憑證本身）的計數器灌到門檻之上。
+    // 直接把該裝置憑證 key 的計數器灌過門檻以觸發 429。
     await db.run(sql`
       insert into rate_limit_counters (key, window_start, count) values (${deviceToken}, ${Date.now()}, 1001)
       on conflict (key) do update set window_start = excluded.window_start, count = excluded.count

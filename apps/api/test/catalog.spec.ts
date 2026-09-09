@@ -47,7 +47,7 @@ describe('GET /api/catalog', () => {
   })
 })
 
-describe('菜單管理寫入 API（P18：規劃書 §10 P18「菜單與權限管理接上伺服端」）', () => {
+describe('菜單管理寫入 API', () => {
   it('沒有裝置憑證時，新增飲品類型拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/catalog/groups', {

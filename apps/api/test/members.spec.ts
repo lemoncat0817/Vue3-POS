@@ -8,10 +8,7 @@ async function readJson(res: Response): Promise<any> {
   return res.json()
 }
 
-/**
- * P22（規劃書 §10 P22「會員與顧客經營」）：會員管理 API，見
- * apps/api/src/db/schema.ts 的 members 說明。
- */
+/** 會員管理 API 測試。 */
 describe('POST /api/members', () => {
   it('沒有裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())

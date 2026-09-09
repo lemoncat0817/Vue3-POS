@@ -5,13 +5,7 @@ import { devices } from '../db/schema'
 import type { AppEnv } from '../types'
 
 /**
- * 裝置層級防護（P4：規劃書 §9 的身分系統）。
- *
- * P2 版本比對單一固定字串（環境變數），P4 改成真的查 devices 表：
- * 逐一用 verifySecret() 跟每一台「還沒被撤銷」的裝置比對雜湊值——裝置
- * 數量在單店單機情境下很小（見規劃書 §3 的部署前提），逐筆比對不是
- * 效能問題；換來的是每台裝置可以個別核發、個別撤銷，不再是全店共用
- * 一把、永遠無法單獨作廢的密鑰。
+ * 裝置憑證驗證中介軟體。查詢 devices 表中未撤銷之裝置，逐一驗證雜湊值以支援個別核發與單獨撤銷。
  */
 export const requireDeviceToken = createMiddleware<AppEnv>(async (c, next) => {
   const provided = c.req.header('X-Device-Token')

@@ -22,9 +22,7 @@ const listStaffRoute = createRoute({
 const createStaffRoute = createRoute({
   method: 'post',
   path: '/',
-  // 新增員工會異動權限名單，屬於需要裝置憑證的異動操作（見
-  // src/middleware/require-device-token.ts 的說明）。掛在路由定義本身
-  // 的 middleware，只套用在這一條路由，不影響上面的 GET。
+  // 建立員工屬異動操作，需校驗裝置憑證。
   middleware: [requireDeviceToken] as const,
   request: {
     body: { content: { 'application/json': { schema: createStaffRequestSchema } } },
@@ -41,11 +39,7 @@ const createStaffRoute = createRoute({
   },
 })
 
-/**
- * 編輯／刪除員工（P18：規劃書 §10 P18「菜單與權限管理接上伺服端」）。
- * permissionManagement.vue 原本的編輯／刪除只改本機 Pinia 狀態，這裡
- * 補上對應的伺服端端點，理由跟 catalog.ts 的菜單管理寫入 API 一致。
- */
+/** 員工管理寫入 API：支援後台編輯與刪除員工。 */
 const updateStaffRoute = createRoute({
   method: 'put',
   path: '/{id}',

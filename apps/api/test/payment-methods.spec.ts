@@ -7,10 +7,7 @@ async function readJson(res: Response): Promise<any> {
   return res.json()
 }
 
-/**
- * P18（規劃書 §10 P18「菜單與權限管理接上伺服端」）：付款方式管理，
- * 見 routes/payment-methods.ts 的說明。
- */
+/** 付款方式管理 API 測試。 */
 describe('GET /api/payment-methods', () => {
   it('不需要裝置憑證即可查詢，沒有資料時回傳空陣列', async () => {
     const app = createTestApp(createTestDb())

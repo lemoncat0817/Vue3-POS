@@ -31,13 +31,7 @@ const getCatalogRoute = createRoute({
   },
 })
 
-/**
- * 菜單管理寫入 API（P18：規劃書 §10 P18「菜單與權限管理接上伺服端」）。
- * productManagement.vue 原本的新增／編輯／刪除只改本機 Pinia 狀態，
- * 這裡補上對應的伺服端端點，讓異動真正落地——跟 P5 促銷引擎當時把
- * offerSetting.vue 接上伺服端寫入 API 是同一套模式（見 routes/
- * promotions.ts）。
- */
+/** 菜單管理寫入 API：支援飲品分類、品項與加料選項之後台維護。 */
 const createGroupRoute = createRoute({
   method: 'post',
   path: '/groups',

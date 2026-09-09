@@ -5,11 +5,7 @@ import { auditLogs } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
-/**
- * 稽核紀錄 API（P21：規劃書 §10 P21「API 安全加固」，見 db/schema.ts
- * 的 auditLogs 說明）。目前唯一的呼叫端是 apps/pos 的開收銀機
- * 流程——原本只 `console.info`，現在真的寫進伺服端。
- */
+/** 稽核紀錄 API：記錄開錢箱等關鍵操作至伺服端資料庫。 */
 const createAuditLogRoute = createRoute({
   method: 'post',
   path: '/',

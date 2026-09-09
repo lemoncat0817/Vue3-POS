@@ -6,17 +6,14 @@ import { staff } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
-/** 連續輸入錯誤達這個次數後鎖定帳號——4～6 碼的 PIN 遠比密碼容易暴力
- *  猜中，雜湊本身不足以擋住反覆嘗試，需要額外的鎖定機制。 */
+/** 連續錯誤達此上限後鎖定帳號，防範暴力破解短 PIN。 */
 const MAX_FAILED_ATTEMPTS = 5
 const LOCKOUT_DURATION_MS = 5 * 60 * 1000
 
 const operatorLoginRoute = createRoute({
   method: 'post',
   path: '/operator-login',
-  // 只有已核發憑證的終端機才能嘗試操作員登入——裝置憑證（64 碼 hex）
-  // 比 PIN（4～6 碼數字）難猜得多，這一層檔掉了「隨便一個網路上的
-  // 用戶端直接對這個端點暴力猜 PIN」的整條路徑。
+  // 限制僅合法裝置憑證可嘗試操作員登入，防範外部暴力破解。
   middleware: [requireDeviceToken] as const,
   request: {
     body: { content: { 'application/json': { schema: operatorLoginRequestSchema } } },

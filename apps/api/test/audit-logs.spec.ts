@@ -7,10 +7,7 @@ async function readJson(res: Response): Promise<any> {
   return res.json()
 }
 
-/**
- * P21（規劃書 §10 P21「API 安全加固」）：稽核紀錄，取代原本開收銀機
- * 只印在瀏覽器主控台的做法，見 db/schema.ts 的 auditLogs 說明。
- */
+// 稽核紀錄：取代舊版僅在前端 console 印出 log 的做法。
 describe('POST /api/audit-logs', () => {
   it('沒有裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())

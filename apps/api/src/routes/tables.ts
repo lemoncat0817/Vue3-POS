@@ -10,11 +10,7 @@ import { diningTables } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
-/**
- * 桌況管理 API（P24：規劃書 §10 P24「真實硬體整合與桌況管理」，見
- * db/schema.ts 的 diningTables 說明）。跟菜單、員工的寫入端點是同一套
- * 模式（P18）：新資源 id 一律由伺服端配發。
- */
+/** 桌況管理 API：支援桌位資料維護與桌況狀態更新。 */
 const errorSchema = z.object({ error: z.string() })
 
 const listTablesRoute = createRoute({
@@ -108,9 +104,7 @@ export const tableRoutes = new OpenAPIHono<AppEnv>()
     const db = c.get('db')
     const existing = await db.select().from(diningTables).where(eq(diningTables.id, id)).get()
     if (!existing) return c.json({ error: '找不到這個桌位' }, 404)
-    // note 選填：沒帶就維持原本的備註，不會被清空——跟只想切換狀態
-    // （例如帶位時標成使用中）的常見操作情境一致，不用每次都重打一次
-    // 備註。
+    // note 為選填：未帶時保留既有備註，便於快速切換桌況。
     const updated = { status: input.status, note: input.note ?? existing.note }
     await db.update(diningTables).set(updated).where(eq(diningTables.id, id))
     return c.json({ ...existing, ...updated }, 200)

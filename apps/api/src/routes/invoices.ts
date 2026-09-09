@@ -9,10 +9,7 @@ import { invoiceTracks, orders } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
-/**
- * 電子發票字軌與模擬上傳 API（P23：規劃書 §10 P23「電子發票平台
- * 串接」，見 db/schema.ts 的 invoiceTracks／orders.invoiceStatus 說明）。
- */
+/** 電子發票字軌與批次上傳模擬 API。 */
 const errorSchema = z.object({ error: z.string() })
 
 const listTracksRoute = createRoute({
@@ -58,13 +55,7 @@ export const invoiceRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createTrackRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    // 同時間只會有一個字軌是啟用中的（見 nextInvoiceNumber 的說明）
-    // ——新增一個字軌代表「換下一期」，把之前所有字軌都停用。這裡不是
-    // db.transaction()（理由跟 routes/orders.ts 送單那段一致：D1／
-    // better-sqlite3 的交易介面不一致，見該檔案的說明），兩個 update
-    // 之間如果剛好有另一筆請求核發發票號碼，最壞情況是那筆訂單用了
-    // 舊字軌——單店單機情境下這個時間窗口小到可以接受，不是常態併發
-    // 場景。
+    // 建立新字軌時停用既有字軌，確保同一時間僅單一字軌處於啟用狀態。
     await db.update(invoiceTracks).set({ isActive: false })
     const newTrack = { id: crypto.randomUUID(), ...input, currentNumber: input.rangeStart - 1, isActive: true }
     await db.insert(invoiceTracks).values(newTrack)
@@ -72,11 +63,7 @@ export const invoiceRoutes = new OpenAPIHono<AppEnv>()
   })
   .openapi(submitInvoicesRoute, async (c) => {
     const db = c.get('db')
-    // 這裡是模擬——真正上傳到財政部電子發票整合服務平台需要真正的
-    // 介接憑證（這個專案沒有，見規劃書「沒有介接硬體需求」同樣精神的
-    // 說明）。之後拿到真正的憑證，只需要把下面這段換成真的呼叫平台
-    // API，資料模型（哪些發票是 'issued'、上傳後標成 'submitted'）
-    // 已經是照真實流程設計，不需要另外改資料庫結構。
+    // 模擬批次上傳：目前尚未介接財政部真實憑證，先以更新狀態為 submitted 模擬。
     const submittedAt = new Date().toISOString()
     const pending = await db.select().from(orders).where(eq(orders.invoiceStatus, 'issued')).all()
     for (const order of pending) {

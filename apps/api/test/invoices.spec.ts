@@ -39,11 +39,8 @@ function buildRequest(overrides: Record<string, unknown> = {}) {
   }
 }
 
-/**
- * P23（規劃書 §10 P23「電子發票平台串接」）：電子發票字軌與模擬批次
- * 上傳，見 db/schema.ts 的 invoiceTracks／orders.invoiceStatus 說明。
- */
-describe('沒有啟用中的字軌時，送單依號碼核發失敗（P23）', () => {
+/** 電子發票字軌與模擬批次上傳測試。 */
+describe('沒有啟用中的字軌時，送單依號碼核發失敗', () => {
   it('沒有任何字軌時，送單回 400 而不是沒說明原因的 500', async () => {
     // 這裡刻意不呼叫 seedPromotions（它現在會順便建立測試用字軌，見
     // helpers/promotions.ts），單獨測「完全沒有字軌」這個狀況。

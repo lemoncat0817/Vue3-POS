@@ -37,7 +37,7 @@ function buildOrderRequest(idempotencyKey: string, tenders: { method: string; am
   }
 }
 
-describe('POST /api/shifts（P6：規劃書 §10 P0「班別結帳」）', () => {
+describe('POST /api/shifts', () => {
   it('沒有帶裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/shifts', {

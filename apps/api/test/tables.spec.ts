@@ -7,10 +7,6 @@ async function readJson(res: Response): Promise<any> {
   return res.json()
 }
 
-/**
- * P24（規劃書 §10 P24「真實硬體整合與桌況管理」）：桌況管理 API，見
- * apps/api/src/db/schema.ts 的 diningTables 說明。
- */
 describe('POST /api/tables', () => {
   it('沒有裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
