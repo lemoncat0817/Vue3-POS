@@ -4,12 +4,7 @@
 
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-surface-900 p-4 rounded-2xl border border-surface-200 dark:border-surface-800 shadow-sm">
         <div>
-          <div class="flex items-center gap-2.5">
-            <h1 class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight">營業數據分析</h1>
-            <span class="rounded-full bg-primary-50 dark:bg-primary-950/50 px-2.5 py-0.5 text-xs font-bold text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
-              營運報表
-            </span>
-          </div>
+          <h1 class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight">營業數據分析</h1>
           <p class="text-xs text-surface-500 dark:text-surface-400 mt-1">
             統計期間：{{ selectTime[0] }} 至 {{ selectTime[1] }} · 即時掌握門市營收與銷售趨勢
           </p>
@@ -127,6 +122,42 @@
         </div>
       </div>
 
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
+          <span class="text-xs font-bold text-surface-500 dark:text-surface-400">折扣金額 (優惠券折抵)</span>
+          <div class="mt-2 flex items-baseline gap-2 flex-wrap">
+            <span class="text-xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
+              NT$ {{ discountAmount.toLocaleString() }}
+            </span>
+            <span class="text-[11px] font-bold text-accent-600 dark:text-accent-400">折扣率 {{ discountRate }}%</span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
+          <span class="text-xs font-bold text-surface-500 dark:text-surface-400">作廢訂單</span>
+          <div class="mt-2 flex items-baseline gap-2 flex-wrap">
+            <span class="text-xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
+              {{ voidedOrderCount.toLocaleString() }} <span class="text-sm font-bold text-surface-500">筆</span>
+            </span>
+            <span
+              class="text-[11px] font-bold"
+              :class="voidRate > 5 ? 'text-danger-600 dark:text-danger-400' : 'text-surface-400'">
+              作廢率 {{ voidRate }}%
+            </span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
+          <span class="text-xs font-bold text-surface-500 dark:text-surface-400">退款</span>
+          <div class="mt-2 flex items-baseline gap-2 flex-wrap">
+            <span class="text-xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
+              NT$ {{ refundAmount.toLocaleString() }}
+            </span>
+            <span class="text-[11px] font-bold text-surface-400">{{ refundedOrderCount }} 筆訂單有退款</span>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
         <div class="xl:col-span-8 card-panel p-5 flex flex-col gap-4">
           <div class="flex items-center justify-between">
@@ -145,94 +176,27 @@
 
         <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
           <span class="text-sm font-black text-surface-900 dark:text-surface-100">熱銷品項排行榜 (Top 5)</span>
-          <div v-for="(item, idx) in salesReport?.topProducts" :key="item.name" class="flex flex-col gap-1">
-            <div class="flex justify-between text-xs font-bold">
-              <span class="flex items-center gap-2">
-                <span
-                  class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
-                  :class="idx === 0 ? 'bg-accent-500' : idx === 1 ? 'bg-surface-400' : idx === 2 ? 'bg-accent-700' : 'bg-surface-300 dark:bg-surface-700'">
-                  {{ idx + 1 }}
-                </span>
-                <span>{{ item.name }}</span>
-              </span>
-              <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 件</span>
-            </div>
-            <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
-              <div
-                class="h-full rounded-full bg-primary-500 transition-all duration-500"
-                :style="{ width: `${totalUnits > 0 ? (item.count / totalUnits) * 100 : 0}%` }" />
-            </div>
-          </div>
-          <p v-if="!salesReport?.topProducts.length" class="text-xs text-surface-400 py-4 text-center">目前無銷售紀錄</p>
+          <RankedBarChart :items="salesReport?.topProducts ?? []" unit="件" color="#ef4444" empty-label="目前無銷售紀錄" />
         </div>
 
         <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">分類別銷售佔比</span>
-          <div v-for="(item, idx) in salesReport?.topCategories" :key="item.name" class="flex flex-col gap-1">
-            <div class="flex justify-between text-xs font-bold">
-              <span class="flex items-center gap-2">
-                <span
-                  class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
-                  :class="idx === 0 ? 'bg-accent-500' : idx === 1 ? 'bg-surface-400' : idx === 2 ? 'bg-accent-700' : 'bg-surface-300 dark:bg-surface-700'">
-                  {{ idx + 1 }}
-                </span>
-                <span>{{ item.name }}</span>
-              </span>
-              <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 件</span>
-            </div>
-            <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
-              <div
-                class="h-full rounded-full bg-accent-500 transition-all duration-500"
-                :style="{ width: `${salesReport?.topCategories[0]?.count ? (item.count / salesReport.topCategories[0].count) * 100 : 0}%` }" />
-            </div>
-          </div>
-          <p v-if="!salesReport?.topCategories.length" class="text-xs text-surface-400 py-4 text-center">目前無分類銷售紀錄</p>
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">分類別銷售佔比 (Top 5)</span>
+          <RankedBarChart :items="salesReport?.topCategories ?? []" unit="件" color="#f59e0b" empty-label="目前無分類銷售紀錄" />
         </div>
 
         <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
           <span class="text-sm font-black text-surface-900 dark:text-surface-100">加購選配榜單 (Top 5)</span>
-          <div v-for="(item, idx) in salesReport?.topAddOns" :key="item.name" class="flex flex-col gap-1">
-            <div class="flex justify-between text-xs font-bold">
-              <span class="flex items-center gap-2">
-                <span
-                  class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
-                  :class="idx === 0 ? 'bg-accent-500' : idx === 1 ? 'bg-surface-400' : idx === 2 ? 'bg-accent-700' : 'bg-surface-300 dark:bg-surface-700'">
-                  {{ idx + 1 }}
-                </span>
-                <span>{{ item.name }}</span>
-              </span>
-              <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 份</span>
-            </div>
-            <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
-              <div
-                class="h-full rounded-full bg-success-500 transition-all duration-500"
-                :style="{ width: `${salesReport?.topAddOns[0]?.count ? (item.count / salesReport.topAddOns[0].count) * 100 : 0}%` }" />
-            </div>
-          </div>
-          <p v-if="!salesReport?.topAddOns.length" class="text-xs text-surface-400 py-4 text-center">目前無加購紀錄</p>
+          <RankedBarChart :items="salesReport?.topAddOns ?? []" unit="份" color="#10b981" empty-label="目前無加購紀錄" />
         </div>
 
         <div class="xl:col-span-8 card-panel p-4 flex flex-col gap-3">
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">多元支付通路結構</span>
-          <div v-for="(item, idx) in salesReport?.topPaymentMethods" :key="item.name" class="flex flex-col gap-1">
-            <div class="flex justify-between text-xs font-bold">
-              <span class="flex items-center gap-2">
-                <span
-                  class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
-                  :class="idx === 0 ? 'bg-primary-500' : 'bg-surface-400 dark:bg-surface-600'">
-                  {{ idx + 1 }}
-                </span>
-                <span>{{ item.name }}</span>
-              </span>
-              <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 次交易</span>
-            </div>
-            <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
-              <div
-                class="h-full rounded-full bg-info-500 transition-all duration-500"
-                :style="{ width: `${totalOrders > 0 ? (item.count / totalOrders) * 100 : 0}%` }" />
-            </div>
-          </div>
-          <p v-if="!salesReport?.topPaymentMethods.length" class="text-xs text-surface-400 py-4 text-center">目前無付款紀錄</p>
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">多元支付通路結構 (Top 5)</span>
+          <RankedBarChart :items="salesReport?.topPaymentMethods ?? []" unit="次交易" color="#0ea5e9" empty-label="目前無付款紀錄" />
+        </div>
+
+        <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">內用／外帶佔比</span>
+          <ChannelDonutChart :items="salesReport?.channelBreakdown ?? []" />
         </div>
       </div>
     </div>
@@ -263,6 +227,14 @@
         <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
           <span>熱銷品項總量 (Top 5):</span>
           <span class="font-bold">{{ totalUnits }} 件</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
+          <span>折扣總額 (優惠券折抵):</span>
+          <span class="font-bold">NT$ {{ discountAmount.toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
+          <span>作廢訂單 / 退款:</span>
+          <span class="font-bold">{{ voidedOrderCount }} 筆作廢 · NT$ {{ refundAmount.toLocaleString() }} 退款</span>
         </div>
 
         <div class="mt-2">
@@ -300,6 +272,8 @@ import { getDate, getTime, formatBusinessDate, toBusinessDate, toNativeDate, fro
 import { fetchSalesReport } from '@/api/reports'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import TrendBadge from '@/components/ui/TrendBadge.vue'
+import RankedBarChart from '@/components/ui/RankedBarChart.vue'
+import ChannelDonutChart from '@/components/ui/ChannelDonutChart.vue'
 import { showToast } from '@/composables/useToast'
 import { useTheme } from '@/composables/useTheme'
 
@@ -347,8 +321,9 @@ function computeTotals(report: typeof salesReport.value, singleDay: boolean) {
     ? report.hourlyRevenue.reduce((sum, p) => sum + p.revenue, 0)
     : report.dailyRevenue.reduce((sum, p) => sum + p.revenue, 0)
   const totalUnits = report.topProducts.reduce((sum, d) => sum + d.count, 0)
-  const paymentCount = report.topPaymentMethods.reduce((sum, p) => sum + p.count, 0)
-  const totalOrders = paymentCount > 0 ? paymentCount : (totalRevenue > 0 ? Math.ceil(totalRevenue / 180) : 0)
+  // 訂單數用後端算好的 orderCount，不是加總 topPaymentMethods——那份榜單
+  // 只列前五名付款方式，付款方式一多（門市有 9 種）就會少算訂單數與客單價。
+  const totalOrders = report.orderCount
   const averageOrderValue = totalOrders === 0 ? 0 : Math.round(totalRevenue / totalOrders)
   return { totalRevenue, totalUnits, totalOrders, averageOrderValue }
 }
@@ -372,6 +347,21 @@ const unitsTrend = computed(() => trendOf(current.value.totalUnits, previous.val
 const ordersTrend = computed(() => trendOf(current.value.totalOrders, previous.value.totalOrders))
 const aovTrend = computed(() => trendOf(current.value.averageOrderValue, previous.value.averageOrderValue))
 
+// 折扣、作廢、退款：只看當期，不比對前期（跟業界慣例一樣，異常率是拿來看
+// 現況高不高，不是拿來看漲跌）。四捨五入到小數點下一位。
+const roundRate = (numerator: number, denominator: number) =>
+  denominator > 0 ? Math.round((numerator / denominator) * 1000) / 10 : 0
+
+const discountAmount = computed(() => salesReport.value?.discountAmount ?? 0)
+// 折扣率的分母是折扣前毛額（淨營收 + 折扣金額），不是淨營收本身。
+const discountRate = computed(() => roundRate(discountAmount.value, totalRevenue.value + discountAmount.value))
+
+const voidedOrderCount = computed(() => salesReport.value?.voidedOrderCount ?? 0)
+const voidRate = computed(() => roundRate(voidedOrderCount.value, voidedOrderCount.value + totalOrders.value))
+
+const refundedOrderCount = computed(() => salesReport.value?.refundedOrderCount ?? 0)
+const refundAmount = computed(() => salesReport.value?.refundAmount ?? 0)
+
 const peakHourInfo = computed(() => {
   if (!salesReport.value || selectTime.value[0] !== selectTime.value[1]) return null
   const points = salesReport.value.hourlyRevenue
@@ -386,30 +376,36 @@ const peakHourInfo = computed(() => {
   return `${String(maxPoint.hour).padStart(2, '0')}:00 (NT$ ${maxPoint.revenue.toLocaleString()})`
 })
 
-const setDatePreset = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
+// 各頁籤對應的日期區間，setDatePreset／isPresetActive 共用同一份定義，
+// 避免兩邊各算一次、改一邊忘了改另一邊。
+function presetRange(preset: 'today' | 'yesterday' | 'week' | 'month'): [string, string] {
   const now = new Date()
   if (preset === 'today') {
     const t = formatSlashDate(now)
-    selectTime.value = [t, t]
-  } else if (preset === 'yesterday') {
+    return [t, t]
+  }
+  if (preset === 'yesterday') {
     const y = new Date(now)
     y.setDate(y.getDate() - 1)
     const yStr = formatSlashDate(y)
-    selectTime.value = [yStr, yStr]
-  } else if (preset === 'week') {
+    return [yStr, yStr]
+  }
+  if (preset === 'week') {
     const w = new Date(now)
     w.setDate(w.getDate() - 6)
-    selectTime.value = [formatSlashDate(w), formatSlashDate(now)]
-  } else if (preset === 'month') {
-    const m = new Date(now.getFullYear(), now.getMonth(), 1)
-    selectTime.value = [formatSlashDate(m), formatSlashDate(now)]
+    return [formatSlashDate(w), formatSlashDate(now)]
   }
+  const m = new Date(now.getFullYear(), now.getMonth(), 1)
+  return [formatSlashDate(m), formatSlashDate(now)]
+}
+
+const setDatePreset = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
+  selectTime.value = presetRange(preset)
 }
 
 const isPresetActive = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
-  const todayStr = formatSlashDate(new Date())
-  if (preset === 'today') return selectTime.value[0] === todayStr && selectTime.value[1] === todayStr
-  return false
+  const [start, end] = presetRange(preset)
+  return selectTime.value[0] === start && selectTime.value[1] === end
 }
 
 const exportCsv = () => {
@@ -419,9 +415,20 @@ const exportCsv = () => {
   csv += `總營業額,${totalRevenue.value}\n`
   csv += `總訂單數,${totalOrders.value}\n`
   csv += `平均客單價,${averageOrderValue.value}\n`
-  csv += `熱銷品項總量,${totalUnits.value}\n\n`
+  csv += `熱銷品項總量,${totalUnits.value}\n`
+  csv += `折扣金額,${discountAmount.value}\n`
+  csv += `折扣率,${discountRate.value}%\n`
+  csv += `作廢訂單數,${voidedOrderCount.value}\n`
+  csv += `作廢率,${voidRate.value}%\n`
+  csv += `退款金額,${refundAmount.value}\n`
+  csv += `退款訂單數,${refundedOrderCount.value}\n\n`
 
-  csv += '--- 熱銷品項前五名 ---\n排名,品項名稱,銷售件數\n'
+  csv += '--- 內用／外帶佔比 ---\n通路,訂單數,營業額\n'
+  salesReport.value.channelBreakdown.forEach((c) => {
+    csv += `${c.channel},${c.count},${c.revenue}\n`
+  })
+
+  csv += '\n--- 熱銷品項前五名 ---\n排名,品項名稱,銷售件數\n'
   salesReport.value.topProducts.forEach((d, i) => {
     csv += `${i + 1},${d.name},${d.count}\n`
   })
