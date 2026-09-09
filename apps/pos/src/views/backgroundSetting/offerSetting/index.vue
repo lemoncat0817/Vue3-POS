@@ -13,48 +13,35 @@
               <p class="text-[11px] text-surface-400">固定金額折抵券設定</p>
             </div>
           </div>
-          <div class="flex items-center gap-1.5">
-            <button
-              type="button"
-              class="pos-btn pos-btn-secondary px-2.5 py-1.5 text-xs font-bold"
-              :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
-              @click="openAddMoneyDiscountDialog">新增</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-danger px-2.5 py-1.5 text-xs font-bold"
-              :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
-              @click="deleteCurrentMoneyDiscount">刪除</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-primary px-2.5 py-1.5 text-xs font-bold"
-              :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
-              @click="openEditMoneyDiscountDialog">編輯</button>
-          </div>
+          <button
+            type="button"
+            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+            :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }"
+            @click="openAddMoneyDiscountDialog">＋ 新增現金折扣券</button>
         </div>
 
         <div class="mt-3.5 overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800">
           <table class="w-full text-center text-xs">
             <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
               <tr>
-                <th class="px-3 py-2.5">序號</th>
-                <th class="px-3 py-2.5">Id</th>
                 <th class="px-3 py-2.5 text-left">折價券名稱</th>
                 <th class="px-3 py-2.5 text-right">折價金額</th>
+                <th class="px-3 py-2.5">操作</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
               <tr v-if="sliceMoneyDiscount.length === 0">
-                <td colspan="4" class="px-3 py-8 text-surface-400 dark:text-surface-500">無現金折價券</td>
+                <td colspan="3" class="px-3 py-8 text-surface-400 dark:text-surface-500">無現金折價券</td>
               </tr>
-              <tr
-                v-for="(row, index) in sliceMoneyDiscount" :key="row.id"
-                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentMoneyDiscount.id === row.id }"
-                @click="currentMoneyDiscount = row">
-                <td class="px-3 py-2.5 font-mono text-surface-400">{{ index + 1 }}</td>
-                <td class="px-3 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
+              <tr v-for="row in sliceMoneyDiscount" :key="row.id" class="hover:bg-surface-50 dark:hover:bg-surface-950/40">
                 <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
                 <td class="px-3 py-2.5 text-right font-mono font-bold text-success-600 dark:text-success-400">-${{ row.discountMoney }}</td>
+                <td class="px-3 py-2.5">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button type="button" class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs" :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }" @click="openEditMoneyDiscountDialog(row)">編輯</button>
+                    <button type="button" class="pos-btn pos-btn-danger px-2.5 py-1 text-xs" :class="{ 'pointer-events-none opacity-40': !canSetMoneyDiscount }" @click="removeMoneyDiscount(row)">刪除</button>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -80,48 +67,35 @@
               <p class="text-[11px] text-surface-400">百分比/折扣折數設定</p>
             </div>
           </div>
-          <div class="flex items-center gap-1.5">
-            <button
-              type="button"
-              class="pos-btn pos-btn-secondary px-2.5 py-1.5 text-xs font-bold"
-              :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
-              @click="openAddPercentDiscountDialog">新增</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-danger px-2.5 py-1.5 text-xs font-bold"
-              :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
-              @click="deleteCurrentPercentDiscount">刪除</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-primary px-2.5 py-1.5 text-xs font-bold"
-              :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
-              @click="openEditPercentDiscountDialog">編輯</button>
-          </div>
+          <button
+            type="button"
+            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+            :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }"
+            @click="openAddPercentDiscountDialog">＋ 新增折數折扣券</button>
         </div>
 
         <div class="mt-3.5 overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800">
           <table class="w-full text-center text-xs">
             <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
               <tr>
-                <th class="px-3 py-2.5">序號</th>
-                <th class="px-3 py-2.5">Id</th>
                 <th class="px-3 py-2.5 text-left">折價券名稱</th>
                 <th class="px-3 py-2.5 text-right">折價折數</th>
+                <th class="px-3 py-2.5">操作</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
               <tr v-if="slicePercentDiscount.length === 0">
-                <td colspan="4" class="px-3 py-8 text-surface-400 dark:text-surface-500">無折數折價券</td>
+                <td colspan="3" class="px-3 py-8 text-surface-400 dark:text-surface-500">無折數折價券</td>
               </tr>
-              <tr
-                v-for="(row, index) in slicePercentDiscount" :key="row.id"
-                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentPercentDiscount.id === row.id }"
-                @click="currentPercentDiscount = row">
-                <td class="px-3 py-2.5 font-mono text-surface-400">{{ index + 1 }}</td>
-                <td class="px-3 py-2.5 font-mono text-xs text-surface-400 truncate max-w-[80px]" :title="String(row.id)">{{ row.id }}</td>
+              <tr v-for="row in slicePercentDiscount" :key="row.id" class="hover:bg-surface-50 dark:hover:bg-surface-950/40">
                 <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
                 <td class="px-3 py-2.5 text-right font-mono font-bold text-info-600 dark:text-info-400">{{ row.discountMoney }}</td>
+                <td class="px-3 py-2.5">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button type="button" class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs" :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }" @click="openEditPercentDiscountDialog(row)">編輯</button>
+                    <button type="button" class="pos-btn pos-btn-danger px-2.5 py-1 text-xs" :class="{ 'pointer-events-none opacity-40': !canSetPercentDiscount }" @click="removePercentDiscount(row)">刪除</button>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -147,45 +121,28 @@
               <p class="text-[11px] text-surface-400">點餐頁購物車的快捷折扣按鈕，可自由新增/刪除</p>
             </div>
           </div>
-          <div class="flex items-center gap-1.5">
-            <button
-              type="button"
-              class="pos-btn pos-btn-secondary px-2.5 py-1.5 text-xs font-bold"
-              :class="{ 'pointer-events-none opacity-40': !canSetQuickDiscount }"
-              @click="openAddQuickDiscountDialog">新增</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-danger px-2.5 py-1.5 text-xs font-bold"
-              :class="{ 'pointer-events-none opacity-40': !canSetQuickDiscount }"
-              @click="deleteCurrentQuickDiscount">刪除</button>
-            <button
-              type="button"
-              class="pos-btn pos-btn-primary px-2.5 py-1.5 text-xs font-bold"
-              :class="{ 'pointer-events-none opacity-40': !canSetQuickDiscount }"
-              @click="openEditQuickDiscountDialog">編輯</button>
-          </div>
+          <button
+            type="button"
+            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+            :class="{ 'pointer-events-none opacity-40': !canSetQuickDiscount }"
+            @click="openAddQuickDiscountDialog">＋ 新增快速折扣</button>
         </div>
 
         <div class="mt-3.5 overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800">
           <table class="w-full text-center text-xs">
             <thead class="bg-surface-50 dark:bg-surface-800/80 font-bold text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-800">
               <tr>
-                <th class="px-3 py-2.5">序號</th>
                 <th class="px-3 py-2.5 text-left">優惠名稱</th>
                 <th class="px-3 py-2.5">類型</th>
                 <th class="px-3 py-2.5 text-right">折抵值</th>
+                <th class="px-3 py-2.5">操作</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
               <tr v-if="sliceQuickDiscount.length === 0">
                 <td colspan="4" class="px-3 py-8 text-surface-400 dark:text-surface-500">無快速折扣</td>
               </tr>
-              <tr
-                v-for="(row, index) in sliceQuickDiscount" :key="row.id"
-                class="cursor-pointer transition-colors hover:bg-surface-50 dark:hover:bg-surface-950"
-                :class="{ 'bg-primary-50/90 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 font-bold': currentQuickDiscount.id === row.id }"
-                @click="currentQuickDiscount = row">
-                <td class="px-3 py-2.5 font-mono text-surface-400">{{ index + 1 }}</td>
+              <tr v-for="row in sliceQuickDiscount" :key="row.id" class="hover:bg-surface-50 dark:hover:bg-surface-950/40">
                 <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
                 <td class="px-3 py-2.5">
                   <span class="rounded-md px-1.5 py-0.5 text-[10px] font-bold" :class="row.kind === 'amount' ? 'bg-success-50 text-success-600 dark:bg-success-950/40 dark:text-success-400' : 'bg-info-50 text-info-600 dark:bg-info-950/40 dark:text-info-400'">
@@ -194,6 +151,12 @@
                 </td>
                 <td class="px-3 py-2.5 text-right font-mono font-bold text-primary-600 dark:text-primary-400">
                   {{ row.kind === 'amount' ? `-$${row.value}` : row.value }}
+                </td>
+                <td class="px-3 py-2.5">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button type="button" class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs" :class="{ 'pointer-events-none opacity-40': !canSetQuickDiscount }" @click="openEditQuickDiscountDialog(row)">編輯</button>
+                    <button type="button" class="pos-btn pos-btn-danger px-2.5 py-1 text-xs" :class="{ 'pointer-events-none opacity-40': !canSetQuickDiscount }" @click="removeQuickDiscount(row)">刪除</button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -226,8 +189,8 @@
   <ModalDialog v-model:open="editMoneyDiscountDialog" title="編輯現金折扣券">
     <Form
       v-slot="{ isSubmitting }"
-      :validation-schema="toTypedSchema(moneyCouponSchema(currentMoneyDiscount.id))"
-      :initial-values="{ name: currentMoneyDiscount.name, discountMoney: Number(currentMoneyDiscount.discountMoney) }"
+      :validation-schema="toTypedSchema(moneyCouponSchema(editingMoneyDiscount.id))"
+      :initial-values="{ name: editingMoneyDiscount.name, discountMoney: Number(editingMoneyDiscount.discountMoney) }"
       @submit="onSubmitEditMoneyDiscount">
       <div class="space-y-4 py-2">
         <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: $50折價券..." />
@@ -256,8 +219,8 @@
   <ModalDialog v-model:open="editPercentDiscountDialog" title="編輯折數折扣券">
     <Form
       v-slot="{ isSubmitting }"
-      :validation-schema="toTypedSchema(percentCouponSchema(currentPercentDiscount.id))"
-      :initial-values="{ name: currentPercentDiscount.name, discountPercent: Number(currentPercentDiscount.discountMoney) }"
+      :validation-schema="toTypedSchema(percentCouponSchema(editingPercentDiscount.id))"
+      :initial-values="{ name: editingPercentDiscount.name, discountPercent: Number(editingPercentDiscount.discountMoney) }"
       @submit="onSubmitEditPercentDiscount">
       <div class="space-y-4 py-2">
         <FormField name="name" label="折扣券名稱" :disabled="isSubmitting" placeholder="例如: 九折折價券..." />
@@ -298,8 +261,8 @@
   <ModalDialog v-model:open="editQuickDiscountDialog" title="編輯快速折扣">
     <Form
       v-slot="{ isSubmitting }"
-      :validation-schema="toTypedSchema(quickDiscountSchema(currentQuickDiscount.id))"
-      :initial-values="{ name: currentQuickDiscount.name, kind: editQuickDiscountKind, value: Number(currentQuickDiscount.value) }"
+      :validation-schema="toTypedSchema(quickDiscountSchema(editingQuickDiscount.id))"
+      :initial-values="{ name: editingQuickDiscount.name, kind: editQuickDiscountKind, value: Number(editingQuickDiscount.value) }"
       @submit="onSubmitEditQuickDiscount">
       <div class="space-y-4 py-2">
         <FormField name="name" label="優惠名稱" :disabled="isSubmitting" placeholder="例如: 常客優惠、員工優惠..." />
@@ -336,7 +299,7 @@ import { useDiscountStore } from '@/stores/discount'
 const discountStore = useDiscountStore()
 import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
-import type { MaybeSelected, MoneyDiscount, PercentDiscount, QuickDiscount } from '@/types'
+import type { MoneyDiscount, PercentDiscount, QuickDiscount } from '@/types'
 import { hasCapability } from '@/utils/selection'
 import { ApiError } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
@@ -365,7 +328,6 @@ const canSetPercentDiscount = computed(() => hasCapability(loginStore.userInfo, 
 const canSetQuickDiscount = computed(() => hasCapability(loginStore.userInfo, 'canSetQuickDiscount'))
 
 // ---------- 現金折扣券 ----------
-const currentMoneyDiscount = ref<MaybeSelected<MoneyDiscount>>({})
 const moneyDiscountCurrentPage = ref(1)
 const moneyDiscountPageCount = computed(() => Math.max(Math.ceil(discountStore.moneyDiscount.length / 10), 1))
 const sliceMoneyDiscount = computed(() =>
@@ -398,19 +360,17 @@ async function onSubmitAddMoneyDiscount(values: Record<string, unknown>) {
 }
 
 const editMoneyDiscountDialog = ref(false)
-function openEditMoneyDiscountDialog() {
-  if (!currentMoneyDiscount.value.name) {
-    showToast('請先選擇要編輯的折扣券', 'error')
-    return
-  }
+const editingMoneyDiscount = ref<MoneyDiscount>({ id: '', name: '', discountMoney: 0 })
+function openEditMoneyDiscountDialog(row: MoneyDiscount) {
+  editingMoneyDiscount.value = row
   editMoneyDiscountDialog.value = true
 }
 async function onSubmitEditMoneyDiscount(values: Record<string, unknown>) {
   const input = values as { name: string; discountMoney: number }
   try {
-    const updated = await updateMoneyCoupon(String(currentMoneyDiscount.value.id), input)
-    currentMoneyDiscount.value.name = updated.name
-    currentMoneyDiscount.value.discountMoney = updated.discountMoney
+    const updated = await updateMoneyCoupon(String(editingMoneyDiscount.value.id), input)
+    editingMoneyDiscount.value.name = updated.name
+    editingMoneyDiscount.value.discountMoney = updated.discountMoney
     editMoneyDiscountDialog.value = false
     showToast('保存成功', 'success')
   } catch (err) {
@@ -418,21 +378,16 @@ async function onSubmitEditMoneyDiscount(values: Record<string, unknown>) {
   }
 }
 
-async function deleteCurrentMoneyDiscount() {
-  if (!currentMoneyDiscount.value.name) {
-    showToast('請先選擇要刪除的折扣券', 'error')
-    return
-  }
+async function removeMoneyDiscount(row: MoneyDiscount) {
   const result = await confirm({
     title: '警告',
-    description: `是否刪除折扣券 ${currentMoneyDiscount.value.name}？`,
+    description: `是否刪除折扣券 ${row.name}？`,
     variant: 'danger',
   })
   if (result !== 'confirm') return
   try {
-    await deleteMoneyCoupon(String(currentMoneyDiscount.value.id))
-    discountStore.moneyDiscount = discountStore.moneyDiscount.filter((item) => item.id !== currentMoneyDiscount.value.id)
-    currentMoneyDiscount.value = {}
+    await deleteMoneyCoupon(String(row.id))
+    discountStore.moneyDiscount = discountStore.moneyDiscount.filter((item) => item.id !== row.id)
     showToast('刪除成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
@@ -440,7 +395,6 @@ async function deleteCurrentMoneyDiscount() {
 }
 
 // ---------- 折數折扣券 ----------
-const currentPercentDiscount = ref<MaybeSelected<PercentDiscount>>({})
 const percentDiscountCurrentPage = ref(1)
 const percentDiscountPageCount = computed(() => Math.max(Math.ceil(discountStore.percentDiscount.length / 10), 1))
 const slicePercentDiscount = computed(() =>
@@ -476,19 +430,17 @@ async function onSubmitAddPercentDiscount(values: Record<string, unknown>) {
 }
 
 const editPercentDiscountDialog = ref(false)
-function openEditPercentDiscountDialog() {
-  if (!currentPercentDiscount.value.name) {
-    showToast('請先選擇要編輯的折扣券', 'error')
-    return
-  }
+const editingPercentDiscount = ref<PercentDiscount>({ id: '', name: '', discountMoney: 0 })
+function openEditPercentDiscountDialog(row: PercentDiscount) {
+  editingPercentDiscount.value = row
   editPercentDiscountDialog.value = true
 }
 async function onSubmitEditPercentDiscount(values: Record<string, unknown>) {
   const input = values as { name: string; discountPercent: number }
   try {
-    const updated = await updatePercentCoupon(String(currentPercentDiscount.value.id), input)
-    currentPercentDiscount.value.name = updated.name
-    currentPercentDiscount.value.discountMoney = updated.discountPercent
+    const updated = await updatePercentCoupon(String(editingPercentDiscount.value.id), input)
+    editingPercentDiscount.value.name = updated.name
+    editingPercentDiscount.value.discountMoney = updated.discountPercent
     editPercentDiscountDialog.value = false
     showToast('保存成功', 'success')
   } catch (err) {
@@ -496,21 +448,16 @@ async function onSubmitEditPercentDiscount(values: Record<string, unknown>) {
   }
 }
 
-async function deleteCurrentPercentDiscount() {
-  if (!currentPercentDiscount.value.name) {
-    showToast('請先選擇要刪除的折扣券', 'error')
-    return
-  }
+async function removePercentDiscount(row: PercentDiscount) {
   const result = await confirm({
     title: '警告',
-    description: `是否刪除折扣券 ${currentPercentDiscount.value.name}？`,
+    description: `是否刪除折扣券 ${row.name}？`,
     variant: 'danger',
   })
   if (result !== 'confirm') return
   try {
-    await deletePercentCoupon(String(currentPercentDiscount.value.id))
-    discountStore.percentDiscount = discountStore.percentDiscount.filter((item) => item.id !== currentPercentDiscount.value.id)
-    currentPercentDiscount.value = {}
+    await deletePercentCoupon(String(row.id))
+    discountStore.percentDiscount = discountStore.percentDiscount.filter((item) => item.id !== row.id)
     showToast('刪除成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
@@ -518,7 +465,6 @@ async function deleteCurrentPercentDiscount() {
 }
 
 // ---------- 快速折扣 ----------
-const currentQuickDiscount = ref<MaybeSelected<QuickDiscount>>({})
 const quickDiscountCurrentPage = ref(1)
 const quickDiscountPageCount = computed(() => Math.max(Math.ceil(discountStore.quickDiscounts.length / 10), 1))
 const sliceQuickDiscount = computed(() =>
@@ -555,21 +501,19 @@ async function onSubmitAddQuickDiscount(values: Record<string, unknown>) {
 
 const editQuickDiscountDialog = ref(false)
 const editQuickDiscountKind = ref<'amount' | 'percent'>('amount')
-function openEditQuickDiscountDialog() {
-  if (!currentQuickDiscount.value.name) {
-    showToast('請先選擇要編輯的優惠', 'error')
-    return
-  }
-  editQuickDiscountKind.value = currentQuickDiscount.value.kind ?? 'amount'
+const editingQuickDiscount = ref<QuickDiscount>({ id: '', name: '', kind: 'amount', value: 0 })
+function openEditQuickDiscountDialog(row: QuickDiscount) {
+  editingQuickDiscount.value = row
+  editQuickDiscountKind.value = row.kind
   editQuickDiscountDialog.value = true
 }
 async function onSubmitEditQuickDiscount(values: Record<string, unknown>) {
   const input = values as { name: string; kind: 'amount' | 'percent'; value: number }
   try {
-    const updated = await updateQuickDiscount(String(currentQuickDiscount.value.id), input)
-    currentQuickDiscount.value.name = updated.name
-    currentQuickDiscount.value.kind = updated.kind
-    currentQuickDiscount.value.value = updated.value
+    const updated = await updateQuickDiscount(String(editingQuickDiscount.value.id), input)
+    editingQuickDiscount.value.name = updated.name
+    editingQuickDiscount.value.kind = updated.kind
+    editingQuickDiscount.value.value = updated.value
     editQuickDiscountDialog.value = false
     showToast('保存成功', 'success')
   } catch (err) {
@@ -577,21 +521,16 @@ async function onSubmitEditQuickDiscount(values: Record<string, unknown>) {
   }
 }
 
-async function deleteCurrentQuickDiscount() {
-  if (!currentQuickDiscount.value.name) {
-    showToast('請先選擇要刪除的優惠', 'error')
-    return
-  }
+async function removeQuickDiscount(row: QuickDiscount) {
   const result = await confirm({
     title: '警告',
-    description: `是否刪除快速折扣 ${currentQuickDiscount.value.name}？`,
+    description: `是否刪除快速折扣 ${row.name}？`,
     variant: 'danger',
   })
   if (result !== 'confirm') return
   try {
-    await deleteQuickDiscount(String(currentQuickDiscount.value.id))
-    discountStore.quickDiscounts = discountStore.quickDiscounts.filter((item) => item.id !== currentQuickDiscount.value.id)
-    currentQuickDiscount.value = {}
+    await deleteQuickDiscount(String(row.id))
+    discountStore.quickDiscounts = discountStore.quickDiscounts.filter((item) => item.id !== row.id)
     showToast('刪除成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
