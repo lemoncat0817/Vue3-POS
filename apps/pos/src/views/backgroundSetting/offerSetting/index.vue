@@ -122,7 +122,6 @@
         <AppPagination :page="quickDiscountPage" :page-count="quickDiscountPageCount" :total="discountStore.quickDiscounts.length" @update:page="(v) => quickDiscountPage = v" />
       </div>
     </div>
-  </div>
 
   <!-- 新增訂單折價券 -->
   <ModalDialog v-model:open="addOrderCouponDialog" title="新增訂單折價券">
@@ -227,6 +226,7 @@
       </div>
     </Form>
   </ModalDialog>
+  </div>
 </template>
 
 <script setup lang="ts">

@@ -1,5 +1,20 @@
 import './styles/reset.scss'
 import './styles/style.scss'
+
+// 攔截 Chromium DevTools 即時指標 (Core Web Vitals) 或擴充套件在 SPA 軟導航時注入的已知例外，避免干擾控制台
+window.addEventListener('error', (event) => {
+  const message = typeof event.message === 'string' ? event.message : ''
+  const errorMsg = event.error instanceof Error ? event.error.message : ''
+  const stack = event.error instanceof Error ? event.error.stack : ''
+  if (
+    message.includes("reading 'startTime'") ||
+    errorMsg.includes("reading 'startTime'") ||
+    (typeof stack === 'string' && stack.includes('reportAllChanges') && stack.includes('startTime'))
+  ) {
+    event.preventDefault()
+  }
+})
+
 import { createApp } from 'vue'
 import App from './App.vue'
 const app = createApp(App)

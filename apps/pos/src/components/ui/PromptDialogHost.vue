@@ -6,8 +6,8 @@
         class="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-overlay focus:outline-none dark:bg-surface-900"
         @click.capture="onContentClick">
         <DialogTitle class="text-lg font-bold text-surface-900 dark:text-surface-100">{{ state.title }}</DialogTitle>
-        <DialogDescription v-if="state.description" class="mt-2 text-sm text-surface-600 dark:text-surface-400">
-          {{ state.description }}
+        <DialogDescription :class="state.description ? 'mt-2 text-sm text-surface-600 dark:text-surface-400' : 'sr-only'">
+          {{ state.description || state.title }}
         </DialogDescription>
         <label class="mt-4 block text-xs font-bold text-surface-500 dark:text-surface-400">
           {{ state.label }}

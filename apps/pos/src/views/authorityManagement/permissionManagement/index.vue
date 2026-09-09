@@ -91,8 +91,6 @@
       </div>
     </div>
 
-  </div>
-
   <ModalDialog v-model:open="addStaffDialog" title="新增人員" size="lg">
     <div class="space-y-3.5 py-1">
       <div class="grid grid-cols-2 gap-3">
@@ -180,7 +178,7 @@
       <button type="button" class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold" @click="editStaff">保存</button>
     </div>
   </ModalDialog>
-
+  </div>
 </template>
 
 <script setup lang="ts">
