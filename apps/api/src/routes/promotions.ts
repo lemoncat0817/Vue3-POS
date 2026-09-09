@@ -3,13 +3,14 @@ import { eq } from 'drizzle-orm'
 import {
   createMoneyCouponRequestSchema,
   createPercentCouponRequestSchema,
+  createQuickDiscountRequestSchema,
   moneyCouponSchema,
-  oftenUseRateSchema,
   percentCouponSchema,
   promotionsResponseSchema,
-  updateOftenUseRateRequestSchema,
+  quickDiscountSchema,
+  updateQuickDiscountRequestSchema,
 } from '@pos/contract'
-import { moneyCoupons, oftenUseRates, percentCoupons } from '../db/schema'
+import { moneyCoupons, percentCoupons, quickDiscounts } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
@@ -20,7 +21,7 @@ const getPromotionsRoute = createRoute({
   path: '/',
   responses: {
     200: {
-      description: '目前的促銷資料（現金／折數折價券、常用折扣）',
+      description: '目前的促銷資料（現金／折數折價券、快速折扣）',
       content: { 'application/json': { schema: promotionsResponseSchema } },
     },
   },
@@ -102,43 +103,58 @@ const updatePercentCouponRoute = createRoute({
   },
 })
 
-// 常用折扣固定 5 筆（slot 0～4），只能編輯內容，見 db/schema.ts 的說明。
-const updateOftenUseRateRoute = createRoute({
+const createQuickDiscountRoute = createRoute({
+  method: 'post',
+  path: '/quick-discounts',
+  middleware: [requireDeviceToken] as const,
+  request: { body: { content: { 'application/json': { schema: createQuickDiscountRequestSchema } } } },
+  responses: {
+    201: { description: '快速折扣建立成功', content: { 'application/json': { schema: quickDiscountSchema } } },
+    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+const updateQuickDiscountRoute = createRoute({
   method: 'put',
-  path: '/often-use-rates/{slot}',
+  path: '/quick-discounts/{id}',
   middleware: [requireDeviceToken] as const,
   request: {
-    params: z.object({ slot: z.coerce.number().int().min(0).max(4) }),
-    body: { content: { 'application/json': { schema: updateOftenUseRateRequestSchema } } },
+    params: z.object({ id: z.string().min(1) }),
+    body: { content: { 'application/json': { schema: updateQuickDiscountRequestSchema } } },
   },
   responses: {
-    200: { description: '常用折扣更新成功', content: { 'application/json': { schema: oftenUseRateSchema } } },
+    200: { description: '快速折扣更新成功', content: { 'application/json': { schema: quickDiscountSchema } } },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '這個 slot 不存在', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這筆快速折扣', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+const deleteQuickDiscountRoute = createRoute({
+  method: 'delete',
+  path: '/quick-discounts/{id}',
+  middleware: [requireDeviceToken] as const,
+  request: { params: z.object({ id: z.string().min(1) }) },
+  responses: {
+    204: { description: '快速折扣已刪除' },
+    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這筆快速折扣', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
 export const promotionRoutes = new OpenAPIHono<AppEnv>()
   .openapi(getPromotionsRoute, async (c) => {
     const db = c.get('db')
-    const [money, percent, oftenUse] = await Promise.all([
+    const [money, percent, quick] = await Promise.all([
       db.select().from(moneyCoupons).all(),
       db.select().from(percentCoupons).all(),
-      db.select().from(oftenUseRates).all(),
+      db.select().from(quickDiscounts).all(),
     ])
-
-    const bySlot = new Map(oftenUse.map((row) => [row.slot, row]))
-    const at = (slot: number) => {
-      const row = bySlot.get(slot)
-      if (!row) throw new Error(`常用折扣缺少 slot ${slot} 的資料，請先套用 seed/promotions.sql`)
-      return { slot: row.slot, name: row.name, discountMoney: row.discountMoney, discountPercent: row.discountPercent }
-    }
 
     return c.json(
       promotionsResponseSchema.parse({
         moneyCoupons: money.map((row) => ({ id: row.id, name: row.name, discountMoney: row.discountMoney })),
         percentCoupons: percent.map((row) => ({ id: row.id, name: row.name, discountPercent: row.discountPercent })),
-        oftenUseRates: [at(0), at(1), at(2), at(3), at(4)],
+        quickDiscounts: quick.map((row) => ({ id: row.id, name: row.name, kind: row.kind, value: row.value })),
       }),
       200,
     )
@@ -191,12 +207,27 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
     await db.update(percentCoupons).set(input).where(eq(percentCoupons.id, id))
     return c.json(percentCouponSchema.parse({ id, ...input }), 200)
   })
-  .openapi(updateOftenUseRateRoute, async (c) => {
-    const { slot } = c.req.valid('param')
+  .openapi(createQuickDiscountRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(oftenUseRates).where(eq(oftenUseRates.slot, slot)).get()
-    if (!existing) return c.json({ error: '這個 slot 不存在' }, 404)
-    await db.update(oftenUseRates).set(input).where(eq(oftenUseRates.slot, slot))
-    return c.json(oftenUseRateSchema.parse({ slot, ...input }), 200)
+    const newDiscount = { id: crypto.randomUUID(), ...input }
+    await db.insert(quickDiscounts).values(newDiscount)
+    return c.json(quickDiscountSchema.parse(newDiscount), 201)
+  })
+  .openapi(updateQuickDiscountRoute, async (c) => {
+    const { id } = c.req.valid('param')
+    const input = c.req.valid('json')
+    const db = c.get('db')
+    const existing = await db.select().from(quickDiscounts).where(eq(quickDiscounts.id, id)).get()
+    if (!existing) return c.json({ error: '找不到這筆快速折扣' }, 404)
+    await db.update(quickDiscounts).set(input).where(eq(quickDiscounts.id, id))
+    return c.json(quickDiscountSchema.parse({ id, ...input }), 200)
+  })
+  .openapi(deleteQuickDiscountRoute, async (c) => {
+    const { id } = c.req.valid('param')
+    const db = c.get('db')
+    const existing = await db.select().from(quickDiscounts).where(eq(quickDiscounts.id, id)).get()
+    if (!existing) return c.json({ error: '找不到這筆快速折扣' }, 404)
+    await db.delete(quickDiscounts).where(eq(quickDiscounts.id, id))
+    return c.body(null, 204)
   })

@@ -11,16 +11,11 @@ async function readJson(res: Response): Promise<any> {
 const validLine = {
   name: '楊枝甘露2.0',
   price: 80,
-  size: 'L',
   count: 1,
   addList: '無添加配料' as const,
   addListPrice: 0,
   freeDiscount: false,
-  ecoDiscount: false,
-  bottleDiscount: false,
-  oftenUseDiscount1: false,
-  oftenUseDiscount2: false,
-  oftenUseDiscount3: false,
+  quickDiscountId: null,
 }
 
 function buildOrderRequest(idempotencyKey: string, tenders: { method: string; amount: number }[]) {

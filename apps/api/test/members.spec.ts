@@ -133,16 +133,11 @@ describe('GET /api/members/:id、PUT、DELETE', () => {
           {
             name: '楊枝甘露2.0',
             price: 80,
-            size: 'L',
             count: 1,
             addList: '無添加配料',
             addListPrice: 0,
             freeDiscount: false,
-            ecoDiscount: false,
-            bottleDiscount: false,
-            oftenUseDiscount1: false,
-            oftenUseDiscount2: false,
-            oftenUseDiscount3: false,
+            quickDiscountId: null,
           },
         ],
         bagCount: 0,
@@ -174,16 +169,11 @@ describe('POST /api/orders 掛會員（P22）', () => {
   const validLine = {
     name: '楊枝甘露2.0',
     price: 80,
-    size: 'L',
     count: 2,
     addList: '無添加配料' as const,
     addListPrice: 0,
     freeDiscount: false,
-    ecoDiscount: false,
-    bottleDiscount: false,
-    oftenUseDiscount1: false,
-    oftenUseDiscount2: false,
-    oftenUseDiscount3: false,
+    quickDiscountId: null,
   }
 
   function buildRequest(overrides: Record<string, unknown> = {}) {

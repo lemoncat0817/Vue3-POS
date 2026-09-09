@@ -1,14 +1,15 @@
 import { sql } from 'drizzle-orm'
-import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import type {
   AuditLogAction,
   AuthorityKey,
-  DrinkCustomized,
   InvoiceCarrierType,
   InvoiceStatus,
+  ModifierSelectionType,
   OrderChannel,
   OrderStatus,
   PaymentUseMethod,
+  QuickDiscountKind,
   TableStatus,
 } from '@pos/contract'
 
@@ -16,25 +17,54 @@ import type {
 // apps/pos 現行因表單輸入而混用的型別（FormNumeric、'none' 字面值）。
 
 // ---------- 菜單 ----------
+// 不綁定單一餐飲品類：品項只有一個底價，客製化選項（尺寸、甜度、熟度……）
+// 一律透過可重複掛用的規格群組（modifierGroups）表達，見 @pos/contract 的說明。
 
-export const catalogGroups = sqliteTable('catalog_groups', {
+export const categories = sqliteTable('categories', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
-  type: text('type').notNull(),
 })
 
-export const catalogItems = sqliteTable('catalog_items', {
+export const products = sqliteTable('products', {
   id: text('id').primaryKey(),
-  groupId: text('group_id')
+  categoryId: text('category_id')
     .notNull()
-    .references(() => catalogGroups.id),
+    .references(() => categories.id),
   name: text('name').notNull(),
-  priceL: integer('price_l'),
-  priceBottle: integer('price_bottle'),
-  customized: text('customized').$type<DrinkCustomized>().notNull(),
+  basePrice: integer('base_price').notNull(),
   // null 代表不追蹤此品項庫存，見 @pos/contract 的 catalogStockSchema。
   stock: integer('stock'),
 })
+
+export const modifierGroups = sqliteTable('modifier_groups', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  selectionType: text('selection_type').$type<ModifierSelectionType>().notNull(),
+  required: integer('required', { mode: 'boolean' }).notNull(),
+})
+
+export const modifierOptions = sqliteTable('modifier_options', {
+  id: text('id').primaryKey(),
+  groupId: text('group_id')
+    .notNull()
+    .references(() => modifierGroups.id),
+  name: text('name').notNull(),
+  priceDelta: integer('price_delta').notNull(),
+})
+
+// 品項與規格群組的多對多關聯：同一群組（例如「甜度」）可掛在任意數量的品項上。
+export const productModifierGroups = sqliteTable(
+  'product_modifier_groups',
+  {
+    productId: text('product_id')
+      .notNull()
+      .references(() => products.id),
+    groupId: text('group_id')
+      .notNull()
+      .references(() => modifierGroups.id),
+  },
+  (table) => [primaryKey({ columns: [table.productId, table.groupId] })],
+)
 
 export const addOnOptions = sqliteTable('add_on_options', {
   id: text('id').primaryKey(),
@@ -59,13 +89,13 @@ export const percentCoupons = sqliteTable('percent_coupons', {
   discountPercent: real('discount_percent').notNull(),
 })
 
-// 常用折扣固定 5 筆（見 @pos/domain 的 OftenUseRates），slot 0～4 為固定
-// 位置（0 環保、1 瓶裝、2～4 三個折數），後台只能編輯內容、不能新增／刪除列。
-export const oftenUseRates = sqliteTable('often_use_rates', {
-  slot: integer('slot').primaryKey(),
+// 快速折扣：點餐頁購物車可直接套用在勾選品項上的具名折扣，後台可自由新增／
+// 刪除任意筆數（見 @pos/domain 的 QuickDiscount），不再是固定 slot 的表。
+export const quickDiscounts = sqliteTable('quick_discounts', {
+  id: text('id').primaryKey(),
   name: text('name').notNull(),
-  discountMoney: integer('discount_money').notNull(),
-  discountPercent: real('discount_percent').notNull(),
+  kind: text('kind').$type<QuickDiscountKind>().notNull(),
+  value: real('value').notNull(),
 })
 
 // ---------- 裝置憑證 ----------
@@ -217,23 +247,16 @@ export const orderLines = sqliteTable('order_lines', {
     .references(() => orders.orderId),
   name: text('name').notNull(),
   price: integer('price').notNull(),
-  size: text('size').notNull(),
   count: integer('count').notNull(),
   discount: integer('discount').notNull(),
   addList: text('add_list', { mode: 'json' }).$type<string | string[]>().notNull(),
   addListPrice: integer('add_list_price').notNull(),
   totalPrice: integer('total_price').notNull(),
-  currentDiscountPercent: real('current_discount_percent').notNull(),
-  currentDiscountMoney: real('current_discount_money').notNull(),
-  useDiscountPercent: text('use_discount_percent').notNull(),
-  useDiscountMoney: text('use_discount_money').notNull(),
-  useDiscountFree: text('use_discount_free').notNull(),
   freeDiscount: integer('free_discount', { mode: 'boolean' }).notNull(),
-  ecoDiscount: integer('eco_discount', { mode: 'boolean' }).notNull(),
-  bottleDiscount: integer('bottle_discount', { mode: 'boolean' }).notNull(),
-  oftenUseDiscount1: integer('often_use_discount_1', { mode: 'boolean' }).notNull(),
-  oftenUseDiscount2: integer('often_use_discount_2', { mode: 'boolean' }).notNull(),
-  oftenUseDiscount3: integer('often_use_discount_3', { mode: 'boolean' }).notNull(),
+  // 套用哪一筆快速折扣，沒套用是 null；name 是下單當下的名稱快照，避免
+  // 後台之後改名或刪除該筆快速折扣時，歷史訂單的顯示跟著跑掉。
+  quickDiscountId: text('quick_discount_id'),
+  quickDiscountName: text('quick_discount_name').notNull().default(''),
 })
 
 // 一筆訂單實際收到的每一筆支付，取代舊的 orders.orderPayment 單一字串
@@ -331,12 +354,15 @@ export const diningTables = sqliteTable('dining_tables', {
 })
 
 export const schema = {
-  catalogGroups,
-  catalogItems,
+  categories,
+  products,
+  modifierGroups,
+  modifierOptions,
+  productModifierGroups,
   addOnOptions,
   moneyCoupons,
   percentCoupons,
-  oftenUseRates,
+  quickDiscounts,
   devices,
   staff,
   paymentMethods,

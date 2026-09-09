@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
-import { moneyCoupons, oftenUseRates, percentCoupons } from '../src/db/schema'
+import { moneyCoupons, percentCoupons } from '../src/db/schema'
 import { createTestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
 
@@ -12,16 +12,11 @@ async function readJson(res: Response): Promise<any> {
 const validLine = {
   name: '楊枝甘露2.0',
   price: 80,
-  size: 'L',
   count: 1,
   addList: '無添加配料' as const,
   addListPrice: 0,
   freeDiscount: false,
-  ecoDiscount: false,
-  bottleDiscount: false,
-  oftenUseDiscount1: false,
-  oftenUseDiscount2: false,
-  oftenUseDiscount3: false,
+  quickDiscountId: null,
 }
 
 function buildRequest(overrides: Record<string, unknown> = {}) {
@@ -45,13 +40,6 @@ describe('沒有啟用中的字軌時，送單依號碼核發失敗', () => {
     // 這裡刻意不呼叫 seedPromotions（它現在會順便建立測試用字軌，見
     // helpers/promotions.ts），單獨測「完全沒有字軌」這個狀況。
     const db = createTestDb()
-    await db.insert(oftenUseRates).values([
-      { slot: 0, name: '環保折扣', discountMoney: 5, discountPercent: 1 },
-      { slot: 1, name: '瓶裝折扣', discountMoney: 10, discountPercent: 1 },
-      { slot: 2, name: '九折', discountMoney: 0, discountPercent: 0.9 },
-      { slot: 3, name: '八五折', discountMoney: 0, discountPercent: 0.85 },
-      { slot: 4, name: '員工八折', discountMoney: 0, discountPercent: 0.8 },
-    ])
     await db.insert(moneyCoupons).values([{ id: 'money-1', name: '$50折價券', discountMoney: 50 }])
     await db.insert(percentCoupons).values([{ id: 'percent-1', name: '整單95折', discountPercent: 0.95 }])
     const { app, deviceToken } = await createTestAppWithDevice(db)

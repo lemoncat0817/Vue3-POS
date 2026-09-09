@@ -4,7 +4,7 @@ import { createTestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
 
 describe('GET /api/promotions', () => {
-  it('不需要裝置憑證，回傳現金／折數折價券與 5 筆常用折扣', async () => {
+  it('不需要裝置憑證，回傳現金／折數折價券與快速折扣清單', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const app = createTestApp(db)
@@ -14,17 +14,18 @@ describe('GET /api/promotions', () => {
     const body = (await res.json()) as {
       moneyCoupons: unknown[]
       percentCoupons: unknown[]
-      oftenUseRates: unknown[]
+      quickDiscounts: unknown[]
     }
     expect(body.moneyCoupons).toHaveLength(2)
     expect(body.percentCoupons).toHaveLength(1)
-    expect(body.oftenUseRates).toHaveLength(5)
+    expect(body.quickDiscounts).toHaveLength(3)
   })
 
-  it('沒有資料時回傳空陣列，但常用折扣缺資料會直接出錯（見 routes/promotions.ts 的設計說明）', async () => {
+  it('沒有資料時回傳空陣列（清單可自由增刪，沒有固定筆數限制）', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/promotions')
-    expect(res.status).toBe(500)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ moneyCoupons: [], percentCoupons: [], quickDiscounts: [] })
   })
 })
 
@@ -123,35 +124,76 @@ describe('PUT /api/promotions/percent-coupons/:id', () => {
   })
 })
 
-describe('PUT /api/promotions/often-use-rates/:slot', () => {
-  it('更新指定 slot 的內容，不影響其他 slot', async () => {
+describe('POST /api/promotions/quick-discounts', () => {
+  it('建立成功，id 由伺服端配發（清單可自由新增，不受固定筆數限制）', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/promotions/quick-discounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ name: '生日優惠', kind: 'percent', value: 0.8 }),
+    })
+    expect(res.status).toBe(201)
+    const body = (await res.json()) as { id: string; name: string; kind: string; value: number }
+    expect(body).toMatchObject({ name: '生日優惠', kind: 'percent', value: 0.8 })
+    expect(body.id).toBeTruthy()
+  })
+})
+
+describe('PUT /api/promotions/quick-discounts/:id', () => {
+  it('更新指定 id 的內容，不影響其他筆', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken } = await createTestAppWithDevice(db)
 
-    const res = await app.request('/api/promotions/often-use-rates/0', {
+    const res = await app.request('/api/promotions/quick-discounts/quick-1', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ name: '環保折扣（調整後）', discountMoney: 8, discountPercent: 1 }),
+      body: JSON.stringify({ name: '常客優惠（調整後）', kind: 'amount', value: 8 }),
     })
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { slot: number; name: string; discountMoney: number }
-    expect(body).toMatchObject({ slot: 0, name: '環保折扣（調整後）', discountMoney: 8 })
+    const body = (await res.json()) as { id: string; name: string; value: number }
+    expect(body).toMatchObject({ id: 'quick-1', name: '常客優惠（調整後）', value: 8 })
 
     const list = (await (await app.request('/api/promotions')).json()) as {
-      oftenUseRates: Array<{ slot: number; name: string }>
+      quickDiscounts: Array<{ id: string; name: string }>
     }
-    expect(list.oftenUseRates[0]).toMatchObject({ name: '環保折扣（調整後）' })
-    expect(list.oftenUseRates[1]).toMatchObject({ name: '瓶裝折扣' })
+    expect(list.quickDiscounts.find((d) => d.id === 'quick-1')).toMatchObject({ name: '常客優惠（調整後）' })
+    expect(list.quickDiscounts.find((d) => d.id === 'quick-2')).toMatchObject({ name: '大宗採購優惠' })
   })
 
-  it('slot 超出 0～4 範圍時驗證失敗', async () => {
+  it('更新不存在的快速折扣回傳 404', async () => {
     const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
-    const res = await app.request('/api/promotions/often-use-rates/9', {
+    const res = await app.request('/api/promotions/quick-discounts/does-not-exist', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ name: 'x', discountMoney: 0, discountPercent: 1 }),
+      body: JSON.stringify({ name: 'x', kind: 'amount', value: 0 }),
     })
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('DELETE /api/promotions/quick-discounts/:id', () => {
+  it('刪除存在的快速折扣回傳 204，之後就不在清單裡', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    const res = await app.request('/api/promotions/quick-discounts/quick-1', {
+      method: 'DELETE',
+      headers: { 'X-Device-Token': deviceToken },
+    })
+    expect(res.status).toBe(204)
+
+    const list = (await (await app.request('/api/promotions')).json()) as { quickDiscounts: Array<{ id: string }> }
+    expect(list.quickDiscounts.find((d) => d.id === 'quick-1')).toBeUndefined()
+  })
+
+  it('刪除不存在的快速折扣回傳 404', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/promotions/quick-discounts/does-not-exist', {
+      method: 'DELETE',
+      headers: { 'X-Device-Token': deviceToken },
+    })
+    expect(res.status).toBe(404)
   })
 })

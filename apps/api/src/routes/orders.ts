@@ -11,17 +11,17 @@ import {
   type OrderLineInput,
   type TenderInput,
 } from '@pos/contract'
-import { priceLine, summarizeOrderRefunds, type OftenUseRates } from '@pos/domain'
+import { priceLine, summarizeOrderRefunds, type QuickDiscount } from '@pos/domain'
 import {
   addOnOptions,
-  catalogItems,
   members,
   moneyCoupons,
   orderLines,
   orderRefunds,
   orders,
   orderTenders,
-  oftenUseRates as oftenUseRatesTable,
+  products,
+  quickDiscounts as quickDiscountsTable,
   percentCoupons,
 } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -190,41 +190,24 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderT
     orderData: lines.map((line) => ({
       name: line.name,
       price: line.price,
-      size: line.size,
       count: line.count,
       addList: line.addList,
       addListPrice: line.addListPrice,
       freeDiscount: line.freeDiscount,
-      ecoDiscount: line.ecoDiscount,
-      bottleDiscount: line.bottleDiscount,
-      oftenUseDiscount1: line.oftenUseDiscount1,
-      oftenUseDiscount2: line.oftenUseDiscount2,
-      oftenUseDiscount3: line.oftenUseDiscount3,
+      quickDiscountId: line.quickDiscountId,
       discount: line.discount,
       totalPrice: line.totalPrice,
-      currentDiscountMoney: line.currentDiscountMoney,
-      currentDiscountPercent: line.currentDiscountPercent,
-      useDiscountMoney: line.useDiscountMoney,
-      useDiscountPercent: line.useDiscountPercent,
-      useDiscountFree: line.useDiscountFree,
+      quickDiscountName: line.quickDiscountName,
     })),
   })
 }
 
-// 常用折扣由 often_use_rates 表提供，永遠讀當下的值，不會有「後台改了、
-// 送單卻還用舊值」的不一致。缺任何一個 slot 直接讓送單失敗（500）而不是
-// 悄悄補假資料——缺資料代表部署流程有問題，比起算出錯的折扣，這裡就爆出來更安全。
-async function loadOftenUseRates(db: AnyDb): Promise<OftenUseRates> {
-  const rows = await db.select().from(oftenUseRatesTable).all()
-  const bySlot = new Map(rows.map((row) => [row.slot, row]))
-  const at = (slot: number) => {
-    const row = bySlot.get(slot)
-    if (!row) {
-      throw new Error(`常用折扣缺少 slot ${slot} 的資料，請先套用 seed/promotions.sql`)
-    }
-    return { name: row.name, discountMoney: row.discountMoney, discountPercent: row.discountPercent }
-  }
-  return [at(0), at(1), at(2), at(3), at(4)]
+// 快速折扣由 quick_discounts 表提供，永遠讀當下的值，不會有「後台改了、
+// 送單卻還用舊值」的不一致。清單筆數不固定，找不到某個 quickDiscountId
+// 時 priceLine() 視為未套用（可能是後台送單當下剛好刪掉那一筆）。
+async function loadQuickDiscounts(db: AnyDb): Promise<QuickDiscount[]> {
+  const rows = await db.select().from(quickDiscountsTable).all()
+  return rows.map((row) => ({ id: row.id, name: row.name, kind: row.kind, value: row.value }))
 }
 
 // 原子核發下一個訂單序號：單一 SQL 陳述式（INSERT ... ON CONFLICT DO
@@ -284,9 +267,9 @@ function toInvoiceCarrier(type: InvoiceCarrier['type'], value: string | null): I
 // 擋下訂單：目前只做「扣減與示警」，真正的超賣防護留待之後需要再做。
 async function deductStock(db: AnyDb, lines: Pick<OrderLineInput, 'name' | 'count' | 'addList'>[]): Promise<void> {
   for (const line of lines) {
-    const item = await db.select().from(catalogItems).where(eq(catalogItems.name, line.name)).get()
+    const item = await db.select().from(products).where(eq(products.name, line.name)).get()
     if (item && item.stock !== null) {
-      await db.update(catalogItems).set({ stock: Math.max(0, item.stock - line.count) }).where(eq(catalogItems.id, item.id))
+      await db.update(products).set({ stock: Math.max(0, item.stock - line.count) }).where(eq(products.id, item.id))
     }
     if (Array.isArray(line.addList)) {
       for (const addOnName of line.addList) {
@@ -376,12 +359,12 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const sequence = await nextOrderSequence(db, input.businessDate)
     const orderId = `${input.businessDate}${sequence}`
 
-    const oftenUseRatesNow = await loadOftenUseRates(db)
+    const quickDiscountsNow = await loadQuickDiscounts(db)
     const pricedLines = input.lines.map((line) => {
       const priced = priceLine(
         { price: line.price, count: line.count, addListPrice: line.addListPrice },
         line,
-        oftenUseRatesNow,
+        quickDiscountsNow,
       )
       return { ...line, ...priced }
     })

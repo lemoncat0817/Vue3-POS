@@ -2,18 +2,29 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import {
   addOnOptionSchema,
-  catalogGroupSummarySchema,
-  catalogItemSchema,
+  categorySchema,
   catalogResponseSchema,
   createAddOnOptionRequestSchema,
-  createCatalogGroupRequestSchema,
-  createCatalogItemRequestSchema,
+  createCategoryRequestSchema,
+  createModifierGroupRequestSchema,
+  createProductRequestSchema,
+  modifierGroupSchema,
+  productSchema,
   updateAddOnOptionRequestSchema,
-  updateCatalogGroupRequestSchema,
-  updateCatalogItemRequestSchema,
+  updateCategoryRequestSchema,
+  updateModifierGroupRequestSchema,
+  updateProductRequestSchema,
 } from '@pos/contract'
-import { addOnOptions, catalogGroups, catalogItems } from '../db/schema'
+import {
+  addOnOptions,
+  categories,
+  modifierGroups,
+  modifierOptions,
+  productModifierGroups,
+  products,
+} from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
@@ -23,90 +34,126 @@ const getCatalogRoute = createRoute({
   path: '/',
   responses: {
     200: {
-      description: '目前的菜單（飲料系列與品項、加料選項）',
-      content: {
-        'application/json': { schema: catalogResponseSchema },
-      },
+      description: '目前的菜單（分類、品項、規格群組、加購選項）',
+      content: { 'application/json': { schema: catalogResponseSchema } },
     },
   },
 })
 
-/** 菜單管理寫入 API：支援飲品分類、品項與加料選項之後台維護。 */
-const createGroupRoute = createRoute({
+/** 菜單管理寫入 API：支援分類、品項、規格群組與加購選項之後台維護。 */
+const createCategoryRoute = createRoute({
   method: 'post',
-  path: '/groups',
+  path: '/categories',
   middleware: [requireDeviceToken] as const,
-  request: { body: { content: { 'application/json': { schema: createCatalogGroupRequestSchema } } } },
+  request: { body: { content: { 'application/json': { schema: createCategoryRequestSchema } } } },
   responses: {
-    201: { description: '飲品類型建立成功', content: { 'application/json': { schema: catalogGroupSummarySchema } } },
+    201: { description: '分類建立成功', content: { 'application/json': { schema: categorySchema } } },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
-const updateGroupRoute = createRoute({
+const updateCategoryRoute = createRoute({
   method: 'put',
-  path: '/groups/{id}',
+  path: '/categories/{id}',
   middleware: [requireDeviceToken] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updateCatalogGroupRequestSchema } } },
+    body: { content: { 'application/json': { schema: updateCategoryRequestSchema } } },
   },
   responses: {
-    200: { description: '飲品類型更新成功', content: { 'application/json': { schema: catalogGroupSummarySchema } } },
+    200: { description: '分類更新成功', content: { 'application/json': { schema: categorySchema } } },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個飲品類型', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這個分類', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
-const deleteGroupRoute = createRoute({
+const deleteCategoryRoute = createRoute({
   method: 'delete',
-  path: '/groups/{id}',
+  path: '/categories/{id}',
   middleware: [requireDeviceToken] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
-    204: { description: '飲品類型已刪除' },
+    204: { description: '分類已刪除' },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個飲品類型', content: { 'application/json': { schema: errorSchema } } },
-    409: { description: '這個類型底下還有品項，需要先刪除或搬移品項', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這個分類', content: { 'application/json': { schema: errorSchema } } },
+    409: { description: '這個分類底下還有品項，需要先刪除或搬移品項', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
-const createItemRoute = createRoute({
+const createProductRoute = createRoute({
   method: 'post',
-  path: '/items',
+  path: '/products',
   middleware: [requireDeviceToken] as const,
-  request: { body: { content: { 'application/json': { schema: createCatalogItemRequestSchema } } } },
+  request: { body: { content: { 'application/json': { schema: createProductRequestSchema } } } },
   responses: {
-    201: { description: '飲料品項建立成功', content: { 'application/json': { schema: catalogItemSchema } } },
+    201: { description: '品項建立成功', content: { 'application/json': { schema: productSchema } } },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到對應的飲品類型', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到對應的分類或規格群組', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
-const updateItemRoute = createRoute({
+const updateProductRoute = createRoute({
   method: 'put',
-  path: '/items/{id}',
+  path: '/products/{id}',
   middleware: [requireDeviceToken] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updateCatalogItemRequestSchema } } },
+    body: { content: { 'application/json': { schema: updateProductRequestSchema } } },
   },
   responses: {
-    200: { description: '飲料品項更新成功', content: { 'application/json': { schema: catalogItemSchema } } },
+    200: { description: '品項更新成功', content: { 'application/json': { schema: productSchema } } },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個品項或對應的飲品類型', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這個品項或對應的分類／規格群組', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
-const deleteItemRoute = createRoute({
+const deleteProductRoute = createRoute({
   method: 'delete',
-  path: '/items/{id}',
+  path: '/products/{id}',
   middleware: [requireDeviceToken] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
-    204: { description: '飲料品項已刪除' },
+    204: { description: '品項已刪除' },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
     404: { description: '找不到這個品項', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+const createModifierGroupRoute = createRoute({
+  method: 'post',
+  path: '/modifier-groups',
+  middleware: [requireDeviceToken] as const,
+  request: { body: { content: { 'application/json': { schema: createModifierGroupRequestSchema } } } },
+  responses: {
+    201: { description: '規格群組建立成功', content: { 'application/json': { schema: modifierGroupSchema } } },
+    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+const updateModifierGroupRoute = createRoute({
+  method: 'put',
+  path: '/modifier-groups/{id}',
+  middleware: [requireDeviceToken] as const,
+  request: {
+    params: z.object({ id: z.string().min(1) }),
+    body: { content: { 'application/json': { schema: updateModifierGroupRequestSchema } } },
+  },
+  responses: {
+    200: { description: '規格群組更新成功', content: { 'application/json': { schema: modifierGroupSchema } } },
+    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這個規格群組', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+const deleteModifierGroupRoute = createRoute({
+  method: 'delete',
+  path: '/modifier-groups/{id}',
+  middleware: [requireDeviceToken] as const,
+  request: { params: z.object({ id: z.string().min(1) }) },
+  responses: {
+    204: { description: '規格群組已刪除' },
+    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這個規格群組', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
@@ -116,7 +163,7 @@ const createAddOnRoute = createRoute({
   middleware: [requireDeviceToken] as const,
   request: { body: { content: { 'application/json': { schema: createAddOnOptionRequestSchema } } } },
   responses: {
-    201: { description: '配料建立成功', content: { 'application/json': { schema: addOnOptionSchema } } },
+    201: { description: '加購選項建立成功', content: { 'application/json': { schema: addOnOptionSchema } } },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
   },
 })
@@ -130,9 +177,9 @@ const updateAddOnRoute = createRoute({
     body: { content: { 'application/json': { schema: updateAddOnOptionRequestSchema } } },
   },
   responses: {
-    200: { description: '配料更新成功', content: { 'application/json': { schema: addOnOptionSchema } } },
+    200: { description: '加購選項更新成功', content: { 'application/json': { schema: addOnOptionSchema } } },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個配料', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這個加購選項', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
@@ -142,115 +189,198 @@ const deleteAddOnRoute = createRoute({
   middleware: [requireDeviceToken] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
-    204: { description: '配料已刪除' },
+    204: { description: '加購選項已刪除' },
     401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個配料', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: '找不到這個加購選項', content: { 'application/json': { schema: errorSchema } } },
   },
 })
+
+/** 一次寫入規格群組的所有選項：先刪光現有選項再整批重建，避免逐筆 diff 的複雜度。 */
+async function replaceModifierOptions(db: AnyDb, groupId: string, options: { name: string; priceDelta: number }[]) {
+  await db.delete(modifierOptions).where(eq(modifierOptions.groupId, groupId))
+  if (options.length === 0) return
+  await db.insert(modifierOptions).values(options.map((option) => ({ id: crypto.randomUUID(), groupId, ...option })))
+}
+
+async function loadModifierGroup(db: AnyDb, id: string) {
+  const group = await db.select().from(modifierGroups).where(eq(modifierGroups.id, id)).get()
+  if (!group) return null
+  const options = await db.select().from(modifierOptions).where(eq(modifierOptions.groupId, id)).all()
+  return modifierGroupSchema.parse({
+    id: group.id,
+    name: group.name,
+    selectionType: group.selectionType,
+    required: group.required,
+    options: options.map((option) => ({ id: option.id, name: option.name, priceDelta: option.priceDelta })),
+  })
+}
+
+/** 一次寫入品項掛用的規格群組：先刪光現有關聯再整批重建。 */
+async function replaceProductModifierGroups(db: AnyDb, productId: string, groupIds: string[]) {
+  await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, productId))
+  if (groupIds.length === 0) return
+  await db.insert(productModifierGroups).values(groupIds.map((groupId) => ({ productId, groupId })))
+}
 
 export const catalogRoutes = new OpenAPIHono<AppEnv>()
   .openapi(getCatalogRoute, async (c) => {
     const db = c.get('db')
 
-    const [groups, items, addOns] = await Promise.all([
-      db.select().from(catalogGroups).all(),
-      db.select().from(catalogItems).all(),
+    const [categoryRows, productRows, groupRows, optionRows, productGroupRows, addOns] = await Promise.all([
+      db.select().from(categories).all(),
+      db.select().from(products).all(),
+      db.select().from(modifierGroups).all(),
+      db.select().from(modifierOptions).all(),
+      db.select().from(productModifierGroups).all(),
       db.select().from(addOnOptions).all(),
     ])
 
-    const itemsByGroup = new Map<string, typeof items>()
-    for (const item of items) {
-      const list = itemsByGroup.get(item.groupId) ?? []
-      list.push(item)
-      itemsByGroup.set(item.groupId, list)
+    const optionsByGroup = new Map<string, typeof optionRows>()
+    for (const option of optionRows) {
+      const list = optionsByGroup.get(option.groupId) ?? []
+      list.push(option)
+      optionsByGroup.set(option.groupId, list)
+    }
+    const groupIdsByProduct = new Map<string, string[]>()
+    for (const row of productGroupRows) {
+      const list = groupIdsByProduct.get(row.productId) ?? []
+      list.push(row.groupId)
+      groupIdsByProduct.set(row.productId, list)
     }
 
     return c.json(
       catalogResponseSchema.parse({
-        groups: groups.map((group) => ({
+        categories: categoryRows.map((category) => ({ id: category.id, name: category.name })),
+        products: productRows.map((product) => ({
+          id: product.id,
+          categoryId: product.categoryId,
+          name: product.name,
+          basePrice: product.basePrice,
+          stock: product.stock,
+          modifierGroupIds: groupIdsByProduct.get(product.id) ?? [],
+        })),
+        modifierGroups: groupRows.map((group) => ({
           id: group.id,
           name: group.name,
-          type: group.type,
-          items: (itemsByGroup.get(group.id) ?? []).map((item) => ({
-            id: item.id,
-            name: item.name,
-            priceL: item.priceL,
-            priceBottle: item.priceBottle,
-            customized: item.customized,
-            stock: item.stock,
+          selectionType: group.selectionType,
+          required: group.required,
+          options: (optionsByGroup.get(group.id) ?? []).map((option) => ({
+            id: option.id,
+            name: option.name,
+            priceDelta: option.priceDelta,
           })),
         })),
         addOns: addOns.map((addOn) => ({ id: addOn.id, name: addOn.name, price: addOn.price, stock: addOn.stock })),
       }),
     )
   })
-  .openapi(createGroupRoute, async (c) => {
+  .openapi(createCategoryRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    const newGroup = { id: crypto.randomUUID(), ...input }
-    await db.insert(catalogGroups).values(newGroup)
-    return c.json(newGroup, 201)
+    const newCategory = { id: crypto.randomUUID(), ...input }
+    await db.insert(categories).values(newCategory)
+    return c.json(newCategory, 201)
   })
-  .openapi(updateGroupRoute, async (c) => {
+  .openapi(updateCategoryRoute, async (c) => {
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(catalogGroups).where(eq(catalogGroups.id, id)).get()
-    if (!existing) return c.json({ error: '找不到這個飲品類型' }, 404)
-    await db.update(catalogGroups).set(input).where(eq(catalogGroups.id, id))
+    const existing = await db.select().from(categories).where(eq(categories.id, id)).get()
+    if (!existing) return c.json({ error: '找不到這個分類' }, 404)
+    await db.update(categories).set(input).where(eq(categories.id, id))
     return c.json({ id, ...input }, 200)
   })
-  .openapi(deleteGroupRoute, async (c) => {
+  .openapi(deleteCategoryRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(catalogGroups).where(eq(catalogGroups.id, id)).get()
-    if (!existing) return c.json({ error: '找不到這個飲品類型' }, 404)
-    const remainingItems = await db.select().from(catalogItems).where(eq(catalogItems.groupId, id)).all()
-    if (remainingItems.length > 0) {
-      return c.json({ error: '這個類型底下還有品項，請先刪除或搬移品項' }, 409)
+    const existing = await db.select().from(categories).where(eq(categories.id, id)).get()
+    if (!existing) return c.json({ error: '找不到這個分類' }, 404)
+    const remainingProducts = await db.select().from(products).where(eq(products.categoryId, id)).all()
+    if (remainingProducts.length > 0) {
+      return c.json({ error: '這個分類底下還有品項，請先刪除或搬移品項' }, 409)
     }
-    await db.delete(catalogGroups).where(eq(catalogGroups.id, id))
+    await db.delete(categories).where(eq(categories.id, id))
     return c.body(null, 204)
   })
-  .openapi(createItemRoute, async (c) => {
+  .openapi(createProductRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    const group = await db.select().from(catalogGroups).where(eq(catalogGroups.id, input.groupId)).get()
-    if (!group) return c.json({ error: '找不到對應的飲品類型' }, 404)
-    const newItem = { id: crypto.randomUUID(), ...input }
-    await db.insert(catalogItems).values(newItem)
-    return c.json(
-      {
-        id: newItem.id,
-        name: newItem.name,
-        priceL: newItem.priceL,
-        priceBottle: newItem.priceBottle,
-        customized: newItem.customized,
-        stock: newItem.stock,
-      },
-      201,
-    )
+    const category = await db.select().from(categories).where(eq(categories.id, input.categoryId)).get()
+    if (!category) return c.json({ error: '找不到對應的分類' }, 404)
+    for (const groupId of input.modifierGroupIds) {
+      const group = await db.select().from(modifierGroups).where(eq(modifierGroups.id, groupId)).get()
+      if (!group) return c.json({ error: `找不到規格群組 ${groupId}` }, 404)
+    }
+    const newProduct = {
+      id: crypto.randomUUID(),
+      categoryId: input.categoryId,
+      name: input.name,
+      basePrice: input.basePrice,
+      stock: input.stock,
+    }
+    await db.insert(products).values(newProduct)
+    await replaceProductModifierGroups(db, newProduct.id, input.modifierGroupIds)
+    return c.json({ ...newProduct, modifierGroupIds: input.modifierGroupIds }, 201)
   })
-  .openapi(updateItemRoute, async (c) => {
+  .openapi(updateProductRoute, async (c) => {
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(catalogItems).where(eq(catalogItems.id, id)).get()
+    const existing = await db.select().from(products).where(eq(products.id, id)).get()
     if (!existing) return c.json({ error: '找不到這個品項' }, 404)
-    const group = await db.select().from(catalogGroups).where(eq(catalogGroups.id, input.groupId)).get()
-    if (!group) return c.json({ error: '找不到對應的飲品類型' }, 404)
-    await db.update(catalogItems).set(input).where(eq(catalogItems.id, id))
-    return c.json(
-      { id, name: input.name, priceL: input.priceL, priceBottle: input.priceBottle, customized: input.customized, stock: input.stock },
-      200,
-    )
+    const category = await db.select().from(categories).where(eq(categories.id, input.categoryId)).get()
+    if (!category) return c.json({ error: '找不到對應的分類' }, 404)
+    for (const groupId of input.modifierGroupIds) {
+      const group = await db.select().from(modifierGroups).where(eq(modifierGroups.id, groupId)).get()
+      if (!group) return c.json({ error: `找不到規格群組 ${groupId}` }, 404)
+    }
+    await db
+      .update(products)
+      .set({ categoryId: input.categoryId, name: input.name, basePrice: input.basePrice, stock: input.stock })
+      .where(eq(products.id, id))
+    await replaceProductModifierGroups(db, id, input.modifierGroupIds)
+    return c.json({ id, ...input }, 200)
   })
-  .openapi(deleteItemRoute, async (c) => {
+  .openapi(deleteProductRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(catalogItems).where(eq(catalogItems.id, id)).get()
+    const existing = await db.select().from(products).where(eq(products.id, id)).get()
     if (!existing) return c.json({ error: '找不到這個品項' }, 404)
-    await db.delete(catalogItems).where(eq(catalogItems.id, id))
+    await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, id))
+    await db.delete(products).where(eq(products.id, id))
+    return c.body(null, 204)
+  })
+  .openapi(createModifierGroupRoute, async (c) => {
+    const input = c.req.valid('json')
+    const db = c.get('db')
+    const newGroup = { id: crypto.randomUUID(), name: input.name, selectionType: input.selectionType, required: input.required }
+    await db.insert(modifierGroups).values(newGroup)
+    await replaceModifierOptions(db, newGroup.id, input.options)
+    const created = await loadModifierGroup(db, newGroup.id)
+    return c.json(created!, 201)
+  })
+  .openapi(updateModifierGroupRoute, async (c) => {
+    const { id } = c.req.valid('param')
+    const input = c.req.valid('json')
+    const db = c.get('db')
+    const existing = await db.select().from(modifierGroups).where(eq(modifierGroups.id, id)).get()
+    if (!existing) return c.json({ error: '找不到這個規格群組' }, 404)
+    await db
+      .update(modifierGroups)
+      .set({ name: input.name, selectionType: input.selectionType, required: input.required })
+      .where(eq(modifierGroups.id, id))
+    await replaceModifierOptions(db, id, input.options)
+    const updated = await loadModifierGroup(db, id)
+    return c.json(updated!, 200)
+  })
+  .openapi(deleteModifierGroupRoute, async (c) => {
+    const { id } = c.req.valid('param')
+    const db = c.get('db')
+    const existing = await db.select().from(modifierGroups).where(eq(modifierGroups.id, id)).get()
+    if (!existing) return c.json({ error: '找不到這個規格群組' }, 404)
+    await db.delete(modifierOptions).where(eq(modifierOptions.groupId, id))
+    await db.delete(productModifierGroups).where(eq(productModifierGroups.groupId, id))
+    await db.delete(modifierGroups).where(eq(modifierGroups.id, id))
     return c.body(null, 204)
   })
   .openapi(createAddOnRoute, async (c) => {
@@ -265,7 +395,7 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     const input = c.req.valid('json')
     const db = c.get('db')
     const existing = await db.select().from(addOnOptions).where(eq(addOnOptions.id, id)).get()
-    if (!existing) return c.json({ error: '找不到這個配料' }, 404)
+    if (!existing) return c.json({ error: '找不到這個加購選項' }, 404)
     await db.update(addOnOptions).set(input).where(eq(addOnOptions.id, id))
     return c.json({ id, ...input }, 200)
   })
@@ -273,7 +403,7 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const db = c.get('db')
     const existing = await db.select().from(addOnOptions).where(eq(addOnOptions.id, id)).get()
-    if (!existing) return c.json({ error: '找不到這個配料' }, 404)
+    if (!existing) return c.json({ error: '找不到這個加購選項' }, 404)
     await db.delete(addOnOptions).where(eq(addOnOptions.id, id))
     return c.body(null, 204)
   })

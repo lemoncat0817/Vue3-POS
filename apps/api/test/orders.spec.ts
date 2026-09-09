@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
-import { addOnOptions, catalogGroups, catalogItems } from '../src/db/schema'
+import { addOnOptions, categories, products } from '../src/db/schema'
 import { createTestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
 
@@ -13,16 +13,11 @@ async function readJson(res: Response): Promise<any> {
 const validLine = {
   name: '楊枝甘露2.0',
   price: 80,
-  size: 'L',
   count: 2,
   addList: '無添加配料' as const,
   addListPrice: 0,
   freeDiscount: false,
-  ecoDiscount: false,
-  bottleDiscount: false,
-  oftenUseDiscount1: false,
-  oftenUseDiscount2: false,
-  oftenUseDiscount3: false,
+  quickDiscountId: null,
 }
 
 // validLine（2 杯 80 元）預設應付 160 元，更動 lines 或 coupon 時需同步指定 tenders。
@@ -63,7 +58,7 @@ describe('POST /api/orders', () => {
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify(
         buildRequest({
-          lines: [{ ...validLine, ecoDiscount: true }], // 80*2 - 5*2 = 150
+          lines: [{ ...validLine, quickDiscountId: 'quick-1' }], // 80*2 - 5*2 = 150
           tenders: [{ method: '現金', amount: 150 }],
         }),
       ),
@@ -71,7 +66,7 @@ describe('POST /api/orders', () => {
     expect(res.status).toBe(201)
     const body = await readJson(res)
     expect(body.orderData[0].totalPrice).toBe(150)
-    expect(body.orderData[0].useDiscountMoney).toBe('環保折扣')
+    expect(body.orderData[0].quickDiscountName).toBe('常客優惠')
     expect(body.orderTotalPrice).toBe(150)
     expect(body.orderCupCount).toBe(2)
     expect(body.orderId).toBe('202406101')
@@ -283,10 +278,8 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
     await seedPromotions(db)
     const { app, deviceToken } = await createTestAppWithDevice(db)
 
-    await db.insert(catalogGroups).values([{ id: 'g1', name: '季節限定', type: 'drinkSeasonal' }])
-    await db.insert(catalogItems).values([
-      { id: 'i1', groupId: 'g1', name: '楊枝甘露2.0', priceL: 80, priceBottle: null, customized: 'none', stock: 3 },
-    ])
+    await db.insert(categories).values([{ id: 'c1', name: '季節限定' }])
+    await db.insert(products).values([{ id: 'i1', categoryId: 'c1', name: '楊枝甘露2.0', basePrice: 80, stock: 3 }])
     await db.insert(addOnOptions).values([{ id: 'a1', name: '珍珠', price: 10, stock: 1 }])
 
     // 扣庫存至 0 為下限，不為負數。
@@ -302,7 +295,7 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
     })
     expect(res.status).toBe(201)
 
-    const item = await db.select().from(catalogItems).where(eq(catalogItems.id, 'i1')).get()
+    const item = await db.select().from(products).where(eq(products.id, 'i1')).get()
     const addOn = await db.select().from(addOnOptions).where(eq(addOnOptions.id, 'a1')).get()
     expect(item?.stock).toBe(1)
     expect(addOn?.stock).toBe(0)
@@ -313,10 +306,8 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
     await seedPromotions(db)
     const { app, deviceToken } = await createTestAppWithDevice(db)
 
-    await db.insert(catalogGroups).values([{ id: 'g1', name: '季節限定', type: 'drinkSeasonal' }])
-    await db.insert(catalogItems).values([
-      { id: 'i1', groupId: 'g1', name: '楊枝甘露2.0', priceL: 80, priceBottle: null, customized: 'none', stock: null },
-    ])
+    await db.insert(categories).values([{ id: 'c1', name: '季節限定' }])
+    await db.insert(products).values([{ id: 'i1', categoryId: 'c1', name: '楊枝甘露2.0', basePrice: 80, stock: null }])
 
     const res = await app.request('/api/orders', {
       method: 'POST',
@@ -325,7 +316,7 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
     })
     expect(res.status).toBe(201)
 
-    const item = await db.select().from(catalogItems).where(eq(catalogItems.id, 'i1')).get()
+    const item = await db.select().from(products).where(eq(products.id, 'i1')).get()
     expect(item?.stock).toBeNull()
   })
 
@@ -334,10 +325,8 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
     await seedPromotions(db)
     const { app, deviceToken } = await createTestAppWithDevice(db)
 
-    await db.insert(catalogGroups).values([{ id: 'g1', name: '季節限定', type: 'drinkSeasonal' }])
-    await db.insert(catalogItems).values([
-      { id: 'i1', groupId: 'g1', name: '楊枝甘露2.0', priceL: 80, priceBottle: null, customized: 'none', stock: 10 },
-    ])
+    await db.insert(categories).values([{ id: 'c1', name: '季節限定' }])
+    await db.insert(products).values([{ id: 'i1', categoryId: 'c1', name: '楊枝甘露2.0', basePrice: 80, stock: 10 }])
 
     const body = JSON.stringify(buildRequest())
     const first = await app.request('/api/orders', {
@@ -354,7 +343,7 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
     expect(second.status).toBe(200)
 
     // validLine 是 2 杯，只應該扣一次（10 - 2 = 8），不是兩次。
-    const item = await db.select().from(catalogItems).where(eq(catalogItems.id, 'i1')).get()
+    const item = await db.select().from(products).where(eq(products.id, 'i1')).get()
     expect(item?.stock).toBe(8)
   })
 })

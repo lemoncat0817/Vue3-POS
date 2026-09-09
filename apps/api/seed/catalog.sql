@@ -1,91 +1,57 @@
--- 從 apps/pos/src/stores/drink.ts 的既有種子資料一次性搬過來（P2 建立 D1 菜單資料）。
--- 之後菜單改由這裡（D1）當唯一來源，apps/pos 端在 P3 接上 API 後移除自己的重複副本。
+-- 展示用菜單：跨品類的餐飲示範資料（主餐、輕食、飲品、甜點），示範這套
+-- 目錄模型不綁定單一產業——熟度、甜度/冰塊/容器大小等客製化選項一律透過
+-- 可重複掛用的規格群組（modifier_groups）表達，不是寫死在品項欄位裡。
 
-INSERT INTO catalog_groups (id, name, type) VALUES ('group-1', '季節限定', 'drinkSeasonal');
-INSERT INTO catalog_groups (id, name, type) VALUES ('group-2', '果粒茶系列', 'drinkFreshFruit');
-INSERT INTO catalog_groups (id, name, type) VALUES ('group-3', '原味茶', 'drinkOriginal');
-INSERT INTO catalog_groups (id, name, type) VALUES ('group-4', '香醇系列', 'drinkFreshMilk');
-INSERT INTO catalog_groups (id, name, type) VALUES ('group-5', '芝芝系列', 'drinkCheese');
-INSERT INTO catalog_groups (id, name, type) VALUES ('group-6', '鮮果茶飲', 'drinkFreshJuice');
-INSERT INTO catalog_groups (id, name, type) VALUES ('group-7', '濃醇系列', 'drinkMilk');
-INSERT INTO catalog_groups (id, name, type) VALUES ('group-8', '獨家特調', 'drinkSpecial');
+INSERT INTO categories (id, name) VALUES ('cat-1', '主餐');
+INSERT INTO categories (id, name) VALUES ('cat-2', '輕食');
+INSERT INTO categories (id, name) VALUES ('cat-3', '飲品');
+INSERT INTO categories (id, name) VALUES ('cat-4', '甜點');
 
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-1-1', 'group-1', '楊枝甘露2.0', 80, NULL, 'none');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-1-2', 'group-1', '芝芝芒果果粒', 90, NULL, 'none');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-1-3', 'group-1', '芒果果粒波波', 80, NULL, 'none');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-1-4', 'group-1', '芝芝葡萄果粒', 85, NULL, 'none');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-1-5', 'group-1', '葡萄果粒波波', 85, NULL, 'none');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-1-6', 'group-1', '芝芝草莓果粒', 90, NULL, 'none');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-1-7', 'group-1', '提拉米蘇2.0', 80, NULL, 'none');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-1-8', 'group-1', '抹茶提拉米蘇2.0', 90, NULL, 'none');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-1-9', 'group-1', '番茄梅蜜', 70, NULL, 'none');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-1-10', 'group-1', '番茄梅蜜波波', 80, NULL, 'none');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-2-1', 'group-2', '香橙果粒茶', 70, 100, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-2-2', 'group-2', '柳橙果粒茶', 65, 95, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-2-3', 'group-2', '葡萄柚果粒茶', 60, 90, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-2-4', 'group-2', '葡萄柚果粒蜜茶', 65, 100, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-2-5', 'group-2', '奇異果果粒茶', 60, 100, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-2-6', 'group-2', '柳橙芒果果粒茶', 70, NULL, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-3-1', 'group-3', '高山金萱茶', 30, 45, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-3-2', 'group-3', '翡翠綠茶', 30, 45, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-3-3', 'group-3', '錫蘭紅茶', 30, 45, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-3-4', 'group-3', '文山青茶', 30, 45, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-3-5', 'group-3', '古早味紅茶', 30, 45, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-3-6', 'group-3', '蜜桃紅茶', 40, 55, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-3-7', 'group-3', '金萱雙Q', 40, 55, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-3-8', 'group-3', '金萱三Q', 45, 60, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-4-1', 'group-4', '紅茶拿鐵', 60, 90, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-4-2', 'group-4', '鐵觀音拿鐵', 60, 90, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-4-3', 'group-4', '波霸紅茶拿鐵', 60, 90, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-4-4', 'group-4', '阿華田拿鐵', 65, 95, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-4-5', 'group-4', '玫瑰紅茶拿鐵', 65, 95, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-4-6', 'group-4', '布丁紅茶拿鐵', 75, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-4-7', 'group-4', '抹茶拿鐵', 75, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-5-1', 'group-5', '芝芝金萱', 50, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-5-2', 'group-5', '芝芝金萱雙Q', 60, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-5-3', 'group-5', '芝芝金萱三Q', 65, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-5-4', 'group-5', '芝芝翡翠綠茶', 50, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-5-5', 'group-5', '芝芝蜜桃紅茶', 60, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-5-6', 'group-5', '芝芝錫蘭紅茶', 50, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-5-7', 'group-5', '芝芝錫蘭奶茶', 65, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-5-8', 'group-5', '芝芝阿華田', 80, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-5-9', 'group-5', '芝芝可可', 85, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-6-1', 'group-6', '百香雙Q果', 55, 75, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-6-2', 'group-6', '百香綠茶', 55, 75, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-6-3', 'group-6', '百香多多', 60, NULL, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-6-4', 'group-6', '翡翠檸檬', 60, 90, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-6-5', 'group-6', '冰萃檸檬雙Q', 60, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-6-6', 'group-6', '金桔檸檬', 45, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-6-7', 'group-6', '檸檬綠茶', 45, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-6-8', 'group-6', '檸檬紅茶', 45, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-6-9', 'group-6', '蜂蜜檸檬', 55, NULL, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-6-10', 'group-6', '檸檬多多', 60, NULL, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-6-11', 'group-6', '檸檬梅子', 50, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-7-1', 'group-7', '錫蘭奶茶', 40, 70, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-7-2', 'group-7', '鐵觀音奶茶', 45, 70, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-7-3', 'group-7', '波霸奶茶', 45, 70, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-7-4', 'group-7', '仙草凍奶茶', 45, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-7-5', 'group-7', '玫瑰奶茶', 55, 80, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-7-6', 'group-7', '布丁奶茶', 60, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-7-7', 'group-7', '蜜桃奶茶', 55, 80, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-7-8', 'group-7', '阿華田', 60, 85, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-8-1', 'group-8', '梅子冰茶', 30, 45, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-8-2', 'group-8', '梅子綠茶', 40, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-8-3', 'group-8', '多多綠茶', 45, 75, 'cold');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-8-4', 'group-8', '冬瓜茶', 2, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-8-5', 'group-8', '冬瓜青茶', 30, NULL, 'both');
-INSERT INTO catalog_items (id, group_id, name, price_l, price_bottle, customized) VALUES ('item-8-6', 'group-8', '冬瓜檸檬', 45, 75, 'both');
+INSERT INTO modifier_groups (id, name, selection_type, required) VALUES ('mg-doneness', '熟度', 'single', 1);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-doneness-1', 'mg-doneness', '五分熟', 0);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-doneness-2', 'mg-doneness', '七分熟', 0);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-doneness-3', 'mg-doneness', '全熟', 0);
 
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-1', '波霸', 10);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-2', '珍珠', 10);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-3', '混珠', 10);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-4', '雙Q果', 10);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-5', '椰果', 10);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-6', '波波', 10);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-7', '波波條', 10);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-8', '仙草凍', 10);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-9', '綠茶凍', 10);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-10', '養樂多', 10);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-11', '三Q', 15);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-12', '布丁', 15);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-13', '芝芝', 20);
+INSERT INTO modifier_groups (id, name, selection_type, required) VALUES ('mg-sweetness', '甜度', 'single', 1);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-sweetness-1', 'mg-sweetness', '無糖', 0);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-sweetness-2', 'mg-sweetness', '半糖', 0);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-sweetness-3', 'mg-sweetness', '正常糖', 0);
+
+INSERT INTO modifier_groups (id, name, selection_type, required) VALUES ('mg-ice', '冰塊', 'single', 1);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-ice-1', 'mg-ice', '去冰', 0);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-ice-2', 'mg-ice', '少冰', 0);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-ice-3', 'mg-ice', '正常冰', 0);
+
+INSERT INTO modifier_groups (id, name, selection_type, required) VALUES ('mg-size', '容器大小', 'single', 1);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-size-1', 'mg-size', '中杯', 0);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-size-2', 'mg-size', '大杯', 10);
+
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-1', 'cat-1', '招牌牛肉漢堡', 180, 30);
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-2', 'cat-1', '烤雞三明治', 150, 30);
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-3', 'cat-1', '奶油培根義大利麵', 190, NULL);
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-4', 'cat-2', '凱薩沙拉', 120, NULL);
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-5', 'cat-2', '薯條', 60, NULL);
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-6', 'cat-2', '雞塊六入', 80, NULL);
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-7', 'cat-3', '翡翠綠茶', 30, 100);
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-8', 'cat-3', '鮮奶紅茶拿鐵', 60, 100);
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-9', 'cat-3', '美式咖啡', 50, NULL);
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-10', 'cat-3', '現榨柳橙汁', 70, 40);
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-11', 'cat-4', '提拉米蘇', 90, 15);
+INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-12', 'cat-4', '布朗尼', 75, 15);
+
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-1', 'mg-doneness');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-7', 'mg-sweetness');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-7', 'mg-ice');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-7', 'mg-size');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-8', 'mg-sweetness');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-8', 'mg-ice');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-8', 'mg-size');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-10', 'mg-ice');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-10', 'mg-size');
+
+INSERT INTO add_on_options (id, name, price) VALUES ('addon-1', '加起司', 20);
+INSERT INTO add_on_options (id, name, price) VALUES ('addon-2', '加蛋', 15);
+INSERT INTO add_on_options (id, name, price) VALUES ('addon-3', '加培根', 25);
+INSERT INTO add_on_options (id, name, price) VALUES ('addon-4', '珍珠', 10);
+INSERT INTO add_on_options (id, name, price) VALUES ('addon-5', '布丁', 15);
+INSERT INTO add_on_options (id, name, price) VALUES ('addon-6', '椰果', 10);

@@ -1,14 +1,12 @@
-import { invoiceTracks, moneyCoupons, oftenUseRates, percentCoupons } from '../../src/db/schema'
+import { invoiceTracks, moneyCoupons, percentCoupons, quickDiscounts } from '../../src/db/schema'
 import type { AnyDb } from '../../src/db/types'
 
-/** 測試用促銷與發票字軌前置資料；常用折扣與啟用中字軌為送單必要條件。 */
+/** 測試用促銷與發票字軌前置資料；快速折扣與啟用中字軌為送單必要條件。 */
 export async function seedPromotions(db: AnyDb): Promise<void> {
-  await db.insert(oftenUseRates).values([
-    { slot: 0, name: '環保折扣', discountMoney: 5, discountPercent: 1 },
-    { slot: 1, name: '瓶裝折扣', discountMoney: 10, discountPercent: 1 },
-    { slot: 2, name: '九折', discountMoney: 0, discountPercent: 0.9 },
-    { slot: 3, name: '八五折', discountMoney: 0, discountPercent: 0.85 },
-    { slot: 4, name: '員工八折', discountMoney: 0, discountPercent: 0.8 },
+  await db.insert(quickDiscounts).values([
+    { id: 'quick-1', name: '常客優惠', kind: 'amount', value: 5 },
+    { id: 'quick-2', name: '大宗採購優惠', kind: 'amount', value: 10 },
+    { id: 'quick-3', name: '九折優惠', kind: 'percent', value: 0.9 },
   ])
   await db.insert(moneyCoupons).values([
     { id: 'money-1', name: '$50折價券', discountMoney: 50 },

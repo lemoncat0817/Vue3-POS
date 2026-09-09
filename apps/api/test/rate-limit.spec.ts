@@ -22,10 +22,10 @@ describe('速率限制', () => {
       on conflict (key) do update set window_start = excluded.window_start, count = excluded.count
     `)
 
-    const res = await app.request('/api/catalog/groups', {
+    const res = await app.request('/api/catalog/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ name: '測試類型', type: 'testType' }),
+      body: JSON.stringify({ name: '測試分類' }),
     })
     expect(res.status).toBe(429)
     expect(res.headers.get('Retry-After')).toBeTruthy()
@@ -42,10 +42,10 @@ describe('速率限制', () => {
       on conflict (key) do update set window_start = excluded.window_start, count = excluded.count
     `)
 
-    const res = await app.request('/api/catalog/groups', {
+    const res = await app.request('/api/catalog/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ name: '測試類型2', type: 'testType2' }),
+      body: JSON.stringify({ name: '測試分類2' }),
     })
     expect(res.status).toBe(201)
   })
