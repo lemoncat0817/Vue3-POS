@@ -3,12 +3,7 @@
     <div class="w-full max-w-7xl flex flex-col gap-5">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm">
         <div>
-          <div class="flex items-center gap-2.5">
-            <h1 class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight">桌況管理</h1>
-            <span class="rounded-full bg-primary-50 dark:bg-primary-950/50 px-2.5 py-0.5 text-xs font-bold text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
-              內用席位
-            </span>
-          </div>
+          <h1 class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight">桌況管理</h1>
           <p class="mt-1 text-xs lg:text-sm text-surface-500 dark:text-surface-400">
             監控內用桌況即時狀態、入座備註與席位調配
           </p>

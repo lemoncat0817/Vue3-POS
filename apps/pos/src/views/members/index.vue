@@ -3,12 +3,7 @@
     <div class="w-full max-w-7xl flex flex-col gap-5">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm">
         <div>
-          <div class="flex items-center gap-2.5">
-            <h1 class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight">會員管理</h1>
-            <span class="rounded-full bg-primary-50 dark:bg-primary-950/50 px-2.5 py-0.5 text-xs font-bold text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
-              顧客名冊
-            </span>
-          </div>
+          <h1 class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight">會員管理</h1>
           <p class="mt-1 text-xs lg:text-sm text-surface-500 dark:text-surface-400">
             查詢顧客消費歷程、管理會員集點與維護顧客資料庫
           </p>
