@@ -124,7 +124,94 @@ describe('GET /api/reports/sales', () => {
     )
     expect(body.topAddOns).toHaveLength(2)
     expect(body.topPaymentMethods).toEqual([{ name: '現金', count: 1 }])
+    expect(body.orderCount).toBe(1)
     // 兩個品項都屬於「飲品」分類，加總後應該是 3（2 杯 + 1 杯）。
     expect(body.topCategories).toEqual([{ name: '飲品', count: 3 }])
+  })
+
+  it('作廢訂單不計入營收、訂單數與各項排行，跟 shifts.ts 的 sumCashSales 同一套規則', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    await db.insert(categories).values([{ id: 'cat-1', name: '飲品' }])
+    await db.insert(products).values([{ id: 'prod-1', categoryId: 'cat-1', name: '楊枝甘露2.0', basePrice: 80, stock: null }])
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    const createRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest()),
+    })
+    expect(createRes.status).toBe(201)
+    const created = await readJson(createRes)
+
+    const voidRes = await app.request(`/api/orders/${created.orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '客訴退單' }),
+    })
+    expect(voidRes.status).toBe(200)
+
+    const res = await app.request('/api/reports/sales?from=20260101&to=20260101')
+    const body = await readJson(res)
+
+    expect(body.dailyRevenue).toEqual([{ businessDate: '20260101', revenue: 0 }])
+    expect(body.orderCount).toBe(0)
+    expect(body.topProducts).toEqual([])
+    expect(body.topPaymentMethods).toEqual([])
+    expect(body.topCategories).toEqual([])
+    // 作廢訂單本身仍要算進 voidedOrderCount，不是完全從報表消失、無跡可循。
+    expect(body.voidedOrderCount).toBe(1)
+  })
+
+  it('折扣總額、退款、內用／外帶佔比都直接來自 D1 聚合，不是前端猜的數字', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+
+    // 外帶、套用 $50 折價券：160 - 50 = 110。
+    const takeoutRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(
+        buildRequest({
+          idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB1',
+          orderChannel: '外帶',
+          appliedCoupon: { type: 'coupon', couponId: 'money-1' },
+          tenders: [{ method: '現金', amount: 110 }],
+        }),
+      ),
+    })
+    expect(takeoutRes.status).toBe(201)
+
+    // 內用、無折扣，之後退款 30 元。
+    const dineInRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB2', orderChannel: '內用' })),
+    })
+    expect(dineInRes.status).toBe(201)
+    const dineInOrder = await readJson(dineInRes)
+
+    const refundRes = await app.request(`/api/orders/${dineInOrder.orderId}/refunds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ refundId: '01ARZ3NDEKTSV4RRFFQ69G5FC1', amount: 30, reason: '少一顆珍珠', operator: '店長 - Lemon' }),
+    })
+    expect(refundRes.status).toBe(201)
+
+    const res = await app.request('/api/reports/sales?from=20260101&to=20260101')
+    const body = await readJson(res)
+
+    expect(body.orderCount).toBe(2)
+    expect(body.discountAmount).toBe(50)
+    expect(body.refundedOrderCount).toBe(1)
+    expect(body.refundAmount).toBe(30)
+    expect(body.voidedOrderCount).toBe(0)
+    expect(body.channelBreakdown).toEqual(
+      expect.arrayContaining([
+        { channel: '外帶', count: 1, revenue: 110 },
+        { channel: '內用', count: 1, revenue: 160 },
+      ]),
+    )
   })
 })

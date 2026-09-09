@@ -8,6 +8,8 @@ const errorSchema = z.object({ error: z.string() })
 /**
  * 數據分析報表 API。以 SQL 聚合營收與排行資料。
  * 營業日直接取 order_id 前 8 碼比對；時段統計以 UTC+8 換算本地小時。
+ * 所有查詢都排除 order_status = '已取消' 的作廢訂單，跟 shifts.ts 的
+ * sumCashSales 同一套規則，避免作廢訂單虛增營收與排行數字。
  */
 
 const getSalesReportRoute = createRoute({
@@ -48,11 +50,24 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
   const { from, to } = c.req.valid('query')
   const db = c.get('db')
 
-  const [dailyRows, hourlyRows, topProductRows, topAddOnRows, topPaymentRows, topCategoryRows] = await Promise.all([
+  const [
+    dailyRows,
+    hourlyRows,
+    orderCountRow,
+    discountRow,
+    voidedRow,
+    refundRow,
+    channelRows,
+    topProductRows,
+    topAddOnRows,
+    topPaymentRows,
+    topCategoryRows,
+  ] = await Promise.all([
     db.all<{ business_date: string; revenue: number }>(sql`
       select substr(order_id, 1, 8) as business_date, sum(order_payment_price) as revenue
       from orders
       where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
+        and order_status = '已完成'
       group by business_date
     `),
     db.all<{ hour: number; revenue: number }>(sql`
@@ -60,13 +75,54 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
              sum(order_payment_price) as revenue
       from orders
       where substr(order_id, 1, 8) = ${from}
+        and order_status = '已完成'
       group by hour
+    `),
+    // 完成訂單總筆數：獨立算好回傳，避免前端拿被 TOP_RANKING_LIMIT 截斷的
+    // topPaymentMethods 加總去湊訂單數（付款方式種類一多就會少算）。
+    db.all<{ count: number }>(sql`
+      select count(*) as count
+      from orders
+      where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
+        and order_status = '已完成'
+    `),
+    // 折扣總額＝優惠券折抵（orderTotalPrice - orderPaymentPrice），已完成訂單才算，
+    // 跟營收用同一個過濾條件，才能對得上「毛額 vs 淨額」。
+    db.all<{ amount: number | null }>(sql`
+      select sum(order_discount) as amount
+      from orders
+      where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
+        and order_status = '已完成'
+    `),
+    // 作廢訂單筆數：故意不套用 order_status = '已完成' 的過濾，這裡要算的正是被排除在外的那些。
+    db.all<{ count: number }>(sql`
+      select count(*) as count
+      from orders
+      where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
+        and order_status = '已取消'
+    `),
+    // 退款：訂單仍是「已完成」、只是退了部分或全部的錢，用訂單所屬營業日篩選區間
+    // （不是退款發生的時間），跟報表其他欄位的區間定義一致。
+    db.all<{ orderCount: number; amount: number | null }>(sql`
+      select count(distinct o.order_id) as orderCount, sum(r.amount) as amount
+      from order_refunds r
+      join orders o on o.order_id = r.order_id
+      where substr(o.order_id, 1, 8) >= ${from} and substr(o.order_id, 1, 8) <= ${to}
+        and o.order_status = '已完成'
+    `),
+    db.all<{ channel: string; count: number; revenue: number }>(sql`
+      select order_channel as channel, count(*) as count, sum(order_payment_price) as revenue
+      from orders
+      where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
+        and order_status = '已完成'
+      group by order_channel
     `),
     db.all<{ name: string; count: number }>(sql`
       select ol.name as name, sum(ol.count) as count
       from order_lines ol
       join orders o on o.order_id = ol.order_id
       where substr(o.order_id, 1, 8) >= ${from} and substr(o.order_id, 1, 8) <= ${to}
+        and o.order_status = '已完成'
       group by ol.name
       order by count desc
       limit ${TOP_RANKING_LIMIT}
@@ -78,6 +134,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       join json_each(ol.add_list) je
       where json_type(ol.add_list) = 'array'
         and substr(o.order_id, 1, 8) >= ${from} and substr(o.order_id, 1, 8) <= ${to}
+        and o.order_status = '已完成'
       group by je.value
       order by count desc
       limit ${TOP_RANKING_LIMIT}
@@ -87,6 +144,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       select order_payment as name, count(*) as count
       from orders
       where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
+        and order_status = '已完成'
       group by order_payment
       order by count desc
       limit ${TOP_RANKING_LIMIT}
@@ -100,6 +158,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       join products p on p.name = ol.name
       join categories c on c.id = p.category_id
       where substr(o.order_id, 1, 8) >= ${from} and substr(o.order_id, 1, 8) <= ${to}
+        and o.order_status = '已完成'
       group by c.name
       order by count desc
       limit ${TOP_RANKING_LIMIT}
@@ -123,6 +182,12 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
     salesReportSchema.parse({
       dailyRevenue,
       hourlyRevenue,
+      orderCount: orderCountRow[0]?.count ?? 0,
+      discountAmount: discountRow[0]?.amount ?? 0,
+      voidedOrderCount: voidedRow[0]?.count ?? 0,
+      refundedOrderCount: refundRow[0]?.orderCount ?? 0,
+      refundAmount: refundRow[0]?.amount ?? 0,
+      channelBreakdown: channelRows.map((row) => ({ channel: row.channel, count: row.count, revenue: row.revenue })),
       topProducts: topProductRows.map((row) => ({ name: row.name, count: row.count })),
       topAddOns: topAddOnRows.map((row) => ({ name: row.name, count: row.count })),
       topPaymentMethods: topPaymentRows.map((row) => ({ name: row.name, count: row.count })),

@@ -18,6 +18,12 @@ describe('salesReportSchema', () => {
     const result = salesReportSchema.safeParse({
       hourlyRevenue: [{ hour: 8, revenue: 0 }, { hour: 9, revenue: 1200 }],
       dailyRevenue: [{ businessDate: '20260101', revenue: 3400 }],
+      orderCount: 9,
+      discountAmount: 100,
+      voidedOrderCount: 1,
+      refundedOrderCount: 0,
+      refundAmount: 0,
+      channelBreakdown: [{ channel: '內用', count: 5, revenue: 2000 }, { channel: '外帶', count: 4, revenue: 1400 }],
       topProducts: [{ name: '珍珠奶茶', count: 12 }],
       topAddOns: [{ name: '珍珠', count: 12 }],
       topPaymentMethods: [{ name: '現金', count: 9 }],
