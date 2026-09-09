@@ -36,8 +36,8 @@ const buildOption = () => {
       backgroundColor: isDark.value ? '#1e293b' : '#ffffff',
       borderColor: isDark.value ? '#334155' : '#e2e8f0',
       textStyle: { color: textColor },
-      formatter: (p: { name: string; value: number; percent: number }) =>
-        `${p.name}<br/>NT$ ${p.value.toLocaleString()}（${p.percent}%）`,
+      formatter: (p: { name: string; value: number; percent: number; data: { revenue: number } }) =>
+        `${p.name}<br/>${p.value.toLocaleString()} 筆（${p.percent}%）<br/>NT$ ${p.data.revenue.toLocaleString()}`,
     },
     legend: {
       bottom: 0,
@@ -52,7 +52,8 @@ const buildOption = () => {
         itemStyle: { borderColor: isDark.value ? '#0f172a' : '#ffffff', borderWidth: 2 },
         data: props.items.map((item) => ({
           name: item.channel,
-          value: item.revenue,
+          value: item.count,
+          revenue: item.revenue,
           itemStyle: { color: CHANNEL_COLOR[item.channel] ?? '#94a3b8' },
         })),
       },
