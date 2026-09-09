@@ -28,7 +28,7 @@ export const dailyRevenuePointSchema = z.object({
 })
 export type DailyRevenuePoint = z.infer<typeof dailyRevenuePointSchema>
 
-/** 熱門排行的一列，用於熱門飲料／配料／付款方式三張圖表共用的形狀。 */
+/** 熱門排行的一列，用於熱銷品項／加購選項／付款方式／分類四張圖表共用的形狀。 */
 export const rankedCountSchema = z.object({
   name: z.string(),
   count: z.number().int().nonnegative(),
@@ -39,8 +39,9 @@ export type RankedCount = z.infer<typeof rankedCountSchema>
 export const salesReportSchema = z.object({
   hourlyRevenue: z.array(hourlyRevenuePointSchema),
   dailyRevenue: z.array(dailyRevenuePointSchema),
-  topDrinks: z.array(rankedCountSchema),
+  topProducts: z.array(rankedCountSchema),
   topAddOns: z.array(rankedCountSchema),
   topPaymentMethods: z.array(rankedCountSchema),
+  topCategories: z.array(rankedCountSchema),
 })
 export type SalesReport = z.infer<typeof salesReportSchema>

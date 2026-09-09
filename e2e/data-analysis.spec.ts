@@ -24,8 +24,9 @@ test('數據分析頁會向伺服端要報表資料，切換日期會重新查�
   expect(from).toBe(to)
 
   await expect(page.locator('canvas')).toBeVisible()
-  await expect(page.getByText('熱門飲品排行榜', { exact: false })).toBeVisible()
-  await expect(page.getByText('加料選配榜單', { exact: false })).toBeVisible()
+  await expect(page.getByText('熱銷品項排行榜', { exact: false })).toBeVisible()
+  await expect(page.getByText('分類別銷售佔比', { exact: true })).toBeVisible()
+  await expect(page.getByText('加購選配榜單', { exact: false })).toBeVisible()
   await expect(page.getByText('多元支付通路結構', { exact: true })).toBeVisible()
 
   // 切換為跨日區間，確保填寫順序維持 from <= to。

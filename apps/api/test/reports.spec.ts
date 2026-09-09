@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
+import { categories, products } from '../src/db/schema'
 import { createTestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
 
@@ -73,6 +74,11 @@ describe('GET /api/reports/sales', () => {
   it('營業額、小時分桶、熱銷飲料／配料／付款方式都直接來自 D1 的聚合結果，不是用戶端算好回傳的數字', async () => {
     const db = createTestDb()
     await seedPromotions(db)
+    await db.insert(categories).values([{ id: 'cat-1', name: '飲品' }])
+    await db.insert(products).values([
+      { id: 'prod-1', categoryId: 'cat-1', name: '楊枝甘露2.0', basePrice: 80, stock: null },
+      { id: 'prod-2', categoryId: 'cat-1', name: '珍珠奶茶', basePrice: 80, stock: null },
+    ])
     const { app, deviceToken } = await createTestAppWithDevice(db)
 
     // 兩杯楊枝甘露（無配料）+ 一杯有加珍珠、椰果的飲料，同一張訂單。
@@ -103,7 +109,7 @@ describe('GET /api/reports/sales', () => {
     const otherHours = body.hourlyRevenue.filter((point: { hour: number }) => point.hour !== 10)
     expect(otherHours.every((point: { revenue: number }) => point.revenue === 0)).toBe(true)
 
-    expect(body.topDrinks).toEqual(
+    expect(body.topProducts).toEqual(
       expect.arrayContaining([
         { name: '楊枝甘露2.0', count: 2 },
         { name: '珍珠奶茶', count: 1 },
@@ -118,5 +124,7 @@ describe('GET /api/reports/sales', () => {
     )
     expect(body.topAddOns).toHaveLength(2)
     expect(body.topPaymentMethods).toEqual([{ name: '現金', count: 1 }])
+    // 兩個品項都屬於「飲品」分類，加總後應該是 3（2 杯 + 1 杯）。
+    expect(body.topCategories).toEqual([{ name: '飲品', count: 3 }])
   })
 })

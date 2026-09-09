@@ -72,12 +72,7 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between relative overflow-hidden">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-surface-500 dark:text-surface-400">總營業額 GROSS SALES</span>
-            <div class="h-8 w-8 rounded-xl bg-primary-50 dark:bg-primary-950/60 flex items-center justify-center text-primary-600 dark:text-primary-400">
-              <DollarSign class="h-4 w-4" />
-            </div>
-          </div>
+          <span class="text-xs font-bold text-surface-500 dark:text-surface-400">總營業額 GROSS SALES</span>
           <div class="mt-3 flex items-baseline gap-2 flex-wrap">
             <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
               NT$ {{ totalRevenue.toLocaleString() }}
@@ -93,30 +88,20 @@
         </div>
 
         <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-surface-500 dark:text-surface-400">熱門榜出杯總量</span>
-            <div class="h-8 w-8 rounded-xl bg-accent-50 dark:bg-accent-950/60 flex items-center justify-center text-accent-600 dark:text-accent-400">
-              <Coffee class="h-4 w-4" />
-            </div>
-          </div>
+          <span class="text-xs font-bold text-surface-500 dark:text-surface-400">熱銷品項總量</span>
           <div class="mt-3 flex items-baseline gap-2 flex-wrap">
             <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
-              {{ totalCups.toLocaleString() }} <span class="text-sm font-bold text-surface-500">杯</span>
+              {{ totalUnits.toLocaleString() }} <span class="text-sm font-bold text-surface-500">件</span>
             </span>
-            <TrendBadge :trend="cupsTrend" />
+            <TrendBadge :trend="unitsTrend" />
           </div>
           <p class="text-[11px] text-surface-400 mt-1">
-            榜首：{{ salesReport?.topDrinks[0]?.name || '暫無資料' }} ({{ salesReport?.topDrinks[0]?.count || 0 }}杯)
+            榜首：{{ salesReport?.topProducts[0]?.name || '暫無資料' }}（{{ salesReport?.topProducts[0]?.count || 0 }} 件）
           </p>
         </div>
 
         <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-surface-500 dark:text-surface-400">完成交易筆數</span>
-            <div class="h-8 w-8 rounded-xl bg-success-50 dark:bg-success-950/60 flex items-center justify-center text-success-600 dark:text-success-400">
-              <ShoppingBag class="h-4 w-4" />
-            </div>
-          </div>
+          <span class="text-xs font-bold text-surface-500 dark:text-surface-400">完成交易筆數</span>
           <div class="mt-3 flex items-baseline gap-2 flex-wrap">
             <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
               {{ totalOrders.toLocaleString() }} <span class="text-sm font-bold text-surface-500">筆</span>
@@ -129,12 +114,7 @@
         </div>
 
         <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-surface-500 dark:text-surface-400">平均客單價 (AOV)</span>
-            <div class="h-8 w-8 rounded-xl bg-info-50 dark:bg-info-950/60 flex items-center justify-center text-info-600 dark:text-info-400">
-              <TrendingUp class="h-4 w-4" />
-            </div>
-          </div>
+          <span class="text-xs font-bold text-surface-500 dark:text-surface-400">平均客單價 (AOV)</span>
           <div class="mt-3 flex items-baseline gap-2 flex-wrap">
             <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
               NT$ {{ averageOrderValue.toLocaleString() }}
@@ -150,9 +130,8 @@
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
         <div class="xl:col-span-8 card-panel p-5 flex flex-col gap-4">
           <div class="flex items-center justify-between">
-            <h2 class="text-base font-black text-surface-900 dark:text-surface-100 flex items-center gap-2">
-              <TrendingUp class="h-4 w-4 text-primary-600" />
-              <span>{{ selectTime[0] === selectTime[1] ? `${selectTime[0]} 時段營業額動態` : `${selectTime[0]} ~ ${selectTime[1]} 每日營業額趨勢` }}</span>
+            <h2 class="text-base font-black text-surface-900 dark:text-surface-100">
+              {{ selectTime[0] === selectTime[1] ? `${selectTime[0]} 時段營業額動態` : `${selectTime[0]} ~ ${selectTime[1]} 每日營業額趨勢` }}
             </h2>
             <span class="text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 rounded-full">
               累計: NT$ {{ totalRevenue.toLocaleString() }}
@@ -166,8 +145,8 @@
         </div>
 
         <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">熱門飲品排行榜 (Top 5)</span>
-          <div v-for="(item, idx) in salesReport?.topDrinks" :key="item.name" class="flex flex-col gap-1">
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">熱銷品項排行榜 (Top 5)</span>
+          <div v-for="(item, idx) in salesReport?.topProducts" :key="item.name" class="flex flex-col gap-1">
             <div class="flex justify-between text-xs font-bold">
               <span class="flex items-center gap-2">
                 <span
@@ -177,19 +156,42 @@
                 </span>
                 <span>{{ item.name }}</span>
               </span>
-              <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 杯</span>
+              <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 件</span>
             </div>
             <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
               <div
                 class="h-full rounded-full bg-primary-500 transition-all duration-500"
-                :style="{ width: `${totalCups > 0 ? (item.count / totalCups) * 100 : 0}%` }" />
+                :style="{ width: `${totalUnits > 0 ? (item.count / totalUnits) * 100 : 0}%` }" />
             </div>
           </div>
-          <p v-if="!salesReport?.topDrinks.length" class="text-xs text-surface-400 py-4 text-center">目前無銷售紀錄</p>
+          <p v-if="!salesReport?.topProducts.length" class="text-xs text-surface-400 py-4 text-center">目前無銷售紀錄</p>
         </div>
 
-        <div class="xl:col-span-6 card-panel p-4 flex flex-col gap-3">
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">加料選配榜單 (Top 5)</span>
+        <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">分類別銷售佔比</span>
+          <div v-for="(item, idx) in salesReport?.topCategories" :key="item.name" class="flex flex-col gap-1">
+            <div class="flex justify-between text-xs font-bold">
+              <span class="flex items-center gap-2">
+                <span
+                  class="h-5 w-5 rounded-full flex items-center justify-center text-[10px] text-white font-black"
+                  :class="idx === 0 ? 'bg-accent-500' : idx === 1 ? 'bg-surface-400' : idx === 2 ? 'bg-accent-700' : 'bg-surface-300 dark:bg-surface-700'">
+                  {{ idx + 1 }}
+                </span>
+                <span>{{ item.name }}</span>
+              </span>
+              <span class="text-surface-600 dark:text-surface-400">{{ item.count }} 件</span>
+            </div>
+            <div class="h-2 w-full rounded-full bg-surface-200 dark:bg-surface-700 overflow-hidden">
+              <div
+                class="h-full rounded-full bg-accent-500 transition-all duration-500"
+                :style="{ width: `${salesReport?.topCategories[0]?.count ? (item.count / salesReport.topCategories[0].count) * 100 : 0}%` }" />
+            </div>
+          </div>
+          <p v-if="!salesReport?.topCategories.length" class="text-xs text-surface-400 py-4 text-center">目前無分類銷售紀錄</p>
+        </div>
+
+        <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">加購選配榜單 (Top 5)</span>
           <div v-for="(item, idx) in salesReport?.topAddOns" :key="item.name" class="flex flex-col gap-1">
             <div class="flex justify-between text-xs font-bold">
               <span class="flex items-center gap-2">
@@ -208,14 +210,11 @@
                 :style="{ width: `${salesReport?.topAddOns[0]?.count ? (item.count / salesReport.topAddOns[0].count) * 100 : 0}%` }" />
             </div>
           </div>
-          <p v-if="!salesReport?.topAddOns.length" class="text-xs text-surface-400 py-4 text-center">目前無配料加購紀錄</p>
+          <p v-if="!salesReport?.topAddOns.length" class="text-xs text-surface-400 py-4 text-center">目前無加購紀錄</p>
         </div>
 
-        <div class="xl:col-span-6 card-panel p-4 flex flex-col gap-3">
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100 flex items-center gap-1.5">
-            <CreditCard class="h-4 w-4 text-info-500" />
-            <span>多元支付通路結構</span>
-          </span>
+        <div class="xl:col-span-8 card-panel p-4 flex flex-col gap-3">
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">多元支付通路結構</span>
           <div v-for="(item, idx) in salesReport?.topPaymentMethods" :key="item.name" class="flex flex-col gap-1">
             <div class="flex justify-between text-xs font-bold">
               <span class="flex items-center gap-2">
@@ -263,8 +262,8 @@
           <span class="font-bold">NT$ {{ averageOrderValue }}</span>
         </div>
         <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
-          <span>總出杯數 (Top 5):</span>
-          <span class="font-bold">{{ totalCups }} 杯</span>
+          <span>熱銷品項總量 (Top 5):</span>
+          <span class="font-bold">{{ totalUnits }} 件</span>
         </div>
 
         <div class="mt-2">
@@ -294,17 +293,7 @@ import { LineChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue'
-import {
-  DollarSign,
-  Coffee,
-  ShoppingBag,
-  TrendingUp,
-  Calendar,
-  Download,
-  Printer,
-  Flame,
-  CreditCard
-} from 'lucide-vue-next'
+import { Calendar, Download, Printer, Flame } from 'lucide-vue-next'
 
 echarts.use([LineChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer])
 import { useQuery } from '@tanstack/vue-query'
@@ -354,22 +343,22 @@ const { data: previousSalesReport } = useQuery({
 
 // 當期與前期共用相同的 KPI 計算邏輯。
 function computeTotals(report: typeof salesReport.value, singleDay: boolean) {
-  if (!report) return { totalRevenue: 0, totalCups: 0, totalOrders: 0, averageOrderValue: 0 }
+  if (!report) return { totalRevenue: 0, totalUnits: 0, totalOrders: 0, averageOrderValue: 0 }
   const totalRevenue = singleDay
     ? report.hourlyRevenue.reduce((sum, p) => sum + p.revenue, 0)
     : report.dailyRevenue.reduce((sum, p) => sum + p.revenue, 0)
-  const totalCups = report.topDrinks.reduce((sum, d) => sum + d.count, 0)
+  const totalUnits = report.topProducts.reduce((sum, d) => sum + d.count, 0)
   const paymentCount = report.topPaymentMethods.reduce((sum, p) => sum + p.count, 0)
   const totalOrders = paymentCount > 0 ? paymentCount : (totalRevenue > 0 ? Math.ceil(totalRevenue / 180) : 0)
   const averageOrderValue = totalOrders === 0 ? 0 : Math.round(totalRevenue / totalOrders)
-  return { totalRevenue, totalCups, totalOrders, averageOrderValue }
+  return { totalRevenue, totalUnits, totalOrders, averageOrderValue }
 }
 const isSingleDay = computed(() => selectTime.value[0] === selectTime.value[1])
 const current = computed(() => computeTotals(salesReport.value, isSingleDay.value))
 const previous = computed(() => computeTotals(previousSalesReport.value, previousPeriod.value[0] === previousPeriod.value[1]))
 
 const totalRevenue = computed(() => current.value.totalRevenue)
-const totalCups = computed(() => current.value.totalCups)
+const totalUnits = computed(() => current.value.totalUnits)
 const totalOrders = computed(() => current.value.totalOrders)
 const averageOrderValue = computed(() => current.value.averageOrderValue)
 
@@ -380,7 +369,7 @@ function trendOf(currentValue: number, previousValue: number): { pct: number; up
   return { pct, up: pct >= 0 }
 }
 const revenueTrend = computed(() => trendOf(current.value.totalRevenue, previous.value.totalRevenue))
-const cupsTrend = computed(() => trendOf(current.value.totalCups, previous.value.totalCups))
+const unitsTrend = computed(() => trendOf(current.value.totalUnits, previous.value.totalUnits))
 const ordersTrend = computed(() => trendOf(current.value.totalOrders, previous.value.totalOrders))
 const aovTrend = computed(() => trendOf(current.value.averageOrderValue, previous.value.averageOrderValue))
 
@@ -431,14 +420,19 @@ const exportCsv = () => {
   csv += `總營業額,${totalRevenue.value}\n`
   csv += `總訂單數,${totalOrders.value}\n`
   csv += `平均客單價,${averageOrderValue.value}\n`
-  csv += `總出杯數,${totalCups.value}\n\n`
+  csv += `熱銷品項總量,${totalUnits.value}\n\n`
 
-  csv += '--- 熱門飲品前五名 ---\n排名,飲品名稱,銷售杯數\n'
-  salesReport.value.topDrinks.forEach((d, i) => {
+  csv += '--- 熱銷品項前五名 ---\n排名,品項名稱,銷售件數\n'
+  salesReport.value.topProducts.forEach((d, i) => {
     csv += `${i + 1},${d.name},${d.count}\n`
   })
 
-  csv += '\n--- 熱門配料前五名 ---\n排名,配料名稱,份數\n'
+  csv += '\n--- 分類別銷售佔比 ---\n排名,分類名稱,銷售件數\n'
+  salesReport.value.topCategories.forEach((c, i) => {
+    csv += `${i + 1},${c.name},${c.count}\n`
+  })
+
+  csv += '\n--- 熱門加購選項前五名 ---\n排名,加購選項名稱,份數\n'
   salesReport.value.topAddOns.forEach((a, i) => {
     csv += `${i + 1},${a.name},${a.count}\n`
   })

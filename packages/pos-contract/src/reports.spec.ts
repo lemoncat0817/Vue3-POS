@@ -18,9 +18,10 @@ describe('salesReportSchema', () => {
     const result = salesReportSchema.safeParse({
       hourlyRevenue: [{ hour: 8, revenue: 0 }, { hour: 9, revenue: 1200 }],
       dailyRevenue: [{ businessDate: '20260101', revenue: 3400 }],
-      topDrinks: [{ name: '珍珠奶茶', count: 12 }],
+      topProducts: [{ name: '珍珠奶茶', count: 12 }],
       topAddOns: [{ name: '珍珠', count: 12 }],
       topPaymentMethods: [{ name: '現金', count: 9 }],
+      topCategories: [{ name: '飲品', count: 12 }],
     })
     expect(result.success).toBe(true)
   })
@@ -30,9 +31,10 @@ describe('salesReportSchema', () => {
       salesReportSchema.safeParse({
         hourlyRevenue: [],
         dailyRevenue: [],
-        topDrinks: [{ name: '珍珠奶茶', count: -1 }],
+        topProducts: [{ name: '珍珠奶茶', count: -1 }],
         topAddOns: [],
         topPaymentMethods: [],
+        topCategories: [],
       }).success,
     ).toBe(false)
   })

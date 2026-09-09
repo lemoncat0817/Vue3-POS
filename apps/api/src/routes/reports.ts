@@ -48,7 +48,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
   const { from, to } = c.req.valid('query')
   const db = c.get('db')
 
-  const [dailyRows, hourlyRows, topDrinkRows, topAddOnRows, topPaymentRows] = await Promise.all([
+  const [dailyRows, hourlyRows, topProductRows, topAddOnRows, topPaymentRows, topCategoryRows] = await Promise.all([
     db.all<{ business_date: string; revenue: number }>(sql`
       select substr(order_id, 1, 8) as business_date, sum(order_payment_price) as revenue
       from orders
@@ -91,6 +91,19 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       order by count desc
       limit ${TOP_RANKING_LIMIT}
     `),
+    // 分類排行透過品項名稱回查 products/categories：訂單品項只存名稱快照，
+    // 跟 deductStock() 用同一種「以名稱比對」的既有限制（改過名字的品項對不到）。
+    db.all<{ name: string; count: number }>(sql`
+      select c.name as name, sum(ol.count) as count
+      from order_lines ol
+      join orders o on o.order_id = ol.order_id
+      join products p on p.name = ol.name
+      join categories c on c.id = p.category_id
+      where substr(o.order_id, 1, 8) >= ${from} and substr(o.order_id, 1, 8) <= ${to}
+      group by c.name
+      order by count desc
+      limit ${TOP_RANKING_LIMIT}
+    `),
   ])
 
   const revenueByDate = new Map(dailyRows.map((row) => [row.business_date, row.revenue]))
@@ -110,9 +123,10 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
     salesReportSchema.parse({
       dailyRevenue,
       hourlyRevenue,
-      topDrinks: topDrinkRows.map((row) => ({ name: row.name, count: row.count })),
+      topProducts: topProductRows.map((row) => ({ name: row.name, count: row.count })),
       topAddOns: topAddOnRows.map((row) => ({ name: row.name, count: row.count })),
       topPaymentMethods: topPaymentRows.map((row) => ({ name: row.name, count: row.count })),
+      topCategories: topCategoryRows.map((row) => ({ name: row.name, count: row.count })),
     }),
     200,
   )
