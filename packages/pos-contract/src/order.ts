@@ -3,14 +3,9 @@ import { businessDateSchema, ulidSchema } from './common'
 import { invoiceStatusSchema } from './invoice'
 import { appliedCouponSchema } from './promotion'
 
-/**
- * 訂單相關的 schema。
- *
- * 設計原則（見重構規劃書 §6）：用戶端只送出「選了什麼」（品項基本資料
- * ＋折扣旗標），金額一律由伺服端用 @pos/domain 的 priceLine() 重新
- * 計算——用戶端完全不需要、也不被信任送出算好的金額。這是
- * D-01／D-02 的修復方式在伺服端的延伸：同一份計價邏輯只存在一個地方。
- */
+// 訂單相關的 schema。設計原則：用戶端只送出「選了什麼」（品項基本資料
+// ＋折扣旗標），金額一律由伺服端用 @pos/domain 的 priceLine() 重新計算
+// ——用戶端完全不需要、也不被信任送出算好的金額，同一份計價邏輯只存在一個地方。
 
 export const lineDiscountFlagsSchema = z.object({
   freeDiscount: z.boolean(),
@@ -38,24 +33,12 @@ export type OrderLineInput = z.infer<typeof orderLineInputSchema>
 export const paymentUseMethodSchema = z.enum(['紙鈔', '感應', '掃描'])
 export type PaymentUseMethod = z.infer<typeof paymentUseMethodSchema>
 
-/**
- * 混合支付（重構規劃書 §10 P0「混合支付」，也是這一整組功能裡最先要
- * 做的一項——班別結算、退款、發票都要靠 tenders 才對得起帳）。
- *
- * 用戶端只送「這筆 tender 用什麼方式支付、分擔多少應付金額」，`amount`
- * 的總和必須剛好等於伺服端重算出的應付金額（見 orders.ts 的
- * validateTenders），不吃用戶端自己算的合計，理由跟品項金額不信任
- * 用戶端一致。`receivedAmount` 只用在需要找零的支付方式（主要是現金）
- * ——「實收」跟「這筆帳單分擔的金額」是兩件事：客人給 500 元付一筆
- * 88 元的單，`amount` 是 88，`receivedAmount` 是 500，差額 412 由伺服端
- * 算成 changeDue 找零，不需要用戶端自己算。
- *
- * `amount` 允許 0（不是 `positive()`）：現金折價券／折數折價券把應付
- * 金額折到 0 元時（見 orders.ts 的 resolveOrderPayment），這筆訂單
- * 仍然需要一筆 tender 才能結案（tenders 陣列至少 1 筆），只是分擔的
- * 金額是 0——這比另外為「完全免費的訂單」設計一套跳過付款畫面的特例
- * 簡單。
- */
+// 用戶端只送「這筆 tender 用什麼方式支付、分擔多少應付金額」，amount
+// 的總和必須剛好等於伺服端重算出的應付金額（見 orders.ts 的
+// validateTenders）。receivedAmount 只用在需要找零的支付方式：客人給
+// 500 元付一筆 88 元的單，amount 是 88、receivedAmount 是 500，差額
+// 412 由伺服端算成 changeDue。amount 允許 0（不是 positive()）：折價券
+// 把應付金額折到 0 元時，仍需要一筆 tender 才能結案，只是分擔金額是 0。
 export const tenderInputSchema = z
   .object({
     method: z.string().min(1),
@@ -76,27 +59,14 @@ export const tenderSchema = z.object({
 })
 export type Tender = z.infer<typeof tenderSchema>
 
-/**
- * 內用／外帶（P13：規劃書 §10 P0「內用外帶」）。這個專案只有袋子
- * （bagCount）能間接暗示外帶，沒有真正的內用／外帶區分——結果是內用
- * 客人也被問「要不要加購袋子」，報表也無法拆分兩種客群的營業額。
- * 只有這兩種值，不像餐廳還有「外送」，這裡刻意不做成開放字串，理由
- * 跟 orderStatusSchema 一致：一個封閉的小型列舉比自由字串更容易在
- * UI 上排版（固定兩顆按鈕）跟報表上分組。
- */
+// 只有內用／外帶兩種值，不做成開放字串：封閉的小型列舉比自由字串更容易
+// 在 UI 上排版（固定兩顆按鈕）跟報表上分組，理由跟 orderStatusSchema 一致。
 export const orderChannelSchema = z.enum(['內用', '外帶'])
 export type OrderChannel = z.infer<typeof orderChannelSchema>
 
-/**
- * 發票載具（P15：規劃書 §10 P0「發票」）。這個專案原本的「載具」按鈕
- * （見 apps/pos/src/views/home/index.vue 的 scanCarrier）只彈一句
- * 「請掃描載具條碼」就結束，不記錄掃了什麼、也不影響訂單本身——是
- * 重構前就存在的假操作，這裡把它換成真的會影響發票開立方式的資料。
- *
- * 手機條碼格式（財政部規定）：「/」開頭＋7 碼（數字、大寫英文字母、
- * 或 . + - 三個符號）。統一編號：8 碼數字，用於企業客戶需要跟公司
- * 對帳的情境（B2B）。「無載具」代表開紙本發票，不需要 value。
- */
+// 手機條碼格式（財政部規定）：「/」開頭＋7 碼（數字、大寫英文字母、或
+// . + - 三個符號）。統一編號：8 碼數字，用於企業客戶對帳（B2B）。
+// 「無載具」代表開紙本發票，不需要 value。
 export const invoiceCarrierTypeSchema = z.enum(['無載具', '手機條碼', '統一編號'])
 export type InvoiceCarrierType = z.infer<typeof invoiceCarrierTypeSchema>
 
@@ -113,14 +83,9 @@ export const invoiceCarrierSchema = z.discriminatedUnion('type', [
 ])
 export type InvoiceCarrier = z.infer<typeof invoiceCarrierSchema>
 
-/**
- * 送出訂單的請求。appliedCoupon 只是「套用了哪張折價券」的意圖（P5：
- * 促銷引擎），實際折抵金額（orderDiscount）與名稱（discountName）由
- * 伺服端查真正的折價券資料重算——這是 D-01／D-02 修復方式在訂單層級
- * 促銷的延伸，見 apps/api/src/routes/orders.ts。P4 以前這裡曾經直接
- * 收用戶端算好的 orderDiscount／discountName 數字，不驗證是否對應
- * 真實存在的折價券，是身分系統落地前的一個真實缺口。
- */
+// appliedCoupon 只是「套用了哪張折價券」的意圖，實際折抵金額
+// （orderDiscount）與名稱（discountName）由伺服端查真正的折價券資料
+// 重算，不信任用戶端算好的數字（見 apps/api/src/routes/orders.ts）。
 export const createOrderRequestSchema = z.object({
   idempotencyKey: ulidSchema,
   businessDate: businessDateSchema,
@@ -131,20 +96,9 @@ export const createOrderRequestSchema = z.object({
   appliedCoupon: appliedCouponSchema,
   orderChannel: orderChannelSchema,
   invoiceCarrier: invoiceCarrierSchema,
-  /**
-   * 這筆訂單掛在哪個會員名下（P22：規劃書 §10 P22「會員與顧客經營」）
-   * ——選填，沒有輸入會員手機就是一般訂單，不影響既有的送單流程。
-   * 伺服端會依應付金額累加這個會員的點數（見 routes/orders.ts 的
-   * accrueMemberPoints）。
-   */
+  /** 選填，沒有輸入會員手機就是一般訂單。伺服端依應付金額累加點數（見 routes/orders.ts 的 accrueMemberPoints）。 */
   memberId: z.string().min(1).optional(),
-  /**
-   * 內用桌號（P24：規劃書 §10 P24「真實硬體整合與桌況管理」）——選填，
-   * 純粹是這筆訂單的紀錄用途（出餐、對帳時知道送去哪一桌），不是桌況
-   * 的外鍵：桌況（見 table.ts 的 diningTableSchema）是店員手動維護的
-   * 狀態，不由訂單生命週期推導，訂單刪除或作廢也不需要牽動桌況，兩者
-   * 刻意不用外鍵綁死。
-   */
+  /** 選填，純粹是訂單的紀錄用途，不是桌況的外鍵——桌況由店員手動維護，不由訂單生命週期推導。 */
   tableNumber: z.string().min(1).optional(),
 })
 export type CreateOrderRequest = z.infer<typeof createOrderRequestSchema>
@@ -164,16 +118,10 @@ export const orderLineSchema = orderLineInputSchema.extend({
 })
 export type OrderLine = z.infer<typeof orderLineSchema>
 
-/**
- * 退款（P12：規劃書 §10 P0「退款／作廢」）。
- *
- * `refundId` 是用戶端在退款當下用 ULID 產生並送入，理由跟訂單的
- * idempotencyKey、班別的 shiftId 一致：同一個 refundId 重送不會建立
- * 第二筆退款紀錄（見 orders.ts 的說明）。`amount` 是這一筆退款的金額，
- * 不是「退款後剩餘應付金額」——伺服端會用 @pos/domain 的
- * summarizeOrderRefunds() 驗證這筆金額有沒有超過目前還能退的金額，
- * 用戶端不需要（也不被信任）自己算剩餘可退額度。
- */
+// refundId 是用戶端在退款當下用 ULID 產生並送入，理由跟訂單的
+// idempotencyKey、班別的 shiftId 一致：同一個 refundId 重送不會建立
+// 第二筆退款紀錄。amount 是這一筆退款的金額，不是「退款後剩餘應付
+// 金額」——伺服端會用 summarizeOrderRefunds() 驗證是否超過可退額度。
 export const refundInputSchema = z.object({
   refundId: ulidSchema,
   amount: z.number().int().positive(),
@@ -197,7 +145,6 @@ export const orderSchema = z.object({
   orderId: z.string(),
   orderTime: z.string(),
   orderStatus: orderStatusSchema,
-  /** 內用／外帶（P13：規劃書 §10 P0「內用外帶」），見 orderChannelSchema 的說明。 */
   orderChannel: orderChannelSchema,
   staff: z.string(),
   orderData: z.array(orderLineSchema),
@@ -209,26 +156,22 @@ export const orderSchema = z.object({
   orderDiscount: z.number().int().nonnegative(),
   orderPaymentPrice: z.number().int().nonnegative(),
   discountName: z.string(),
-  /** 這筆訂單實際收到的每一筆支付，見 tenderSchema 的說明。 */
   tenders: z.array(tenderSchema).min(1),
-  /** 找零總額——由伺服端從 tenders 的 receivedAmount 算出，見 orders.ts。 */
+  /** 找零總額——由伺服端從 tenders 的 receivedAmount 算出。 */
   changeDue: z.number().int().nonnegative(),
-  /** 這筆訂單目前所有的退款紀錄，見 refundSchema 的說明。 */
   refunds: z.array(refundSchema),
   /** 已退金額總和——由伺服端從 refunds 算出，見 @pos/domain 的 summarizeOrderRefunds()。 */
   refundedAmount: z.number().int().nonnegative(),
-  /** 作廢原因。只有 orderStatus 為「已取消」時才有值，見 P12 的說明。 */
+  /** 作廢原因。只有 orderStatus 為「已取消」時才有值。 */
   voidReason: z.string().nullable(),
   voidedBy: z.string().nullable(),
   voidedAt: z.string().nullable(),
-  /** 發票號碼（P15：規劃書 §10 P0「發票」），見 nextInvoiceNumber() 的說明。 */
   invoiceNumber: z.string(),
   invoiceCarrier: invoiceCarrierSchema,
-  /** 這筆訂單掛在哪個會員名下，見 createOrderRequestSchema.memberId 的說明；沒有掛會員是 null。 */
+  /** 沒有掛會員是 null。 */
   memberId: z.string().nullable(),
-  /** 內用桌號，見 createOrderRequestSchema.tableNumber 的說明；沒有指定是 null。 */
+  /** 沒有指定是 null。 */
   tableNumber: z.string().nullable(),
-  /** 發票上傳狀態（P23：規劃書 §10 P23「電子發票平台串接」），見 invoice.ts 的 invoiceStatusSchema 說明。 */
   invoiceStatus: invoiceStatusSchema,
   invoiceSubmittedAt: z.string().nullable(),
 })

@@ -28,16 +28,9 @@ import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
 
-/**
- * 送單只包含「選了什麼」，金額一律由這裡用 @pos/domain 的 priceLine()
- * 重新計算——用戶端送來的數字不被信任，這是 D-01／D-02 修復方式在
- * 伺服端的延伸（見重構規劃書 §6、packages/pos-contract/src/order.ts
- * 的說明）。
- *
- * P4 之前這個端點沒有掛任何裝置憑證檢查——任何打得到這個 API 的人都能
- * 建立訂單，是身分系統落地前的一個真實缺口。掛上 requireDeviceToken
- * 之後，apps/pos 送單時要記得帶 X-Device-Token（見 src/api/http.ts）。
- */
+// 送單只包含「選了什麼」，金額一律用 @pos/domain 的 priceLine() 在伺服端
+// 重新計算，不信任用戶端送來的數字。掛 requireDeviceToken 後，apps/pos
+// 送單需帶 X-Device-Token（見 src/api/http.ts）。
 const createOrderRoute = createRoute({
   method: 'post',
   path: '/',
@@ -80,22 +73,12 @@ const listOrdersRoute = createRoute({
 
 const errorSchema = z.object({ error: z.string() })
 
-/**
- * P6：apps/pos 的訂單列表頁（編輯訂單狀態／刪除訂單）原本只改本機
- * Pinia 狀態，從來沒有打過任何 API——單店單機情境下看不太出問題，但
- * 一旦有第二台終端（或同一台裝置重新整理），本機的異動就會被伺服端
- * 尚未更新的資料蓋掉，兩邊看到的訂單狀態不一致。這兩個端點把這個動作
- * 變成真的伺服端操作。
- *
- * P12（規劃書 §10 P0「退款／作廢」）：把狀態改成「已取消」現在是真正
- * 的「作廢」操作，不只是換個字串——一定要附上原因（reason）與經手人
- * （operator），伺服端記錄成 voidReason／voidedBy／voidedAt（見
- * db/schema.ts 的說明），班別結算也會從此排除這筆訂單的現金 tender
- * （見 shifts.ts 的 sumCashSales）。改回「已完成」則是撤銷這次作廢，
- * 三個欄位一併清空。「已完成」不需要 reason——這裡只有作廢這個方向
- * 需要交代理由，跟現實收銀情境一致（沒有人會被要求解釋「為什麼這筆
- * 訂單是正常完成的」）。
- */
+// 訂單列表頁的狀態變更／刪除操作，過去只改本機 Pinia 狀態、沒有打 API
+// ——多終端情境下本機異動會被伺服端資料蓋掉。這兩個端點讓它變成真正的
+// 伺服端操作。改成「已取消」是真正的作廢，必須附上 reason／operator
+// （見 db/schema.ts 的 voidReason 等欄位），班別結算也會排除這筆訂單的
+// 現金 tender（見 shifts.ts 的 sumCashSales）。改回「已完成」則清空
+// 這三個欄位，不需要 reason。
 const updateOrderStatusRequestSchema = z
   .object({
     orderStatus: orderStatusSchema,
@@ -122,13 +105,9 @@ const updateOrderStatusRoute = createRoute({
   },
 })
 
-/**
- * 退款（P12：規劃書 §10 P0「退款／作廢」）。只允許對「已完成」的訂單
- * 退款——已作廢的訂單整筆都不算數，不需要另外退錢（見 refund.ts 的
- * 說明）。退款金額不能超過目前還能退的額度（應付金額 − 已退金額，
- * 用 @pos/domain 的 summarizeOrderRefunds() 驗證），避免同一筆訂單
- * 因為分好幾次退款、每次都只檢查單次金額合理而退超過。
- */
+// 只允許對「已完成」的訂單退款（已作廢的訂單整筆不算數，不需另外退錢，
+// 見 refund.ts）。退款金額不能超過目前還能退的額度（應付金額－已退
+// 金額，用 summarizeOrderRefunds() 驗證），避免分次退款繞過單次金額檢查。
 const createRefundRoute = createRoute({
   method: 'post',
   path: '/{orderId}/refunds',
@@ -146,11 +125,8 @@ const createRefundRoute = createRoute({
   },
 })
 
-// 這裡是真的從資料庫刪掉整筆訂單（含明細），不是軟刪除／狀態標記——
-// 沿用 apps/pos 既有「刪除訂單」的語意（見 views/order/index.vue）。
-// 對正式營運的收銀紀錄而言，事後想留稽核軌跡的話，更常見的做法是只
-// 允許把狀態改成「已取消」、不允許真的刪除；這裡沒有另外加這層限制，
-// 是刻意保留跟既有 UI 一致的行為，不是這個端點本身故意要禁止軟刪除。
+// 真的從資料庫刪掉整筆訂單（含明細），不是軟刪除——沿用既有「刪除訂單」
+// 的語意（見 views/order/index.vue）。
 const deleteOrderRoute = createRoute({
   method: 'delete',
   path: '/{orderId}',
@@ -235,15 +211,9 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderT
   })
 }
 
-/**
- * 常用折扣（P5：促銷引擎）改由 often_use_rates 表提供，取代 P2～P4
- * 沿用的 config/often-use-rates.ts 固定值——後台現在可以編輯這 5 筆
- * 資料，這裡永遠讀當下的值，不會有「後台改了、送單卻還用舊值」的
- * 不一致。缺任何一個 slot 都直接讓這次送單失敗（500），而不是悄悄用
- * 假資料補上：常用折扣的 5 筆資料本來就該由 seed/promotions.sql 保證
- * 存在，缺資料代表部署流程本身有問題，比起算出錯的折扣，讓它在這裡
- * 就爆出來更安全。
- */
+// 常用折扣由 often_use_rates 表提供，永遠讀當下的值，不會有「後台改了、
+// 送單卻還用舊值」的不一致。缺任何一個 slot 直接讓送單失敗（500）而不是
+// 悄悄補假資料——缺資料代表部署流程有問題，比起算出錯的折扣，這裡就爆出來更安全。
 async function loadOftenUseRates(db: AnyDb): Promise<OftenUseRates> {
   const rows = await db.select().from(oftenUseRatesTable).all()
   const bySlot = new Map(rows.map((row) => [row.slot, row]))
@@ -257,30 +227,16 @@ async function loadOftenUseRates(db: AnyDb): Promise<OftenUseRates> {
   return [at(0), at(1), at(2), at(3), at(4)]
 }
 
-/**
- * 原子核發下一個訂單序號（P6：規劃書 §3「多終端情境」）。單一 SQL
- * 陳述式（INSERT ... ON CONFLICT DO UPDATE ... RETURNING）內完成
- * 「這個營業日目前的計數、加一、寫回」，不需要另外包交易——單一陳述式
- * 本身就是原子的，兩台終端幾乎同時送單也不會核發到同一個序號（對照
- * P2～P5「查同一營業日已有幾筆訂單、+1」的作法：兩次查詢中間有空檔，
- * 兩台終端可能查到同一個計數，算出同一個序號，其中一筆 insert 會因為
- * orderId 撞到 primary key 直接失敗）。
- *
- * 第一次插入某個營業日的計數列時，起始值不是無條件從 1 開始，而是
- * COALESCE 這個營業日在 orders 表裡已經用掉的最大序號＋1（沒有的話
- * 才是 1）。這不是多餘的防禦：這張表是這次改動才新增的，orders 表裡
- * 可能已經有用舊版「查訂單數＋1」算出來的資料（本機開發／既有部署都
- * 是這樣）——如果無條件從 1 開始，第一筆新單就會撞到舊資料的
- * primary key。這裡假設 orderId 固定是 8 碼營業日＋序號（SUBSTR 從
- * 第 9 碼切）——businessDateSchema 已經驗證是 8 碼數字，這個假設成立。
- */
+// 原子核發下一個訂單序號：單一 SQL 陳述式（INSERT ... ON CONFLICT DO
+// UPDATE ... RETURNING）完成「讀計數、加一、寫回」，不需要另外包交易，
+// 兩台終端同時送單也不會核發到同一個序號。第一次插入某營業日的計數列
+// 時，起始值用 COALESCE 抓 orders 表裡該營業日已用掉的最大序號＋1
+// （沒有才是 1）——避免撞到用舊版「查訂單數＋1」算出來的既有資料。
+// 假設 orderId 固定是 8 碼營業日＋序號（businessDateSchema 已驗證 8 碼）。
 async function nextOrderSequence(db: AnyDb, businessDate: string): Promise<number> {
-  // 刻意不把 orderSequences／orders 的 Column 物件內插進這段 sql``——
-  // drizzle 會把它們展開成完整限定名稱（例如 "order_sequences"."business_date"），
-  // 但 SQLite 的 INSERT 欄位清單、ON CONFLICT 欄位清單、SET 左側都只
-  // 接受不限定的欄位名稱，用限定名稱會直接語法錯誤。這裡的表名／欄位名
-  // 都是寫死的常值（不是使用者輸入），直接寫字面量就好，只有真正的值
-  // （businessDate）才用參數帶入。
+  // 刻意不把 Column 物件內插進這段 sql``——drizzle 會展開成完整限定名稱，
+  // 但 SQLite 的 INSERT／ON CONFLICT／SET 欄位清單只接受不限定名稱。
+  // 表名／欄位名是寫死常值，直接寫字面量，只有 businessDate 用參數帶入。
   const row = await db.get<{ counter: number }>(sql`
     insert into order_sequences (business_date, counter)
     values (
@@ -300,17 +256,9 @@ async function nextOrderSequence(db: AnyDb, businessDate: string): Promise<numbe
   return row.counter
 }
 
-/**
- * 原子核發下一個發票號碼（P23：規劃書 §10 P23「電子發票平台串接」，
- * 取代 P15 當時單一固定前綴的簡化版本）。從目前啟用的字軌（見
- * db/schema.ts 的 invoiceTracks 說明）取下一個號碼，寫法跟
- * nextOrderSequence() 同一套模式（UPDATE ... RETURNING，單一陳述式
- * 保證原子性，不會有兩張訂單同時搶到同一個號碼）。
- *
- * 找不到啟用中的字軌、或字軌的號碼區間已經用完，直接丟錯讓這筆訂單
- * 送單失敗——這是真實情境下真的會發生、也真的該擋下來的狀況（字軌
- * 用完卻繼續開發票是違法的），不是可以悄悄跳過或補一個假號碼的地方。
- */
+// 原子核發下一個發票號碼，寫法同 nextOrderSequence()（UPDATE ...
+// RETURNING，單一陳述式保證原子性）。找不到啟用中的字軌、或號碼區間
+// 用完，直接丟錯讓送單失敗——字軌用完卻繼續開發票是違法的。
 async function nextInvoiceNumber(db: AnyDb): Promise<string> {
   const row = await db.get<{ trackCode: string; currentNumber: number }>(sql`
     update invoice_tracks
@@ -330,17 +278,10 @@ function toInvoiceCarrier(type: InvoiceCarrier['type'], value: string | null): I
   return { type, value: value ?? '' }
 }
 
-/**
- * 送單成功後扣庫存（P20：規劃書 §10 P20「基礎庫存管理」）。訂單品項
- * 只存名稱（見 packages/pos-contract/src/order.ts 的 orderLineInputSchema
- * 說明，這個專案的訂單一直是這樣設計，不是這裡才引入的限制），所以
- * 這裡用名稱比對回菜單品項／配料——換句話說，改過名字的品項／配料，
- * 舊訂單不會再扣到它的庫存，這是用名稱關聯已知的既有限制，不是這次
- * 疏漏。庫存是 null（不追蹤）或找不到對應品項／配料時直接略過，扣到
- * 0 就不再往下扣（不會變負數），也不會因為庫存不夠就擋下這筆訂單——
- * 「基礎」庫存管理目前只做「扣減與示警」，真的要擋購買（超賣防護）
- * 需要在下單當下鎖庫存重新設計，留給之後有實際需要再做。
- */
+// 送單成功後扣庫存。訂單品項只存名稱，這裡用名稱比對回菜單品項／配料
+// ——改過名字的品項，舊訂單不會再扣到它的庫存，屬已知限制。庫存為 null
+// 或找不到對應品項時直接略過，扣到 0 就不再往下扣，也不會因庫存不夠
+// 擋下訂單：目前只做「扣減與示警」，真正的超賣防護留待之後需要再做。
 async function deductStock(db: AnyDb, lines: Pick<OrderLineInput, 'name' | 'count' | 'addList'>[]): Promise<void> {
   for (const line of lines) {
     const item = await db.select().from(catalogItems).where(eq(catalogItems.name, line.name)).get()
@@ -361,14 +302,9 @@ async function deductStock(db: AnyDb, lines: Pick<OrderLineInput, 'name' | 'coun
 /** 每消費這麼多元累加 1 點——最基礎的固定比例規則，見 @pos/contract 的 memberSchema 說明。 */
 const POINTS_PER_CURRENCY_UNIT = 10
 
-/**
- * 確認用戶端送來的 memberId 真的對應存在的會員（P22：規劃書 §10 P22
- * 「會員與顧客經營」）。找不到對應會員（例如會員被刪除，或用戶端送
- * 了一個過期的 memberId）不擋這筆訂單、也不強行存一個無效的參照——
- * orders.memberId 有外鍵約束（見 db/schema.ts），存進去會直接讓整筆
- * 訂單的 insert 失敗，因此要在送單當下先確認，找不到就當成沒有掛
- * 會員（回傳 null），而不是讓「找不到會員」變成「整筆訂單失敗」。
- */
+// 確認用戶端送來的 memberId 真的對應存在的會員。orders.memberId 有
+// 外鍵約束，存入無效參照會讓整筆訂單 insert 失敗，因此送單當下先確認，
+// 找不到就當成沒有掛會員（回傳 null）而不是讓整筆訂單失敗。
 async function resolveMemberId(db: AnyDb, memberId: string | undefined): Promise<string | null> {
   if (!memberId) return null
   const member = await db.select().from(members).where(eq(members.id, memberId)).get()
@@ -385,13 +321,8 @@ async function accrueMemberPoints(db: AnyDb, memberId: string | null, orderPayme
   await db.update(members).set({ points: member.points + earned }).where(eq(members.id, memberId))
 }
 
-/**
- * 訂單層級折價券（P5）：用戶端只送「套用了哪張」，實際折抵金額查真正
- * 的折價券資料重算——不相信用戶端算好的數字，這是 D-01／D-02 修復
- * 方式的延伸。折抵後金額不會是負的（money 折價券面額超過訂單金額時，
- * 實際折抵只到 0 元為止，不是讓應付金額變負數），公式跟 apps/pos 舊版
- * drinkStore.drinkPayPrice 的既有邏輯一致。
- */
+// 用戶端只送「套用了哪張」，實際折抵金額查真正的折價券資料重算，不
+// 信任用戶端算好的數字。折抵後金額不會是負的。
 async function resolveOrderPayment(
   db: AnyDb,
   appliedCoupon: AppliedCoupon,
@@ -413,12 +344,7 @@ async function resolveOrderPayment(
   }
 }
 
-/**
- * 驗證混合支付的金額總和，並算出找零總額（P6：規劃書 §10 P0
- * 「混合支付」）。用戶端只送每筆 tender 分擔多少、實收多少——不相信
- * 用戶端自己算的合計是否等於應付金額，這是 D-01／D-02 修復方式（金額
- * 只能由伺服端算）在混合支付上的延伸。
- */
+// 驗證混合支付金額總和並算出找零，不信任用戶端自己算的合計。
 function validateTenders(
   tenders: readonly TenderInput[],
   orderPaymentPrice: number,
@@ -476,23 +402,17 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const orderDiscount = orderTotalPrice - orderPaymentPrice
     const orderCupCount = pricedLines.reduce((sum, line) => sum + line.count, 0)
     const orderTime = new Date().toISOString()
-    // 顯示用摘要：多筆 tender 用頓號連接（見 db/schema.ts 的
-    // orders.orderPayment 說明），單筆時就是那個方式的名稱，跟舊版
-    // 行為一致，不影響既有畫面。
+    // 顯示用摘要：多筆 tender 用頓號連接（見 db/schema.ts 的 orders.orderPayment）。
     const orderPayment = input.tenders.map((tender) => tender.method).join('、')
 
-    // 每一筆訂單一律開立發票（P15：規劃書 §10 P0「發票」），不管有沒有
-    // 帶載具——這是統一發票本身的規則（有交易就要開立），不是可選項。
-    // P23：字軌用完或沒有啟用中的字軌是可預期的商業狀況（店家剛開幕
-    // 忘記設定、或這期字軌真的賣完了），回 400 讓前端顯示清楚的錯誤
-    // 訊息，不是讓它變成沒說明原因的 500。
+    // 每筆訂單一律開立發票（不管有沒有帶載具）。字軌用完或未啟用是可
+    // 預期的商業狀況，回 400 顯示清楚錯誤，不是沒說明原因的 500。
     let invoiceNumber: string
     try {
       invoiceNumber = await nextInvoiceNumber(db)
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : '核發發票號碼失敗' }, 400)
     }
-    // P22：找不到對應會員就當成沒有掛會員，見 resolveMemberId 的說明。
     const memberId = await resolveMemberId(db, input.memberId)
 
     const newOrder: OrderRow = {
@@ -520,9 +440,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       memberId,
       invoiceStatus: 'issued',
       invoiceSubmittedAt: null,
-      // P24：純紀錄用途的內用桌號，見 @pos/contract 的
-      // createOrderRequestSchema.tableNumber 說明——沒帶就是 null，
-      // 不像 memberId 需要驗證存在性（不是外鍵，只是字串）。
+      // 純紀錄用途，不像 memberId 需要驗證存在性（不是外鍵，只是字串）。
       tableNumber: input.tableNumber ?? null,
     }
     const newTenders: Omit<OrderTenderRow, 'id'>[] = input.tenders.map((tender, seq) => ({
@@ -533,17 +451,15 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       receivedAmount: tender.receivedAmount ?? null,
     }))
 
-    // 這裡刻意不用 db.transaction()：better-sqlite3 的交易回呼要求同步
-    // 函式，D1 的 batch() 則要求非同步、且兩者簽章不同，無法用同一段
-    // 程式碼透過 AnyDb 泛型介面統一呼叫。這幾個 insert 因此不是原子的
-    // ——之後若要在 D1 上補回真正的原子性，走 D1 專屬的 db.batch()，
-    // 屬於 route 邏輯要對 driver 分流處理的範圍，目前先接受這個落差。
+    // 刻意不用 db.transaction()：better-sqlite3 要求同步回呼、D1 的
+    // batch() 要求非同步，兩者簽章不同、無法透過 AnyDb 泛型統一呼叫，
+    // 這幾個 insert 因此不是原子的——之後要在 D1 上補回原子性，走 D1
+    // 專屬的 db.batch()。
     await db.insert(orders).values(newOrder)
     await db.insert(orderLines).values(pricedLines.map((line) => ({ ...line, orderId })))
     await db.insert(orderTenders).values(newTenders)
-    // P20／P22：只在真的新建立一筆訂單時扣庫存、累加會員點數——上面
-    // idempotencyKey 命中、直接回傳既有訂單的那條路徑（本函式最上面）
-    // 不會走到這裡，重送同一筆訂單不會扣兩次庫存或算兩次點數。
+    // 只在真的新建立訂單時扣庫存、累加點數；idempotencyKey 命中走上面
+    // 提早 return 的路徑，不會重複執行。
     await deductStock(db, input.lines)
     await accrueMemberPoints(db, memberId, orderPaymentPrice)
 
@@ -599,18 +515,14 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '找不到這筆訂單' }, 404)
     }
 
-    // 改成「已取消」＝這次作廢，記錄理由／經手人／時間；改成「已完成」
-    // ＝撤銷作廢，三個欄位一併清空（見 db/schema.ts 的說明）。
+    // 改成「已取消」記錄作廢理由／經手人／時間；改回「已完成」清空三個欄位。
     const voidFields =
       orderStatus === '已取消'
         ? { voidReason: reason ?? null, voidedBy: operator, voidedAt: new Date().toISOString() }
         : { voidReason: null, voidedBy: null, voidedAt: null }
 
-    // P23：訂單作廢時，這張發票也一併標成作廢——真正的統一發票作廢
-    // 是另一個要跟財政部平台申報的動作（不是本專案模擬範圍），但至少
-    // 讓後台看得出「這張發票對應的訂單已經作廢」，不會誤以為還是有效
-    // 交易。撤銷作廢（改回已完成）則回到 'issued'，等下一次模擬批次
-    // 上傳（見 routes/invoices.ts 的 submitInvoices）。
+    // 訂單作廢時發票也一併標成作廢（真正的統一發票作廢要另外向財政部
+    // 平台申報，不在本專案模擬範圍）。撤銷作廢則回到 'issued'。
     const invoiceStatusField: { invoiceStatus?: InvoiceStatus } =
       orderStatus === '已取消' ? { invoiceStatus: 'voided' } : { invoiceStatus: 'issued' }
 
@@ -632,8 +544,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
 
     const existingRefunds = await db.select().from(orderRefunds).where(eq(orderRefunds.orderId, orderId)).all()
 
-    // 冪等：同一個 refundId 重送，回傳目前的訂單狀態，不重複建立退款
-    // 紀錄（理由跟送單的 idempotencyKey 一致，見 createOrderRoute）。
+    // 冪等：同一個 refundId 重送回傳目前狀態，不重複建立退款紀錄。
     if (existingRefunds.some((refund) => refund.id === input.refundId)) {
       const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
       const tenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
@@ -672,9 +583,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '找不到這筆訂單' }, 404)
     }
 
-    // 先刪明細再刪主檔（order_lines／order_tenders／order_refunds 的
-    // order_id 都參照 orders.order_id，見 db/schema.ts），順序反過來
-    // 會違反外鍵約束。
+    // 先刪明細再刪主檔，避免違反外鍵約束。
     await db.delete(orderLines).where(eq(orderLines.orderId, orderId))
     await db.delete(orderTenders).where(eq(orderTenders.orderId, orderId))
     await db.delete(orderRefunds).where(eq(orderRefunds.orderId, orderId))
