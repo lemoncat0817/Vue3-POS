@@ -22,10 +22,10 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-          <tr v-if="rolesStore.roleList.length === 0">
+          <tr v-if="sliceRoleList.length === 0">
             <td colspan="5" class="px-3 py-8 text-surface-400 dark:text-surface-500">還沒有任何權限群組</td>
           </tr>
-          <tr v-for="row in rolesStore.roleList" :key="row.id" class="hover:bg-surface-50 dark:hover:bg-surface-950/40">
+          <tr v-for="row in sliceRoleList" :key="row.id" class="hover:bg-surface-50 dark:hover:bg-surface-950/40">
             <td class="px-3 py-2.5 text-left font-bold text-surface-900 dark:text-surface-100">{{ row.name }}</td>
             <td class="px-3 py-2.5">
               <span
@@ -57,6 +57,11 @@
       </table>
     </div>
 
+    <div class="mt-3 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3 py-2 text-xs font-bold text-surface-600 dark:text-surface-300">
+      <p>{{ `共 ${rolesStore.roleList.length} 組` }}</p>
+      <AppPagination :page="roleCurrentPage" :page-count="rolePageCount" :total="rolesStore.roleList.length" @update:page="handleRoleCurrentChange" />
+    </div>
+
     <ModalDialog v-model:open="dialog.open" :title="dialog.editingId ? '編輯權限群組' : '新增權限群組'" size="lg">
       <div class="space-y-3.5 py-1">
         <div>
@@ -83,9 +88,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import type { Role } from '@pos/contract'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
 import AuthorityChecklist from '@/components/ui/AuthorityChecklist.vue'
 import { AUTHORITY_FIELDS } from '@/utils/authority'
 import { confirm } from '@/composables/useConfirm'
@@ -111,6 +117,15 @@ const canManage = computed(() => hasCapability(loginStore.userInfo, 'canSetAutho
 function staffCountOf(roleId: string): number {
   return authorityManagementStore.staffList.filter((staff) => staff.roleId === roleId).length
 }
+
+const roleCurrentPage = ref(1)
+function handleRoleCurrentChange(page: number) {
+  roleCurrentPage.value = page
+}
+const sliceRoleList = computed(() => {
+  return rolesStore.roleList.slice((roleCurrentPage.value - 1) * 10, roleCurrentPage.value * 10)
+})
+const rolePageCount = computed(() => Math.max(Math.ceil(rolesStore.roleList.length / 10), 1))
 
 const dialog = reactive<{ open: boolean; editingId: string | null; isSystem: boolean; name: string; capabilities: AuthorityKey[] }>({
   open: false, editingId: null, isSystem: false, name: '', capabilities: [],
