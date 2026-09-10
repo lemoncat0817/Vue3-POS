@@ -10,6 +10,7 @@ export interface AuthorityField {
 export const AUTHORITY_FIELDS: AuthorityField[] = [
   { label: '招待', value: 'canCompItem' },
   { label: '開收銀機', value: 'canOpenCashier' },
+  { label: '管理班別／現金', value: 'canManageShift' },
   { label: '查看訂單', value: 'canCheckOrder' },
   { label: '編輯訂單狀態', value: 'canEditOrderStatus', dependsOn: 'canCheckOrder' },
   { label: '刪除訂單', value: 'canDeleteOrder', dependsOn: 'canCheckOrder' },

@@ -4,6 +4,7 @@ import type { FormNumeric } from './common'
 export type AuthorityKey =
   | 'canCompItem'
   | 'canOpenCashier'
+  | 'canManageShift'
   | 'canCheckOrder'
   | 'canEditOrderStatus'
   | 'canDeleteOrder'

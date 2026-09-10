@@ -4,6 +4,7 @@ import { z } from 'zod'
 export const authorityKeySchema = z.enum([
   'canCompItem',
   'canOpenCashier',
+  'canManageShift',
   'canCheckOrder',
   'canEditOrderStatus',
   'canDeleteOrder',

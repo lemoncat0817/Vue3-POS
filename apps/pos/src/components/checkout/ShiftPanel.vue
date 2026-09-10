@@ -17,7 +17,7 @@ v-model.number="openingFloat" type="number" min="0"
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800" @click="open = false">取消</button>
         <button
-type="button" :disabled="isSubmitting"
+type="button" :disabled="isSubmitting || !canManageShift"
           class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
           @click="submitOpen">開帳</button>
       </div>
@@ -47,13 +47,13 @@ type="button" :disabled="isSubmitting"
           原因
           <input v-model="movementReason" type="text" placeholder="例如：追加零錢準備金" class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
         </label>
-        <button type="button" :disabled="isSubmitting" class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:cursor-not-allowed disabled:opacity-40" @click="submitMovement('in')">存入</button>
-        <button type="button" :disabled="isSubmitting" class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:cursor-not-allowed disabled:opacity-40" @click="submitMovement('out')">提出</button>
+        <button type="button" :disabled="isSubmitting || !canManageShift" class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:cursor-not-allowed disabled:opacity-40" @click="submitMovement('in')">存入</button>
+        <button type="button" :disabled="isSubmitting || !canManageShift" class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:cursor-not-allowed disabled:opacity-40" @click="submitMovement('out')">提出</button>
       </div>
 
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800" @click="open = false">關閉</button>
-        <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700" @click="closing = true">收班</button>
+        <button type="button" :disabled="!canManageShift" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40" @click="closing = true">收班</button>
       </div>
     </div>
 
@@ -75,7 +75,7 @@ type="button" :disabled="isSubmitting"
       <div class="mt-2 flex justify-end gap-2">
         <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closing = false">返回</button>
         <button
-type="button" :disabled="isSubmitting"
+type="button" :disabled="isSubmitting || !canManageShift"
           class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
           @click="submitClose">確認收班</button>
       </div>
@@ -90,10 +90,15 @@ import { useQuery } from '@tanstack/vue-query'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { addCashMovement, closeShift, fetchCurrentShift, openShift } from '@/api/shifts'
 import { showToast } from '@/composables/useToast'
+import { useLoginStore } from '@/stores/login'
+import { hasCapability } from '@/utils/selection'
 import { ulid } from '@pos/domain'
 import type { CashMovementType } from '@pos/contract'
 
 const props = defineProps<{ operator: string }>()
+
+const loginStore = useLoginStore()
+const canManageShift = computed(() => hasCapability(loginStore.userInfo, 'canManageShift'))
 
 const open = ref(false)
 const closing = ref(false)
