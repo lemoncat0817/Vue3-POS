@@ -72,8 +72,8 @@ import { ulid } from '@pos/domain'
 import type { InvoiceCarrier } from '@pos/contract'
 import type { OrderChannel } from '@/types'
 
-const props = defineProps<{ orderChannel: OrderChannel; invoiceCarrier: InvoiceCarrier }>()
-const emit = defineEmits<{ 'update:orderChannel': [OrderChannel]; 'update:invoiceCarrier': [InvoiceCarrier] }>()
+const props = defineProps<{ orderChannel: OrderChannel; invoiceCarrier: InvoiceCarrier; orderNote: string }>()
+const emit = defineEmits<{ 'update:orderChannel': [OrderChannel]; 'update:invoiceCarrier': [InvoiceCarrier]; 'update:orderNote': [string] }>()
 
 const catalogStore = useCatalogStore()
 const discountStore = useDiscountStore()
@@ -125,6 +125,7 @@ async function parkCurrent() {
     invoiceCarrier: JSON.parse(JSON.stringify(props.invoiceCarrier)),
     orderCouponId: discountStore.orderCouponId,
     currentDiscountName: discountStore.currentDiscountName,
+    orderNote: props.orderNote,
   })
 
   catalogStore.suppressClearedNotice = true
@@ -155,6 +156,7 @@ async function resumeOrder(order: ParkedOrder) {
   discountStore.currentDiscountName = order.currentDiscountName
   emit('update:orderChannel', order.orderChannel)
   emit('update:invoiceCarrier', order.invoiceCarrier)
+  emit('update:orderNote', order.orderNote ?? '')
 
   await deleteParkedOrder(order.id)
   await refresh()

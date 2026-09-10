@@ -34,4 +34,6 @@ export interface OrderRecord {
   memberId?: string | null
   /** 內用桌號，選填。 */
   tableNumber?: string | null
+  /** 訂單備註（外送地址、取件時間、客製化需求等），選填。 */
+  note?: string | null
 }

@@ -96,6 +96,8 @@ export const createOrderRequestSchema = z.object({
   memberId: z.string().min(1).optional(),
   /** 選填，純粹是訂單的紀錄用途，不是桌況的外鍵——桌況由店員手動維護，不由訂單生命週期推導。 */
   tableNumber: z.string().min(1).optional(),
+  /** 選填備註（外送地址、取件時間、客製化需求等），純文字紀錄用途，伺服端不解析內容。 */
+  note: z.string().max(200).optional(),
 })
 export type CreateOrderRequest = z.infer<typeof createOrderRequestSchema>
 
@@ -165,6 +167,8 @@ export const orderSchema = z.object({
   memberId: z.string().nullable(),
   /** 沒有指定是 null。 */
   tableNumber: z.string().nullable(),
+  /** 沒有填寫是 null。 */
+  note: z.string().nullable(),
   invoiceStatus: invoiceStatusSchema,
   invoiceSubmittedAt: z.string().nullable(),
 })

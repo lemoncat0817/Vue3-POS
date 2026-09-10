@@ -179,6 +179,7 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderT
     invoiceStatus: order.invoiceStatus,
     invoiceSubmittedAt: order.invoiceSubmittedAt,
     tableNumber: order.tableNumber,
+    note: order.note,
     tenders: [...tenders]
       .sort((a, b) => a.seq - b.seq)
       .map((tender) => ({
@@ -420,6 +421,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       invoiceSubmittedAt: null,
       // 純紀錄用途，不像 memberId 需要驗證存在性（不是外鍵，只是字串）。
       tableNumber: input.tableNumber ?? null,
+      note: input.note?.trim() || null,
     }
     const newTenders: Omit<OrderTenderRow, 'id'>[] = input.tenders.map((tender, seq) => ({
       orderId,

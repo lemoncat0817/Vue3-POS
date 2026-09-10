@@ -115,6 +115,39 @@ describe('POST /api/orders', () => {
     expect((await readJson(res)).tableNumber).toBeNull()
   })
 
+  it('備註原封不動存回並回傳，前後空白會被修剪', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ note: '  外送地址：忠孝東路一段1號  ' })),
+    })
+    expect(res.status).toBe(201)
+    expect((await readJson(res)).note).toBe('外送地址：忠孝東路一段1號')
+  })
+
+  it('沒有帶備註、或備註只有空白時，note 是 null', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const noNote = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest()),
+    })
+    expect((await readJson(noNote)).note).toBeNull()
+
+    // 不同 idempotencyKey，避免命中上一筆的冪等快取而沒有真的測到這次的備註。
+    const blankNote = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FBV', note: '   ' })),
+    })
+    expect((await readJson(blankNote)).note).toBeNull()
+  })
+
   it('沒有帶 orderChannel 時拒絕，回傳 400', async () => {
     const db = createTestDb()
     await seedPromotions(db)

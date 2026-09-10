@@ -53,6 +53,8 @@ export function buildCreateOrderRequest(params: {
   memberId?: string | null
   /** 內用桌號，純紀錄用途。 */
   tableNumber?: string | null
+  /** 訂單備註，純紀錄用途。 */
+  note?: string | null
 }): CreateOrderRequest {
   return createOrderRequestSchema.parse({
     idempotencyKey: ulid(),
@@ -74,5 +76,6 @@ export function buildCreateOrderRequest(params: {
     invoiceCarrier: params.invoiceCarrier,
     ...(params.memberId ? { memberId: params.memberId } : {}),
     ...(params.tableNumber ? { tableNumber: params.tableNumber } : {}),
+    ...(params.note ? { note: params.note } : {}),
   })
 }

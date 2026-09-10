@@ -293,6 +293,11 @@
                           <span v-if="row.original.tableNumber">桌號 {{ row.original.tableNumber }}</span>
                         </div>
 
+                        <div v-if="row.original.note" class="mt-2 flex items-start gap-1.5 rounded-lg bg-surface-50 dark:bg-surface-800/60 px-3 py-1.5 text-xs text-surface-600 dark:text-surface-300">
+                          <span class="shrink-0 font-bold text-surface-400 dark:text-surface-500">備註</span>
+                          <span class="whitespace-pre-wrap">{{ row.original.note }}</span>
+                        </div>
+
                         <div v-if="(row.original.refundedAmount ?? 0) > 0 || row.original.voidReason" class="mt-2 flex flex-wrap gap-2">
                           <span
                             v-if="(row.original.refundedAmount ?? 0) > 0"

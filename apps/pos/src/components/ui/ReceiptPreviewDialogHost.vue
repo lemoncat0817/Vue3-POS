@@ -20,6 +20,10 @@
             <span>發票載具</span>
             <span>{{ state.order.invoiceCarrier.type }} {{ state.order.invoiceCarrier.value }}</span>
           </div>
+          <div v-if="state.order.note" class="flex justify-between gap-2">
+            <span class="shrink-0">備註</span>
+            <span class="text-right whitespace-pre-wrap">{{ state.order.note }}</span>
+          </div>
         </div>
         <div class="my-2 border-t border-dashed border-surface-300 dark:border-surface-700" />
         <table class="w-full text-xs">

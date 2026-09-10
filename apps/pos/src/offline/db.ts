@@ -32,6 +32,12 @@ export interface ParkedOrder {
   invoiceCarrier: InvoiceCarrier
   orderCouponId: FormNumeric
   currentDiscountName: string
+  /**
+   * 訂單本身的備註（外送地址、取件時間等），會隨訂單一起送到伺服端、
+   * 顯示在收據上——跟上面的 `note`（純本機辨認掛單用）是不同東西。
+   * 選填：既有掛單記錄沒有這個欄位，讀出來是 undefined。
+   */
+  orderNote?: string
 }
 
 export const offlineDb = new Dexie('pos-offline') as Dexie & {

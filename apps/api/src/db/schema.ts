@@ -203,6 +203,8 @@ export const orders = sqliteTable(
     invoiceSubmittedAt: text('invoice_submitted_at'),
     // 內用桌號，純紀錄用途，故意不設外鍵指到 dining_tables——桌況跟訂單各自獨立維護。
     tableNumber: text('table_number'),
+    // 訂單備註（外送地址、取件時間、客製化需求等），純文字紀錄用途，伺服端不解析內容。
+    note: text('note'),
   },
   (table) => [uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey)],
 )

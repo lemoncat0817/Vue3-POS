@@ -14,6 +14,14 @@
               <span class="font-mono">A</span>
             </div>
             <ShiftPanel :operator="`${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`" />
+            <!-- 開收銀機是收銀機層級的操作（不對應特定訂單），比照班別面板放在頭部，不跟購物車操作混在一起。 -->
+            <button
+              type="button"
+              class="rounded-md border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors select-none"
+              :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canOpenCashier') }"
+              @click="openCashier">
+              開收銀機
+            </button>
           </div>
         </div>
 
@@ -79,7 +87,14 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-between gap-1 pt-1 border-t border-surface-200/50 dark:border-surface-800">
+        <div class="pt-1 border-t border-surface-200/50 dark:border-surface-800">
+          <input
+            v-model="orderNote" type="text" maxlength="200"
+            placeholder="訂單備註（選填，例如：外送地址、取件時間、特殊需求...）"
+            class="w-full rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1.5 text-xs text-surface-700 dark:text-surface-200 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
+        </div>
+
+        <div class="flex items-center justify-between gap-1 pt-1.5">
           <div class="flex items-center gap-1.5">
             <button
               type="button"
@@ -96,7 +111,7 @@
           </div>
 
           <div class="flex items-center gap-1.5">
-            <ParkedOrdersPanel v-model:order-channel="orderChannel" v-model:invoice-carrier="invoiceCarrier" />
+            <ParkedOrdersPanel v-model:order-channel="orderChannel" v-model:invoice-carrier="invoiceCarrier" v-model:order-note="orderNote" />
           </div>
         </div>
       </div>
@@ -167,19 +182,12 @@
       </div>
 
       <div class="p-2.5 border-b border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-900/60 shrink-0 flex flex-col gap-1.5">
-        <div class="grid grid-cols-3 gap-1.5">
+        <div class="grid grid-cols-2 gap-1.5">
           <button
             type="button"
             class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
             @click="openBagDialog">
             加購包材
-          </button>
-          <button
-            type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canOpenCashier') }"
-            @click="openCashier">
-            開收銀機
           </button>
           <button
             type="button"
@@ -447,6 +455,10 @@ const currentOrderMember = ref<Member | null>(null)
 // 純文字輸入，故意不跟桌況資料綁外鍵（見 dining_tables 說明），只在選了「內用」時顯示。
 const tableNumberInput = ref('')
 
+// 訂單備註（外送地址、取件時間、客製化需求等），跟 invoiceCarrier 一樣屬於這筆
+// 交易的個別需求，送單後重置；掛單／取單時隨 ParkedOrdersPanel 一併保存與還原。
+const orderNote = ref('')
+
 const dialogBag = ref(false)
 const bagCount = ref(1)
 const openBagDialog = () => {
@@ -609,6 +621,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     invoiceCarrier: invoiceCarrier.value,
     memberId: currentOrderMember.value?.id ?? null,
     tableNumber: orderChannel.value === '內用' ? tableNumberInput.value.trim() || null : null,
+    note: orderNote.value.trim() || null,
   }
   orderStore.order.push(toPayOrder)
   showToast('訂單送出成功', 'success')
@@ -650,11 +663,13 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     invoiceCarrier: toPayOrder.invoiceCarrier,
     memberId: toPayOrder.memberId ?? null,
     tableNumber: toPayOrder.tableNumber ?? null,
+    note: toPayOrder.note ?? null,
   })
   void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
   invoiceCarrier.value = { type: '無載具' }
   currentOrderMember.value = null
   tableNumberInput.value = ''
+  orderNote.value = ''
 
   catalogStore.cartLines = []
 }
