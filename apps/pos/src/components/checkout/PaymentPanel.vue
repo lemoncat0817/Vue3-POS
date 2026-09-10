@@ -67,6 +67,19 @@ type="button" :disabled="!canAddDraftTender"
             class="rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
             @click="addDraftTender">加入</button>
         </div>
+
+        <!-- 現金快捷金額：減少手動輸入實收金額的出錯機會，只在選現金時顯示。 -->
+        <div v-if="draftMethod?.useMethod === '紙鈔' && quickCashAmounts.length > 0" class="flex flex-wrap gap-1.5">
+          <button
+v-for="amount in quickCashAmounts" :key="amount" type="button"
+            class="rounded-lg border px-3 py-1 text-xs font-bold transition-colors"
+            :class="draftReceivedAmount === amount
+              ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-400'
+              : 'border-surface-300 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800'"
+            @click="draftReceivedAmount = amount">
+            {{ amount === draftAmount ? `剛好 $${amount}` : `$${amount}` }}
+          </button>
+        </div>
       </div>
 
       <div class="mt-2 flex justify-end gap-2">
@@ -116,6 +129,22 @@ const remaining = computed(() => Math.max(0, props.dueAmount - tenderedAmount.va
 const changeDue = computed(() =>
   tenders.value.reduce((sum, tender) => sum + ((tender.receivedAmount ?? tender.amount) - tender.amount), 0),
 )
+
+// 現金快捷金額：「剛好」湊這筆分擔金額，加上常見鈔票面額（湊到大於等於這筆金額
+// 的最小面額，避免列出一堆明顯不夠付的選項）；非整百的金額額外補一個無條件進位
+// 到百位的選項（例如應付 88 元會有 $100，不是只有 $500／$1000 這種太大的面額）。
+const CASH_NOTES = [100, 500, 1000, 2000]
+const quickCashAmounts = computed(() => {
+  const due = draftAmount.value
+  if (due <= 0) return []
+  const amounts = new Set<number>([due])
+  const roundedUp = Math.ceil(due / 100) * 100
+  if (roundedUp > due) amounts.add(roundedUp)
+  for (const note of CASH_NOTES) {
+    if (note >= due) amounts.add(note)
+  }
+  return [...amounts].sort((a, b) => a - b).slice(0, 5)
+})
 
 const canAddDraftTender = computed(() => {
   if (!draftMethod.value) return false
