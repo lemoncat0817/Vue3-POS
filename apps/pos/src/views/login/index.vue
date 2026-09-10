@@ -99,12 +99,14 @@ const login = async () => {
   try {
     const staff = await operatorLogin(loginStore.account, loginStore.pin)
     loginStore.userInfo = toStaffMember(staff)
+    loginStore.sessionToken = staff.sessionToken
     loginStore.isLogin = true
     router.push('/home')
     showToast(`登入成功：${staff.jobTitle} - ${staff.name}，歡迎進入 POS機系統`, 'success')
   } catch (err) {
     loginStore.isLogin = false
     loginStore.userInfo = []
+    loginStore.sessionToken = null
     if (err instanceof ApiError && err.status === 401) {
       showToast('帳號或是 PIN 有誤,請重新輸入', 'error')
     } else {

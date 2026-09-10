@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { operatorLoginRequestSchema, operatorLoginResponseSchema } from '@pos/contract'
 import { verifySecret } from '../auth/hash'
+import { issueOperatorSession, revokeOperatorSession } from '../auth/operator-session'
 import { roles, staff } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
@@ -27,6 +28,17 @@ const operatorLoginRoute = createRoute({
       description: '裝置憑證無效、或帳號密碼錯誤、或帳號已鎖定',
       content: { 'application/json': { schema: z.object({ error: z.string() }) } },
     },
+  },
+})
+
+const logoutRoute = createRoute({
+  method: 'post',
+  path: '/logout',
+  middleware: [requireDeviceToken] as const,
+  responses: {
+    204: { description: '登出成功（session 已撤銷；找不到或已撤銷也視為成功，登出本身是冪等操作）' },
+    400: { description: '缺少操作員 session', content: { 'application/json': { schema: z.object({ error: z.string() }) } } },
+    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: z.object({ error: z.string() }) } } },
   },
 })
 
@@ -62,6 +74,12 @@ export const authRoutes = new OpenAPIHono<AppEnv>().openapi(operatorLoginRoute, 
   const role = await db.select().from(roles).where(eq(roles.id, row.roleId)).get()
   if (!role) return c.json({ error: '帳號設定異常，請聯絡管理者' }, 401)
 
+  // 核發這次登入的操作員 session（見 auth/operator-session.ts）。後續寫入
+  // 請求要帶著它當 X-Operator-Session，伺服端才知道操作的人是誰、有沒有
+  // 對應權限（見 middleware/require-capability.ts）——不能再直接信任
+  // 用戶端回報的 staffId，那是 GET /api/staff 就查得到的公開資訊。
+  const sessionToken = await issueOperatorSession(db, row.id)
+
   return c.json(
     operatorLoginResponseSchema.parse({
       id: row.id,
@@ -71,7 +89,14 @@ export const authRoutes = new OpenAPIHono<AppEnv>().openapi(operatorLoginRoute, 
       roleId: role.id,
       roleName: role.name,
       capabilities: role.capabilities,
+      sessionToken,
     }),
     200,
   )
 })
+  .openapi(logoutRoute, async (c) => {
+    const token = c.req.header('X-Operator-Session')
+    if (!token) return c.json({ error: '缺少操作員 session' }, 400)
+    await revokeOperatorSession(c.get('db'), token)
+    return c.body(null, 204)
+  })

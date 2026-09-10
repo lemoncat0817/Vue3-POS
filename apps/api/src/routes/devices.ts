@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { createDeviceRequestSchema, createDeviceResponseSchema, deviceSchema } from '@pos/contract'
-import { generateDeviceToken, hashSecret } from '../auth/hash'
+import { generateSecureToken, hashSecret } from '../auth/hash'
 import { devices } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import { requireProvisioningSecret } from '../middleware/require-provisioning-secret'
@@ -73,7 +73,7 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
     const input = c.req.valid('json')
     const db = c.get('db')
 
-    const token = generateDeviceToken()
+    const token = generateSecureToken()
     const { hash, salt } = await hashSecret(token)
     const newDevice: DeviceRow = {
       id: crypto.randomUUID(),

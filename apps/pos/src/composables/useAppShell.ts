@@ -9,6 +9,7 @@ import {
   Users,
   LayoutGrid,
 } from 'lucide-vue-next'
+import { revokeSession } from '@/api/auth'
 import { useCatalogStore } from '@/stores/catalog'
 import { useLoginStore } from '@/stores/login'
 import { confirm } from '@/composables/useConfirm'
@@ -68,9 +69,15 @@ export function useAppShell() {
       showToast('操作取消', 'error')
       return
     }
+    // 先撤銷伺服端的 session，讓這組 token 立刻失效，不是只清掉本機狀態
+    // ——撤銷失敗（連不上伺服端）也不擋住登出，見 api/auth.ts 的說明。
+    if (loginStore.sessionToken) {
+      await revokeSession(loginStore.sessionToken).catch(() => undefined)
+    }
     router.push('/login')
     loginStore.isLogin = false
     loginStore.userInfo = []
+    loginStore.sessionToken = null
     // 登出時清空記憶體中的 PIN。
     loginStore.pin = ''
     if (loginStore.rememberAccount === false) {

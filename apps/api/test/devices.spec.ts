@@ -52,9 +52,9 @@ describe('GET /api/devices（裝置清單，需要裝置憑證）', () => {
   })
 
   it('有裝置憑證時回傳清單，不含憑證本身', async () => {
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb(), '前台收銀機')
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb(), '前台收銀機')
 
-    const res = await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } })
+    const res = await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } })
     expect(res.status).toBe(200)
     const body = (await res.json()) as Array<Record<string, unknown>>
     expect(body).toHaveLength(1)
@@ -67,7 +67,7 @@ describe('GET /api/devices（裝置清單，需要裝置憑證）', () => {
 describe('POST /api/devices/:id/revoke（撤銷）', () => {
   it('只撤銷指定的那一台，不影響其他裝置', async () => {
     const db = createTestDb()
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db, '前台收銀機')
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db, '前台收銀機')
 
     const secondRes = await app.request('/api/devices', {
       method: 'POST',
@@ -77,13 +77,13 @@ describe('POST /api/devices/:id/revoke（撤銷）', () => {
     const deviceB = (await secondRes.json()) as { id: string; token: string }
 
     const listBefore = (await (
-      await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } })
+      await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } })
     ).json()) as Array<{ id: string; name: string }>
     const deviceA = listBefore.find((d) => d.name === '前台收銀機')!
 
     const revokeRes = await app.request(`/api/devices/${deviceA.id}/revoke`, {
       method: 'POST',
-      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
     })
     expect(revokeRes.status).toBe(200)
 
@@ -99,10 +99,10 @@ describe('POST /api/devices/:id/revoke（撤銷）', () => {
   })
 
   it('找不到裝置時回傳 404', async () => {
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/devices/does-not-exist/revoke', {
       method: 'POST',
-      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
     })
     expect(res.status).toBe(404)
   })

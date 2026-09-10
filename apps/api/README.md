@@ -115,6 +115,17 @@ PIN，一樣要先有有效的裝置憑證才能嘗試（PIN 遠比裝置憑證�
 `emily`／PIN `3456`（工讀生）——PIN 明碼只出現在這裡跟 seed 檔案的
 註解裡，資料庫本身只有雜湊值。
 
+PIN 登入成功會額外核發一組操作員 session（`operator_sessions` 表，做法
+比照裝置憑證：明碼只在核發當下回傳一次，之後只存雜湊值＋鹽，見
+`src/auth/operator-session.ts`），效期 12 小時。前端後續的新增/編輯/刪除
+類請求要帶 `X-Operator-Session` 標頭，`src/middleware/require-capability.ts`
+會解析出真正的操作員與其角色能力，擋下沒有對應權限的操作——不能只信
+裝置憑證（只能證明「這台裝置合法」）或用戶端自己回報的 staffId（那是
+`GET /api/staff` 就查得到的公開資訊，直接信任等於誰都能冒充身分）。
+`POST /api/auth/logout` 可以撤銷目前這組 session；退款／作廢的主管二次
+授權（`views/order/index.vue`）也是透過同一套機制，核可主管的登入會
+核發一組獨立 session，只用這一次就撤銷。
+
 ## 多終端情境（P6：規劃書 §3）
 
 訂單序號（`orderId` = 營業日 + 序號）改用 `order_sequences` 表的原子

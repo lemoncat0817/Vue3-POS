@@ -5,14 +5,16 @@ export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undef
 const DEVICE_TOKEN = import.meta.env.VITE_DEVICE_TOKEN as string | undefined
 
 /**
- * 目前登入操作員的 id，隨 loginStore.userInfo 變動（見 stores/login.ts 的
- * watch）。伺服端用它解析角色能力、擋下沒有對應權限的寫入操作（見
- * apps/api/src/middleware/require-capability.ts），純裝置憑證只能證明
- * 「這台裝置合法」，證明不了「操作的人是誰」。
+ * 目前登入操作員的 session token，PIN 登入成功時核發、隨 loginStore
+ * 變動（見 stores/login.ts 的 watch）。伺服端用它解析出真正的操作員身分
+ * 與角色能力，擋下沒有對應權限的寫入操作（見 apps/api/src/middleware/
+ * require-capability.ts）——不是直接信任用戶端回報的 staffId，那是
+ * GET /api/staff 就查得到的公開資訊，直接信任等於誰都能冒充身分；純
+ * 裝置憑證也只能證明「這台裝置合法」，證明不了「操作的人是誰」。
  */
-let currentStaffId: string | null = null
-export function setCurrentStaffId(id: string | null): void {
-  currentStaffId = id
+let currentOperatorSession: string | null = null
+export function setOperatorSession(token: string | null): void {
+  currentOperatorSession = token
 }
 
 export class ApiError extends Error {
@@ -32,10 +34,10 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
     headers: {
       'Content-Type': 'application/json',
       ...(DEVICE_TOKEN ? { 'X-Device-Token': DEVICE_TOKEN } : {}),
-      // 呼叫端可透過 init.headers 帶入不同的 X-Staff-Id 覆蓋這裡的預設值
-      // （見 api/orders.ts 的退款／作廢，主管二次授權時要送核可者的 id，
-      // 不是目前登入中的操作員）。
-      ...(currentStaffId ? { 'X-Staff-Id': currentStaffId } : {}),
+      // 呼叫端可透過 init.headers 帶入不同的 X-Operator-Session 覆蓋這裡的
+      // 預設值（見 api/orders.ts 的退款／作廢，主管二次授權時要送核可者
+      // 剛登入核發的 session，不是目前登入中的操作員）。
+      ...(currentOperatorSession ? { 'X-Operator-Session': currentOperatorSession } : {}),
       ...init?.headers,
     },
   })

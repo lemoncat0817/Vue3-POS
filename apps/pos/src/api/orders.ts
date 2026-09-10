@@ -16,20 +16,21 @@ export async function createOrder(payload: CreateOrderRequest): Promise<Order> {
  * 更新訂單狀態（作廢時需帶入經手人與原因）。需在訂單已同步至伺服端後呼叫。
  * 作廢（orderStatus === '已取消'）需要 canRefundOrVoid，伺服端會核對這點
  * ——目前登入的操作員未必有這個權限，是透過主管二次授權核可，所以要帶
- * `approverStaffId`（核可主管的 id，不是目前登入中的操作員）蓋掉預設的
- * X-Staff-Id，見 views/order/index.vue 的 requestRefundOrVoidApproval。
+ * `approverSessionToken`（核可主管登入核發的 session，不是目前登入中的
+ * 操作員）蓋掉預設的 X-Operator-Session，見 views/order/index.vue 的
+ * requestRefundOrVoidApproval。
  */
 export async function updateOrderStatus(
   orderId: string,
   orderStatus: OrderStatus,
   operator: string,
   reason?: string,
-  approverStaffId?: string,
+  approverSessionToken?: string,
 ): Promise<Order> {
   const body = await fetchJson<unknown>(`/api/orders/${encodeURIComponent(orderId)}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ orderStatus, operator, reason }),
-    ...(approverStaffId ? { headers: { 'X-Staff-Id': approverStaffId } } : {}),
+    ...(approverSessionToken ? { headers: { 'X-Operator-Session': approverSessionToken } } : {}),
   })
   return orderSchema.parse(body)
 }
@@ -38,12 +39,12 @@ export async function deleteOrder(orderId: string): Promise<void> {
   await fetchJson<null>(`/api/orders/${encodeURIComponent(orderId)}`, { method: 'DELETE' })
 }
 
-/** 訂單退款：多筆紀錄累加，由伺服端驗證剩餘額度。需要 canRefundOrVoid，見 updateOrderStatus 的 approverStaffId 說明。 */
-export async function refundOrder(orderId: string, input: RefundInput, approverStaffId: string): Promise<Order> {
+/** 訂單退款：多筆紀錄累加，由伺服端驗證剩餘額度。需要 canRefundOrVoid，見 updateOrderStatus 的 approverSessionToken 說明。 */
+export async function refundOrder(orderId: string, input: RefundInput, approverSessionToken: string): Promise<Order> {
   const body = await fetchJson<unknown>(`/api/orders/${encodeURIComponent(orderId)}/refunds`, {
     method: 'POST',
     body: JSON.stringify(input),
-    headers: { 'X-Staff-Id': approverStaffId },
+    headers: { 'X-Operator-Session': approverSessionToken },
   })
   return orderSchema.parse(body)
 }

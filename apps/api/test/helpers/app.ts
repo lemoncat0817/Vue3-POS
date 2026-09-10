@@ -1,5 +1,6 @@
 import { authorityKeySchema } from '@pos/contract'
 import { createApp } from '../../src/app'
+import { issueOperatorSession } from '../../src/auth/operator-session'
 import { staff } from '../../src/db/schema'
 import type { AnyDb } from '../../src/db/types'
 import { seedRole } from './roles'
@@ -15,9 +16,10 @@ export function createTestApp(db: AnyDb) {
  * 測試用操作員：角色擁有全部權限，通得過 requireCapability()（見
  * src/middleware/require-capability.ts）的檢查。多數測試只在乎「有一個
  * 帳號能執行任何寫入操作」，需要驗證「權限不足會被擋下」的測試才會另外
- * 自己 seedRole() 一個能力較少的角色與員工。
+ * 自己 seedRole() 一個能力較少的角色與員工，再用 issueTestSession() 核發
+ * 對應的 session。
  */
-async function seedTestStaff(db: AnyDb): Promise<string> {
+async function seedTestStaff(db: AnyDb): Promise<{ staffId: string; sessionToken: string }> {
   const roleId = await seedRole(db, { capabilities: [...authorityKeySchema.options] })
   const staffId = crypto.randomUUID()
   await db.insert(staff).values({
@@ -29,14 +31,21 @@ async function seedTestStaff(db: AnyDb): Promise<string> {
     pinHash: 'test-hash',
     pinSalt: 'test-salt',
   })
-  return staffId
+  const sessionToken = await issueOperatorSession(db, staffId)
+  return { staffId, sessionToken }
+}
+
+/** 測試用：直接核發一組操作員 session（見 auth/operator-session.ts），省去先跑一次 PIN 登入的流程。 */
+export async function issueTestSession(db: AnyDb, staffId: string): Promise<string> {
+  return issueOperatorSession(db, staffId)
 }
 
 /**
  * requireDeviceToken（見 src/middleware/require-device-token.ts）現在
  * 真的查 devices 表，測試需要一個裝置憑證時，得先透過核發端點真的建立
- * 一台裝置，不能再用寫死的固定字串。同時附上一個全權限的操作員，讓需要
- * X-Staff-Id 才能通過的寫入端點（見 require-capability.ts）也能直接呼叫。
+ * 一台裝置，不能再用寫死的固定字串。同時附上一個全權限的操作員與對應的
+ * session，讓需要 X-Operator-Session 才能通過的寫入端點（見
+ * require-capability.ts）也能直接呼叫。
  *
  * `seedStaff: false` 跳過這個自動附掛的操作員：驗證「全店最後一位權限
  * 管理者」這種不可歸零保護的測試，需要精準控制 db 裡有誰、有什麼權限，
@@ -47,7 +56,7 @@ export async function createTestAppWithDevice(
   db: AnyDb,
   deviceName = 'test-device',
   options: { seedStaff?: boolean } = {},
-): Promise<{ app: ReturnType<typeof createApp>; deviceToken: string; staffId: string }> {
+): Promise<{ app: ReturnType<typeof createApp>; deviceToken: string; staffId: string; sessionToken: string }> {
   const app = createTestApp(db)
   const res = await app.request('/api/devices', {
     method: 'POST',
@@ -55,6 +64,6 @@ export async function createTestAppWithDevice(
     body: JSON.stringify({ name: deviceName }),
   })
   const body = (await res.json()) as { token: string }
-  const staffId = options.seedStaff === false ? '' : await seedTestStaff(db)
-  return { app, deviceToken: body.token, staffId }
+  const { staffId, sessionToken } = options.seedStaff === false ? { staffId: '', sessionToken: '' } : await seedTestStaff(db)
+  return { app, deviceToken: body.token, staffId, sessionToken }
 }

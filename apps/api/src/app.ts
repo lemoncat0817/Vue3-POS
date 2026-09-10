@@ -42,7 +42,10 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string; allow
   // CORS 限制僅允許白名單來源，避免萬用字元 '*' 放大攻擊面。
   app.use(
     '*',
-    cors({ origin: config.allowedOrigins, allowHeaders: ['Content-Type', 'X-Device-Token', 'X-Provisioning-Secret'] }),
+    cors({
+      origin: config.allowedOrigins,
+      allowHeaders: ['Content-Type', 'X-Device-Token', 'X-Provisioning-Secret', 'X-Operator-Session'],
+    }),
   )
 
   app.use('*', async (c, next) => {

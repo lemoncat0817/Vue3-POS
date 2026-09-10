@@ -15,7 +15,7 @@ describe('速率限制', () => {
 
   it('寫入端點的計數器超過門檻時拒絕，回傳 429 並帶 Retry-After', async () => {
     const db = createTestDb()
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     // 直接把該裝置憑證 key 的計數器灌過門檻以觸發 429。
     await db.run(sql`
       insert into rate_limit_counters (key, window_start, count) values (${deviceToken}, ${Date.now()}, 1001)
@@ -24,7 +24,7 @@ describe('速率限制', () => {
 
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ name: '測試分類' }),
     })
     expect(res.status).toBe(429)
@@ -34,7 +34,7 @@ describe('速率限制', () => {
 
   it('視窗過期後，就算先前計數器已經爆表，一樣可以繼續寫入', async () => {
     const db = createTestDb()
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     // 視窗開始時間設在很久以前（超過 60 秒），下一次請求應該被視為
     // 新的視窗，計數器重置成 1，不會被擋。
     await db.run(sql`
@@ -44,7 +44,7 @@ describe('速率限制', () => {
 
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ name: '測試分類2' }),
     })
     expect(res.status).toBe(201)

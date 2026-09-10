@@ -88,5 +88,11 @@ export const operatorLoginRequestSchema = z.object({
 })
 export type OperatorLoginRequest = z.infer<typeof operatorLoginRequestSchema>
 
-export const operatorLoginResponseSchema = staffSchema
+/**
+ * sessionToken 是這次登入核發的操作員 session 明碼，只在這個回應裡出現一次
+ * （之後伺服端只存雜湊值，見 db/schema.ts 的 operatorSessions）。後續寫入
+ * 請求要帶著它當 X-Operator-Session，不能再直接送 staffId 冒充身分
+ * ——staffId 本身是 GET /api/staff 就查得到的公開資訊。
+ */
+export const operatorLoginResponseSchema = staffSchema.extend({ sessionToken: z.string().min(1) })
 export type OperatorLoginResponse = z.infer<typeof operatorLoginResponseSchema>

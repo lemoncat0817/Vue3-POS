@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generateDeviceToken, hashSecret, verifySecret } from '../../src/auth/hash'
+import { generateSecureToken, hashSecret, verifySecret } from '../../src/auth/hash'
 
 describe('hashSecret / verifySecret', () => {
   it('用正確的密鑰驗證會成功', async () => {
@@ -29,10 +29,10 @@ describe('hashSecret / verifySecret', () => {
   })
 })
 
-describe('generateDeviceToken', () => {
+describe('generateSecureToken', () => {
   it('產生 64 碼 hex 字串（32 bytes），每次呼叫都不同', () => {
-    const a = generateDeviceToken()
-    const b = generateDeviceToken()
+    const a = generateSecureToken()
+    const b = generateSecureToken()
     expect(a).toMatch(/^[0-9a-f]{64}$/)
     expect(a).not.toBe(b)
   })

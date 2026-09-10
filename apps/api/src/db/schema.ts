@@ -149,6 +149,23 @@ export const staff = sqliteTable(
   (table) => [uniqueIndex('staff_account_idx').on(table.account)],
 )
 
+// PIN 登入成功後核發的操作員 session，取代直接信任用戶端回報的 staffId
+// ——staffId 本身是 GET /api/staff 就能查到的公開資訊，不能當作身分證明
+// （見 middleware/require-capability.ts）。做法比照 devices：明碼只在
+// 核發當下回傳一次，之後只存雜湊值＋鹽；revokedAt 非 null 代表已登出或
+// 已被撤銷，過期則看 expiresAt，兩者都不刪除紀錄以保留稽核軌跡。
+export const operatorSessions = sqliteTable('operator_sessions', {
+  id: text('id').primaryKey(),
+  staffId: text('staff_id')
+    .notNull()
+    .references(() => staff.id),
+  tokenHash: text('token_hash').notNull(),
+  tokenSalt: text('token_salt').notNull(),
+  createdAt: text('created_at').notNull(),
+  expiresAt: text('expires_at').notNull(),
+  revokedAt: text('revoked_at'),
+})
+
 // 付款方式。後台設定允許用哪些方式收款——跟訂單 tenders[] 裡的 method
 // （自由字串）是不同的東西，這張表只影響付款面板要顯示哪些選項。
 export const paymentMethods = sqliteTable('payment_methods', {
@@ -380,6 +397,7 @@ export const schema = {
   devices,
   roles,
   staff,
+  operatorSessions,
   paymentMethods,
   orders,
   orderLines,

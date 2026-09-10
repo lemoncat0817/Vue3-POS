@@ -432,7 +432,7 @@ import { useLoginStore } from "@/stores/login"
 const loginStore = useLoginStore()
 import { fromSelection, hasCapability } from '@/utils/selection'
 import { deleteOrder as deleteOrderRequest, refundOrder as refundOrderRequest, updateOrderStatus } from '@/api/orders'
-import { operatorLogin } from '@/api/auth'
+import { operatorLogin, revokeSession } from '@/api/auth'
 import { ApiError } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { prompt } from '@/composables/usePrompt'
@@ -721,8 +721,8 @@ const currentOperator = () => `${fromSelection(loginStore.userInfo)?.jobTitle} -
 interface RefundOrVoidApprover {
   /** 顯示用文字，記錄在訂單的經手人欄位。 */
   label: string
-  /** 送給伺服端的 X-Staff-Id，讓 canRefundOrVoid 的驗證認的是核可主管、不是目前登入中的操作員。 */
-  staffId: string
+  /** 送給伺服端的 X-Operator-Session，讓 canRefundOrVoid 的驗證認的是核可主管、不是目前登入中的操作員。用完即撤銷，見呼叫端。 */
+  sessionToken: string
 }
 
 async function requestRefundOrVoidApproval(title: string, description: string): Promise<RefundOrVoidApprover | null> {
@@ -731,10 +731,12 @@ async function requestRefundOrVoidApproval(title: string, description: string): 
   try {
     const staff = await operatorLogin(credentials.account, credentials.pin)
     if (!staff.capabilities.includes('canRefundOrVoid')) {
+      // 這組核發出來的 session 用不到，直接撤銷，不留在伺服端。
+      await revokeSession(staff.sessionToken).catch(() => undefined)
       showToast('這個帳號沒有退款／作廢的權限，操作已取消', 'error')
       return null
     }
-    return { label: `${staff.jobTitle} - ${staff.name}`, staffId: staff.id }
+    return { label: `${staff.jobTitle} - ${staff.name}`, sessionToken: staff.sessionToken }
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
       showToast('帳號或 PIN 錯誤，操作已取消', 'error')
@@ -773,7 +775,7 @@ const editOrderStatus = async (id: string) => {
   }
 
   try {
-    const updated = await updateOrderStatus(id, nextStatus, voidApprover?.label ?? currentOperator(), reason, voidApprover?.staffId)
+    const updated = await updateOrderStatus(id, nextStatus, voidApprover?.label ?? currentOperator(), reason, voidApprover?.sessionToken)
     const local = orderStore.order.find(item => item.orderId === id)
     if (local) {
       local.orderStatus = updated.orderStatus
@@ -785,6 +787,9 @@ const editOrderStatus = async (id: string) => {
     showToast(`訂單狀態已設定為${nextStatus}`, 'success')
   } catch (err) {
     showToast(orderApiErrorMessage(err), 'error')
+  } finally {
+    // 主管的授權 session 只為了這一次作廢核可存在，用完就撤銷，不留在終端機的有效清單裡。
+    if (voidApprover) await revokeSession(voidApprover.sessionToken).catch(() => undefined)
   }
 }
 
@@ -794,15 +799,15 @@ const refundOrder = async (order: OrderRecord) => {
   const approver = await requestRefundOrVoidApproval('退款需要主管授權', '這筆訂單即將辦理退款，請輸入有權限核可的帳號與 PIN')
   if (approver === null) return
 
-  const result = await requestRefund({ max })
-  if (result === null) return
   try {
+    const result = await requestRefund({ max })
+    if (result === null) return
     const updated = await refundOrderRequest(order.orderId, {
       refundId: ulid(),
       amount: result.amount,
       reason: result.reason,
       operator: approver.label,
-    }, approver.staffId)
+    }, approver.sessionToken)
     const local = orderStore.order.find(item => item.orderId === order.orderId)
     if (local) {
       local.refundedAmount = updated.refundedAmount
@@ -811,6 +816,9 @@ const refundOrder = async (order: OrderRecord) => {
     showToast(`退款成功，已退 $${result.amount}`, 'success')
   } catch (err) {
     showToast(orderApiErrorMessage(err), 'error')
+  } finally {
+    // 主管的授權 session 只為了這一次退款核可存在，用完就撤銷（包含取消金額輸入的情況）。
+    await revokeSession(approver.sessionToken).catch(() => undefined)
   }
 }
 

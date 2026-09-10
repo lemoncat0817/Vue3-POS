@@ -44,7 +44,11 @@ export async function verifySecret(secret: string, hash: string, salt: string): 
   return toHex(derived) === hash
 }
 
-/** 產生裝置憑證明碼（核發當下回傳一次，之後只存雜湊值，見 routes/devices.ts）。 */
-export function generateDeviceToken(): string {
+/**
+ * 產生一個高熵亂數 token（256 bits，明碼只在核發當下回傳一次，之後只存
+ * 雜湊值）。裝置憑證（routes/devices.ts）與操作員 session（routes/auth.ts）
+ * 共用同一套產生方式。
+ */
+export function generateSecureToken(): string {
   return toHex(crypto.getRandomValues(new Uint8Array(32)))
 }

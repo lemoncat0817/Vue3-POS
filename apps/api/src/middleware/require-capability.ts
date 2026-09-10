@@ -2,6 +2,7 @@ import type { Context } from 'hono'
 import { createMiddleware } from 'hono/factory'
 import { eq } from 'drizzle-orm'
 import type { AuthorityKey } from '@pos/contract'
+import { findActiveOperatorSession } from '../auth/operator-session'
 import { roles, staff } from '../db/schema'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
@@ -9,13 +10,19 @@ import type { AppEnv } from '../types'
 /**
  * 操作者權限驗證。requireDeviceToken 只驗證「這台裝置合法」，不知道操作者
  * 是誰——過去所有寫入 API 只掛裝置憑證，等於同店任何一台已核發裝置都能
- * 繞過畫面按鈕的禁用狀態直接執行操作。這裡透過操作員登入時記住的
- * X-Staff-Id（見 apps/pos/src/api/http.ts）解析出目前操作者與其角色能力，
- * 比照前端 hasCapability() 用的同一份規則，在伺服端也擋一次。
+ * 繞過畫面按鈕的禁用狀態直接執行操作。
+ *
+ * 這裡解析的是操作員登入時核發的 session token（X-Operator-Session，見
+ * apps/pos/src/api/http.ts 與 auth/operator-session.ts），不是直接信任
+ * 用戶端回報的 staffId——staffId 本身是 GET /api/staff 就查得到的公開
+ * 資訊，直接信任等於誰都能填別人的 id 冒充身分；session token 是 PIN
+ * 登入成功才會核發、伺服端只存雜湊值、可以單獨撤銷與設定效期。
  */
-async function resolveCapabilities(db: AnyDb, staffId: string | null): Promise<AuthorityKey[] | null> {
-  if (!staffId) return null
-  const staffRow = await db.select().from(staff).where(eq(staff.id, staffId)).get()
+async function resolveCapabilities(db: AnyDb, sessionToken: string | null): Promise<AuthorityKey[] | null> {
+  if (!sessionToken) return null
+  const session = await findActiveOperatorSession(db, sessionToken)
+  if (!session) return null
+  const staffRow = await db.select().from(staff).where(eq(staff.id, session.staffId)).get()
   if (!staffRow) return null
   const role = await db.select().from(roles).where(eq(roles.id, staffRow.roleId)).get()
   return role?.capabilities ?? null
@@ -32,10 +39,10 @@ export type CapabilityCheckResult = { ok: true } | { ok: false; status: 401 | 40
  * 下面的 requireCapability() 中介軟體。
  */
 export async function checkCapability(c: Context<AppEnv>, key: AuthorityKey): Promise<CapabilityCheckResult> {
-  const staffId = c.req.header('X-Staff-Id') ?? null
-  const capabilities = await resolveCapabilities(c.get('db'), staffId)
+  const sessionToken = c.req.header('X-Operator-Session') ?? null
+  const capabilities = await resolveCapabilities(c.get('db'), sessionToken)
   if (capabilities === null) {
-    return { ok: false, status: 401, message: staffId ? '操作員身分無效' : '缺少操作員身分（X-Staff-Id）' }
+    return { ok: false, status: 401, message: sessionToken ? '操作員 session 無效或已過期' : '缺少操作員 session（X-Operator-Session）' }
   }
   if (!capabilities.includes(key)) {
     return { ok: false, status: 403, message: '這個帳號沒有執行此操作的權限' }

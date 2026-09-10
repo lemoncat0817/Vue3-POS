@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { staff } from '../src/db/schema'
-import { createTestApp, createTestAppWithDevice } from './helpers/app'
+import { createTestApp, createTestAppWithDevice, issueTestSession } from './helpers/app'
 import { createTestDb } from './helpers/db'
 import { seedRole } from './helpers/roles'
 
@@ -56,10 +56,10 @@ describe('POST /api/staff（權限拒絕案例）', () => {
 
   it('指定不存在的權限群組時拒絕，回傳 404', async () => {
     const db = createTestDb()
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/staff', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ ...staffBaseFields, roleId: 'does-not-exist', pin: '3456' }),
     })
     expect(res.status).toBe(404)
@@ -68,10 +68,10 @@ describe('POST /api/staff（權限拒絕案例）', () => {
   it('裝置憑證正確時允許建立員工', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { name: '工讀生', capabilities: ['canCheckOrder', 'canEditOrderStatus'] })
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/staff', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' }),
     })
     expect(res.status).toBe(201)
@@ -89,19 +89,19 @@ describe('POST /api/staff（權限拒絕案例）', () => {
   it('裝置憑證被撤銷後就不再能通過檢查', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { capabilities: [] })
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
 
     const list = (await (
-      await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } })
+      await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } })
     ).json()) as Array<{ id: string }>
     await app.request(`/api/devices/${list[0]!.id}/revoke`, {
       method: 'POST',
-      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
     })
 
     const res = await app.request('/api/staff', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' }),
     })
     expect(res.status).toBe(401)
@@ -125,18 +125,18 @@ describe('PUT /api/staff/:id', () => {
     const db = createTestDb()
     const partTimerRoleId = await seedRole(db, { name: '工讀生', capabilities: ['canCheckOrder', 'canEditOrderStatus'] })
     const dutyManagerRoleId = await seedRole(db, { name: '值班經理', capabilities: ['canCheckOrder'] })
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const created = await (
       await app.request('/api/staff', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
         body: JSON.stringify({ ...staffBaseFields, roleId: partTimerRoleId, pin: '3456' }),
       })
     ).json() as { id: string }
 
     const res = await app.request(`/api/staff/${created.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ ...staffBaseFields, jobTitle: '值班經理', roleId: dutyManagerRoleId }),
     })
     expect(res.status).toBe(200)
@@ -146,7 +146,7 @@ describe('PUT /api/staff/:id', () => {
     // 原本的 PIN（3456）應該還能登入——沒填 pin 時不該把雜湊值清掉或改掉。
     const login = await app.request('/api/auth/operator-login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ account: 'emily', pin: '3456' }),
     })
     expect(login.status).toBe(200)
@@ -155,18 +155,18 @@ describe('PUT /api/staff/:id', () => {
   it('指定不存在的權限群組時拒絕，回傳 404', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { capabilities: [] })
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const created = await (
       await app.request('/api/staff', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
         body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' }),
       })
     ).json() as { id: string }
 
     const res = await app.request(`/api/staff/${created.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ ...staffBaseFields, roleId: 'does-not-exist' }),
     })
     expect(res.status).toBe(404)
@@ -175,23 +175,23 @@ describe('PUT /api/staff/:id', () => {
   it('帳號被其他員工使用時拒絕，回傳 409', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { capabilities: [] })
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     await app.request('/api/staff', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ ...staffBaseFields, roleId, account: 'lemon', pin: '3456' }),
     })
     const second = await (
       await app.request('/api/staff', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
         body: JSON.stringify({ ...staffBaseFields, roleId, account: 'james', pin: '3456' }),
       })
     ).json() as { id: string }
 
     const res = await app.request(`/api/staff/${second.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ ...staffBaseFields, roleId, account: 'lemon' }),
     })
     expect(res.status).toBe(409)
@@ -200,10 +200,10 @@ describe('PUT /api/staff/:id', () => {
   it('找不到員工時回傳 404', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { capabilities: [] })
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/staff/does-not-exist', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ ...staffBaseFields, roleId }),
     })
     expect(res.status).toBe(404)
@@ -223,11 +223,12 @@ describe('PUT /api/staff/:id', () => {
       pinHash: 'x', pinSalt: 'x',
     })
     const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', { seedStaff: false })
+    const adminSessionToken = await issueTestSession(db, adminStaffId)
 
     // 這是全店唯一一位擁有 canManageRoles 的員工，改成無此權限的角色應該被擋下。
     const res = await app.request(`/api/staff/${adminStaffId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': adminStaffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': adminSessionToken },
       body: JSON.stringify({ ...staffBaseFields, roleId: partTimerRoleId }),
     })
     expect(res.status).toBe(409)
@@ -244,18 +245,18 @@ describe('DELETE /api/staff/:id（P18）', () => {
   it('刪除存在的員工，之後 GET 也看不到', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { capabilities: [] })
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const created = await (
       await app.request('/api/staff', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
         body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' }),
       })
     ).json() as { id: string }
 
     const res = await app.request(`/api/staff/${created.id}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
     })
     expect(res.status).toBe(204)
 
@@ -265,10 +266,10 @@ describe('DELETE /api/staff/:id（P18）', () => {
   })
 
   it('找不到員工時回傳 404', async () => {
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/staff/does-not-exist', {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
     })
     expect(res.status).toBe(404)
   })
@@ -284,10 +285,11 @@ describe('DELETE /api/staff/:id（P18）', () => {
       pinHash: 'x', pinSalt: 'x',
     })
     const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', { seedStaff: false })
+    const adminSessionToken = await issueTestSession(db, adminStaffId)
 
     const res = await app.request(`/api/staff/${adminStaffId}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': adminStaffId },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': adminSessionToken },
     })
     expect(res.status).toBe(409)
   })

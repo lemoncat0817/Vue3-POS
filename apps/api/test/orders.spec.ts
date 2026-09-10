@@ -52,10 +52,10 @@ describe('POST /api/orders', () => {
   it('金額由伺服端用 priceLine() 重算，不信任用戶端送來的數字（用戶端送的請求本來就不含金額）', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(
         buildRequest({
           lines: [{ ...validLine, quickDiscountId: 'quick-1' }], // 80*2 - 5*2 = 150
@@ -75,10 +75,10 @@ describe('POST /api/orders', () => {
   it('orderChannel 原封不動存回並回傳', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ orderChannel: '內用' })),
     })
     expect(res.status).toBe(201)
@@ -92,10 +92,10 @@ describe('POST /api/orders', () => {
   it('內用桌號原封不動存回並回傳，純紀錄用途', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ orderChannel: '內用', tableNumber: 'A1' })),
     })
     expect(res.status).toBe(201)
@@ -105,10 +105,10 @@ describe('POST /api/orders', () => {
   it('沒有帶桌號時，tableNumber 是 null', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest()),
     })
     expect(res.status).toBe(201)
@@ -118,10 +118,10 @@ describe('POST /api/orders', () => {
   it('備註原封不動存回並回傳，前後空白會被修剪', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ note: '  外送地址：忠孝東路一段1號  ' })),
     })
     expect(res.status).toBe(201)
@@ -131,10 +131,10 @@ describe('POST /api/orders', () => {
   it('沒有帶備註、或備註只有空白時，note 是 null', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const noNote = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest()),
     })
     expect((await readJson(noNote)).note).toBeNull()
@@ -142,7 +142,7 @@ describe('POST /api/orders', () => {
     // 不同 idempotencyKey，避免命中上一筆的冪等快取而沒有真的測到這次的備註。
     const blankNote = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FBV', note: '   ' })),
     })
     expect((await readJson(blankNote)).note).toBeNull()
@@ -151,12 +151,12 @@ describe('POST /api/orders', () => {
   it('沒有帶 orderChannel 時拒絕，回傳 400', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const withoutChannel: Record<string, unknown> = buildRequest()
     delete withoutChannel.orderChannel
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(withoutChannel),
     })
     expect(res.status).toBe(400)
@@ -165,15 +165,15 @@ describe('POST /api/orders', () => {
   it('每一筆訂單都會核發發票號碼，連續建立的訂單編號依序遞增', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const first = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB1' })),
     })
     const second = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB2' })),
     })
     const firstBody = await readJson(first)
@@ -186,11 +186,11 @@ describe('POST /api/orders', () => {
   it('帶手機條碼載具時原封不動存回並回傳，格式不對時拒絕（回傳 400）', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
 
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ invoiceCarrier: { type: '手機條碼', value: '/ABC1234' } })),
     })
     expect(res.status).toBe(201)
@@ -199,7 +199,7 @@ describe('POST /api/orders', () => {
 
     const invalid = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FC1', invoiceCarrier: { type: '手機條碼', value: 'bad' } })),
     })
     expect(invalid.status).toBe(400)
@@ -208,11 +208,11 @@ describe('POST /api/orders', () => {
   it('帶統一編號載具時原封不動存回並回傳（B2B 情境）', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
 
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ invoiceCarrier: { type: '統一編號', value: '12345678' } })),
     })
     expect(res.status).toBe(201)
@@ -223,15 +223,15 @@ describe('POST /api/orders', () => {
   it('同一營業日內連續建立訂單，編號依序遞增', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FAV' })),
     })
     const res2 = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FAW' })),
     })
     const body2 = await readJson(res2)
@@ -241,7 +241,7 @@ describe('POST /api/orders', () => {
   it('多筆訂單同時送出時，每筆都核發到不同的序號', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
 
     const idempotencyKeys = [
       '01ARZ3NDEKTSV4RRFFQ69G5FA1',
@@ -254,7 +254,7 @@ describe('POST /api/orders', () => {
       idempotencyKeys.map((idempotencyKey) =>
         app.request('/api/orders', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+          headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
           body: JSON.stringify(buildRequest({ idempotencyKey })),
         }),
       ),
@@ -269,10 +269,10 @@ describe('POST /api/orders', () => {
   it('重送同一個 idempotencyKey 回傳原本那筆訂單，不會建立第二筆（冪等）', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const first = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest()),
     })
     const firstBody = await readJson(first)
@@ -280,7 +280,7 @@ describe('POST /api/orders', () => {
 
     const second = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest()),
     })
     const secondBody = await readJson(second)
@@ -295,10 +295,10 @@ describe('POST /api/orders', () => {
   it('lines 是空陣列時回傳 400', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ lines: [] })),
     })
     expect(res.status).toBe(400)
@@ -309,7 +309,7 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
   it('品項與配料的庫存不是 null 時，送單成功後依數量扣減，扣到 0 就不再往下扣', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
 
     await db.insert(categories).values([{ id: 'c1', name: '季節限定' }])
     await db.insert(products).values([{ id: 'i1', categoryId: 'c1', name: '楊枝甘露2.0', basePrice: 80, stock: 3 }])
@@ -318,7 +318,7 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
     // 扣庫存至 0 為下限，不為負數。
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(
         buildRequest({
           lines: [{ ...validLine, addList: ['珍珠'], addListPrice: 10 }],
@@ -337,14 +337,14 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
   it('庫存是 null（不追蹤）或找不到對應品項時，送單成功但不影響庫存', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
 
     await db.insert(categories).values([{ id: 'c1', name: '季節限定' }])
     await db.insert(products).values([{ id: 'i1', categoryId: 'c1', name: '楊枝甘露2.0', basePrice: 80, stock: null }])
 
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest()),
     })
     expect(res.status).toBe(201)
@@ -356,7 +356,7 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
   it('重送同一筆訂單（idempotencyKey 命中）不會扣兩次庫存', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
 
     await db.insert(categories).values([{ id: 'c1', name: '季節限定' }])
     await db.insert(products).values([{ id: 'i1', categoryId: 'c1', name: '楊枝甘露2.0', basePrice: 80, stock: 10 }])
@@ -364,13 +364,13 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
     const body = JSON.stringify(buildRequest())
     const first = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body,
     })
     expect(first.status).toBe(201)
     const second = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body,
     })
     expect(second.status).toBe(200)
@@ -385,10 +385,10 @@ describe('POST /api/orders（訂單層級折價券，伺服端重算折抵金額
   it('套用現金折價券：折抵金額查真正的折價券資料，不是用戶端說了算', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(
         buildRequest({
           appliedCoupon: { type: 'coupon', couponId: 'money-1' }, // 160 - 50
@@ -407,10 +407,10 @@ describe('POST /api/orders（訂單層級折價券，伺服端重算折抵金額
   it('套用折數折價券：以伺服端重算後的訂單小計計算，四捨五入', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(
         buildRequest({
           appliedCoupon: { type: 'coupon', couponId: 'percent-1' }, // round(160*0.95)
@@ -428,10 +428,10 @@ describe('POST /api/orders（訂單層級折價券，伺服端重算折抵金額
   it('現金折價券面額超過訂單金額時，應付金額只會到 0，不會是負數', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(
         buildRequest({
           lines: [{ ...validLine, count: 1 }], // 80 元
@@ -449,10 +449,10 @@ describe('POST /api/orders（訂單層級折價券，伺服端重算折抵金額
   it('套用不存在的折價券時拒絕，回傳 400（不能無中生有一張折價券）', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ appliedCoupon: { type: 'coupon', couponId: 'does-not-exist' } })),
     })
     expect(res.status).toBe(400)
@@ -472,10 +472,10 @@ describe('POST /api/orders（混合支付）', () => {
   it('單一 tender 剛好付清：changeDue 為 0，orderPayment 是該方式的名稱', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ tenders: [{ method: '信用卡', amount: 160 }] })),
     })
     expect(res.status).toBe(201)
@@ -488,10 +488,10 @@ describe('POST /api/orders（混合支付）', () => {
   it('現金 tender 帶 receivedAmount：伺服端算出找零，不信任用戶端', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ tenders: [{ method: '現金', amount: 160, receivedAmount: 500 }] })),
     })
     expect(res.status).toBe(201)
@@ -503,10 +503,10 @@ describe('POST /api/orders（混合支付）', () => {
   it('多筆混合支付：現金找零 + 信用卡各分擔一部分，摘要用頓號連接', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(
         buildRequest({
           tenders: [
@@ -529,10 +529,10 @@ describe('POST /api/orders（混合支付）', () => {
   it('tenders 金額總和跟應付金額不符時拒絕，回傳 400', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(buildRequest({ tenders: [{ method: '現金', amount: 100 }] })), // 應付 160
     })
     expect(res.status).toBe(400)
@@ -543,10 +543,10 @@ describe('POST /api/orders（混合支付）', () => {
   it('折抵到 0 元的訂單仍可用單一 amount:0 的 tender 結案', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(
         buildRequest({
           lines: [{ ...validLine, count: 1 }], // 80 元
@@ -566,11 +566,11 @@ describe('POST /api/orders（混合支付）', () => {
 async function createOne(
   app: Awaited<ReturnType<typeof createTestAppWithDevice>>['app'],
   deviceToken: string,
-  staffId: string,
+  sessionToken: string,
 ): Promise<string> {
   const res = await app.request('/api/orders', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+    headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
     body: JSON.stringify(buildRequest()),
   })
   const body = await readJson(res)
@@ -581,8 +581,8 @@ describe('PATCH /api/orders/:orderId/status', () => {
   it('沒有裝置憑證時拒絕', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
-    const orderId = await createOne(app, deviceToken, staffId)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken, sessionToken)
 
     const res = await app.request(`/api/orders/${orderId}/status`, {
       method: 'PATCH',
@@ -595,12 +595,12 @@ describe('PATCH /api/orders/:orderId/status', () => {
   it('更新存在的訂單狀態，之後 GET 也看得到新狀態', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
-    const orderId = await createOne(app, deviceToken, staffId)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken, sessionToken)
 
     const res = await app.request(`/api/orders/${orderId}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '顧客取消訂單' }),
     })
     expect(res.status).toBe(200)
@@ -617,17 +617,17 @@ describe('PATCH /api/orders/:orderId/status', () => {
   it('作廢一筆訂單後又改回已完成，撤銷作廢，voidReason 等欄位清空', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
-    const orderId = await createOne(app, deviceToken, staffId)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken, sessionToken)
 
     await app.request(`/api/orders/${orderId}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '按錯了' }),
     })
     const res = await app.request(`/api/orders/${orderId}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ orderStatus: '已完成', operator: '店長 - Lemon' }),
     })
     expect(res.status).toBe(200)
@@ -641,22 +641,22 @@ describe('PATCH /api/orders/:orderId/status', () => {
   it('作廢訂單沒有填寫原因時拒絕，回傳 400', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
-    const orderId = await createOne(app, deviceToken, staffId)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken, sessionToken)
 
     const res = await app.request(`/api/orders/${orderId}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon' }),
     })
     expect(res.status).toBe(400)
   })
 
   it('訂單不存在時回傳 404', async () => {
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/orders/does-not-exist/status', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '測試' }),
     })
     expect(res.status).toBe(404)
@@ -667,8 +667,8 @@ describe('POST /api/orders/:orderId/refunds（退款／作廢）', () => {
   it('沒有裝置憑證時拒絕', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
-    const orderId = await createOne(app, deviceToken, staffId)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken, sessionToken)
 
     const res = await app.request(`/api/orders/${orderId}/refunds`, {
       method: 'POST',
@@ -681,14 +681,14 @@ describe('POST /api/orders/:orderId/refunds（退款／作廢）', () => {
   it('退部分金額成功，refundedAmount／refunds 反映在訂單上，訂單狀態仍是已完成', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
-    const orderId = await createOne(app, deviceToken, staffId)
-    const created = await readJson(await app.request(`/api/orders`, { headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } }))
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken, sessionToken)
+    const created = await readJson(await app.request(`/api/orders`, { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } }))
     const order = created.find((o: { orderId: string }) => o.orderId === orderId)
 
     const res = await app.request(`/api/orders/${orderId}/refunds`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV', amount: 50, reason: '少一杯', operator: '店長 - Lemon' }),
     })
     expect(res.status).toBe(201)
@@ -703,20 +703,20 @@ describe('POST /api/orders/:orderId/refunds（退款／作廢）', () => {
   it('同一個 refundId 重送是冪等的，不會建立第二筆退款', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
-    const orderId = await createOne(app, deviceToken, staffId)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken, sessionToken)
     const refundPayload = { refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV', amount: 50, reason: '少一杯', operator: '店長 - Lemon' }
 
     const first = await app.request(`/api/orders/${orderId}/refunds`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(refundPayload),
     })
     expect(first.status).toBe(201)
 
     const second = await app.request(`/api/orders/${orderId}/refunds`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify(refundPayload),
     })
     expect(second.status).toBe(200)
@@ -728,14 +728,14 @@ describe('POST /api/orders/:orderId/refunds（退款／作廢）', () => {
   it('退款金額超過還能退的額度時拒絕，回傳 400', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
-    const orderId = await createOne(app, deviceToken, staffId)
-    const created = await readJson(await app.request(`/api/orders`, { headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } }))
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken, sessionToken)
+    const created = await readJson(await app.request(`/api/orders`, { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } }))
     const order = created.find((o: { orderId: string }) => o.orderId === orderId)
 
     const res = await app.request(`/api/orders/${orderId}/refunds`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({
         refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
         amount: order.orderPaymentPrice + 1,
@@ -749,28 +749,28 @@ describe('POST /api/orders/:orderId/refunds（退款／作廢）', () => {
   it('已作廢的訂單不能再退款，回傳 400', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
-    const orderId = await createOne(app, deviceToken, staffId)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken, sessionToken)
 
     await app.request(`/api/orders/${orderId}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '整單作廢' }),
     })
 
     const res = await app.request(`/api/orders/${orderId}/refunds`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV', amount: 10, reason: '不應該成功', operator: '店長 - Lemon' }),
     })
     expect(res.status).toBe(400)
   })
 
   it('訂單不存在時回傳 404', async () => {
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/orders/does-not-exist/refunds', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
       body: JSON.stringify({ refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV', amount: 10, reason: '測試', operator: '店長 - Lemon' }),
     })
     expect(res.status).toBe(404)
@@ -781,8 +781,8 @@ describe('DELETE /api/orders/:orderId', () => {
   it('沒有裝置憑證時拒絕', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
-    const orderId = await createOne(app, deviceToken, staffId)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken, sessionToken)
 
     const res = await app.request(`/api/orders/${orderId}`, { method: 'DELETE' })
     expect(res.status).toBe(401)
@@ -791,12 +791,12 @@ describe('DELETE /api/orders/:orderId', () => {
   it('刪除存在的訂單，連明細一起消失，之後 GET 也看不到', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
-    const orderId = await createOne(app, deviceToken, staffId)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const orderId = await createOne(app, deviceToken, sessionToken)
 
     const res = await app.request(`/api/orders/${orderId}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
     })
     expect(res.status).toBe(204)
 
@@ -805,10 +805,10 @@ describe('DELETE /api/orders/:orderId', () => {
   })
 
   it('訂單不存在時回傳 404', async () => {
-    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/orders/does-not-exist', {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
     })
     expect(res.status).toBe(404)
   })
