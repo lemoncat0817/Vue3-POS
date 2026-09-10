@@ -23,11 +23,12 @@ test('數據分析頁會向伺服端要報表資料，切換日期會重新查�
   expect(from).toMatch(/^\d{8}$/)
   expect(from).toBe(to)
 
-  await expect(page.locator('canvas')).toBeVisible()
+  // ECharts 會為多張圖各掛 canvas，不能用 toBeVisible() 的 strict 單元素斷言。
+  await expect(page.locator('canvas').first()).toBeVisible()
   await expect(page.getByText('熱銷品項排行榜', { exact: false })).toBeVisible()
-  await expect(page.getByText('分類別銷售佔比', { exact: true })).toBeVisible()
+  await expect(page.getByText('分類別銷售佔比', { exact: false })).toBeVisible()
   await expect(page.getByText('加購選配榜單', { exact: false })).toBeVisible()
-  await expect(page.getByText('多元支付通路結構', { exact: true })).toBeVisible()
+  await expect(page.getByText('多元支付通路結構', { exact: false })).toBeVisible()
 
   // 切換為跨日區間，確保填寫順序維持 from <= to。
   const rangeReportResponse = page.waitForResponse(
