@@ -30,9 +30,8 @@
             <td class="px-3 py-2.5 font-mono text-surface-500">{{ row.account }}</td>
             <td class="px-3 py-2.5 text-surface-700 dark:text-surface-300">{{ row.jobTitle }}</td>
             <td class="px-3 py-2.5">
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-info-50 px-2.5 py-0.5 text-[11px] font-bold text-info-600 dark:bg-info-950/50 dark:text-info-400">
+              <span class="inline-flex items-center rounded-full bg-info-50 px-2.5 py-0.5 text-[11px] font-bold text-info-600 dark:bg-info-950/50 dark:text-info-400">
                 {{ row.roleName }}
-                <span class="text-[10px] font-mono text-info-500/70 dark:text-info-400/70">{{ row.authorityCheckList.length }}/{{ AUTHORITY_FIELDS.length }}</span>
               </span>
             </td>
             <td class="px-3 py-2.5">
@@ -152,7 +151,6 @@ import { ref, computed } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import RoleSelect from '@/components/ui/RoleSelect.vue'
-import { AUTHORITY_FIELDS } from '@/utils/authority'
 import { alert, confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
