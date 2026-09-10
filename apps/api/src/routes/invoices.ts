@@ -6,6 +6,7 @@ import {
   submitInvoicesResponseSchema,
 } from '@pos/contract'
 import { invoiceTracks, orders } from '../db/schema'
+import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
@@ -25,7 +26,7 @@ const listTracksRoute = createRoute({
 const createTrackRoute = createRoute({
   method: 'post',
   path: '/tracks',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canCheckBackgroundSetting')] as const,
   request: { body: { content: { 'application/json': { schema: createInvoiceTrackRequestSchema } } } },
   responses: {
     201: { description: '字軌建立成功，並自動設為啟用中', content: { 'application/json': { schema: invoiceTrackSchema } } },
@@ -36,7 +37,7 @@ const createTrackRoute = createRoute({
 const submitInvoicesRoute = createRoute({
   method: 'post',
   path: '/submit',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canCheckBackgroundSetting')] as const,
   responses: {
     200: {
       description: '模擬批次上傳：把目前所有「已開立、尚未上傳」的發票標成已上傳',

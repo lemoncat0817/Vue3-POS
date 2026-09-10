@@ -8,6 +8,7 @@ import {
 } from '@pos/contract'
 import { summarizeShiftCash } from '@pos/domain'
 import { cashMovements, orderRefunds, orderTenders, orders, shifts } from '../db/schema'
+import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
@@ -18,7 +19,7 @@ const errorSchema = z.object({ error: z.string() })
 const openShiftRoute = createRoute({
   method: 'post',
   path: '/',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageShift')] as const,
   request: {
     body: { content: { 'application/json': { schema: openShiftRequestSchema } } },
   },
@@ -42,7 +43,7 @@ const getCurrentShiftRoute = createRoute({
 const addCashMovementRoute = createRoute({
   method: 'post',
   path: '/{id}/cash-movements',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageShift')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: addCashMovementRequestSchema } } },
@@ -58,7 +59,7 @@ const addCashMovementRoute = createRoute({
 const closeShiftRoute = createRoute({
   method: 'post',
   path: '/{id}/close',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageShift')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: closeShiftRequestSchema } } },

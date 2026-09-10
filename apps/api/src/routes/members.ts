@@ -7,6 +7,7 @@ import {
   updateMemberRequestSchema,
 } from '@pos/contract'
 import { members, orders } from '../db/schema'
+import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
@@ -30,7 +31,7 @@ const listMembersRoute = createRoute({
 const createMemberRoute = createRoute({
   method: 'post',
   path: '/',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canCheckMembers')] as const,
   request: { body: { content: { 'application/json': { schema: createMemberRequestSchema } } } },
   responses: {
     201: { description: '會員建立成功', content: { 'application/json': { schema: memberSchema } } },
@@ -54,7 +55,7 @@ const getMemberRoute = createRoute({
 const updateMemberRoute = createRoute({
   method: 'put',
   path: '/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canCheckMembers')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateMemberRequestSchema } } },
@@ -70,7 +71,7 @@ const updateMemberRoute = createRoute({
 const deleteMemberRoute = createRoute({
   method: 'delete',
   path: '/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canCheckMembers')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '會員已刪除' },

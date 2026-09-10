@@ -19,10 +19,10 @@ describe('POST /api/tables', () => {
   })
 
   it('新增成功，id 由伺服端配發、預設為空桌', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/tables', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ tableNumber: 'A1', seats: 4 }),
     })
     expect(res.status).toBe(201)
@@ -35,11 +35,11 @@ describe('POST /api/tables', () => {
 
 describe('GET /api/tables', () => {
   it('可以列出所有桌位', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId }
     await app.request('/api/tables', { method: 'POST', headers, body: JSON.stringify({ tableNumber: 'A1', seats: 4 }) })
     await app.request('/api/tables', { method: 'POST', headers, body: JSON.stringify({ tableNumber: 'A2', seats: 2 }) })
-    const res = await app.request('/api/tables', { headers: { 'X-Device-Token': deviceToken } })
+    const res = await app.request('/api/tables', { headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } })
     expect(res.status).toBe(200)
     const list = await readJson(res)
     expect(list).toHaveLength(2)
@@ -48,8 +48,8 @@ describe('GET /api/tables', () => {
 
 describe('PATCH /api/tables/:id/status', () => {
   it('可以把空桌標成使用中，帶入備註', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId }
     const table = await readJson(
       await app.request('/api/tables', { method: 'POST', headers, body: JSON.stringify({ tableNumber: 'A1', seats: 4 }) }),
     )
@@ -64,8 +64,8 @@ describe('PATCH /api/tables/:id/status', () => {
   })
 
   it('切換狀態時沒帶 note，維持原本的備註不被清空', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId }
     const table = await readJson(
       await app.request('/api/tables', { method: 'POST', headers, body: JSON.stringify({ tableNumber: 'A1', seats: 4 }) }),
     )
@@ -84,10 +84,10 @@ describe('PATCH /api/tables/:id/status', () => {
   })
 
   it('找不到桌位時回傳 404', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/tables/does-not-exist/status', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ status: 'occupied' }),
     })
     expect(res.status).toBe(404)
@@ -96,8 +96,8 @@ describe('PATCH /api/tables/:id/status', () => {
 
 describe('PUT /api/tables/:id', () => {
   it('可以更新桌號與座位數', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId }
     const table = await readJson(
       await app.request('/api/tables', { method: 'POST', headers, body: JSON.stringify({ tableNumber: 'A1', seats: 4 }) }),
     )
@@ -113,20 +113,20 @@ describe('PUT /api/tables/:id', () => {
 
 describe('DELETE /api/tables/:id', () => {
   it('刪除成功回傳 204，之後查詢列表看不到這個桌位', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId }
     const table = await readJson(
       await app.request('/api/tables', { method: 'POST', headers, body: JSON.stringify({ tableNumber: 'A1', seats: 4 }) }),
     )
-    const res = await app.request(`/api/tables/${table.id}`, { method: 'DELETE', headers: { 'X-Device-Token': deviceToken } })
+    const res = await app.request(`/api/tables/${table.id}`, { method: 'DELETE', headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } })
     expect(res.status).toBe(204)
-    const list = await readJson(await app.request('/api/tables', { headers: { 'X-Device-Token': deviceToken } }))
+    const list = await readJson(await app.request('/api/tables', { headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } }))
     expect(list).toHaveLength(0)
   })
 
   it('找不到桌位時回傳 404', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
-    const res = await app.request('/api/tables/does-not-exist', { method: 'DELETE', headers: { 'X-Device-Token': deviceToken } })
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/tables/does-not-exist', { method: 'DELETE', headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } })
     expect(res.status).toBe(404)
   })
 })

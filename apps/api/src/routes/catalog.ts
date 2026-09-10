@@ -23,6 +23,7 @@ import {
   productModifierGroups,
   products,
 } from '../db/schema'
+import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
@@ -44,7 +45,7 @@ const getCatalogRoute = createRoute({
 const createCategoryRoute = createRoute({
   method: 'post',
   path: '/categories',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetCategory')] as const,
   request: { body: { content: { 'application/json': { schema: createCategoryRequestSchema } } } },
   responses: {
     201: { description: '分類建立成功', content: { 'application/json': { schema: categorySchema } } },
@@ -55,7 +56,7 @@ const createCategoryRoute = createRoute({
 const updateCategoryRoute = createRoute({
   method: 'put',
   path: '/categories/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetCategory')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateCategoryRequestSchema } } },
@@ -70,7 +71,7 @@ const updateCategoryRoute = createRoute({
 const deleteCategoryRoute = createRoute({
   method: 'delete',
   path: '/categories/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetCategory')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '分類已刪除' },
@@ -83,7 +84,7 @@ const deleteCategoryRoute = createRoute({
 const createProductRoute = createRoute({
   method: 'post',
   path: '/products',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetProduct')] as const,
   request: { body: { content: { 'application/json': { schema: createProductRequestSchema } } } },
   responses: {
     201: { description: '品項建立成功', content: { 'application/json': { schema: productSchema } } },
@@ -95,7 +96,7 @@ const createProductRoute = createRoute({
 const updateProductRoute = createRoute({
   method: 'put',
   path: '/products/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetProduct')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateProductRequestSchema } } },
@@ -110,7 +111,7 @@ const updateProductRoute = createRoute({
 const deleteProductRoute = createRoute({
   method: 'delete',
   path: '/products/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetProduct')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '品項已刪除' },
@@ -122,7 +123,7 @@ const deleteProductRoute = createRoute({
 const createModifierGroupRoute = createRoute({
   method: 'post',
   path: '/modifier-groups',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetProduct')] as const,
   request: { body: { content: { 'application/json': { schema: createModifierGroupRequestSchema } } } },
   responses: {
     201: { description: '規格群組建立成功', content: { 'application/json': { schema: modifierGroupSchema } } },
@@ -133,7 +134,7 @@ const createModifierGroupRoute = createRoute({
 const updateModifierGroupRoute = createRoute({
   method: 'put',
   path: '/modifier-groups/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetProduct')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateModifierGroupRequestSchema } } },
@@ -148,7 +149,7 @@ const updateModifierGroupRoute = createRoute({
 const deleteModifierGroupRoute = createRoute({
   method: 'delete',
   path: '/modifier-groups/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetProduct')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '規格群組已刪除' },
@@ -160,7 +161,7 @@ const deleteModifierGroupRoute = createRoute({
 const createAddOnRoute = createRoute({
   method: 'post',
   path: '/add-ons',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetAddOns')] as const,
   request: { body: { content: { 'application/json': { schema: createAddOnOptionRequestSchema } } } },
   responses: {
     201: { description: '加購選項建立成功', content: { 'application/json': { schema: addOnOptionSchema } } },
@@ -171,7 +172,7 @@ const createAddOnRoute = createRoute({
 const updateAddOnRoute = createRoute({
   method: 'put',
   path: '/add-ons/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetAddOns')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateAddOnOptionRequestSchema } } },
@@ -186,7 +187,7 @@ const updateAddOnRoute = createRoute({
 const deleteAddOnRoute = createRoute({
   method: 'delete',
   path: '/add-ons/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetAddOns')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '加購選項已刪除' },

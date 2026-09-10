@@ -10,6 +10,7 @@ import {
   updateQuickDiscountRequestSchema,
 } from '@pos/contract'
 import { orderCoupons, quickDiscounts } from '../db/schema'
+import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
@@ -29,7 +30,7 @@ const getPromotionsRoute = createRoute({
 const createOrderCouponRoute = createRoute({
   method: 'post',
   path: '/order-coupons',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetOrderCoupon')] as const,
   request: { body: { content: { 'application/json': { schema: createOrderCouponRequestSchema } } } },
   responses: {
     201: { description: '訂單折價券建立成功', content: { 'application/json': { schema: orderCouponSchema } } },
@@ -40,7 +41,7 @@ const createOrderCouponRoute = createRoute({
 const updateOrderCouponRoute = createRoute({
   method: 'put',
   path: '/order-coupons/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetOrderCoupon')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateOrderCouponRequestSchema } } },
@@ -55,7 +56,7 @@ const updateOrderCouponRoute = createRoute({
 const deleteOrderCouponRoute = createRoute({
   method: 'delete',
   path: '/order-coupons/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetOrderCoupon')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '訂單折價券已刪除' },
@@ -67,7 +68,7 @@ const deleteOrderCouponRoute = createRoute({
 const createQuickDiscountRoute = createRoute({
   method: 'post',
   path: '/quick-discounts',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetQuickDiscount')] as const,
   request: { body: { content: { 'application/json': { schema: createQuickDiscountRequestSchema } } } },
   responses: {
     201: { description: '快速折扣建立成功', content: { 'application/json': { schema: quickDiscountSchema } } },
@@ -78,7 +79,7 @@ const createQuickDiscountRoute = createRoute({
 const updateQuickDiscountRoute = createRoute({
   method: 'put',
   path: '/quick-discounts/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetQuickDiscount')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateQuickDiscountRequestSchema } } },
@@ -93,7 +94,7 @@ const updateQuickDiscountRoute = createRoute({
 const deleteQuickDiscountRoute = createRoute({
   method: 'delete',
   path: '/quick-discounts/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetQuickDiscount')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '快速折扣已刪除' },

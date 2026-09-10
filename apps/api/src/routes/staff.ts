@@ -4,6 +4,7 @@ import { createStaffRequestSchema, staffSchema, updateStaffRequestSchema } from 
 import { hashSecret } from '../auth/hash'
 import { roles, staff } from '../db/schema'
 import type { AnyDb } from '../db/types'
+import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
@@ -65,7 +66,7 @@ const createStaffRoute = createRoute({
   method: 'post',
   path: '/',
   // 建立員工屬異動操作，需校驗裝置憑證。
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
   request: {
     body: { content: { 'application/json': { schema: createStaffRequestSchema } } },
   },
@@ -87,7 +88,7 @@ const createStaffRoute = createRoute({
 const updateStaffRoute = createRoute({
   method: 'put',
   path: '/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateStaffRequestSchema } } },
@@ -103,7 +104,7 @@ const updateStaffRoute = createRoute({
 const deleteStaffRoute = createRoute({
   method: 'delete',
   path: '/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '員工已刪除' },

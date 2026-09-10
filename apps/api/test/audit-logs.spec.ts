@@ -20,10 +20,10 @@ describe('POST /api/audit-logs', () => {
   })
 
   it('新增成功，id 與時間由伺服端配發，之後 GET 看得到這筆紀錄', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/audit-logs', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ action: 'cashier_open', operator: '店長 - Lemon', detail: '協助客人換零錢' }),
     })
     expect(res.status).toBe(201)
@@ -32,21 +32,21 @@ describe('POST /api/audit-logs', () => {
     expect(typeof body.id).toBe('number')
     expect(typeof body.createdAt).toBe('string')
 
-    const list = await readJson(await app.request('/api/audit-logs', { headers: { 'X-Device-Token': deviceToken } }))
+    const list = await readJson(await app.request('/api/audit-logs', { headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } }))
     expect(list).toHaveLength(1)
     expect(list[0]).toMatchObject({ id: body.id, action: 'cashier_open' })
   })
 
   it('多筆紀錄依 id 由新到舊排序', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
     for (const detail of ['第一筆', '第二筆', '第三筆']) {
       await app.request('/api/audit-logs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
         body: JSON.stringify({ action: 'cashier_open', operator: '店長 - Lemon', detail }),
       })
     }
-    const list = await readJson(await app.request('/api/audit-logs', { headers: { 'X-Device-Token': deviceToken } }))
+    const list = await readJson(await app.request('/api/audit-logs', { headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } }))
     expect(list.map((row: { detail: string }) => row.detail)).toEqual(['第三筆', '第二筆', '第一筆'])
   })
 })

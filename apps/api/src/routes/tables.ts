@@ -7,6 +7,7 @@ import {
   updateTableStatusRequestSchema,
 } from '@pos/contract'
 import { diningTables } from '../db/schema'
+import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
@@ -26,7 +27,7 @@ const listTablesRoute = createRoute({
 const createTableRoute = createRoute({
   method: 'post',
   path: '/',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageTables')] as const,
   request: { body: { content: { 'application/json': { schema: createTableRequestSchema } } } },
   responses: {
     201: { description: '桌位建立成功，預設為空桌', content: { 'application/json': { schema: diningTableSchema } } },
@@ -37,7 +38,7 @@ const createTableRoute = createRoute({
 const updateTableRoute = createRoute({
   method: 'put',
   path: '/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageTables')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateTableRequestSchema } } },
@@ -52,7 +53,7 @@ const updateTableRoute = createRoute({
 const updateTableStatusRoute = createRoute({
   method: 'patch',
   path: '/{id}/status',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageTables')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateTableStatusRequestSchema } } },
@@ -67,7 +68,7 @@ const updateTableStatusRoute = createRoute({
 const deleteTableRoute = createRoute({
   method: 'delete',
   path: '/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageTables')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '桌位已刪除' },

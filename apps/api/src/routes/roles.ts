@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { createRoleRequestSchema, roleSchema, updateRoleRequestSchema, type AuthorityKey } from '@pos/contract'
 import { roles, staff } from '../db/schema'
 import type { AnyDb } from '../db/types'
+import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
@@ -44,7 +45,7 @@ const listRolesRoute = createRoute({
 const createRoleRoute = createRoute({
   method: 'post',
   path: '/',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
   request: { body: { content: { 'application/json': { schema: createRoleRequestSchema } } } },
   responses: {
     201: { description: '權限群組建立成功', content: { 'application/json': { schema: roleSchema } } },
@@ -56,7 +57,7 @@ const createRoleRoute = createRoute({
 const updateRoleRoute = createRoute({
   method: 'put',
   path: '/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateRoleRequestSchema } } },
@@ -72,7 +73,7 @@ const updateRoleRoute = createRoute({
 const deleteRoleRoute = createRoute({
   method: 'delete',
   path: '/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '權限群組已刪除' },

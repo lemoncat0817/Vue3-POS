@@ -23,6 +23,7 @@ import {
   products,
   quickDiscounts as quickDiscountsTable,
 } from '../db/schema'
+import { checkCapability, requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
@@ -99,7 +100,8 @@ const updateOrderStatusRoute = createRoute({
   },
   responses: {
     200: { description: '訂單狀態更新成功', content: { 'application/json': { schema: orderSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+    401: { description: '裝置憑證無效或缺漏、或缺少操作員身分', content: { 'application/json': { schema: errorSchema } } },
+    403: { description: '這個帳號沒有執行此操作的權限', content: { 'application/json': { schema: errorSchema } } },
     404: { description: '找不到這筆訂單', content: { 'application/json': { schema: errorSchema } } },
   },
 })
@@ -110,7 +112,7 @@ const updateOrderStatusRoute = createRoute({
 const createRefundRoute = createRoute({
   method: 'post',
   path: '/{orderId}/refunds',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canRefundOrVoid')] as const,
   request: {
     params: z.object({ orderId: z.string().min(1) }),
     body: { content: { 'application/json': { schema: refundInputSchema } } },
@@ -129,7 +131,7 @@ const createRefundRoute = createRoute({
 const deleteOrderRoute = createRoute({
   method: 'delete',
   path: '/{orderId}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canDeleteOrder')] as const,
   request: {
     params: z.object({ orderId: z.string().min(1) }),
   },
@@ -489,6 +491,13 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const { orderId } = c.req.valid('param')
     const { orderStatus, operator, reason } = c.req.valid('json')
     const db = c.get('db')
+
+    // 改成「已取消」是作廢，需要 canRefundOrVoid（比照前端的主管二次授權流程，
+    // 見 apps/pos/src/views/order/index.vue 的 requestRefundOrVoidApproval）；
+    // 其餘狀態變更只需 canEditOrderStatus，所需權限要看請求內容才能決定，
+    // 沒辦法用靜態的 requireCapability() 中介軟體。
+    const capabilityCheck = await checkCapability(c, orderStatus === '已取消' ? 'canRefundOrVoid' : 'canEditOrderStatus')
+    if (!capabilityCheck.ok) return c.json({ error: capabilityCheck.message }, capabilityCheck.status)
 
     const existing = await db.select().from(orders).where(eq(orders.orderId, orderId)).get()
     if (!existing) {

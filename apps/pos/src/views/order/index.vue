@@ -718,7 +718,14 @@ const tableRenderKey = computed(() => {
 
 const currentOperator = () => `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`
 
-async function requestRefundOrVoidApproval(title: string, description: string): Promise<string | null> {
+interface RefundOrVoidApprover {
+  /** 顯示用文字，記錄在訂單的經手人欄位。 */
+  label: string
+  /** 送給伺服端的 X-Staff-Id，讓 canRefundOrVoid 的驗證認的是核可主管、不是目前登入中的操作員。 */
+  staffId: string
+}
+
+async function requestRefundOrVoidApproval(title: string, description: string): Promise<RefundOrVoidApprover | null> {
   const credentials = await requestManagerAuth({ title, description })
   if (credentials === null) return null
   try {
@@ -727,7 +734,7 @@ async function requestRefundOrVoidApproval(title: string, description: string): 
       showToast('這個帳號沒有退款／作廢的權限，操作已取消', 'error')
       return null
     }
-    return `${staff.jobTitle} - ${staff.name}`
+    return { label: `${staff.jobTitle} - ${staff.name}`, staffId: staff.id }
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
       showToast('帳號或 PIN 錯誤，操作已取消', 'error')
@@ -749,7 +756,7 @@ const editOrderStatus = async (id: string) => {
   const nextStatus = result === 'confirm' ? '已完成' : '已取消'
 
   let reason: string | undefined
-  let voidApprover: string | null = null
+  let voidApprover: RefundOrVoidApprover | null = null
   if (nextStatus === '已取消') {
     voidApprover = await requestRefundOrVoidApproval('作廢需要主管授權', '這筆訂單即將被標記為作廢，請輸入有權限核可的帳號與 PIN')
     if (voidApprover === null) return
@@ -766,7 +773,7 @@ const editOrderStatus = async (id: string) => {
   }
 
   try {
-    const updated = await updateOrderStatus(id, nextStatus, voidApprover ?? currentOperator(), reason)
+    const updated = await updateOrderStatus(id, nextStatus, voidApprover?.label ?? currentOperator(), reason, voidApprover?.staffId)
     const local = orderStore.order.find(item => item.orderId === id)
     if (local) {
       local.orderStatus = updated.orderStatus
@@ -794,8 +801,8 @@ const refundOrder = async (order: OrderRecord) => {
       refundId: ulid(),
       amount: result.amount,
       reason: result.reason,
-      operator: approver,
-    })
+      operator: approver.label,
+    }, approver.staffId)
     const local = orderStore.order.find(item => item.orderId === order.orderId)
     if (local) {
       local.refundedAmount = updated.refundedAmount

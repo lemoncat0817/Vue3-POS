@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { createPaymentMethodRequestSchema, paymentMethodSchema, updatePaymentMethodRequestSchema } from '@pos/contract'
 import { paymentMethods } from '../db/schema'
+import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
@@ -19,7 +20,7 @@ const listPaymentMethodsRoute = createRoute({
 const createPaymentMethodRoute = createRoute({
   method: 'post',
   path: '/',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetPayMethod')] as const,
   request: { body: { content: { 'application/json': { schema: createPaymentMethodRequestSchema } } } },
   responses: {
     201: { description: '付款方式建立成功', content: { 'application/json': { schema: paymentMethodSchema } } },
@@ -30,7 +31,7 @@ const createPaymentMethodRoute = createRoute({
 const updatePaymentMethodRoute = createRoute({
   method: 'put',
   path: '/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetPayMethod')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updatePaymentMethodRequestSchema } } },
@@ -45,7 +46,7 @@ const updatePaymentMethodRoute = createRoute({
 const deletePaymentMethodRoute = createRoute({
   method: 'delete',
   path: '/{id}',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canSetPayMethod')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '付款方式已刪除' },

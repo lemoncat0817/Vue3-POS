@@ -27,10 +27,10 @@ describe('POST /api/roles', () => {
   })
 
   it('裝置憑證正確時允許建立，且預設不是系統內建角色', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/roles', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ name: '外場', capabilities: ['canCheckOrder'] }),
     })
     expect(res.status).toBe(201)
@@ -41,10 +41,10 @@ describe('POST /api/roles', () => {
   it('名稱重複時拒絕，回傳 409', async () => {
     const db = createTestDb()
     await seedRole(db, { name: '外場', capabilities: [] })
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
     const res = await app.request('/api/roles', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ name: '外場', capabilities: [] }),
     })
     expect(res.status).toBe(409)
@@ -55,10 +55,10 @@ describe('PUT /api/roles/:id', () => {
   it('可以調整系統內建角色的權限內容', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { name: '店長', capabilities: ['canCheckOrder'], isSystem: true })
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
     const res = await app.request(`/api/roles/${roleId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ name: '店長', capabilities: ['canCheckOrder', 'canDeleteOrder'] }),
     })
     expect(res.status).toBe(200)
@@ -69,20 +69,20 @@ describe('PUT /api/roles/:id', () => {
   it('系統內建角色不可改名，回傳 409', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { name: '店長', capabilities: [], isSystem: true })
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
     const res = await app.request(`/api/roles/${roleId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ name: '總經理', capabilities: [] }),
     })
     expect(res.status).toBe(409)
   })
 
   it('找不到角色時回傳 404', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/roles/does-not-exist', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ name: '外場', capabilities: [] }),
     })
     expect(res.status).toBe(404)
@@ -95,10 +95,12 @@ describe('PUT /api/roles/:id', () => {
       id: 's1', name: 'Lemon', jobTitle: '店長', account: 'lemon', roleId,
       pinHash: 'x', pinSalt: 'x',
     })
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    // seedStaff: false：跳過自動附掛的全權限操作員，否則店裡永遠還有別人
+    // 擁有 canSetAuthority，「歸零」這個條件永遠不會成立（見 helpers/app.ts）。
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', { seedStaff: false })
     const res = await app.request(`/api/roles/${roleId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': 's1' },
       body: JSON.stringify({ name: '店長', capabilities: [] }),
     })
     expect(res.status).toBe(409)
@@ -107,10 +109,10 @@ describe('PUT /api/roles/:id', () => {
   it('系統中本來就沒有人擁有此權限時，不受最後管理者防護限制', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { name: '工讀生', capabilities: [] })
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
     const res = await app.request(`/api/roles/${roleId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ name: '工讀生', capabilities: ['canCheckOrder'] }),
     })
     expect(res.status).toBe(200)
@@ -121,10 +123,10 @@ describe('DELETE /api/roles/:id', () => {
   it('系統內建角色不可刪除，回傳 409', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { name: '店長', capabilities: [], isSystem: true })
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
     const res = await app.request(`/api/roles/${roleId}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
     })
     expect(res.status).toBe(409)
   })
@@ -136,10 +138,10 @@ describe('DELETE /api/roles/:id', () => {
       id: 's1', name: 'Emily', jobTitle: '外場', account: 'emily', roleId,
       pinHash: 'x', pinSalt: 'x',
     })
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
     const res = await app.request(`/api/roles/${roleId}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
     })
     expect(res.status).toBe(409)
   })
@@ -147,19 +149,19 @@ describe('DELETE /api/roles/:id', () => {
   it('沒有員工使用的自訂角色可以刪除', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { name: '外場', capabilities: [] })
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
     const res = await app.request(`/api/roles/${roleId}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
     })
     expect(res.status).toBe(204)
   })
 
   it('找不到角色時回傳 404', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/roles/does-not-exist', {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
     })
     expect(res.status).toBe(404)
   })

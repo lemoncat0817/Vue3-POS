@@ -79,12 +79,12 @@ describe('GET /api/reports/sales', () => {
       { id: 'prod-1', categoryId: 'cat-1', name: '楊枝甘露2.0', basePrice: 80, stock: null },
       { id: 'prod-2', categoryId: 'cat-1', name: '珍珠奶茶', basePrice: 80, stock: null },
     ])
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
 
     // 兩杯楊枝甘露（無配料）+ 一杯有加珍珠、椰果的飲料，同一張訂單。
     const createRes = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify(
         buildRequest({
           lines: [
@@ -134,11 +134,11 @@ describe('GET /api/reports/sales', () => {
     await seedPromotions(db)
     await db.insert(categories).values([{ id: 'cat-1', name: '飲品' }])
     await db.insert(products).values([{ id: 'prod-1', categoryId: 'cat-1', name: '楊枝甘露2.0', basePrice: 80, stock: null }])
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
 
     const createRes = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify(buildRequest()),
     })
     expect(createRes.status).toBe(201)
@@ -146,7 +146,7 @@ describe('GET /api/reports/sales', () => {
 
     const voidRes = await app.request(`/api/orders/${created.orderId}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '客訴退單' }),
     })
     expect(voidRes.status).toBe(200)
@@ -166,12 +166,12 @@ describe('GET /api/reports/sales', () => {
   it('折扣總額、退款、內用／外帶佔比都直接來自 D1 聚合，不是前端猜的數字', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
 
     // 外帶、套用 $50 折價券：160 - 50 = 110。
     const takeoutRes = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify(
         buildRequest({
           idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB1',
@@ -186,7 +186,7 @@ describe('GET /api/reports/sales', () => {
     // 內用、無折扣，之後退款 30 元。
     const dineInRes = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB2', orderChannel: '內用' })),
     })
     expect(dineInRes.status).toBe(201)
@@ -194,7 +194,7 @@ describe('GET /api/reports/sales', () => {
 
     const refundRes = await app.request(`/api/orders/${dineInOrder.orderId}/refunds`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ refundId: '01ARZ3NDEKTSV4RRFFQ69G5FC1', amount: 30, reason: '少一顆珍珠', operator: '店長 - Lemon' }),
     })
     expect(refundRes.status).toBe(201)

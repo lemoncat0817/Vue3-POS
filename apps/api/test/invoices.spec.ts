@@ -41,11 +41,11 @@ describe('沒有啟用中的字軌時，送單依號碼核發失敗', () => {
     // helpers/promotions.ts），單獨測「完全沒有字軌」這個狀況。
     const db = createTestDb()
     await db.insert(orderCoupons).values([{ id: 'money-1', name: '$50折價券', kind: 'amount', value: 50 }])
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
 
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify(buildRequest()),
     })
     expect(res.status).toBe(400)
@@ -71,8 +71,8 @@ describe('GET/POST /api/invoices/tracks', () => {
   it('新增字軌會自動設為啟用中，並停用其他字軌；之後送單用新字軌配號', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken } = await createTestAppWithDevice(db)
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId }
 
     const created = await readJson(
       await app.request('/api/invoices/tracks', {
@@ -83,7 +83,7 @@ describe('GET/POST /api/invoices/tracks', () => {
     )
     expect(created).toMatchObject({ trackCode: 'AB', isActive: true, currentNumber: 0 })
 
-    const tracks = await readJson(await app.request('/api/invoices/tracks', { headers: { 'X-Device-Token': deviceToken } }))
+    const tracks = await readJson(await app.request('/api/invoices/tracks', { headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } }))
     expect(tracks).toHaveLength(2)
     const oldTrack = tracks.find((t: { id: string }) => t.id !== created.id)
     expect(oldTrack.isActive).toBe(false)
@@ -98,8 +98,8 @@ describe('POST /api/invoices/submit（模擬批次上傳）', () => {
   it('把目前所有已開立、尚未上傳的發票標成已上傳，回傳筆數與時間；再送一次是 0 筆', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken } = await createTestAppWithDevice(db)
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId }
 
     const order1 = await readJson(await app.request('/api/orders', { method: 'POST', headers, body: JSON.stringify(buildRequest()) }))
     const order2 = await readJson(
@@ -111,13 +111,13 @@ describe('POST /api/invoices/submit（模擬批次上傳）', () => {
     )
     expect(order1.invoiceStatus).toBe('issued')
 
-    const submitRes = await app.request('/api/invoices/submit', { method: 'POST', headers: { 'X-Device-Token': deviceToken } })
+    const submitRes = await app.request('/api/invoices/submit', { method: 'POST', headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } })
     expect(submitRes.status).toBe(200)
     const submitBody = await readJson(submitRes)
     expect(submitBody.submittedCount).toBe(2)
     expect(typeof submitBody.submittedAt).toBe('string')
 
-    const list = await readJson(await app.request('/api/orders', { headers: { 'X-Device-Token': deviceToken } }))
+    const list = await readJson(await app.request('/api/orders', { headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } }))
     const updated1 = list.find((o: { orderId: string }) => o.orderId === order1.orderId)
     const updated2 = list.find((o: { orderId: string }) => o.orderId === order2.orderId)
     expect(updated1.invoiceStatus).toBe('submitted')
@@ -126,7 +126,7 @@ describe('POST /api/invoices/submit（模擬批次上傳）', () => {
 
     // 再送一次沒有新的待上傳發票。
     const secondSubmit = await readJson(
-      await app.request('/api/invoices/submit', { method: 'POST', headers: { 'X-Device-Token': deviceToken } }),
+      await app.request('/api/invoices/submit', { method: 'POST', headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId } }),
     )
     expect(secondSubmit.submittedCount).toBe(0)
   })
@@ -136,8 +136,8 @@ describe('作廢訂單時發票一併標成作廢（P23）', () => {
   it('訂單作廢（已取消）時 invoiceStatus 變成 voided；撤銷作廢改回 issued', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const { app, deviceToken } = await createTestAppWithDevice(db)
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken }
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
+    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId }
 
     const order = await readJson(await app.request('/api/orders', { method: 'POST', headers, body: JSON.stringify(buildRequest()) }))
 

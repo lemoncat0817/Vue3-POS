@@ -71,10 +71,10 @@ describe('菜單管理寫入 API', () => {
   })
 
   it('新增分類成功，id 由伺服端配發', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ name: '主餐' }),
     })
     expect(res.status).toBe(201)
@@ -86,32 +86,32 @@ describe('菜單管理寫入 API', () => {
 
   it('刪除還有品項的分類時拒絕，回傳 409', async () => {
     const db = createTestDb()
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
     const category = await readJson(
       await app.request('/api/catalog/categories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
         body: JSON.stringify({ name: '主餐' }),
       }),
     )
     await app.request('/api/catalog/products', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ categoryId: category.id, name: '招牌牛肉漢堡', basePrice: 180, stock: null, modifierGroupIds: [] }),
     })
 
     const res = await app.request(`/api/catalog/categories/${category.id}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
     })
     expect(res.status).toBe(409)
   })
 
   it('新增品項時找不到對應的分類，回傳 404', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/catalog/products', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ categoryId: 'does-not-exist', name: '招牌牛肉漢堡', basePrice: 180, stock: null, modifierGroupIds: [] }),
     })
     expect(res.status).toBe(404)
@@ -119,17 +119,17 @@ describe('菜單管理寫入 API', () => {
 
   it('新增品項時找不到對應的規格群組，回傳 404', async () => {
     const db = createTestDb()
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
     const category = await readJson(
       await app.request('/api/catalog/categories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
         body: JSON.stringify({ name: '主餐' }),
       }),
     )
     const res = await app.request('/api/catalog/products', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ categoryId: category.id, name: '招牌牛肉漢堡', basePrice: 180, stock: null, modifierGroupIds: ['does-not-exist'] }),
     })
     expect(res.status).toBe(404)
@@ -137,25 +137,25 @@ describe('菜單管理寫入 API', () => {
 
   it('新增、編輯、刪除品項，異動反映在 GET /api/catalog', async () => {
     const db = createTestDb()
-    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(db)
     const category = await readJson(
       await app.request('/api/catalog/categories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
         body: JSON.stringify({ name: '主餐' }),
       }),
     )
     const item = await readJson(
       await app.request('/api/catalog/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
         body: JSON.stringify({ categoryId: category.id, name: '招牌牛肉漢堡', basePrice: 180, stock: null, modifierGroupIds: [] }),
       }),
     )
 
     const updateRes = await app.request(`/api/catalog/products/${item.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ categoryId: category.id, name: '特級牛肉漢堡', basePrice: 200, stock: 5, modifierGroupIds: [] }),
     })
     expect(updateRes.status).toBe(200)
@@ -172,7 +172,7 @@ describe('菜單管理寫入 API', () => {
 
     const deleteRes = await app.request(`/api/catalog/products/${item.id}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
     })
     expect(deleteRes.status).toBe(204)
 
@@ -181,11 +181,11 @@ describe('菜單管理寫入 API', () => {
   })
 
   it('新增、編輯、刪除規格群組，異動反映在 GET /api/catalog', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
     const group = await readJson(
       await app.request('/api/catalog/modifier-groups', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
         body: JSON.stringify({
           name: '甜度',
           selectionType: 'single',
@@ -199,7 +199,7 @@ describe('菜單管理寫入 API', () => {
 
     const updateRes = await app.request(`/api/catalog/modifier-groups/${group.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({
         name: '甜度',
         selectionType: 'single',
@@ -216,7 +216,7 @@ describe('菜單管理寫入 API', () => {
 
     const deleteRes = await app.request(`/api/catalog/modifier-groups/${group.id}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
     })
     expect(deleteRes.status).toBe(204)
 
@@ -225,11 +225,11 @@ describe('菜單管理寫入 API', () => {
   })
 
   it('新增、編輯、刪除加購選項，異動反映在 GET /api/catalog', async () => {
-    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const { app, deviceToken, staffId } = await createTestAppWithDevice(createTestDb())
     const addOn = await readJson(
       await app.request('/api/catalog/add-ons', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
         body: JSON.stringify({ name: '加起司', price: 20, stock: null }),
       }),
     )
@@ -237,14 +237,14 @@ describe('菜單管理寫入 API', () => {
 
     const updateRes = await app.request(`/api/catalog/add-ons/${addOn.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
       body: JSON.stringify({ name: '加起司', price: 25, stock: null }),
     })
     expect(updateRes.status).toBe(200)
 
     const deleteRes = await app.request(`/api/catalog/add-ons/${addOn.id}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Staff-Id': staffId },
     })
     expect(deleteRes.status).toBe(204)
 

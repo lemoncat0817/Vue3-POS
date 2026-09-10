@@ -4,6 +4,17 @@ export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undef
 /** 終端機裝置憑證，未設定時異動端點將收到 401。 */
 const DEVICE_TOKEN = import.meta.env.VITE_DEVICE_TOKEN as string | undefined
 
+/**
+ * 目前登入操作員的 id，隨 loginStore.userInfo 變動（見 stores/login.ts 的
+ * watch）。伺服端用它解析角色能力、擋下沒有對應權限的寫入操作（見
+ * apps/api/src/middleware/require-capability.ts），純裝置憑證只能證明
+ * 「這台裝置合法」，證明不了「操作的人是誰」。
+ */
+let currentStaffId: string | null = null
+export function setCurrentStaffId(id: string | null): void {
+  currentStaffId = id
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -21,6 +32,10 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
     headers: {
       'Content-Type': 'application/json',
       ...(DEVICE_TOKEN ? { 'X-Device-Token': DEVICE_TOKEN } : {}),
+      // 呼叫端可透過 init.headers 帶入不同的 X-Staff-Id 覆蓋這裡的預設值
+      // （見 api/orders.ts 的退款／作廢，主管二次授權時要送核可者的 id，
+      // 不是目前登入中的操作員）。
+      ...(currentStaffId ? { 'X-Staff-Id': currentStaffId } : {}),
       ...init?.headers,
     },
   })
