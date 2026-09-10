@@ -8,10 +8,10 @@ import type { AuthorityKey, StaffMember } from '@/types'
 // 驗證通用導航守衛（權限檢查與初次載入頁籤還原）。
 
 const ALL_CAPABILITIES: AuthorityKey[] = [
-  'canCompItem', 'canOpenCashier', 'canManageShift', 'canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder',
+  'canCompItem', 'canOpenCashier', 'canManageShift', 'canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder', 'canRefundOrVoid',
   'canCheckBackgroundSetting', 'canSetCategory', 'canSetProduct', 'canSetAddOns',
   'canSetOrderCoupon', 'canSetQuickDiscount',
-  'canCheckDataAnalysis', 'canCheckAuthority', 'canSetAuthority', 'canSetPayMethod', 'canCheckMembers',
+  'canCheckDataAnalysis', 'canCheckAuthority', 'canManageStaff', 'canManageRoles', 'canSetPayMethod', 'canCheckMembers',
   'canManageTables',
 ]
 

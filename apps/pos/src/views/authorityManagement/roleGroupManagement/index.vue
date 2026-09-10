@@ -112,7 +112,7 @@ function apiErrorMessage(err: unknown): string {
   return '連不上伺服端，請確認網路連線'
 }
 
-const canManage = computed(() => hasCapability(loginStore.userInfo, 'canSetAuthority'))
+const canManage = computed(() => hasCapability(loginStore.userInfo, 'canManageRoles'))
 
 function staffCountOf(roleId: string): number {
   return authorityManagementStore.staffList.filter((staff) => staff.roleId === roleId).length

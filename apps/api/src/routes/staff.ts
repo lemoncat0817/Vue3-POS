@@ -28,9 +28,9 @@ async function toStaffResponse(
   })
 }
 
-/** 判斷「若把某員工的角色改成 nextRoleId」之後，是否還有人擁有 canSetAuthority——
- * 取代舊版用 jobTitle==='店長' 字串比對的脆弱保護，見 routes/roles.ts 同名函式。 */
-async function wouldLeaveNoAuthorityAdmin(
+/** 判斷「若把某員工的角色改成 nextRoleId」之後，是否還有人擁有 canManageRoles——
+ * 這是唯一會造成永久鎖死的能力，理由見 routes/roles.ts 同名函式。 */
+async function wouldLeaveNoRoleAdmin(
   db: AnyDb,
   staffIdBeingChanged: string | null,
   nextRoleId: string | null,
@@ -39,15 +39,15 @@ async function wouldLeaveNoAuthorityAdmin(
   const allStaff = await db.select({ id: staff.id, roleId: staff.roleId }).from(staff).all()
   const capabilitiesOf = (roleId: string) => allRoles.find((role) => role.id === roleId)?.capabilities ?? []
 
-  const currentlyHasAdmin = allStaff.some((row) => capabilitiesOf(row.roleId).includes('canSetAuthority'))
+  const currentlyHasAdmin = allStaff.some((row) => capabilitiesOf(row.roleId).includes('canManageRoles'))
   // 系統本來就沒有人擁有這個權限，不是這次變更造成的，不擋——只防「從有變沒有」這個轉折。
   if (!currentlyHasAdmin) return false
 
   return !allStaff.some((row) => {
     if (row.id === staffIdBeingChanged) {
-      return nextRoleId !== null && capabilitiesOf(nextRoleId).includes('canSetAuthority')
+      return nextRoleId !== null && capabilitiesOf(nextRoleId).includes('canManageRoles')
     }
-    return capabilitiesOf(row.roleId).includes('canSetAuthority')
+    return capabilitiesOf(row.roleId).includes('canManageRoles')
   })
 }
 
@@ -66,7 +66,7 @@ const createStaffRoute = createRoute({
   method: 'post',
   path: '/',
   // 建立員工屬異動操作，需校驗裝置憑證。
-  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageStaff')] as const,
   request: {
     body: { content: { 'application/json': { schema: createStaffRequestSchema } } },
   },
@@ -88,7 +88,7 @@ const createStaffRoute = createRoute({
 const updateStaffRoute = createRoute({
   method: 'put',
   path: '/{id}',
-  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageStaff')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateStaffRequestSchema } } },
@@ -104,7 +104,7 @@ const updateStaffRoute = createRoute({
 const deleteStaffRoute = createRoute({
   method: 'delete',
   path: '/{id}',
-  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageStaff')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '員工已刪除' },
@@ -162,8 +162,8 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
     if (accountTaken && accountTaken.id !== id) {
       return c.json({ error: '這個帳號已經被其他員工使用' }, 409)
     }
-    if (await wouldLeaveNoAuthorityAdmin(db, id, roleId)) {
-      return c.json({ error: '此變更會讓沒有人擁有「設定人員名單」的權限，操作已取消' }, 409)
+    if (await wouldLeaveNoRoleAdmin(db, id, roleId)) {
+      return c.json({ error: '此變更會讓沒有人擁有「設定權限群組」的權限，操作已取消' }, 409)
     }
 
     // pin 選填——只有真的要重設 PIN 才重新雜湊，沒填就沿用既有的雜湊值
@@ -181,8 +181,8 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
     const db = c.get('db')
     const existing = await db.select().from(staff).where(eq(staff.id, id)).get()
     if (!existing) return c.json({ error: '找不到這個員工' }, 404)
-    if (await wouldLeaveNoAuthorityAdmin(db, id, null)) {
-      return c.json({ error: '此操作會讓沒有人擁有「設定人員名單」的權限，操作已取消' }, 409)
+    if (await wouldLeaveNoRoleAdmin(db, id, null)) {
+      return c.json({ error: '此操作會讓沒有人擁有「設定權限群組」的權限，操作已取消' }, 409)
     }
     await db.delete(staff).where(eq(staff.id, id))
     return c.body(null, 204)

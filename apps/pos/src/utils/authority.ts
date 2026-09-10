@@ -24,7 +24,8 @@ export const AUTHORITY_FIELDS: AuthorityField[] = [
   { label: '設定付款方式', value: 'canSetPayMethod', dependsOn: 'canCheckBackgroundSetting' },
   { label: '查看數據分析', value: 'canCheckDataAnalysis' },
   { label: '查看權限管理', value: 'canCheckAuthority' },
-  { label: '設定人員名單', value: 'canSetAuthority', dependsOn: 'canCheckAuthority' },
+  { label: '設定人員名單', value: 'canManageStaff', dependsOn: 'canCheckAuthority' },
+  { label: '設定權限群組', value: 'canManageRoles', dependsOn: 'canCheckAuthority' },
   { label: '查看會員管理', value: 'canCheckMembers' },
   { label: '查看桌況管理', value: 'canManageTables' },
 ]

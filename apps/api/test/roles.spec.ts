@@ -88,15 +88,15 @@ describe('PUT /api/roles/:id', () => {
     expect(res.status).toBe(404)
   })
 
-  it('此變更會讓沒有人擁有設定人員名單的權限時拒絕，回傳 409', async () => {
+  it('此變更會讓沒有人擁有設定權限群組的權限時拒絕，回傳 409', async () => {
     const db = createTestDb()
-    const roleId = await seedRole(db, { name: '店長', capabilities: ['canSetAuthority'], isSystem: true })
+    const roleId = await seedRole(db, { name: '店長', capabilities: ['canManageRoles'], isSystem: true })
     await db.insert(staff).values({
       id: 's1', name: 'Lemon', jobTitle: '店長', account: 'lemon', roleId,
       pinHash: 'x', pinSalt: 'x',
     })
     // seedStaff: false：跳過自動附掛的全權限操作員，否則店裡永遠還有別人
-    // 擁有 canSetAuthority，「歸零」這個條件永遠不會成立（見 helpers/app.ts）。
+    // 擁有 canManageRoles，「歸零」這個條件永遠不會成立（見 helpers/app.ts）。
     const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', { seedStaff: false })
     const res = await app.request(`/api/roles/${roleId}`, {
       method: 'PUT',

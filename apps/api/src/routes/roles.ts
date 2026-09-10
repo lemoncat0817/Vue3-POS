@@ -13,11 +13,14 @@ const errorSchema = z.object({ error: z.string() })
  * 權限群組（角色）管理 API。權限只掛在角色身上，員工只認 roleId——見
  * db/schema.ts 的說明。這裡額外把關兩件事：
  * 1. 系統內建角色（isSystem）不可刪除、不可改名，但權限內容仍可調整。
- * 2. 任何異動都不可讓「擁有 canSetAuthority 的員工人數」歸零，否則全店
- *    會沒有人能再打開權限管理頁面救援——取代舊版用 jobTitle==='店長'
- *    字串比對的脆弱保護。
+ * 2. 任何異動都不可讓「擁有 canManageRoles 的員工人數」歸零，否則全店會
+ *    沒有人能再打開角色能力設定救援——取代舊版用 jobTitle==='店長'
+ *    字串比對的脆弱保護。canManageRoles 是唯一會造成永久鎖死的能力：
+ *    只要還有人握有它，就能透過編輯角色把任何其他能力（含 canManageStaff）
+ *    補回來；但 canManageRoles 一旦歸零，沒人能再改任何角色的能力，
+ *    因此不必另外保護 canManageStaff。
  */
-async function wouldLeaveNoAuthorityAdmin(
+async function wouldLeaveNoRoleAdmin(
   db: AnyDb,
   roleIdBeingChanged: string,
   nextCapabilities: AuthorityKey[],
@@ -25,13 +28,13 @@ async function wouldLeaveNoAuthorityAdmin(
   const allRoles = await db.select().from(roles).all()
   const allStaff = await db.select({ roleId: staff.roleId }).from(staff).all()
   const capabilitiesById = new Map(allRoles.map((role) => [role.id, role.capabilities]))
-  const currentlyHasAdmin = allStaff.some((row) => capabilitiesById.get(row.roleId)?.includes('canSetAuthority'))
+  const currentlyHasAdmin = allStaff.some((row) => capabilitiesById.get(row.roleId)?.includes('canManageRoles'))
   // 系統本來就沒有人擁有這個權限（例如全新環境還沒指派任何管理者），
   // 不是這次變更造成的，不擋——只防「從有變沒有」這個轉折。
   if (!currentlyHasAdmin) return false
 
   capabilitiesById.set(roleIdBeingChanged, nextCapabilities)
-  return !allStaff.some((row) => capabilitiesById.get(row.roleId)?.includes('canSetAuthority'))
+  return !allStaff.some((row) => capabilitiesById.get(row.roleId)?.includes('canManageRoles'))
 }
 
 const listRolesRoute = createRoute({
@@ -45,7 +48,7 @@ const listRolesRoute = createRoute({
 const createRoleRoute = createRoute({
   method: 'post',
   path: '/',
-  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageRoles')] as const,
   request: { body: { content: { 'application/json': { schema: createRoleRequestSchema } } } },
   responses: {
     201: { description: '權限群組建立成功', content: { 'application/json': { schema: roleSchema } } },
@@ -57,7 +60,7 @@ const createRoleRoute = createRoute({
 const updateRoleRoute = createRoute({
   method: 'put',
   path: '/{id}',
-  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageRoles')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateRoleRequestSchema } } },
@@ -73,7 +76,7 @@ const updateRoleRoute = createRoute({
 const deleteRoleRoute = createRoute({
   method: 'delete',
   path: '/{id}',
-  middleware: [requireDeviceToken, requireCapability('canSetAuthority')] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageRoles')] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '權限群組已刪除' },
@@ -115,8 +118,8 @@ export const roleRoutes = new OpenAPIHono<AppEnv>()
     if (nameTaken && nameTaken.id !== id) {
       return c.json({ error: '此名稱已被使用，請重新輸入' }, 409)
     }
-    if (await wouldLeaveNoAuthorityAdmin(db, id, input.capabilities)) {
-      return c.json({ error: '此變更會讓沒有人擁有「設定人員名單」的權限，操作已取消' }, 409)
+    if (await wouldLeaveNoRoleAdmin(db, id, input.capabilities)) {
+      return c.json({ error: '此變更會讓沒有人擁有「設定權限群組」的權限，操作已取消' }, 409)
     }
 
     await db.update(roles).set(input).where(eq(roles.id, id))

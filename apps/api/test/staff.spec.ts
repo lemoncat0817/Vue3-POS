@@ -209,11 +209,13 @@ describe('PUT /api/staff/:id', () => {
     expect(res.status).toBe(404)
   })
 
-  it('此變更會讓沒有人擁有設定人員名單的權限時拒絕，回傳 409', async () => {
+  it('此變更會讓沒有人擁有設定權限群組的權限時拒絕，回傳 409', async () => {
     const db = createTestDb()
-    // 用 seedStaff: false 跳過自動附掛的全權限操作員——否則店裡永遠還有
-    // 別人擁有 canSetAuthority，「歸零」這個條件永遠不會成立（見 helpers/app.ts）。
-    const adminRoleId = await seedRole(db, { name: '店長', capabilities: ['canSetAuthority'] })
+    // 這個角色要同時有 canManageStaff（才能呼叫這個 PUT 端點）與
+    // canManageRoles（受「不可歸零」保護的能力）。用 seedStaff: false
+    // 跳過自動附掛的全權限操作員——否則店裡永遠還有別人擁有
+    // canManageRoles，「歸零」這個條件永遠不會成立（見 helpers/app.ts）。
+    const adminRoleId = await seedRole(db, { name: '店長', capabilities: ['canManageStaff', 'canManageRoles'] })
     const partTimerRoleId = await seedRole(db, { name: '工讀生', capabilities: [] })
     const adminStaffId = 'admin-1'
     await db.insert(staff).values({
@@ -222,7 +224,7 @@ describe('PUT /api/staff/:id', () => {
     })
     const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', { seedStaff: false })
 
-    // 這是全店唯一一位擁有 canSetAuthority 的員工，改成無此權限的角色應該被擋下。
+    // 這是全店唯一一位擁有 canManageRoles 的員工，改成無此權限的角色應該被擋下。
     const res = await app.request(`/api/staff/${adminStaffId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Staff-Id': adminStaffId },
@@ -271,10 +273,11 @@ describe('DELETE /api/staff/:id（P18）', () => {
     expect(res.status).toBe(404)
   })
 
-  it('刪除最後一位擁有設定人員名單權限的員工時拒絕，回傳 409', async () => {
+  it('刪除最後一位擁有設定權限群組權限的員工時拒絕，回傳 409', async () => {
     const db = createTestDb()
-    // 用 seedStaff: false 避免自動附掛的操作員讓「歸零」條件永遠不成立。
-    const adminRoleId = await seedRole(db, { name: '店長', capabilities: ['canSetAuthority'] })
+    // 同上一個測試：需要 canManageStaff 才能呼叫 DELETE，且用 seedStaff:
+    // false 避免自動附掛的操作員讓「歸零」條件永遠不成立。
+    const adminRoleId = await seedRole(db, { name: '店長', capabilities: ['canManageStaff', 'canManageRoles'] })
     const adminStaffId = 'admin-1'
     await db.insert(staff).values({
       id: adminStaffId, name: 'Lemon', jobTitle: '店長', account: 'lemon', roleId: adminRoleId,

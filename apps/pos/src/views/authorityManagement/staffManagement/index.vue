@@ -175,7 +175,7 @@ const PIN_PATTERN = /^\d{4,6}$/
 
 // 人員與權限群組由 App.vue 啟動時同步，CRUD 直接以 API 回應更新本機陣列，避免重複 fetch 覆蓋。
 
-const canManage = computed(() => hasCapability(loginStore.userInfo, 'canSetAuthority'))
+const canManage = computed(() => hasCapability(loginStore.userInfo, 'canManageStaff'))
 // 不可編輯／刪除自己，避免操作中的帳號把自己鎖在門外；「最後一位權限管理者」則交由後端把關
 // （見 apps/api/src/routes/staff.ts 的 wouldLeaveNoAuthorityAdmin），不再用 jobTitle==='店長' 字串比對。
 function canEdit(row: StaffMember): boolean {

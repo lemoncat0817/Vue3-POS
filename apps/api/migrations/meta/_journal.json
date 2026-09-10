@@ -169,6 +169,13 @@
       "when": 1789035407181,
       "tag": "0023_backfill_shift_capability",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1789036782370,
+      "tag": "0024_backfill_role_admin_split",
+      "breakpoints": true
     }
   ]
 }
