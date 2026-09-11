@@ -18,9 +18,9 @@ coverage
 /cypress/screenshots/
 
 # Playwright
-/test-results/
-/playwright-report/
-/blob-report/
+test-results/
+playwright-report/
+blob-report/
 /playwright/.cache/
 
 # 各 workspace 套件的暫存編譯輸出
