@@ -29,7 +29,7 @@
       </div>
 
       <div
-        class="w-full overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm"
+        class="w-full overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm flex flex-col justify-between min-h-[540px]"
       >
         <div
           class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
@@ -37,7 +37,7 @@
           <div class="text-sm font-black text-surface-900 dark:text-surface-100">會員名單</div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead
               class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"

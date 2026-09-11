@@ -33,9 +33,9 @@
       </p>
 
       <div
-        class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm"
+        class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm flex flex-col justify-between min-h-[540px]"
       >
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead
               class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
@@ -66,7 +66,7 @@
                 </td>
               </tr>
               <tr
-                v-for="track in tracks"
+                v-for="track in sliceTracks"
                 :key="track.id"
                 class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
               >
@@ -105,11 +105,12 @@
           </table>
         </div>
         <TablePagination
-          :page="1"
-          :page-count="1"
+          :page="trackPage"
+          :page-count="trackPageCount"
           :total="tracks.length"
-          :current-count="tracks.length"
+          :current-count="sliceTracks.length"
           unit="筆字軌"
+          @update:page="(p) => (trackPage = p)"
         />
       </div>
     </div>
@@ -171,7 +172,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Receipt } from 'lucide-vue-next'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -190,6 +191,13 @@ function apiErrorMessage(err: unknown): string {
 }
 
 const tracks = ref<InvoiceTrack[]>([])
+const trackPage = ref(1)
+const trackPageSize = 10
+const trackPageCount = computed(() => Math.max(1, Math.ceil(tracks.value.length / trackPageSize)))
+const sliceTracks = computed(() => {
+  const start = (trackPage.value - 1) * trackPageSize
+  return tracks.value.slice(start, start + trackPageSize)
+})
 onMounted(async () => {
   try {
     tracks.value = await fetchInvoiceTracks()

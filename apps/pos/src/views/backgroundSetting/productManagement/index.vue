@@ -36,9 +36,9 @@
       </div>
 
       <div
-        class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm"
+        class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[540px] flex flex-col justify-between"
       >
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead
               class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
@@ -131,9 +131,9 @@
       </div>
 
       <div
-        class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm"
+        class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[540px] flex flex-col justify-between"
       >
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead
               class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
@@ -245,9 +245,9 @@
       </div>
 
       <div
-        class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm"
+        class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[540px] flex flex-col justify-between"
       >
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead
               class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
@@ -261,7 +261,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-              <tr v-if="catalogStore.modifierGroups.length === 0">
+              <tr v-if="sliceModifierGroups.length === 0">
                 <td
                   colspan="5"
                   class="px-4 py-16 text-center text-surface-400 dark:text-surface-500"
@@ -278,7 +278,7 @@
                 </td>
               </tr>
               <tr
-                v-for="row in catalogStore.modifierGroups"
+                v-for="row in sliceModifierGroups"
                 :key="row.id"
                 class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
               >
@@ -335,11 +335,12 @@
           </table>
         </div>
         <TablePagination
-          :page="1"
-          :page-count="1"
+          :page="modifierGroupPage"
+          :page-count="modifierGroupPageCount"
           :total="catalogStore.modifierGroups.length"
-          :current-count="catalogStore.modifierGroups.length"
+          :current-count="sliceModifierGroups.length"
           unit="組規格群組"
+          @update:page="(v) => (modifierGroupPage = v)"
         />
       </div>
     </div>
@@ -361,9 +362,9 @@
       </div>
 
       <div
-        class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm"
+        class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[540px] flex flex-col justify-between"
       >
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead
               class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
@@ -987,6 +988,17 @@ async function removeProduct(row: Product) {
 }
 
 // ---------- 規格群組 ----------
+const modifierGroupPage = ref(1)
+const modifierGroupPageCount = computed(() =>
+  Math.max(Math.ceil(catalogStore.modifierGroups.length / 10), 1)
+)
+const sliceModifierGroups = computed(() =>
+  catalogStore.modifierGroups.slice(
+    (modifierGroupPage.value - 1) * 10,
+    modifierGroupPage.value * 10
+  )
+)
+
 function optionSummary(group: ModifierGroup) {
   return group.options
     .map((o) =>
@@ -1075,6 +1087,12 @@ async function removeModifierGroup(row: ModifierGroup) {
         (id) => String(id) !== String(row.id)
       )
     })
+    if (
+      modifierGroupPage.value > 1 &&
+      (modifierGroupPage.value - 1) * 10 >= catalogStore.modifierGroups.length
+    ) {
+      modifierGroupPage.value--
+    }
     showToast('刪除成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
