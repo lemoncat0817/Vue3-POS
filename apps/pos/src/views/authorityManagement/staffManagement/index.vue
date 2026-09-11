@@ -223,9 +223,8 @@ async function addStaff() {
       roleId: currentInputRoleId.value,
       pin: currentInputStaffPin.value,
     })
-    // 陣列重建以觸發 reactive 更新，並標記本機已異動以防背景同步覆蓋。
+    // 陣列重建以觸發 reactive 更新。
     authorityManagementStore.staffList = [...authorityManagementStore.staffList, toStaffMember(created)]
-    authorityManagementStore.staffSource = 'server'
     showToast('新增人員成功', 'success')
     addStaffDialog.value = false
   } catch (err) {
@@ -240,7 +239,6 @@ async function deleteStaff(row: StaffMember) {
   try {
     await deleteStaffApi(String(row.id))
     authorityManagementStore.staffList = authorityManagementStore.staffList.filter((item) => item.id !== row.id)
-    authorityManagementStore.staffSource = 'server'
     showToast('刪除成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
@@ -306,7 +304,6 @@ async function editStaff() {
     const mapped = toStaffMember(updated)
     const index = authorityManagementStore.staffList.findIndex((item) => item.id === target.id)
     if (index !== -1) authorityManagementStore.staffList[index] = mapped
-    authorityManagementStore.staffSource = 'server'
     editStaffDialog.value = false
     showToast('保存成功', 'success')
   } catch (err) {

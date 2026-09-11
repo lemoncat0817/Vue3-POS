@@ -172,7 +172,6 @@ async function submit() {
       if (index !== -1) orderStore.paymentList[index] = updated
       showToast('保存成功', 'success')
     }
-    orderStore.paymentSource = 'server'
     dialog.open = false
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
@@ -188,7 +187,6 @@ async function removePayMethod(row: PaymentMethod) {
   try {
     await deletePaymentMethod(String(row.id))
     orderStore.paymentList = orderStore.paymentList.filter((item) => item.id !== row.id)
-    orderStore.paymentSource = 'server'
     showToast('刪除成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')

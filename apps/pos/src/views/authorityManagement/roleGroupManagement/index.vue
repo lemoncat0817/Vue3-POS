@@ -171,7 +171,6 @@ async function submit() {
       )
       showToast('保存成功', 'success')
     }
-    rolesStore.roleSource = 'server'
     dialog.open = false
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
@@ -192,7 +191,6 @@ async function removeRole(row: Role) {
   try {
     await deleteRole(row.id)
     rolesStore.roleList = rolesStore.roleList.filter((item) => item.id !== row.id)
-    rolesStore.roleSource = 'server'
     showToast('刪除成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
