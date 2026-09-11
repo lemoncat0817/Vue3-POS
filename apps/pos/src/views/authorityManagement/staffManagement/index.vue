@@ -337,7 +337,7 @@ async function addStaff() {
       roleId: currentInputRoleId.value,
       pin: currentInputStaffPin.value
     })
-    // 陣列重建以觸發 reactive 更新，並標記本機已異動以防背景同步覆蓋。
+    // 陣列重建以觸發 reactive 更新。
     authorityManagementStore.staffList = [
       ...authorityManagementStore.staffList,
       toStaffMember(created)
