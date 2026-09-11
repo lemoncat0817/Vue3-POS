@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { authFile } from './e2e/auth-file'
 
 // E2E 測試設定：自動啟動前端 preview 與後端 dev server，確保測試獨立可重現。
 export default defineConfig({
@@ -14,12 +15,21 @@ export default defineConfig({
       `http://localhost:4173${process.env.VITE_BASE_PATH || '/'}`,
     trace: 'on-first-retry'
   },
-  // shift.spec.ts 獨立為依賴專案，避免平行送單干擾全域班別的收班現金帳差計算。
+  // setup 專案先核發一組裝置憑證存進 storageState，其餘專案都依賴它——
+  // 裝置憑證不再是 build-time 塞進前端的環境變數（見 global.setup.ts），
+  // 每個測試專案都要先配對過裝置才能通過 /login 頁的裝置憑證檢查。
+  // shift.spec.ts 另外獨立為依賴專案，避免平行送單干擾全域班別的收班現金帳差計算。
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /shift\.spec\.ts/ },
+    { name: 'setup', testMatch: /global\.setup\.ts/ },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], storageState: authFile },
+      testIgnore: /shift\.spec\.ts/,
+      dependencies: ['setup']
+    },
     {
       name: 'chromium-shift',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], storageState: authFile },
       testMatch: /shift\.spec\.ts/,
       dependencies: ['chromium']
     }

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { createAppRouter } from './index'
 import { useLoginStore } from '@/stores/login'
+import { useDeviceStore } from '@/stores/device'
 import { usePageStore } from '@/stores/page'
 import type { AuthorityKey, StaffMember } from '@/types'
 
@@ -66,10 +67,23 @@ describe('router guard', () => {
     loginStore.isLogin = true
     loginStore.userInfo = buildStaff()
     loginStore.sessionToken = null
+    useDeviceStore().deviceToken = 'test-device-token'
 
     await router.push('/order')
     expect(router.currentRoute.value.path).toBe('/login')
     expect(loginStore.isLogin).toBe(false)
+  })
+
+  it('operator session 都對，但這台瀏覽器還沒有裝置憑證時，一樣導去 /login', async () => {
+    const router = createAppRouter()
+    const loginStore = useLoginStore()
+    loginStore.isLogin = true
+    loginStore.userInfo = buildStaff()
+    loginStore.sessionToken = 'test-session-token'
+    useDeviceStore().deviceToken = null
+
+    await router.push('/order')
+    expect(router.currentRoute.value.path).toBe('/login')
   })
 
   it('已登入時造訪登入頁會被導回首頁', async () => {
@@ -78,6 +92,7 @@ describe('router guard', () => {
     loginStore.isLogin = true
     loginStore.userInfo = buildStaff()
     loginStore.sessionToken = 'test-session-token'
+    useDeviceStore().deviceToken = 'test-device-token'
 
     await router.push('/login')
     expect(router.currentRoute.value.path).toBe('/home')
@@ -90,6 +105,7 @@ describe('router guard', () => {
     loginStore.isLogin = true
     loginStore.userInfo = buildStaff({ canCheckDataAnalysis: false })
     loginStore.sessionToken = 'test-session-token'
+    useDeviceStore().deviceToken = 'test-device-token'
 
     await router.push('/dataAnalysis')
     expect(router.currentRoute.value.path).not.toBe('/dataAnalysis')
@@ -102,6 +118,7 @@ describe('router guard', () => {
     loginStore.isLogin = true
     loginStore.userInfo = buildStaff({ canCheckAuthority: true })
     loginStore.sessionToken = 'test-session-token'
+    useDeviceStore().deviceToken = 'test-device-token'
 
     await router.push('/authorityManagement')
     expect(router.currentRoute.value.path).toBe('/authorityManagement')
@@ -113,6 +130,7 @@ describe('router guard', () => {
     loginStore.isLogin = true
     loginStore.userInfo = buildStaff()
     loginStore.sessionToken = 'test-session-token'
+    useDeviceStore().deviceToken = 'test-device-token'
 
     await router.push('/backgroundSetting')
     expect(usePageStore().lastVisitedName).toBe('backgroundSetting')
@@ -125,6 +143,7 @@ describe('router guard', () => {
     loginStore.isLogin = true
     loginStore.userInfo = buildStaff()
     loginStore.sessionToken = 'test-session-token'
+    useDeviceStore().deviceToken = 'test-device-token'
 
     await router.push('/home')
     expect(router.currentRoute.value.path).toBe('/order')
@@ -137,6 +156,7 @@ describe('router guard', () => {
     loginStore.isLogin = true
     loginStore.userInfo = buildStaff({ canCheckAuthority: false })
     loginStore.sessionToken = 'test-session-token'
+    useDeviceStore().deviceToken = 'test-device-token'
 
     await router.push('/home')
     expect(router.currentRoute.value.path).not.toBe('/authorityManagement')

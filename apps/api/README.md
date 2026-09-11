@@ -82,7 +82,13 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
    ```
    merge 到 `master` 後 GitHub Actions 也會跑同一個指令（見根目錄 README 的 CI/CD；
    CI **不會**自動 migrate／seed）。
-6. **核發第一台裝置的憑證**（部署完成、拿到正式 API 網址之後）：
+6. **首次使用**：部署完成後，前端用 Google／GitHub 登入即可——第一次登入
+   會自動建立這個帳號的租戶、核發這台瀏覽器的裝置憑證、灌好示範菜單與
+   一個 owner 員工帳密（見 `src/auth/onboarding.ts`），不需要手動呼叫
+   `/api/devices`。
+
+   手動核發裝置憑證只留給要另外配對「非瀏覽器」終端機（例如串接一台實體
+   收銀機）的情境：
    ```sh
    curl -X POST https://<你的 Workers 網址>/api/devices \
      -H "Content-Type: application/json" \
@@ -90,8 +96,9 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
      -d '{"name":"前台收銀機"}'
    ```
    回應裡的 `token` 只會出現這一次，之後即使是資料庫本身也還原不出來
-   （只存雜湊值，見 `src/auth/hash.ts`），要記得馬上存到 apps/pos 建置
-   時用的 `VITE_DEVICE_TOKEN` 環境變數。弄丟了沒關係，用
+   （只存雜湊值，見 `src/auth/hash.ts`）。這個端點核發出來的裝置不屬於
+   任何租戶（`tenantId` 是 null），跟哪個租戶的資料掛勾要另外手動處理，
+   一般情境用 OAuth 登入即可，不需要這條路。弄丟了沒關係，用
    `POST /api/devices/:id/revoke` 撤銷這台、重新核發一台新的即可。
 
 ## 身分系統（P4：規劃書 §9）

@@ -2,8 +2,19 @@
 export const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:8787'
 
-/** 終端機裝置憑證，未設定時異動端點將收到 401。 */
-const DEVICE_TOKEN = import.meta.env.VITE_DEVICE_TOKEN as string | undefined
+/**
+ * 終端機裝置憑證，未設定時異動端點將收到 401。不再是 build-time 的
+ * VITE_DEVICE_TOKEN（那樣會把憑證烤進公開的 GitHub Pages bundle，任何訪客
+ * 都拿得到）——改成登入當下才知道的值，由 stores/device.ts 的 watch 同步進來
+ * （做法比照下面的 currentOperatorSession）。
+ */
+let currentDeviceToken: string | null = null
+export function setDeviceToken(token: string | null): void {
+  currentDeviceToken = token
+}
+export function getDeviceToken(): string | null {
+  return currentDeviceToken
+}
 
 /**
  * 目前登入操作員的 session token，PIN 登入成功時核發、隨 loginStore
@@ -28,6 +39,13 @@ export function setOperatorSessionInvalidHandler(handler: (() => void) | null): 
   onOperatorSessionInvalid = handler
 }
 
+/** 裝置憑證失效（撤銷／從沒核發過）時的全域回呼，做法同上——導回需要重新用
+ *  Google／GitHub 登入配對裝置的畫面（見 router/index.ts 的註冊）。 */
+let onDeviceTokenInvalid: (() => void) | null = null
+export function setDeviceTokenInvalidHandler(handler: (() => void) | null): void {
+  onDeviceTokenInvalid = handler
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -40,11 +58,12 @@ export class ApiError extends Error {
 
 /** 發送 HTTP 請求並解析 JSON；錯誤交由呼叫端或離線快取處理。 */
 export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const deviceTokenSentThisRequest = currentDeviceToken
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      ...(DEVICE_TOKEN ? { 'X-Device-Token': DEVICE_TOKEN } : {}),
+      ...(currentDeviceToken ? { 'X-Device-Token': currentDeviceToken } : {}),
       // 呼叫端可透過 init.headers 帶入不同的 X-Operator-Session 覆蓋這裡的
       // 預設值（見 api/orders.ts 的退款／作廢，主管二次授權時要送核可者
       // 剛登入核發的 session，不是目前登入中的操作員）。
@@ -67,6 +86,14 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
     // ——裝置憑證錯誤與 PIN 登入失敗的 401 都不會，藉此區分不會誤觸強制登出。
     if (res.status === 401 && serverMessage?.includes('操作員 session')) {
       onOperatorSessionInvalid?.()
+    }
+    // 裝置憑證的錯誤訊息固定是這句（見 middleware/require-device-token.ts），
+    // 跟 PIN 登入失敗、帳號鎖定的 401 訊息不會撞在一起。只在這次請求真的
+    // 帶了憑證卻被拒絕時才觸發撤銷——deviceTokenSentThisRequest 是 null
+    // 代表根本還沒有憑證（router 導頁邏輯已經處理這種情況），不是「這組
+    // 憑證失效了」，觸發撤銷只會把剛好還沒 hydrate 完成的合法憑證洗掉。
+    if (res.status === 401 && serverMessage === '裝置憑證無效或缺漏' && deviceTokenSentThisRequest) {
+      onDeviceTokenInvalid?.()
     }
     throw new ApiError(
       serverMessage ?? `${init?.method ?? 'GET'} ${path} 失敗：HTTP ${res.status}`,

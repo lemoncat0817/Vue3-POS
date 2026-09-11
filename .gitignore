@@ -22,6 +22,8 @@ test-results/
 playwright-report/
 blob-report/
 /playwright/.cache/
+# e2e/global.setup.ts 核發的裝置憑證 storageState，內含真的裝置 token 明碼，不能進版控。
+/e2e/.auth/
 
 # 各 workspace 套件的暫存編譯輸出
 **/node_modules/.tmp/

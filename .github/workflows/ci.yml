@@ -1,8 +1,11 @@
 # CI on PRs; deploy frontend (GitHub Pages) + backend (Cloudflare Workers) from master.
 #
 # Required GitHub Actions secrets:
-#   VITE_DEVICE_TOKEN       — already configured; baked into the frontend production build
 #   CLOUDFLARE_API_TOKEN    — already configured; wrangler deploy (Workers Edit + Account read)
+#
+# 裝置憑證不再是 build-time 塞進前端的 secret（那樣會把憑證烤進公開的
+# GitHub Pages bundle）——改成登入當下才核發，見 apps/api/src/routes/oauth.ts
+# 與 apps/pos/src/api/oauth.ts。
 #
 # Optional secret or variable:
 #   CLOUDFLARE_ACCOUNT_ID   — cc1bea6538e772965248fa1fdef2844c (set if wrangler cannot infer the account)
@@ -100,7 +103,6 @@ jobs:
         env:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
-          VITE_DEVICE_TOKEN: ${{ secrets.VITE_DEVICE_TOKEN }}
         run: pnpm --filter @pos/app build
 
       - name: Setup Pages

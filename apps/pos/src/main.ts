@@ -15,6 +15,12 @@ window.addEventListener('error', (event) => {
   }
 })
 
+// 全部其他程式碼（尤其是 App.vue 掛載後 useQuery 立刻送出的那批請求）
+// 之前，同步把 localStorage 裡的裝置憑證讀進 http.ts——見 primeDeviceTokenFromStorage()
+// 的說明，不能賭 Pinia 的 persistedstate hydrate 一定會在那之前跑完。
+import { primeDeviceTokenFromStorage } from './stores/device'
+primeDeviceTokenFromStorage()
+
 import { createApp } from 'vue'
 import App from './App.vue'
 const app = createApp(App)
@@ -23,6 +29,20 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
+
+// 把 Google／GitHub 登入導回網址上的裝置憑證讀進 deviceStore（跟上面的
+// primeDeviceTokenFromStorage 是兩件事：這裡處理的是「剛登入完成」這次的
+// 新憑證，上面處理的是「之前登入過，這次重新整理頁面」要延續舊憑證）。
+import { useDeviceStore } from './stores/device'
+import { consumeOAuthCallback } from './api/oauth'
+import { showToast } from '@/composables/useToast'
+const oauthResult = consumeOAuthCallback(useDeviceStore())
+if (oauthResult.status === 'error') {
+  showToast('登入失敗，請重新嘗試 Google／GitHub 登入', 'error')
+} else if (oauthResult.status === 'success' && !oauthResult.isNewTenant) {
+  showToast('裝置配對成功，請用員工帳號 PIN 登入', 'success')
+}
+
 import router from './router'
 app.use(router)
 import { VueQueryPlugin } from '@tanstack/vue-query'
