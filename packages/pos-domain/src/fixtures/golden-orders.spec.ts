@@ -9,7 +9,7 @@ describe('GOLDEN_ORDERS（P0 黃金資料集）', () => {
       '202406102',
       '202406105',
       '202406106',
-      '202406107',
+      '202406107'
     ])
   })
 
@@ -22,14 +22,14 @@ describe('GOLDEN_ORDERS（P0 黃金資料集）', () => {
     (_orderId, order) => {
       const lineTotal = order.orderData.reduce((sum, line) => sum + line.totalPrice, 0)
       expect(lineTotal + order.orderBagCount).toBe(order.orderTotalPrice)
-    },
+    }
   )
 
   it.each(GOLDEN_ORDERS.map((order) => [order.orderId, order] as const))(
     '訂單 %s：應付金額等於總額減去折扣',
     (_orderId, order) => {
       expect(order.orderTotalPrice - order.orderDiscount).toBe(order.orderPaymentPrice)
-    },
+    }
   )
 
   it.each(GOLDEN_ORDERS.map((order) => [order.orderId, order] as const))(
@@ -37,6 +37,6 @@ describe('GOLDEN_ORDERS（P0 黃金資料集）', () => {
     (_orderId, order) => {
       const cupTotal = order.orderData.reduce((sum, line) => sum + line.count, 0)
       expect(cupTotal).toBe(order.orderCupCount)
-    },
+    }
   )
 })

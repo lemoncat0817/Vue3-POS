@@ -47,9 +47,7 @@ export function allocate(total: Minor, weights: readonly number[]): Minor[] {
   let remainder = total - floored.reduce((sum, f) => sum + f, 0)
 
   // 依小數部分（餘數）由大到小排序，把差額逐一分給餘數最大的項目。
-  const order = raw
-    .map((r, i) => ({ i, frac: r - Math.floor(r) }))
-    .sort((a, b) => b.frac - a.frac)
+  const order = raw.map((r, i) => ({ i, frac: r - Math.floor(r) })).sort((a, b) => b.frac - a.frac)
 
   const result = [...floored]
   for (const { i } of order) {

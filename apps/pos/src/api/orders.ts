@@ -1,4 +1,14 @@
-import { createOrderRequestSchema, orderSchema, type AppliedCoupon, type CreateOrderRequest, type InvoiceCarrier, type Order, type OrderStatus, type RefundInput, type TenderInput } from '@pos/contract'
+import {
+  createOrderRequestSchema,
+  orderSchema,
+  type AppliedCoupon,
+  type CreateOrderRequest,
+  type InvoiceCarrier,
+  type Order,
+  type OrderStatus,
+  type RefundInput,
+  type TenderInput
+} from '@pos/contract'
 import { ulid } from '@pos/domain'
 import type { CartLineItem, OrderChannel } from '@/types'
 import { fetchJson } from './http'
@@ -7,7 +17,7 @@ import { fetchJson } from './http'
 export async function createOrder(payload: CreateOrderRequest): Promise<Order> {
   const body = await fetchJson<unknown>('/api/orders', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload)
   })
   return orderSchema.parse(body)
 }
@@ -25,12 +35,12 @@ export async function updateOrderStatus(
   orderStatus: OrderStatus,
   operator: string,
   reason?: string,
-  approverSessionToken?: string,
+  approverSessionToken?: string
 ): Promise<Order> {
   const body = await fetchJson<unknown>(`/api/orders/${encodeURIComponent(orderId)}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ orderStatus, operator, reason }),
-    ...(approverSessionToken ? { headers: { 'X-Operator-Session': approverSessionToken } } : {}),
+    ...(approverSessionToken ? { headers: { 'X-Operator-Session': approverSessionToken } } : {})
   })
   return orderSchema.parse(body)
 }
@@ -40,11 +50,15 @@ export async function deleteOrder(orderId: string): Promise<void> {
 }
 
 /** 訂單退款：多筆紀錄累加，由伺服端驗證剩餘額度。需要 canRefundOrVoid，見 updateOrderStatus 的 approverSessionToken 說明。 */
-export async function refundOrder(orderId: string, input: RefundInput, approverSessionToken: string): Promise<Order> {
+export async function refundOrder(
+  orderId: string,
+  input: RefundInput,
+  approverSessionToken: string
+): Promise<Order> {
   const body = await fetchJson<unknown>(`/api/orders/${encodeURIComponent(orderId)}/refunds`, {
     method: 'POST',
     body: JSON.stringify(input),
-    headers: { 'X-Operator-Session': approverSessionToken },
+    headers: { 'X-Operator-Session': approverSessionToken }
   })
   return orderSchema.parse(body)
 }
@@ -77,7 +91,7 @@ export function buildCreateOrderRequest(params: {
       addList: line.addList,
       addListPrice: line.addListPrice,
       freeDiscount: line.freeDiscount,
-      quickDiscountId: line.quickDiscountId,
+      quickDiscountId: line.quickDiscountId
     })),
     bagCount: params.bagCount,
     tenders: params.tenders,
@@ -86,6 +100,6 @@ export function buildCreateOrderRequest(params: {
     invoiceCarrier: params.invoiceCarrier,
     ...(params.memberId ? { memberId: params.memberId } : {}),
     ...(params.tableNumber ? { tableNumber: params.tableNumber } : {}),
-    ...(params.note ? { note: params.note } : {}),
+    ...(params.note ? { note: params.note } : {})
   })
 }

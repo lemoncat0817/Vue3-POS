@@ -19,8 +19,8 @@ describe('CORS 白名單', () => {
       headers: {
         Origin: 'http://localhost:4173',
         'Access-Control-Request-Method': 'GET',
-        'Access-Control-Request-Headers': 'X-Device-Token',
-      },
+        'Access-Control-Request-Headers': 'X-Device-Token'
+      }
     })
     expect(res.status).toBe(204)
     expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:4173')
@@ -34,8 +34,8 @@ describe('CORS 白名單', () => {
       headers: {
         Origin: 'http://localhost:4173',
         'Access-Control-Request-Method': 'POST',
-        'Access-Control-Request-Headers': 'X-Operator-Session',
-      },
+        'Access-Control-Request-Headers': 'X-Operator-Session'
+      }
     })
     expect(res.status).toBe(204)
     expect(res.headers.get('access-control-allow-headers')).toContain('X-Operator-Session')
@@ -48,8 +48,8 @@ describe('CORS 白名單', () => {
       headers: {
         Origin: 'https://evil.example.com',
         'Access-Control-Request-Method': 'GET',
-        'Access-Control-Request-Headers': 'X-Device-Token',
-      },
+        'Access-Control-Request-Headers': 'X-Device-Token'
+      }
     })
     expect(res.headers.get('access-control-allow-origin')).toBeNull()
   })

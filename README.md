@@ -55,23 +55,23 @@
 - 型別檢查：`vue-tsc` / `tsc`。
 
 3. **Vue-Router**
-   
+
 - 頁面切換及訪問權限控制
 
 4. **Pinia**
-  
+
 - 資料管理。
 
 5. **Element-Plus**
-  
+
 - UI組件庫。
 
 6. **TailWind CSS**
-  
+
 - 快速樣式編寫，主要版型使用Flex和Grid布局。
 
 7. **Vite**
-  
+
 - 專案建立與打包。
 
 8. **ESLint 9**（flat config）
@@ -79,7 +79,7 @@
 - 程式碼規範管理，含跨套件依賴邊界檢查。
 
 9. **Prettier**
-  
+
 - 程式碼格式化。
 
 10. **Vitest / Playwright**
@@ -87,7 +87,7 @@
 - 單元測試與端對端測試。
 
 11. **Git**
-  
+
 - 版本控制。
 
 12. **Echarts**

@@ -9,8 +9,8 @@ describe('priceLine() 對照黃金資料集', () => {
     order.orderData.map((line) => ({
       orderId: order.orderId,
       lineName: line.name,
-      line,
-    })),
+      line
+    }))
   )
 
   it.each(cases.map(({ orderId, lineName, line }) => [`${orderId} - ${lineName}`, line] as const))(
@@ -18,18 +18,18 @@ describe('priceLine() 對照黃金資料集', () => {
     (_label, line) => {
       const flags: LineDiscountFlags = {
         freeDiscount: line.freeDiscount,
-        quickDiscountId: line.quickDiscountId,
+        quickDiscountId: line.quickDiscountId
       }
       const priced = priceLine(
         { price: line.price, count: line.count, addListPrice: line.addListPrice },
         flags,
-        DEFAULT_QUICK_DISCOUNTS,
+        DEFAULT_QUICK_DISCOUNTS
       )
 
       expect(priced.totalPrice).toBe(line.totalPrice)
       expect(priced.discount).toBe(line.discount)
       expect(priced.quickDiscountName).toBe(line.quickDiscountName)
-    },
+    }
   )
 
   it('訂單層級：各行小計加總後仍等於既有的 orderTotalPrice（加上袋子數量）', () => {
@@ -38,10 +38,11 @@ describe('priceLine() 對照黃金資料集', () => {
         priceLine(
           { price: line.price, count: line.count, addListPrice: line.addListPrice },
           { freeDiscount: line.freeDiscount, quickDiscountId: line.quickDiscountId },
-          DEFAULT_QUICK_DISCOUNTS,
-        ),
+          DEFAULT_QUICK_DISCOUNTS
+        )
       )
-      const recomputedTotal = recomputedLines.reduce((sum, l) => sum + l.totalPrice, 0) + order.orderBagCount
+      const recomputedTotal =
+        recomputedLines.reduce((sum, l) => sum + l.totalPrice, 0) + order.orderBagCount
       expect(recomputedTotal).toBe(order.orderTotalPrice)
     }
   })

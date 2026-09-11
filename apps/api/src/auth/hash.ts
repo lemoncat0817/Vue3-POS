@@ -21,13 +21,17 @@ function fromHex(hex: string): Uint8Array {
 }
 
 async function deriveBits(secret: string, salt: Uint8Array): Promise<ArrayBuffer> {
-  const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), 'PBKDF2', false, [
-    'deriveBits',
-  ])
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  )
   return crypto.subtle.deriveBits(
     { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
     keyMaterial,
-    HASH_BYTE_LENGTH * 8,
+    HASH_BYTE_LENGTH * 8
   )
 }
 

@@ -8,7 +8,7 @@ export const invoiceTrackSchema = z.object({
   rangeStart: z.number().int().positive(),
   rangeEnd: z.number().int().positive(),
   currentNumber: z.number().int().nonnegative(),
-  isActive: z.boolean(),
+  isActive: z.boolean()
 })
 export type InvoiceTrack = z.infer<typeof invoiceTrackSchema>
 
@@ -17,11 +17,11 @@ export const createInvoiceTrackRequestSchema = z
     trackCode: z.string().regex(/^[A-Z]{2}$/, '字軌代號需為 2 碼大寫英文字母'),
     periodLabel: z.string().min(1),
     rangeStart: z.number().int().positive(),
-    rangeEnd: z.number().int().positive(),
+    rangeEnd: z.number().int().positive()
   })
   .refine((input) => input.rangeEnd > input.rangeStart, {
     message: '結束號碼必須大於起始號碼',
-    path: ['rangeEnd'],
+    path: ['rangeEnd']
   })
 export type CreateInvoiceTrackRequest = z.infer<typeof createInvoiceTrackRequestSchema>
 
@@ -31,6 +31,6 @@ export type InvoiceStatus = z.infer<typeof invoiceStatusSchema>
 
 export const submitInvoicesResponseSchema = z.object({
   submittedCount: z.number().int().nonnegative(),
-  submittedAt: z.string(),
+  submittedAt: z.string()
 })
 export type SubmitInvoicesResponse = z.infer<typeof submitInvoicesResponseSchema>

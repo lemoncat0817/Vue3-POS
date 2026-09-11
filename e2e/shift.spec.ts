@@ -15,10 +15,14 @@ test('開帳、中途存入現金、收班：畫面顯示的帳差與伺服端�
   await page.getByRole('heading', { name: '班別結帳' }).waitFor()
   await page.getByRole('spinbutton').fill('3000')
   const openResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/shifts') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/shifts') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByRole('button', { name: '開帳', exact: true }).click()
-  const openBody = (await (await openResponse).json()) as { id: string; status: string; openingFloat: number }
+  const openBody = (await (await openResponse).json()) as {
+    id: string
+    status: string
+    openingFloat: number
+  }
   expect(openBody.status).toBe('open')
   expect(openBody.openingFloat).toBe(3000)
 
@@ -28,7 +32,7 @@ test('開帳、中途存入現金、收班：畫面顯示的帳差與伺服端�
   await page.getByLabel('金額').fill('500')
   await page.getByLabel('原因').fill('追加零錢準備金')
   const movementResponse = page.waitForResponse(
-    (res) => res.url().includes('/cash-movements') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/cash-movements') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByRole('button', { name: '存入', exact: true }).click()
   const movementBody = (await (await movementResponse).json()) as { cashIn: number }
@@ -38,10 +42,14 @@ test('開帳、中途存入現金、收班：畫面顯示的帳差與伺服端�
   await expect(page.getByText('$ 3500')).toBeVisible()
 
   const closeResponse = page.waitForResponse(
-    (res) => res.url().includes('/close') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/close') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByRole('button', { name: '確認收班', exact: true }).click()
-  const closeBody = (await (await closeResponse).json()) as { status: string; expectedCash: number; variance: number }
+  const closeBody = (await (await closeResponse).json()) as {
+    status: string
+    expectedCash: number
+    variance: number
+  }
   expect(closeBody.status).toBe('closed')
   expect(closeBody.expectedCash).toBe(3500)
   expect(closeBody.variance).toBe(0)

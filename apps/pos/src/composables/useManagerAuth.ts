@@ -29,7 +29,7 @@ const state = reactive<ManagerAuthState>({
   description: '',
   account: '',
   pin: '',
-  resolve: null,
+  resolve: null
 })
 
 export function useManagerAuthState() {

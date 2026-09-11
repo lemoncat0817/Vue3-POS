@@ -23,7 +23,7 @@ describe('付款方式寫入 API', () => {
     const res = await app.request('/api/payment-methods', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: '現金', disabled: false, useMethod: '紙鈔' }),
+      body: JSON.stringify({ name: '現金', disabled: false, useMethod: '紙鈔' })
     })
     expect(res.status).toBe(401)
   })
@@ -33,16 +33,24 @@ describe('付款方式寫入 API', () => {
     const created = await readJson(
       await app.request('/api/payment-methods', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ name: '現金', disabled: false, useMethod: '紙鈔' }),
-      }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({ name: '現金', disabled: false, useMethod: '紙鈔' })
+      })
     )
     expect(created).toMatchObject({ name: '現金', disabled: false, useMethod: '紙鈔' })
 
     const updateRes = await app.request(`/api/payment-methods/${created.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '現金', disabled: true, useMethod: '紙鈔' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '現金', disabled: true, useMethod: '紙鈔' })
     })
     expect(updateRes.status).toBe(200)
     expect(await readJson(updateRes)).toMatchObject({ disabled: true })
@@ -52,7 +60,7 @@ describe('付款方式寫入 API', () => {
 
     const deleteRes = await app.request(`/api/payment-methods/${created.id}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(deleteRes.status).toBe(204)
     expect(await readJson(await app.request('/api/payment-methods'))).toEqual([])
@@ -62,14 +70,18 @@ describe('付款方式寫入 API', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const updateRes = await app.request('/api/payment-methods/does-not-exist', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '現金', disabled: false, useMethod: '紙鈔' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '現金', disabled: false, useMethod: '紙鈔' })
     })
     expect(updateRes.status).toBe(404)
 
     const deleteRes = await app.request('/api/payment-methods/does-not-exist', {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(deleteRes.status).toBe(404)
   })

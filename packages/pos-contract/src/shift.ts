@@ -9,7 +9,7 @@ export type CashMovementType = z.infer<typeof cashMovementTypeSchema>
 export const openShiftRequestSchema = z.object({
   shiftId: ulidSchema,
   operator: z.string().min(1),
-  openingFloat: z.number().int().nonnegative(),
+  openingFloat: z.number().int().nonnegative()
 })
 export type OpenShiftRequest = z.infer<typeof openShiftRequestSchema>
 
@@ -17,13 +17,13 @@ export const addCashMovementRequestSchema = z.object({
   type: cashMovementTypeSchema,
   amount: z.number().int().positive(),
   reason: z.string().min(1),
-  operator: z.string().min(1),
+  operator: z.string().min(1)
 })
 export type AddCashMovementRequest = z.infer<typeof addCashMovementRequestSchema>
 
 export const closeShiftRequestSchema = z.object({
   operator: z.string().min(1),
-  actualCash: z.number().int().nonnegative(),
+  actualCash: z.number().int().nonnegative()
 })
 export type CloseShiftRequest = z.infer<typeof closeShiftRequestSchema>
 
@@ -33,7 +33,7 @@ export const cashMovementSchema = z.object({
   amount: z.number().int().positive(),
   reason: z.string().min(1),
   operator: z.string().min(1),
-  at: z.string(),
+  at: z.string()
 })
 export type CashMovement = z.infer<typeof cashMovementSchema>
 
@@ -57,6 +57,6 @@ export const shiftSchema = z.object({
   expectedCash: z.number().int().nonnegative().nullable(),
   actualCash: z.number().int().nonnegative().nullable(),
   variance: z.number().int().nullable(),
-  movements: z.array(cashMovementSchema),
+  movements: z.array(cashMovementSchema)
 })
 export type Shift = z.infer<typeof shiftSchema>

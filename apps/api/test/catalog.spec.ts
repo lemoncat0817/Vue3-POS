@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
-import { addOnOptions, categories, modifierGroups, modifierOptions, productModifierGroups, products } from '../src/db/schema'
+import {
+  addOnOptions,
+  categories,
+  modifierGroups,
+  modifierOptions,
+  productModifierGroups,
+  products
+} from '../src/db/schema'
 import { createTestDb } from './helpers/db'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 測試只做屬性斷言，不需要完整型別
@@ -12,14 +19,16 @@ describe('GET /api/catalog', () => {
   it('回傳分類、品項（含掛用的規格群組）與加購選項', async () => {
     const db = createTestDb()
     await db.insert(categories).values([{ id: 'c1', name: '主餐' }])
-    await db.insert(modifierGroups).values([{ id: 'mg1', name: '熟度', selectionType: 'single', required: true }])
+    await db
+      .insert(modifierGroups)
+      .values([{ id: 'mg1', name: '熟度', selectionType: 'single', required: true }])
     await db.insert(modifierOptions).values([
       { id: 'mo1', groupId: 'mg1', name: '五分熟', priceDelta: 0 },
-      { id: 'mo2', groupId: 'mg1', name: '全熟', priceDelta: 0 },
+      { id: 'mo2', groupId: 'mg1', name: '全熟', priceDelta: 0 }
     ])
     await db.insert(products).values([
       { id: 'i1', categoryId: 'c1', name: '招牌牛肉漢堡', basePrice: 180, stock: 20 },
-      { id: 'i2', categoryId: 'c1', name: '烤雞三明治', basePrice: 150, stock: null },
+      { id: 'i2', categoryId: 'c1', name: '烤雞三明治', basePrice: 150, stock: null }
     ])
     await db.insert(productModifierGroups).values([{ productId: 'i1', groupId: 'mg1' }])
     await db.insert(addOnOptions).values([{ id: 'a1', name: '加起司', price: 20 }])
@@ -32,8 +41,22 @@ describe('GET /api/catalog', () => {
     expect(body).toEqual({
       categories: [{ id: 'c1', name: '主餐' }],
       products: [
-        { id: 'i1', categoryId: 'c1', name: '招牌牛肉漢堡', basePrice: 180, stock: 20, modifierGroupIds: ['mg1'] },
-        { id: 'i2', categoryId: 'c1', name: '烤雞三明治', basePrice: 150, stock: null, modifierGroupIds: [] },
+        {
+          id: 'i1',
+          categoryId: 'c1',
+          name: '招牌牛肉漢堡',
+          basePrice: 180,
+          stock: 20,
+          modifierGroupIds: ['mg1']
+        },
+        {
+          id: 'i2',
+          categoryId: 'c1',
+          name: '烤雞三明治',
+          basePrice: 150,
+          stock: null,
+          modifierGroupIds: []
+        }
       ],
       modifierGroups: [
         {
@@ -43,11 +66,11 @@ describe('GET /api/catalog', () => {
           required: true,
           options: [
             { id: 'mo1', name: '五分熟', priceDelta: 0 },
-            { id: 'mo2', name: '全熟', priceDelta: 0 },
-          ],
-        },
+            { id: 'mo2', name: '全熟', priceDelta: 0 }
+          ]
+        }
       ],
-      addOns: [{ id: 'a1', name: '加起司', price: 20, stock: null }],
+      addOns: [{ id: 'a1', name: '加起司', price: 20, stock: null }]
     })
   })
 
@@ -55,7 +78,12 @@ describe('GET /api/catalog', () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/catalog')
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ categories: [], products: [], modifierGroups: [], addOns: [] })
+    expect(await res.json()).toEqual({
+      categories: [],
+      products: [],
+      modifierGroups: [],
+      addOns: []
+    })
   })
 })
 
@@ -65,7 +93,7 @@ describe('菜單管理寫入 API', () => {
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: '主餐' }),
+      body: JSON.stringify({ name: '主餐' })
     })
     expect(res.status).toBe(401)
   })
@@ -74,8 +102,12 @@ describe('菜單管理寫入 API', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '主餐' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '主餐' })
     })
     expect(res.status).toBe(201)
     const body = await readJson(res)
@@ -90,19 +122,33 @@ describe('菜單管理寫入 API', () => {
     const category = await readJson(
       await app.request('/api/catalog/categories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ name: '主餐' }),
-      }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({ name: '主餐' })
+      })
     )
     await app.request('/api/catalog/products', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ categoryId: category.id, name: '招牌牛肉漢堡', basePrice: 180, stock: null, modifierGroupIds: [] }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({
+        categoryId: category.id,
+        name: '招牌牛肉漢堡',
+        basePrice: 180,
+        stock: null,
+        modifierGroupIds: []
+      })
     })
 
     const res = await app.request(`/api/catalog/categories/${category.id}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(res.status).toBe(409)
   })
@@ -111,8 +157,18 @@ describe('菜單管理寫入 API', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/catalog/products', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ categoryId: 'does-not-exist', name: '招牌牛肉漢堡', basePrice: 180, stock: null, modifierGroupIds: [] }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({
+        categoryId: 'does-not-exist',
+        name: '招牌牛肉漢堡',
+        basePrice: 180,
+        stock: null,
+        modifierGroupIds: []
+      })
     })
     expect(res.status).toBe(404)
   })
@@ -123,14 +179,28 @@ describe('菜單管理寫入 API', () => {
     const category = await readJson(
       await app.request('/api/catalog/categories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ name: '主餐' }),
-      }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({ name: '主餐' })
+      })
     )
     const res = await app.request('/api/catalog/products', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ categoryId: category.id, name: '招牌牛肉漢堡', basePrice: 180, stock: null, modifierGroupIds: ['does-not-exist'] }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({
+        categoryId: category.id,
+        name: '招牌牛肉漢堡',
+        basePrice: 180,
+        stock: null,
+        modifierGroupIds: ['does-not-exist']
+      })
     })
     expect(res.status).toBe(404)
   })
@@ -141,22 +211,46 @@ describe('菜單管理寫入 API', () => {
     const category = await readJson(
       await app.request('/api/catalog/categories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ name: '主餐' }),
-      }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({ name: '主餐' })
+      })
     )
     const item = await readJson(
       await app.request('/api/catalog/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ categoryId: category.id, name: '招牌牛肉漢堡', basePrice: 180, stock: null, modifierGroupIds: [] }),
-      }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({
+          categoryId: category.id,
+          name: '招牌牛肉漢堡',
+          basePrice: 180,
+          stock: null,
+          modifierGroupIds: []
+        })
+      })
     )
 
     const updateRes = await app.request(`/api/catalog/products/${item.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ categoryId: category.id, name: '特級牛肉漢堡', basePrice: 200, stock: 5, modifierGroupIds: [] }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({
+        categoryId: category.id,
+        name: '特級牛肉漢堡',
+        basePrice: 200,
+        stock: 5,
+        modifierGroupIds: []
+      })
     })
     expect(updateRes.status).toBe(200)
 
@@ -167,12 +261,12 @@ describe('菜單管理寫入 API', () => {
       name: '特級牛肉漢堡',
       basePrice: 200,
       stock: 5,
-      modifierGroupIds: [],
+      modifierGroupIds: []
     })
 
     const deleteRes = await app.request(`/api/catalog/products/${item.id}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(deleteRes.status).toBe(204)
 
@@ -185,30 +279,38 @@ describe('菜單管理寫入 API', () => {
     const group = await readJson(
       await app.request('/api/catalog/modifier-groups', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
         body: JSON.stringify({
           name: '甜度',
           selectionType: 'single',
           required: true,
-          options: [{ name: '正常糖', priceDelta: 0 }],
-        }),
-      }),
+          options: [{ name: '正常糖', priceDelta: 0 }]
+        })
+      })
     )
     expect(group).toMatchObject({ name: '甜度', selectionType: 'single', required: true })
     expect(group.options).toHaveLength(1)
 
     const updateRes = await app.request(`/api/catalog/modifier-groups/${group.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
       body: JSON.stringify({
         name: '甜度',
         selectionType: 'single',
         required: true,
         options: [
           { name: '正常糖', priceDelta: 0 },
-          { name: '半糖', priceDelta: 0 },
-        ],
-      }),
+          { name: '半糖', priceDelta: 0 }
+        ]
+      })
     })
     expect(updateRes.status).toBe(200)
     const updated = await readJson(updateRes)
@@ -216,7 +318,7 @@ describe('菜單管理寫入 API', () => {
 
     const deleteRes = await app.request(`/api/catalog/modifier-groups/${group.id}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(deleteRes.status).toBe(204)
 
@@ -229,22 +331,30 @@ describe('菜單管理寫入 API', () => {
     const addOn = await readJson(
       await app.request('/api/catalog/add-ons', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ name: '加起司', price: 20, stock: null }),
-      }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({ name: '加起司', price: 20, stock: null })
+      })
     )
     expect(addOn).toMatchObject({ name: '加起司', price: 20, stock: null })
 
     const updateRes = await app.request(`/api/catalog/add-ons/${addOn.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '加起司', price: 25, stock: null }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '加起司', price: 25, stock: null })
     })
     expect(updateRes.status).toBe(200)
 
     const deleteRes = await app.request(`/api/catalog/add-ons/${addOn.id}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(deleteRes.status).toBe(204)
 

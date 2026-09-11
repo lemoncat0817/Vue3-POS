@@ -28,15 +28,18 @@ const healthRoute = createRoute({
       description: '服務正常',
       content: {
         'application/json': {
-          schema: z.object({ ok: z.literal(true) }),
-        },
-      },
-    },
-  },
+          schema: z.object({ ok: z.literal(true) })
+        }
+      }
+    }
+  }
 })
 
 /** 建立 Hono 應用程式。由呼叫端傳入 Drizzle db 實例以相容 D1 與測試環境。 */
-export function createApp(db: AnyDb, config: { provisioningSecret: string; allowedOrigins: string[] }) {
+export function createApp(
+  db: AnyDb,
+  config: { provisioningSecret: string; allowedOrigins: string[] }
+) {
   const app = new OpenAPIHono<AppEnv>()
 
   // CORS 限制僅允許白名單來源，避免萬用字元 '*' 放大攻擊面。
@@ -44,8 +47,13 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string; allow
     '*',
     cors({
       origin: config.allowedOrigins,
-      allowHeaders: ['Content-Type', 'X-Device-Token', 'X-Provisioning-Secret', 'X-Operator-Session'],
-    }),
+      allowHeaders: [
+        'Content-Type',
+        'X-Device-Token',
+        'X-Provisioning-Secret',
+        'X-Operator-Session'
+      ]
+    })
   )
 
   app.use('*', async (c, next) => {
@@ -76,7 +84,7 @@ export function createApp(db: AnyDb, config: { provisioningSecret: string; allow
 
   app.doc('/openapi.json', {
     openapi: '3.1.0',
-    info: { title: 'POS API', version: '0.0.0' },
+    info: { title: 'POS API', version: '0.0.0' }
   })
 
   return app

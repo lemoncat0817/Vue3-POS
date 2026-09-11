@@ -10,7 +10,7 @@ import { appliedCouponSchema } from './promotion'
 export const lineDiscountFlagsSchema = z.object({
   freeDiscount: z.boolean(),
   /** 套用哪一筆快速折扣（見 promotion.ts 的 quickDiscountSchema），沒套用是 null。 */
-  quickDiscountId: z.string().min(1).nullable(),
+  quickDiscountId: z.string().min(1).nullable()
 })
 export type LineDiscountFlagsInput = z.infer<typeof lineDiscountFlagsSchema>
 
@@ -21,7 +21,7 @@ export const orderLineInputSchema = z
     price: z.number().int().nonnegative(),
     count: z.number().int().positive(),
     addList: z.union([z.literal('無添加配料'), z.array(z.string())]),
-    addListPrice: z.number().int().nonnegative(),
+    addListPrice: z.number().int().nonnegative()
   })
   .extend(lineDiscountFlagsSchema.shape)
 export type OrderLineInput = z.infer<typeof orderLineInputSchema>
@@ -39,19 +39,22 @@ export const tenderInputSchema = z
   .object({
     method: z.string().min(1),
     amount: z.number().int().nonnegative(),
-    receivedAmount: z.number().int().positive().optional(),
+    receivedAmount: z.number().int().positive().optional()
   })
-  .refine((tender) => tender.receivedAmount === undefined || tender.receivedAmount >= tender.amount, {
-    message: '實收金額不能小於這筆支付分擔的金額',
-    path: ['receivedAmount'],
-  })
+  .refine(
+    (tender) => tender.receivedAmount === undefined || tender.receivedAmount >= tender.amount,
+    {
+      message: '實收金額不能小於這筆支付分擔的金額',
+      path: ['receivedAmount']
+    }
+  )
 export type TenderInput = z.infer<typeof tenderInputSchema>
 
 /** 伺服端回傳的 tender：跟輸入同形狀，沒有額外衍生欄位。 */
 export const tenderSchema = z.object({
   method: z.string().min(1),
   amount: z.number().int().nonnegative(),
-  receivedAmount: z.number().int().positive().optional(),
+  receivedAmount: z.number().int().positive().optional()
 })
 export type Tender = z.infer<typeof tenderSchema>
 
@@ -70,12 +73,14 @@ export const invoiceCarrierSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('無載具') }),
   z.object({
     type: z.literal('手機條碼'),
-    value: z.string().regex(/^\/[0-9A-Z.+-]{7}$/, '手機條碼格式錯誤，需為「/」開頭加 7 碼數字或大寫英文字母'),
+    value: z
+      .string()
+      .regex(/^\/[0-9A-Z.+-]{7}$/, '手機條碼格式錯誤，需為「/」開頭加 7 碼數字或大寫英文字母')
   }),
   z.object({
     type: z.literal('統一編號'),
-    value: z.string().regex(/^\d{8}$/, '統一編號需為 8 碼數字'),
-  }),
+    value: z.string().regex(/^\d{8}$/, '統一編號需為 8 碼數字')
+  })
 ])
 export type InvoiceCarrier = z.infer<typeof invoiceCarrierSchema>
 
@@ -97,7 +102,7 @@ export const createOrderRequestSchema = z.object({
   /** 選填，純粹是訂單的紀錄用途，不是桌況的外鍵——桌況由店員手動維護，不由訂單生命週期推導。 */
   tableNumber: z.string().min(1).optional(),
   /** 選填備註（外送地址、取件時間、客製化需求等），純文字紀錄用途，伺服端不解析內容。 */
-  note: z.string().max(200).optional(),
+  note: z.string().max(200).optional()
 })
 export type CreateOrderRequest = z.infer<typeof createOrderRequestSchema>
 
@@ -109,7 +114,7 @@ export const orderLineSchema = orderLineInputSchema.extend({
   discount: z.number().int(),
   totalPrice: z.number().int().nonnegative(),
   /** 套用的快速折扣名稱快照（下單當下的名稱），沒套用或已招待則為空字串。 */
-  quickDiscountName: z.string(),
+  quickDiscountName: z.string()
 })
 export type OrderLine = z.infer<typeof orderLineSchema>
 
@@ -121,7 +126,7 @@ export const refundInputSchema = z.object({
   refundId: ulidSchema,
   amount: z.number().int().positive(),
   reason: z.string().min(1),
-  operator: z.string().min(1),
+  operator: z.string().min(1)
 })
 export type RefundInput = z.infer<typeof refundInputSchema>
 
@@ -131,7 +136,7 @@ export const refundSchema = z.object({
   amount: z.number().int().positive(),
   reason: z.string().min(1),
   operator: z.string().min(1),
-  at: z.string(),
+  at: z.string()
 })
 export type Refund = z.infer<typeof refundSchema>
 
@@ -170,6 +175,6 @@ export const orderSchema = z.object({
   /** 沒有填寫是 null。 */
   note: z.string().nullable(),
   invoiceStatus: invoiceStatusSchema,
-  invoiceSubmittedAt: z.string().nullable(),
+  invoiceSubmittedAt: z.string().nullable()
 })
 export type Order = z.infer<typeof orderSchema>

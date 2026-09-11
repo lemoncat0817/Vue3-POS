@@ -5,9 +5,15 @@ import type { StaffMember } from '@/types'
 
 function staff(overrides: Partial<StaffMember> = {}): StaffMember {
   return {
-    id: 's1', name: 'Lemon', jobTitle: '店長', account: 'lemon', password: '',
-    roleId: 'role-owner', roleName: '店長', authorityCheckList: ['canCheckOrder'],
-    ...overrides,
+    id: 's1',
+    name: 'Lemon',
+    jobTitle: '店長',
+    account: 'lemon',
+    password: '',
+    roleId: 'role-owner',
+    roleName: '店長',
+    authorityCheckList: ['canCheckOrder'],
+    ...overrides
   }
 }
 

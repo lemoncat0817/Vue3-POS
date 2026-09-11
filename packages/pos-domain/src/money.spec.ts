@@ -1,6 +1,14 @@
 import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
-import { addMinor, allocate, fromMinor, roundToDollar, scaleMinor, subtractMinor, toMinor } from './money'
+import {
+  addMinor,
+  allocate,
+  fromMinor,
+  roundToDollar,
+  scaleMinor,
+  subtractMinor,
+  toMinor
+} from './money'
 
 describe('toMinor / fromMinor', () => {
   it('元轉分再轉回元，等於原本的元（四捨五入到分）', () => {
@@ -71,8 +79,8 @@ describe('allocate（最大餘數法分攤）', () => {
           const sum = shares.reduce((acc, s) => acc + s, 0)
           expect(sum).toBe(total)
           expect(shares).toHaveLength(weights.length)
-        },
-      ),
+        }
+      )
     )
   })
 })

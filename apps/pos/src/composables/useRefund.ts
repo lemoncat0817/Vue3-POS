@@ -27,7 +27,7 @@ const state = reactive<RefundState>({
   max: 0,
   amount: 0,
   reason: '',
-  resolve: null,
+  resolve: null
 })
 
 export function useRefundPromptState() {

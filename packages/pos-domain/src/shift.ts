@@ -23,9 +23,10 @@ export interface ShiftCashSummary {
 }
 
 export function summarizeShiftCash(input: ShiftCashSummaryInput): ShiftCashSummary {
-  const expectedCash = input.openingFloat + input.cashSales + input.cashIn - input.cashOut - input.cashRefunds
+  const expectedCash =
+    input.openingFloat + input.cashSales + input.cashIn - input.cashOut - input.cashRefunds
   return {
     expectedCash,
-    variance: input.actualCash - expectedCash,
+    variance: input.actualCash - expectedCash
   }
 }

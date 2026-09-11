@@ -13,7 +13,7 @@ const errorSchema = z.object({ error: z.string() })
 /** 依 roleId 解析出 roleName／capabilities，組成回應用的 staffSchema 形狀。 */
 async function toStaffResponse(
   db: AnyDb,
-  row: { id: string; name: string; jobTitle: string; account: string; roleId: string },
+  row: { id: string; name: string; jobTitle: string; account: string; roleId: string }
 ) {
   const role = await db.select().from(roles).where(eq(roles.id, row.roleId)).get()
   if (!role) throw new Error(`staff ${row.id} 指向不存在的 roleId ${row.roleId}`)
@@ -24,7 +24,7 @@ async function toStaffResponse(
     account: row.account,
     roleId: role.id,
     roleName: role.name,
-    capabilities: role.capabilities,
+    capabilities: role.capabilities
   })
 }
 
@@ -33,13 +33,16 @@ async function toStaffResponse(
 async function wouldLeaveNoRoleAdmin(
   db: AnyDb,
   staffIdBeingChanged: string | null,
-  nextRoleId: string | null,
+  nextRoleId: string | null
 ): Promise<boolean> {
   const allRoles = await db.select().from(roles).all()
   const allStaff = await db.select({ id: staff.id, roleId: staff.roleId }).from(staff).all()
-  const capabilitiesOf = (roleId: string) => allRoles.find((role) => role.id === roleId)?.capabilities ?? []
+  const capabilitiesOf = (roleId: string) =>
+    allRoles.find((role) => role.id === roleId)?.capabilities ?? []
 
-  const currentlyHasAdmin = allStaff.some((row) => capabilitiesOf(row.roleId).includes('canManageRoles'))
+  const currentlyHasAdmin = allStaff.some((row) =>
+    capabilitiesOf(row.roleId).includes('canManageRoles')
+  )
   // 系統本來就沒有人擁有這個權限，不是這次變更造成的，不擋——只防「從有變沒有」這個轉折。
   if (!currentlyHasAdmin) return false
 
@@ -57,9 +60,9 @@ const listStaffRoute = createRoute({
   responses: {
     200: {
       description: '員工名單',
-      content: { 'application/json': { schema: z.array(staffSchema) } },
-    },
-  },
+      content: { 'application/json': { schema: z.array(staffSchema) } }
+    }
+  }
 })
 
 const createStaffRoute = createRoute({
@@ -68,20 +71,23 @@ const createStaffRoute = createRoute({
   // 建立員工屬異動操作，需校驗裝置憑證。
   middleware: [requireDeviceToken, requireCapability('canManageStaff')] as const,
   request: {
-    body: { content: { 'application/json': { schema: createStaffRequestSchema } } },
+    body: { content: { 'application/json': { schema: createStaffRequestSchema } } }
   },
   responses: {
     201: {
       description: '員工建立成功',
-      content: { 'application/json': { schema: staffSchema } },
+      content: { 'application/json': { schema: staffSchema } }
     },
     401: {
       description: '裝置憑證無效或缺漏',
-      content: { 'application/json': { schema: z.object({ error: z.string() }) } },
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } }
     },
-    404: { description: '指定的權限群組不存在', content: { 'application/json': { schema: errorSchema } } },
-    409: { description: '帳號已被使用', content: { 'application/json': { schema: errorSchema } } },
-  },
+    404: {
+      description: '指定的權限群組不存在',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    409: { description: '帳號已被使用', content: { 'application/json': { schema: errorSchema } } }
+  }
 })
 
 /** 員工管理寫入 API：支援後台編輯與刪除員工。 */
@@ -91,14 +97,26 @@ const updateStaffRoute = createRoute({
   middleware: [requireDeviceToken, requireCapability('canManageStaff')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updateStaffRequestSchema } } },
+    body: { content: { 'application/json': { schema: updateStaffRequestSchema } } }
   },
   responses: {
-    200: { description: '員工資料更新成功', content: { 'application/json': { schema: staffSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個員工，或指定的權限群組不存在', content: { 'application/json': { schema: errorSchema } } },
-    409: { description: '這個帳號已經被其他員工使用，或此變更會讓沒有人擁有權限管理能力', content: { 'application/json': { schema: errorSchema } } },
-  },
+    200: {
+      description: '員工資料更新成功',
+      content: { 'application/json': { schema: staffSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: {
+      description: '找不到這個員工，或指定的權限群組不存在',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    409: {
+      description: '這個帳號已經被其他員工使用，或此變更會讓沒有人擁有權限管理能力',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const deleteStaffRoute = createRoute({
@@ -108,10 +126,19 @@ const deleteStaffRoute = createRoute({
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '員工已刪除' },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個員工', content: { 'application/json': { schema: errorSchema } } },
-    409: { description: '此操作會讓沒有人擁有權限管理能力', content: { 'application/json': { schema: errorSchema } } },
-  },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: {
+      description: '找不到這個員工',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    409: {
+      description: '此操作會讓沒有人擁有權限管理能力',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 export const staffRoutes = new OpenAPIHono<AppEnv>()
@@ -141,7 +168,7 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
       pinHash: hash,
       pinSalt: salt,
       failedPinAttempts: 0,
-      lockedUntil: null,
+      lockedUntil: null
     }
     await db.insert(staff).values(newStaff)
 
@@ -168,7 +195,9 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
 
     // pin 選填——只有真的要重設 PIN 才重新雜湊，沒填就沿用既有的雜湊值
     // ／鹽（見 @pos/contract 的 updateStaffRequestSchema 說明）。
-    const pinFields = pin ? await hashSecret(pin) : { hash: existing.pinHash, salt: existing.pinSalt }
+    const pinFields = pin
+      ? await hashSecret(pin)
+      : { hash: existing.pinHash, salt: existing.pinSalt }
     await db
       .update(staff)
       .set({ ...input, roleId, pinHash: pinFields.hash, pinSalt: pinFields.salt })

@@ -16,7 +16,8 @@ export const constantRoutes: RouteRecordRaw[] = [
     meta: {
       title: '登入'
     }
-  }, {
+  },
+  {
     // 點餐首頁使用全寬頂部列版型。
     path: '/',
     component: () => import('@/layout/index.vue'),
@@ -29,9 +30,10 @@ export const constantRoutes: RouteRecordRaw[] = [
         meta: {
           title: '點餐'
         }
-      },
+      }
     ]
-  }, {
+  },
+  {
     // 後台功能頁共用側邊欄後台版型。
     path: '/',
     component: () => import('@/layout/admin/index.vue'),
@@ -91,7 +93,8 @@ export const constantRoutes: RouteRecordRaw[] = [
         }
       }
     ]
-  }, {
+  },
+  {
     // 無效網址一律導回點餐首頁，避免 RouterView 無內容可渲染而黑屏。
     path: '/:pathMatch(.*)*',
     redirect: '/home'

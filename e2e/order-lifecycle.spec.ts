@@ -9,7 +9,7 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
   await expect(page).toHaveURL(/\/home$/)
 
   const createResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByText('輕食', { exact: true }).click()
   await page.getByText('薯條', { exact: true }).click()
@@ -32,7 +32,7 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
     (res) =>
       res.url().includes(`/api/orders/${createBody.orderId}/status`) &&
       res.request().method() === 'PATCH' &&
-      res.ok(),
+      res.ok()
   )
   await row.getByRole('button', { name: '編輯訂單狀態' }).click()
   await page.getByRole('button', { name: '已取消', exact: true }).click()
@@ -42,14 +42,18 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
   await voidAuthDialog.getByRole('button', { name: '確認核可' }).click()
   await page.getByRole('textbox', { name: '原因' }).fill('客人臨時取消')
   await page.getByRole('button', { name: '確認作廢' }).click()
-  const statusBody = (await (await statusResponse).json()) as { orderStatus: string; voidReason: string }
+  const statusBody = (await (await statusResponse).json()) as {
+    orderStatus: string
+    voidReason: string
+  }
   expect(statusBody.orderStatus).toBe('已取消')
   expect(statusBody.voidReason).toBe('客人臨時取消')
   await expect(page.getByTestId('toast-message')).toHaveText('訂單狀態已設定為已取消')
   await expect(row).toContainText('已取消')
 
   const deleteResponse = page.waitForResponse(
-    (res) => res.url().includes(`/api/orders/${createBody.orderId}`) && res.request().method() === 'DELETE',
+    (res) =>
+      res.url().includes(`/api/orders/${createBody.orderId}`) && res.request().method() === 'DELETE'
   )
   await row.getByRole('button', { name: '刪除訂單' }).click()
   await page.getByRole('button', { name: '確定' }).click()

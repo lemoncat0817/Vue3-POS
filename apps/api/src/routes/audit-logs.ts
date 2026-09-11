@@ -12,9 +12,12 @@ const createAuditLogRoute = createRoute({
   middleware: [requireDeviceToken] as const,
   request: { body: { content: { 'application/json': { schema: createAuditLogRequestSchema } } } },
   responses: {
-    201: { description: '稽核紀錄已建立', content: { 'application/json': { schema: auditLogSchema } } },
-    401: { description: '裝置憑證無效或缺漏' },
-  },
+    201: {
+      description: '稽核紀錄已建立',
+      content: { 'application/json': { schema: auditLogSchema } }
+    },
+    401: { description: '裝置憑證無效或缺漏' }
+  }
 })
 
 const listAuditLogsRoute = createRoute({
@@ -24,10 +27,10 @@ const listAuditLogsRoute = createRoute({
   responses: {
     200: {
       description: '稽核紀錄列表，最新的在前面',
-      content: { 'application/json': { schema: auditLogSchema.array() } },
+      content: { 'application/json': { schema: auditLogSchema.array() } }
     },
-    401: { description: '裝置憑證無效或缺漏' },
-  },
+    401: { description: '裝置憑證無效或缺漏' }
+  }
 })
 
 export const auditLogRoutes = new OpenAPIHono<AppEnv>()
@@ -35,7 +38,10 @@ export const auditLogRoutes = new OpenAPIHono<AppEnv>()
     const input = c.req.valid('json')
     const db = c.get('db')
     const createdAt = new Date().toISOString()
-    const result = await db.insert(auditLogs).values({ ...input, createdAt }).returning()
+    const result = await db
+      .insert(auditLogs)
+      .values({ ...input, createdAt })
+      .returning()
     return c.json(result[0], 201)
   })
   .openapi(listAuditLogsRoute, async (c) => {

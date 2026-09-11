@@ -15,7 +15,7 @@ describe('POST /api/members', () => {
     const res = await app.request('/api/members', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: '王小明', phone: '0912345678' }),
+      body: JSON.stringify({ name: '王小明', phone: '0912345678' })
     })
     expect(res.status).toBe(401)
   })
@@ -24,8 +24,12 @@ describe('POST /api/members', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/members', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '王小明', phone: '0912345678' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '王小明', phone: '0912345678' })
     })
     expect(res.status).toBe(201)
     const body = await readJson(res)
@@ -38,13 +42,21 @@ describe('POST /api/members', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     await app.request('/api/members', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '王小明', phone: '0912345678' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '王小明', phone: '0912345678' })
     })
     const res = await app.request('/api/members', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '另一個人', phone: '0912345678' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '另一個人', phone: '0912345678' })
     })
     expect(res.status).toBe(409)
   })
@@ -55,16 +67,26 @@ describe('GET /api/members', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     await app.request('/api/members', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '王小明', phone: '0912345678' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '王小明', phone: '0912345678' })
     })
     await app.request('/api/members', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '林小華', phone: '0987654321' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '林小華', phone: '0987654321' })
     })
 
-    const res = await app.request('/api/members?phone=0987654321', { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } })
+    const res = await app.request('/api/members?phone=0987654321', {
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
     const body = await readJson(res)
     expect(body).toHaveLength(1)
     expect(body[0]).toMatchObject({ name: '林小華' })
@@ -74,53 +96,93 @@ describe('GET /api/members', () => {
 describe('GET /api/members/:id、PUT、DELETE', () => {
   it('找不到會員時通通回傳 404', async () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
     expect((await app.request('/api/members/does-not-exist', { headers })).status).toBe(404)
     expect(
-      (await app.request('/api/members/does-not-exist', { method: 'PUT', headers, body: JSON.stringify({ name: 'x', phone: 'y' }) }))
-        .status,
+      (
+        await app.request('/api/members/does-not-exist', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ name: 'x', phone: 'y' })
+        })
+      ).status
     ).toBe(404)
-    expect((await app.request('/api/members/does-not-exist', { method: 'DELETE', headers })).status).toBe(404)
+    expect(
+      (await app.request('/api/members/does-not-exist', { method: 'DELETE', headers })).status
+    ).toBe(404)
   })
 
   it('更新資料、刪除都正常運作；改成別人已經用過的手機號碼會被擋（409）', async () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
     const a = await readJson(
-      await app.request('/api/members', { method: 'POST', headers, body: JSON.stringify({ name: 'A', phone: '0911111111' }) }),
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: 'A', phone: '0911111111' })
+      })
     )
     const b = await readJson(
-      await app.request('/api/members', { method: 'POST', headers, body: JSON.stringify({ name: 'B', phone: '0922222222' }) }),
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: 'B', phone: '0922222222' })
+      })
     )
 
     const conflictRes = await app.request(`/api/members/${b.id}`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ name: 'B', phone: '0911111111' }),
+      body: JSON.stringify({ name: 'B', phone: '0911111111' })
     })
     expect(conflictRes.status).toBe(409)
 
     const updateRes = await app.request(`/api/members/${a.id}`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ name: 'A改名', phone: '0911111111' }),
+      body: JSON.stringify({ name: 'A改名', phone: '0911111111' })
     })
     expect(updateRes.status).toBe(200)
     expect(await readJson(updateRes)).toMatchObject({ name: 'A改名' })
 
-    const deleteRes = await app.request(`/api/members/${a.id}`, { method: 'DELETE', headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } })
+    const deleteRes = await app.request(`/api/members/${a.id}`, {
+      method: 'DELETE',
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
     expect(deleteRes.status).toBe(204)
-    expect((await app.request(`/api/members/${a.id}`, { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } })).status).toBe(404)
+    expect(
+      (
+        await app.request(`/api/members/${a.id}`, {
+          headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+        })
+      ).status
+    ).toBe(404)
   })
 
   it('刪除有消費紀錄的會員：訂單本身保留，只是解除會員關聯，不是被 FK 約束擋下來', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
 
     const member = await readJson(
-      await app.request('/api/members', { method: 'POST', headers, body: JSON.stringify({ name: '王小明', phone: '0933333333' }) }),
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0933333333' })
+      })
     )
     const orderRes = await app.request('/api/orders', {
       method: 'POST',
@@ -137,24 +199,31 @@ describe('GET /api/members/:id、PUT、DELETE', () => {
             addList: '無添加配料',
             addListPrice: 0,
             freeDiscount: false,
-            quickDiscountId: null,
-          },
+            quickDiscountId: null
+          }
         ],
         bagCount: 0,
         tenders: [{ method: '現金', amount: 80 }],
         appliedCoupon: { type: 'none' },
         orderChannel: '外帶',
         invoiceCarrier: { type: '無載具' },
-        memberId: member.id,
-      }),
+        memberId: member.id
+      })
     })
     const order = await readJson(orderRes)
     expect(order.memberId).toBe(member.id)
 
-    const deleteRes = await app.request(`/api/members/${member.id}`, { method: 'DELETE', headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } })
+    const deleteRes = await app.request(`/api/members/${member.id}`, {
+      method: 'DELETE',
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
     expect(deleteRes.status).toBe(204)
 
-    const list = await readJson(await app.request('/api/orders', { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } }))
+    const list = await readJson(
+      await app.request('/api/orders', {
+        headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+      })
+    )
     const persistedOrder = list.find((item: { orderId: string }) => item.orderId === order.orderId)
     expect(persistedOrder).toBeDefined()
     expect(persistedOrder.memberId).toBeNull()
@@ -173,7 +242,7 @@ describe('POST /api/orders 掛會員（P22）', () => {
     addList: '無添加配料' as const,
     addListPrice: 0,
     freeDiscount: false,
-    quickDiscountId: null,
+    quickDiscountId: null
   }
 
   function buildRequest(overrides: Record<string, unknown> = {}) {
@@ -187,7 +256,7 @@ describe('POST /api/orders 掛會員（P22）', () => {
       appliedCoupon: { type: 'none' },
       orderChannel: '外帶',
       invoiceCarrier: { type: '無載具' },
-      ...overrides,
+      ...overrides
     }
   }
 
@@ -195,16 +264,24 @@ describe('POST /api/orders 掛會員（P22）', () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
-    const headers = { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
 
     const member = await readJson(
-      await app.request('/api/members', { method: 'POST', headers, body: JSON.stringify({ name: '王小明', phone: '0912345678' }) }),
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0912345678' })
+      })
     )
 
     const orderRes = await app.request('/api/orders', {
       method: 'POST',
       headers,
-      body: JSON.stringify(buildRequest({ memberId: member.id })),
+      body: JSON.stringify(buildRequest({ memberId: member.id }))
     })
     expect(orderRes.status).toBe(201)
     const orderBody = await readJson(orderRes)
@@ -224,8 +301,12 @@ describe('POST /api/orders 掛會員（P22）', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify(buildRequest()),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify(buildRequest())
     })
     expect(res.status).toBe(201)
     expect((await readJson(res)).memberId).toBeNull()
@@ -237,8 +318,12 @@ describe('POST /api/orders 掛會員（P22）', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify(buildRequest({ memberId: 'does-not-exist' })),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify(buildRequest({ memberId: 'does-not-exist' }))
     })
     expect(res.status).toBe(201)
     // 無效的 memberId 不會被存進訂單（orders.member_id 有外鍵約束，

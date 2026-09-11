@@ -6,12 +6,27 @@ import { seedRole } from './helpers/roles'
 import { operatorSessions } from '../src/db/schema'
 import type { AnyDb } from '../src/db/types'
 
-async function createStaff(db: AnyDb, app: Awaited<ReturnType<typeof createTestAppWithDevice>>['app'], deviceToken: string, sessionToken: string) {
+async function createStaff(
+  db: AnyDb,
+  app: Awaited<ReturnType<typeof createTestAppWithDevice>>['app'],
+  deviceToken: string,
+  sessionToken: string
+) {
   const roleId = await seedRole(db, { capabilities: ['canCheckOrder'] })
   await app.request('/api/staff', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-    body: JSON.stringify({ name: 'Emily', jobTitle: '工讀生', account: 'emily', roleId, pin: '3456' }),
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    },
+    body: JSON.stringify({
+      name: 'Emily',
+      jobTitle: '工讀生',
+      account: 'emily',
+      roleId,
+      pin: '3456'
+    })
   })
 }
 
@@ -21,7 +36,7 @@ describe('POST /api/auth/operator-login', () => {
     const res = await app.request('/api/auth/operator-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ account: 'emily', pin: '3456' }),
+      body: JSON.stringify({ account: 'emily', pin: '3456' })
     })
     expect(res.status).toBe(401)
   })
@@ -33,8 +48,12 @@ describe('POST /api/auth/operator-login', () => {
 
     const res = await app.request('/api/auth/operator-login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ account: 'emily', pin: '3456' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ account: 'emily', pin: '3456' })
     })
     expect(res.status).toBe(200)
     const body = (await res.json()) as Record<string, unknown>
@@ -54,13 +73,21 @@ describe('POST /api/auth/operator-login', () => {
 
     const wrongPin = await app.request('/api/auth/operator-login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ account: 'emily', pin: '0000' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ account: 'emily', pin: '0000' })
     })
     const noSuchAccount = await app.request('/api/auth/operator-login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ account: 'does-not-exist', pin: '0000' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ account: 'does-not-exist', pin: '0000' })
     })
 
     expect(wrongPin.status).toBe(401)
@@ -76,8 +103,12 @@ describe('POST /api/auth/operator-login', () => {
     const attemptWrongPin = () =>
       app.request('/api/auth/operator-login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ account: 'emily', pin: '0000' }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({ account: 'emily', pin: '0000' })
       })
 
     for (let i = 0; i < 5; i++) {
@@ -87,8 +118,12 @@ describe('POST /api/auth/operator-login', () => {
 
     const lockedRes = await app.request('/api/auth/operator-login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ account: 'emily', pin: '3456' }), // 正確的 PIN
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ account: 'emily', pin: '3456' }) // 正確的 PIN
     })
     expect(lockedRes.status).toBe(401)
     expect(await lockedRes.json()).toMatchObject({ error: expect.stringContaining('鎖定') })
@@ -101,13 +136,21 @@ describe('POST /api/auth/operator-login', () => {
 
     await app.request('/api/auth/operator-login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ account: 'emily', pin: '0000' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ account: 'emily', pin: '0000' })
     })
     const success = await app.request('/api/auth/operator-login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ account: 'emily', pin: '3456' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ account: 'emily', pin: '3456' })
     })
     expect(success.status).toBe(200)
   })
@@ -124,7 +167,7 @@ describe('POST /api/auth/logout', () => {
     const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/auth/logout', {
       method: 'POST',
-      headers: { 'X-Device-Token': deviceToken },
+      headers: { 'X-Device-Token': deviceToken }
     })
     expect(res.status).toBe(400)
   })
@@ -135,14 +178,18 @@ describe('POST /api/auth/logout', () => {
 
     const logout = await app.request('/api/auth/logout', {
       method: 'POST',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(logout.status).toBe(204)
 
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '主餐' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '主餐' })
     })
     expect(res.status).toBe(401)
   })
@@ -151,7 +198,7 @@ describe('POST /api/auth/logout', () => {
     const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/auth/logout', {
       method: 'POST',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': 'does-not-exist' },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': 'does-not-exist' }
     })
     expect(res.status).toBe(204)
   })
@@ -164,12 +211,19 @@ describe('操作員 session 過期', () => {
 
     // 直接把這組 session 的效期改到過去，模擬「已核發但過期」的狀態，
     // 不用真的等 12 小時。
-    await db.update(operatorSessions).set({ expiresAt: '2000-01-01T00:00:00.000Z' }).where(eq(operatorSessions.staffId, staffId))
+    await db
+      .update(operatorSessions)
+      .set({ expiresAt: '2000-01-01T00:00:00.000Z' })
+      .where(eq(operatorSessions.staffId, staffId))
 
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '主餐' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '主餐' })
     })
     expect(res.status).toBe(401)
   })

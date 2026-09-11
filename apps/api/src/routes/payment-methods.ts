@@ -1,6 +1,10 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
-import { createPaymentMethodRequestSchema, paymentMethodSchema, updatePaymentMethodRequestSchema } from '@pos/contract'
+import {
+  createPaymentMethodRequestSchema,
+  paymentMethodSchema,
+  updatePaymentMethodRequestSchema
+} from '@pos/contract'
 import { paymentMethods } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -13,19 +17,30 @@ const listPaymentMethodsRoute = createRoute({
   method: 'get',
   path: '/',
   responses: {
-    200: { description: '付款方式清單', content: { 'application/json': { schema: z.array(paymentMethodSchema) } } },
-  },
+    200: {
+      description: '付款方式清單',
+      content: { 'application/json': { schema: z.array(paymentMethodSchema) } }
+    }
+  }
 })
 
 const createPaymentMethodRoute = createRoute({
   method: 'post',
   path: '/',
   middleware: [requireDeviceToken, requireCapability('canSetPayMethod')] as const,
-  request: { body: { content: { 'application/json': { schema: createPaymentMethodRequestSchema } } } },
-  responses: {
-    201: { description: '付款方式建立成功', content: { 'application/json': { schema: paymentMethodSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+  request: {
+    body: { content: { 'application/json': { schema: createPaymentMethodRequestSchema } } }
   },
+  responses: {
+    201: {
+      description: '付款方式建立成功',
+      content: { 'application/json': { schema: paymentMethodSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const updatePaymentMethodRoute = createRoute({
@@ -34,13 +49,22 @@ const updatePaymentMethodRoute = createRoute({
   middleware: [requireDeviceToken, requireCapability('canSetPayMethod')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updatePaymentMethodRequestSchema } } },
+    body: { content: { 'application/json': { schema: updatePaymentMethodRequestSchema } } }
   },
   responses: {
-    200: { description: '付款方式更新成功', content: { 'application/json': { schema: paymentMethodSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個付款方式', content: { 'application/json': { schema: errorSchema } } },
-  },
+    200: {
+      description: '付款方式更新成功',
+      content: { 'application/json': { schema: paymentMethodSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: {
+      description: '找不到這個付款方式',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const deletePaymentMethodRoute = createRoute({
@@ -50,16 +74,25 @@ const deletePaymentMethodRoute = createRoute({
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '付款方式已刪除' },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個付款方式', content: { 'application/json': { schema: errorSchema } } },
-  },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: {
+      description: '找不到這個付款方式',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 export const paymentMethodRoutes = new OpenAPIHono<AppEnv>()
   .openapi(listPaymentMethodsRoute, async (c) => {
     const db = c.get('db')
     const rows = await db.select().from(paymentMethods).all()
-    return c.json(rows.map((row) => paymentMethodSchema.parse(row)), 200)
+    return c.json(
+      rows.map((row) => paymentMethodSchema.parse(row)),
+      200
+    )
   })
   .openapi(createPaymentMethodRoute, async (c) => {
     const input = c.req.valid('json')

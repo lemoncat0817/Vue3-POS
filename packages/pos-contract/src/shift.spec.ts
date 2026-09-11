@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { addCashMovementRequestSchema, closeShiftRequestSchema, openShiftRequestSchema } from './shift'
+import {
+  addCashMovementRequestSchema,
+  closeShiftRequestSchema,
+  openShiftRequestSchema
+} from './shift'
 
 describe('openShiftRequestSchema', () => {
   it('接受合法的開帳請求', () => {
     const result = openShiftRequestSchema.safeParse({
       shiftId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
       operator: '店長 - Lemon',
-      openingFloat: 3000,
+      openingFloat: 3000
     })
     expect(result.success).toBe(true)
   })
@@ -15,7 +19,7 @@ describe('openShiftRequestSchema', () => {
     const result = openShiftRequestSchema.safeParse({
       shiftId: 'not-a-ulid',
       operator: '店長 - Lemon',
-      openingFloat: 3000,
+      openingFloat: 3000
     })
     expect(result.success).toBe(false)
   })
@@ -24,7 +28,7 @@ describe('openShiftRequestSchema', () => {
     const result = openShiftRequestSchema.safeParse({
       shiftId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
       operator: '店長 - Lemon',
-      openingFloat: -1,
+      openingFloat: -1
     })
     expect(result.success).toBe(false)
   })
@@ -33,22 +37,40 @@ describe('openShiftRequestSchema', () => {
 describe('addCashMovementRequestSchema', () => {
   it('接受 in／out 兩種類型', () => {
     expect(
-      addCashMovementRequestSchema.safeParse({ type: 'in', amount: 1000, reason: '找零準備金追加', operator: '店長 - Lemon' })
-        .success,
+      addCashMovementRequestSchema.safeParse({
+        type: 'in',
+        amount: 1000,
+        reason: '找零準備金追加',
+        operator: '店長 - Lemon'
+      }).success
     ).toBe(true)
     expect(
-      addCashMovementRequestSchema.safeParse({ type: 'out', amount: 500, reason: '存入保險箱', operator: '店長 - Lemon' })
-        .success,
+      addCashMovementRequestSchema.safeParse({
+        type: 'out',
+        amount: 500,
+        reason: '存入保險箱',
+        operator: '店長 - Lemon'
+      }).success
     ).toBe(true)
   })
 
   it('拒絕非正數的金額', () => {
-    const result = addCashMovementRequestSchema.safeParse({ type: 'in', amount: 0, reason: '測試', operator: '店長 - Lemon' })
+    const result = addCashMovementRequestSchema.safeParse({
+      type: 'in',
+      amount: 0,
+      reason: '測試',
+      operator: '店長 - Lemon'
+    })
     expect(result.success).toBe(false)
   })
 
   it('拒絕空的原因', () => {
-    const result = addCashMovementRequestSchema.safeParse({ type: 'in', amount: 100, reason: '', operator: '店長 - Lemon' })
+    const result = addCashMovementRequestSchema.safeParse({
+      type: 'in',
+      amount: 100,
+      reason: '',
+      operator: '店長 - Lemon'
+    })
     expect(result.success).toBe(false)
   })
 })

@@ -12,11 +12,15 @@ test('開收銀機沒填理由無法送出，填了理由後真的寫入伺服�
   await expect(page.getByRole('button', { name: '開啟', exact: true })).toBeDisabled()
 
   const auditLogResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/audit-logs') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/audit-logs') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByRole('textbox', { name: '理由' }).fill('協助客人換零錢')
   await page.getByRole('button', { name: '開啟', exact: true }).click()
-  const auditLogBody = (await (await auditLogResponse).json()) as { action: string; operator: string; detail: string }
+  const auditLogBody = (await (await auditLogResponse).json()) as {
+    action: string
+    operator: string
+    detail: string
+  }
   expect(auditLogBody).toMatchObject({ action: 'cashier_open', detail: '協助客人換零錢' })
   expect(auditLogBody.operator).toContain('Lemon')
   await expect(page.getByTestId('toast-message')).toHaveText('收銀機已開啟')
@@ -30,7 +34,7 @@ test('訂單列表可以看到收據預覽，內容包含品項、金額與發�
   await expect(page).toHaveURL(/\/home$/)
 
   const createResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByText('輕食', { exact: true }).click()
   await page.getByText('薯條', { exact: true }).click()
@@ -42,7 +46,10 @@ test('訂單列表可以看到收據預覽，內容包含品項、金額與發�
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
   await page.getByRole('button', { name: '繼續選取品項' }).click()
-  const createBody = (await (await createResponse).json()) as { orderId: string; invoiceNumber: string }
+  const createBody = (await (await createResponse).json()) as {
+    orderId: string
+    invoiceNumber: string
+  }
 
   await page.getByText('查看訂單', { exact: true }).click()
   await expect(page).toHaveURL(/\/order$/)

@@ -38,9 +38,9 @@ const updateSW = registerSW({
       title: '有新版本可以使用',
       description: '點「立即套用」即可套用最新版本，購物車與待同步的訂單不會遺失。',
       confirmText: '立即套用',
-      cancelText: '稍後再說',
+      cancelText: '稍後再說'
     }).then((result) => {
       if (result === 'confirm') updateSW(true)
     })
-  },
+  }
 })

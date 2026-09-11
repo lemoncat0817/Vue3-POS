@@ -4,7 +4,7 @@ import {
   createTableRequestSchema,
   diningTableSchema,
   updateTableRequestSchema,
-  updateTableStatusRequestSchema,
+  updateTableStatusRequestSchema
 } from '@pos/contract'
 import { diningTables } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
@@ -19,9 +19,15 @@ const listTablesRoute = createRoute({
   path: '/',
   middleware: [requireDeviceToken] as const,
   responses: {
-    200: { description: '桌況列表', content: { 'application/json': { schema: diningTableSchema.array() } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-  },
+    200: {
+      description: '桌況列表',
+      content: { 'application/json': { schema: diningTableSchema.array() } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const createTableRoute = createRoute({
@@ -30,9 +36,15 @@ const createTableRoute = createRoute({
   middleware: [requireDeviceToken, requireCapability('canManageTables')] as const,
   request: { body: { content: { 'application/json': { schema: createTableRequestSchema } } } },
   responses: {
-    201: { description: '桌位建立成功，預設為空桌', content: { 'application/json': { schema: diningTableSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-  },
+    201: {
+      description: '桌位建立成功，預設為空桌',
+      content: { 'application/json': { schema: diningTableSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const updateTableRoute = createRoute({
@@ -41,13 +53,19 @@ const updateTableRoute = createRoute({
   middleware: [requireDeviceToken, requireCapability('canManageTables')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updateTableRequestSchema } } },
+    body: { content: { 'application/json': { schema: updateTableRequestSchema } } }
   },
   responses: {
-    200: { description: '桌位資料更新成功', content: { 'application/json': { schema: diningTableSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個桌位', content: { 'application/json': { schema: errorSchema } } },
-  },
+    200: {
+      description: '桌位資料更新成功',
+      content: { 'application/json': { schema: diningTableSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: { description: '找不到這個桌位', content: { 'application/json': { schema: errorSchema } } }
+  }
 })
 
 const updateTableStatusRoute = createRoute({
@@ -56,13 +74,19 @@ const updateTableStatusRoute = createRoute({
   middleware: [requireDeviceToken, requireCapability('canManageTables')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updateTableStatusRequestSchema } } },
+    body: { content: { 'application/json': { schema: updateTableStatusRequestSchema } } }
   },
   responses: {
-    200: { description: '桌況更新成功', content: { 'application/json': { schema: diningTableSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個桌位', content: { 'application/json': { schema: errorSchema } } },
-  },
+    200: {
+      description: '桌況更新成功',
+      content: { 'application/json': { schema: diningTableSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: { description: '找不到這個桌位', content: { 'application/json': { schema: errorSchema } } }
+  }
 })
 
 const deleteTableRoute = createRoute({
@@ -72,9 +96,12 @@ const deleteTableRoute = createRoute({
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '桌位已刪除' },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個桌位', content: { 'application/json': { schema: errorSchema } } },
-  },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: { description: '找不到這個桌位', content: { 'application/json': { schema: errorSchema } } }
+  }
 })
 
 export const tableRoutes = new OpenAPIHono<AppEnv>()

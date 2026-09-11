@@ -16,7 +16,10 @@ export const rateLimit = createMiddleware<AppEnv>(async (c, next) => {
   }
 
   const key =
-    c.req.header('X-Device-Token') ?? c.req.header('X-Provisioning-Secret') ?? c.req.header('CF-Connecting-IP') ?? 'anonymous'
+    c.req.header('X-Device-Token') ??
+    c.req.header('X-Provisioning-Secret') ??
+    c.req.header('CF-Connecting-IP') ??
+    'anonymous'
   const now = Date.now()
   const db = c.get('db')
 

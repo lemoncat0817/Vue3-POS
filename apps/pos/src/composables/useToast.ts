@@ -12,7 +12,7 @@ interface ToastState {
 const state = reactive<ToastState>({
   open: false,
   message: '',
-  type: 'success',
+  type: 'success'
 })
 
 /** 給 ToastHost.vue 讀取目前要顯示的內容，不對外匯出。 */

@@ -28,7 +28,9 @@ describe('getBusinessDate', () => {
     // 檢查回傳值僅由本地時間決定，不受時區與 UTC 偏移影響。
     const local = new Date(2024, 5, 10, 1, 0, 0)
     expect(getBusinessDate(local)).toBe('20240609')
-    expect(local.toISOString().includes('2024-06-10') || local.toISOString().includes('2024-06-09')).toBe(true)
+    expect(
+      local.toISOString().includes('2024-06-10') || local.toISOString().includes('2024-06-09')
+    ).toBe(true)
   })
 
   it('性質測試：切換時間前後一分鐘，恰好跨越到不同營業日', () => {
@@ -41,8 +43,8 @@ describe('getBusinessDate', () => {
           const beforeBoundary = new Date(year, month, day, DEFAULT_BUSINESS_DAY_START_HOUR, -1)
           const atBoundary = new Date(year, month, day, DEFAULT_BUSINESS_DAY_START_HOUR, 0)
           expect(getBusinessDate(beforeBoundary)).not.toBe(getBusinessDate(atBoundary))
-        },
-      ),
+        }
+      )
     )
   })
 })

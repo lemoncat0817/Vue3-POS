@@ -19,10 +19,13 @@ const getSalesReportRoute = createRoute({
   responses: {
     200: {
       description: '指定營業日範圍的營業額與熱銷排行報表',
-      content: { 'application/json': { schema: salesReportSchema } },
+      content: { 'application/json': { schema: salesReportSchema } }
     },
-    400: { description: 'from／to 格式錯誤，或 from 晚於 to', content: { 'application/json': { schema: errorSchema } } },
-  },
+    400: {
+      description: 'from／to 格式錯誤，或 from 晚於 to',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const HOURLY_REPORT_START_HOUR = 8
@@ -61,7 +64,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
     topProductRows,
     topAddOnRows,
     topPaymentRows,
-    topCategoryRows,
+    topCategoryRows
   ] = await Promise.all([
     db.all<{ business_date: string; revenue: number }>(sql`
       select substr(order_id, 1, 8) as business_date, sum(order_payment_price) as revenue
@@ -162,20 +165,23 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       group by c.name
       order by count desc
       limit ${TOP_RANKING_LIMIT}
-    `),
+    `)
   ])
 
   const revenueByDate = new Map(dailyRows.map((row) => [row.business_date, row.revenue]))
   const dailyRevenue = businessDatesInRange(from, to).map((businessDate) => ({
     businessDate,
-    revenue: revenueByDate.get(businessDate) ?? 0,
+    revenue: revenueByDate.get(businessDate) ?? 0
   }))
 
   const revenueByHour = new Map(hourlyRows.map((row) => [row.hour, row.revenue]))
   const hourCount = HOURLY_REPORT_END_HOUR - HOURLY_REPORT_START_HOUR + 1
-  const hourlyRevenue = Array.from({ length: hourCount }, (_, i) => HOURLY_REPORT_START_HOUR + i).map((hour) => ({
+  const hourlyRevenue = Array.from(
+    { length: hourCount },
+    (_, i) => HOURLY_REPORT_START_HOUR + i
+  ).map((hour) => ({
     hour,
-    revenue: revenueByHour.get(hour) ?? 0,
+    revenue: revenueByHour.get(hour) ?? 0
   }))
 
   return c.json(
@@ -187,12 +193,16 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       voidedOrderCount: voidedRow[0]?.count ?? 0,
       refundedOrderCount: refundRow[0]?.orderCount ?? 0,
       refundAmount: refundRow[0]?.amount ?? 0,
-      channelBreakdown: channelRows.map((row) => ({ channel: row.channel, count: row.count, revenue: row.revenue })),
+      channelBreakdown: channelRows.map((row) => ({
+        channel: row.channel,
+        count: row.count,
+        revenue: row.revenue
+      })),
       topProducts: topProductRows.map((row) => ({ name: row.name, count: row.count })),
       topAddOns: topAddOnRows.map((row) => ({ name: row.name, count: row.count })),
       topPaymentMethods: topPaymentRows.map((row) => ({ name: row.name, count: row.count })),
-      topCategories: topCategoryRows.map((row) => ({ name: row.name, count: row.count })),
+      topCategories: topCategoryRows.map((row) => ({ name: row.name, count: row.count }))
     }),
-    200,
+    200
   )
 })

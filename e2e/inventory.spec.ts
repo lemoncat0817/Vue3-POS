@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test'
 
 // 驗證庫存追蹤、樂觀扣庫存與缺貨停售。使用專用動態品項避免平行測試干擾。
-test('後台設定品項庫存為 0 後，點餐頁把這個品項標成缺貨且無法選取；送單成功會扣庫存', async ({ page }) => {
+test('後台設定品項庫存為 0 後，點餐頁把這個品項標成缺貨且無法選取；送單成功會扣庫存', async ({
+  page
+}) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
   await page.getByPlaceholder('請輸入 PIN').fill('1234')
@@ -17,7 +19,8 @@ test('後台設定品項庫存為 0 後，點餐頁把這個品項標成缺貨�
   await page.getByRole('button', { name: '分類', exact: true }).click()
 
   const createCategoryResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/catalog/categories') && res.request().method() === 'POST' && res.ok(),
+    (res) =>
+      res.url().includes('/api/catalog/categories') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByRole('button', { name: '＋ 新增分類', exact: true }).click()
   const addCategoryDialog = page.getByRole('dialog', { name: '新增分類' })
@@ -27,7 +30,8 @@ test('後台設定品項庫存為 0 後，點餐頁把這個品項標成缺貨�
 
   await page.getByRole('button', { name: '品項', exact: true }).click()
   const createItemResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/catalog/products') && res.request().method() === 'POST' && res.ok(),
+    (res) =>
+      res.url().includes('/api/catalog/products') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByRole('button', { name: '＋ 新增品項', exact: true }).click()
   const addProductDialog = page.getByRole('dialog', { name: '新增品項' })
@@ -55,14 +59,20 @@ test('後台設定品項庫存為 0 後，點餐頁把這個品項標成缺貨�
   await page.getByRole('button', { name: '繼續選取品項' }).click()
 
   await page.getByText(categoryName, { exact: true }).click()
-  const soldOutTile = page.locator('div').filter({ hasText: itemName }).filter({ hasText: '缺貨' }).first()
+  const soldOutTile = page
+    .locator('div')
+    .filter({ hasText: itemName })
+    .filter({ hasText: '缺貨' })
+    .first()
   await expect(soldOutTile).toBeVisible()
   await soldOutTile.click()
   await expect(soldOutTile).not.toHaveClass(/border-primary-500/)
 
   // 品項清單無篩選，新品項可能不在預設頁，改以 API 直接驗證庫存已扣至 0。
   const catalogAfterOrder = await page.request.get('http://localhost:8787/api/catalog')
-  const catalogAfterOrderBody = (await catalogAfterOrder.json()) as { products: { id: string; stock: number | null }[] }
+  const catalogAfterOrderBody = (await catalogAfterOrder.json()) as {
+    products: { id: string; stock: number | null }[]
+  }
   expect(catalogAfterOrderBody.products.find((p) => p.id === itemBody.id)?.stock).toBe(0)
 
   await page.getByRole('button', { name: '後台設定', exact: true }).click()
@@ -71,11 +81,14 @@ test('後台設定品項庫存為 0 後，點餐頁把這個品項標成缺貨�
 
   // 新品項排在清單最後，種子資料已超過一頁時需翻到下一頁才看得到。
   const productRow = page.getByRole('row', { name: itemName })
-  if (await productRow.count() === 0) {
+  if ((await productRow.count()) === 0) {
     await page.getByRole('button', { name: '下一頁' }).click()
   }
   const deleteItemResponse = page.waitForResponse(
-    (res) => res.url().includes(`/api/catalog/products/${itemBody.id}`) && res.request().method() === 'DELETE' && res.status() === 204,
+    (res) =>
+      res.url().includes(`/api/catalog/products/${itemBody.id}`) &&
+      res.request().method() === 'DELETE' &&
+      res.status() === 204
   )
   await productRow.getByRole('button', { name: '刪除', exact: true }).click()
   await page.getByRole('button', { name: '確定' }).click()
@@ -83,9 +96,15 @@ test('後台設定品項庫存為 0 後，點餐頁把這個品項標成缺貨�
 
   await page.getByRole('button', { name: '分類', exact: true }).click()
   const deleteCategoryResponse = page.waitForResponse(
-    (res) => res.url().includes(`/api/catalog/categories/${categoryBody.id}`) && res.request().method() === 'DELETE' && res.status() === 204,
+    (res) =>
+      res.url().includes(`/api/catalog/categories/${categoryBody.id}`) &&
+      res.request().method() === 'DELETE' &&
+      res.status() === 204
   )
-  await page.getByRole('row', { name: categoryName }).getByRole('button', { name: '刪除', exact: true }).click()
+  await page
+    .getByRole('row', { name: categoryName })
+    .getByRole('button', { name: '刪除', exact: true })
+    .click()
   await page.getByRole('button', { name: '確定' }).click()
   await deleteCategoryResponse
 })

@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 // 驗證應用初始化時向 API 取得菜單資料並供點餐流程使用。
 test('點餐頁掛載時會向 apps/api 要一份菜單，且點餐流程用得到這份資料', async ({ page }) => {
   const catalogResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/catalog') && res.request().method() === 'GET',
+    (res) => res.url().includes('/api/catalog') && res.request().method() === 'GET'
   )
 
   await page.goto('login')

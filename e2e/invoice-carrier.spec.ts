@@ -20,7 +20,7 @@ test('選擇手機條碼載具後送單，伺服端記錄的載具與發票號�
   await expect(page.getByTestId('invoice-carrier-button')).toHaveText('載具：手機')
 
   const createResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByText('輕食', { exact: true }).click()
   await page.getByText('薯條', { exact: true }).click()

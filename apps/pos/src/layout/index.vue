@@ -6,8 +6,8 @@
 </template>
 
 <script setup lang="ts">
-import Header from "./header/index.vue"
-import Main from "./main/index.vue"
+import Header from './header/index.vue'
+import Main from './main/index.vue'
 </script>
 
 <style lang="scss" scoped></style>

@@ -14,7 +14,11 @@ describe('POST /api/audit-logs', () => {
     const res = await app.request('/api/audit-logs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'cashier_open', operator: '店長 - Lemon', detail: '協助客人換零錢' }),
+      body: JSON.stringify({
+        action: 'cashier_open',
+        operator: '店長 - Lemon',
+        detail: '協助客人換零錢'
+      })
     })
     expect(res.status).toBe(401)
   })
@@ -23,16 +27,32 @@ describe('POST /api/audit-logs', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/audit-logs', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ action: 'cashier_open', operator: '店長 - Lemon', detail: '協助客人換零錢' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({
+        action: 'cashier_open',
+        operator: '店長 - Lemon',
+        detail: '協助客人換零錢'
+      })
     })
     expect(res.status).toBe(201)
     const body = await readJson(res)
-    expect(body).toMatchObject({ action: 'cashier_open', operator: '店長 - Lemon', detail: '協助客人換零錢' })
+    expect(body).toMatchObject({
+      action: 'cashier_open',
+      operator: '店長 - Lemon',
+      detail: '協助客人換零錢'
+    })
     expect(typeof body.id).toBe('number')
     expect(typeof body.createdAt).toBe('string')
 
-    const list = await readJson(await app.request('/api/audit-logs', { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } }))
+    const list = await readJson(
+      await app.request('/api/audit-logs', {
+        headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+      })
+    )
     expect(list).toHaveLength(1)
     expect(list[0]).toMatchObject({ id: body.id, action: 'cashier_open' })
   })
@@ -42,12 +62,24 @@ describe('POST /api/audit-logs', () => {
     for (const detail of ['第一筆', '第二筆', '第三筆']) {
       await app.request('/api/audit-logs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ action: 'cashier_open', operator: '店長 - Lemon', detail }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({ action: 'cashier_open', operator: '店長 - Lemon', detail })
       })
     }
-    const list = await readJson(await app.request('/api/audit-logs', { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } }))
-    expect(list.map((row: { detail: string }) => row.detail)).toEqual(['第三筆', '第二筆', '第一筆'])
+    const list = await readJson(
+      await app.request('/api/audit-logs', {
+        headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+      })
+    )
+    expect(list.map((row: { detail: string }) => row.detail)).toEqual([
+      '第三筆',
+      '第二筆',
+      '第一筆'
+    ])
   })
 })
 

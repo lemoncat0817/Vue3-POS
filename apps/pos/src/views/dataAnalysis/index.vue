@@ -1,10 +1,15 @@
 <template>
   <div class="w-full flex flex-col items-center px-4 py-6 bg-surface-50/50 dark:bg-surface-950">
     <div class="w-full max-w-7xl flex flex-col gap-6">
-
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-surface-900 p-4 rounded-2xl border border-surface-200 dark:border-surface-800 shadow-sm">
+      <div
+        class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-surface-900 p-4 rounded-2xl border border-surface-200 dark:border-surface-800 shadow-sm"
+      >
         <div>
-          <h1 class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight">營業數據分析</h1>
+          <h1
+            class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight"
+          >
+            營業數據分析
+          </h1>
           <p class="text-xs text-surface-500 dark:text-surface-400 mt-1">
             統計期間：{{ selectTime[0] }} 至 {{ selectTime[1] }} · 即時掌握門市營收與銷售趨勢
           </p>
@@ -15,50 +20,100 @@
             <button
               type="button"
               class="rounded-lg px-2.5 py-1.5 transition-all select-none"
-              :class="isPresetActive('today') ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'"
-              @click="setDatePreset('today')">今日</button>
+              :class="
+                isPresetActive('today')
+                  ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm'
+                  : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'
+              "
+              @click="setDatePreset('today')"
+            >
+              今日
+            </button>
             <button
               type="button"
               class="rounded-lg px-2.5 py-1.5 transition-all select-none"
-              :class="isPresetActive('yesterday') ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'"
-              @click="setDatePreset('yesterday')">昨日</button>
+              :class="
+                isPresetActive('yesterday')
+                  ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm'
+                  : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'
+              "
+              @click="setDatePreset('yesterday')"
+            >
+              昨日
+            </button>
             <button
               type="button"
               class="rounded-lg px-2.5 py-1.5 transition-all select-none"
-              :class="isPresetActive('week') ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'"
-              @click="setDatePreset('week')">近 7 天</button>
+              :class="
+                isPresetActive('week')
+                  ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm'
+                  : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'
+              "
+              @click="setDatePreset('week')"
+            >
+              近 7 天
+            </button>
             <button
               type="button"
               class="rounded-lg px-2.5 py-1.5 transition-all select-none"
-              :class="isPresetActive('month') ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'"
-              @click="setDatePreset('month')">本月</button>
+              :class="
+                isPresetActive('month')
+                  ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm'
+                  : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'
+              "
+              @click="setDatePreset('month')"
+            >
+              本月
+            </button>
           </div>
 
           <!-- 勿調整 aria-label 與型別轉換，供 e2e 測試定位 -->
-          <div class="flex items-center gap-1.5 bg-surface-50 dark:bg-surface-800/80 px-2 py-1 rounded-xl border border-surface-200 dark:border-surface-700">
+          <div
+            class="flex items-center gap-1.5 bg-surface-50 dark:bg-surface-800/80 px-2 py-1 rounded-xl border border-surface-200 dark:border-surface-700"
+          >
             <Calendar class="h-3.5 w-3.5 text-surface-400 shrink-0" />
             <input
-              type="date" aria-label="開始時間" :value="toNativeDate(selectTime[0])"
+              type="date"
+              aria-label="開始時間"
+              :value="toNativeDate(selectTime[0])"
               class="bg-transparent text-xs font-bold text-surface-900 dark:text-surface-100 outline-none"
-              @change="(e) => selectTime = [fromNativeDate((e.target as HTMLInputElement).value), selectTime[1]]">
+              @change="
+                (e) =>
+                  (selectTime = [
+                    fromNativeDate((e.target as HTMLInputElement).value),
+                    selectTime[1]
+                  ])
+              "
+            />
             <span class="text-xs font-bold text-surface-400">~</span>
             <input
-              type="date" aria-label="結束時間" :value="toNativeDate(selectTime[1])"
+              type="date"
+              aria-label="結束時間"
+              :value="toNativeDate(selectTime[1])"
               class="bg-transparent text-xs font-bold text-surface-900 dark:text-surface-100 outline-none"
-              @change="(e) => selectTime = [selectTime[0], fromNativeDate((e.target as HTMLInputElement).value)]">
+              @change="
+                (e) =>
+                  (selectTime = [
+                    selectTime[0],
+                    fromNativeDate((e.target as HTMLInputElement).value)
+                  ])
+              "
+            />
           </div>
 
           <button
             type="button"
             class="flex items-center gap-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-50 shadow-sm transition-colors"
-            @click="exportCsv">
+            @click="exportCsv"
+          >
             <Download class="h-3.5 w-3.5" />
             <span>匯出 CSV</span>
           </button>
           <button
             type="button"
             class="flex items-center gap-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-50 shadow-sm transition-colors"
-            @click="dialogSettlement = true">
+            @click="dialogSettlement = true"
+          >
             <Printer class="h-3.5 w-3.5" />
             <span>日結單</span>
           </button>
@@ -66,94 +121,142 @@
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between relative overflow-hidden">
-          <span class="text-xs font-bold text-surface-500 dark:text-surface-400">總營業額 GROSS SALES</span>
+        <div
+          class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between relative overflow-hidden"
+        >
+          <span class="text-xs font-bold text-surface-500 dark:text-surface-400"
+            >總營業額 GROSS SALES</span
+          >
           <div class="mt-3 flex items-baseline gap-2 flex-wrap">
-            <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
+            <span
+              class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight"
+            >
               NT$ {{ totalRevenue.toLocaleString() }}
             </span>
             <TrendBadge :trend="revenueTrend" />
           </div>
-          <p v-if="peakHourInfo" class="text-[11px] font-medium text-success-600 dark:text-success-400 mt-1 flex items-center gap-1">
+          <p
+            v-if="peakHourInfo"
+            class="text-[11px] font-medium text-success-600 dark:text-success-400 mt-1 flex items-center gap-1"
+          >
             <Flame class="h-3 w-3" /> 尖峰時段：{{ peakHourInfo }}
           </p>
           <p v-else class="text-[11px] text-surface-400 mt-1">
-            {{ previousSalesReport ? `vs 前期（${previousPeriod[0]}${previousPeriod[0] === previousPeriod[1] ? '' : ' ~ ' + previousPeriod[1]}）` : '跨日區間累計總營收' }}
+            {{
+              previousSalesReport
+                ? `vs 前期（${previousPeriod[0]}${previousPeriod[0] === previousPeriod[1] ? '' : ' ~ ' + previousPeriod[1]}）`
+                : '跨日區間累計總營收'
+            }}
           </p>
         </div>
 
-        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
+        <div
+          class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between"
+        >
           <span class="text-xs font-bold text-surface-500 dark:text-surface-400">熱銷品項總量</span>
           <div class="mt-3 flex items-baseline gap-2 flex-wrap">
-            <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
-              {{ totalUnits.toLocaleString() }} <span class="text-sm font-bold text-surface-500">件</span>
+            <span
+              class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight"
+            >
+              {{ totalUnits.toLocaleString() }}
+              <span class="text-sm font-bold text-surface-500">件</span>
             </span>
             <TrendBadge :trend="unitsTrend" />
           </div>
           <p class="text-[11px] text-surface-400 mt-1">
-            榜首：{{ salesReport?.topProducts[0]?.name || '暫無資料' }}（{{ salesReport?.topProducts[0]?.count || 0 }} 件）
+            榜首：{{ salesReport?.topProducts[0]?.name || '暫無資料' }}（{{
+              salesReport?.topProducts[0]?.count || 0
+            }}
+            件）
           </p>
         </div>
 
-        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
+        <div
+          class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between"
+        >
           <span class="text-xs font-bold text-surface-500 dark:text-surface-400">完成交易筆數</span>
           <div class="mt-3 flex items-baseline gap-2 flex-wrap">
-            <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
-              {{ totalOrders.toLocaleString() }} <span class="text-sm font-bold text-surface-500">筆</span>
+            <span
+              class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight"
+            >
+              {{ totalOrders.toLocaleString() }}
+              <span class="text-sm font-bold text-surface-500">筆</span>
             </span>
             <TrendBadge :trend="ordersTrend" />
           </div>
-          <p class="text-[11px] text-surface-400 mt-1">
-            以多元支付管道累計結算
-          </p>
+          <p class="text-[11px] text-surface-400 mt-1">以多元支付管道累計結算</p>
         </div>
 
-        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-surface-500 dark:text-surface-400">平均客單價 (AOV)</span>
+        <div
+          class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between"
+        >
+          <span class="text-xs font-bold text-surface-500 dark:text-surface-400"
+            >平均客單價 (AOV)</span
+          >
           <div class="mt-3 flex items-baseline gap-2 flex-wrap">
-            <span class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
+            <span
+              class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight"
+            >
               NT$ {{ averageOrderValue.toLocaleString() }}
             </span>
             <TrendBadge :trend="aovTrend" />
           </div>
-          <p class="text-[11px] text-surface-400 mt-1">
-            每筆訂單平均消費額
-          </p>
+          <p class="text-[11px] text-surface-400 mt-1">每筆訂單平均消費額</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-surface-500 dark:text-surface-400">折扣金額 (優惠券折抵)</span>
+        <div
+          class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between"
+        >
+          <span class="text-xs font-bold text-surface-500 dark:text-surface-400"
+            >折扣金額 (優惠券折抵)</span
+          >
           <div class="mt-2 flex items-baseline gap-2 flex-wrap">
-            <span class="text-xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
+            <span
+              class="text-xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight"
+            >
               NT$ {{ discountAmount.toLocaleString() }}
             </span>
-            <span class="text-[11px] font-bold text-accent-600 dark:text-accent-400">折扣率 {{ discountRate }}%</span>
+            <span class="text-[11px] font-bold text-accent-600 dark:text-accent-400"
+              >折扣率 {{ discountRate }}%</span
+            >
           </div>
         </div>
 
-        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
+        <div
+          class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between"
+        >
           <span class="text-xs font-bold text-surface-500 dark:text-surface-400">作廢訂單</span>
           <div class="mt-2 flex items-baseline gap-2 flex-wrap">
-            <span class="text-xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
-              {{ voidedOrderCount.toLocaleString() }} <span class="text-sm font-bold text-surface-500">筆</span>
+            <span
+              class="text-xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight"
+            >
+              {{ voidedOrderCount.toLocaleString() }}
+              <span class="text-sm font-bold text-surface-500">筆</span>
             </span>
             <span
               class="text-[11px] font-bold"
-              :class="voidRate > 5 ? 'text-danger-600 dark:text-danger-400' : 'text-surface-400'">
+              :class="voidRate > 5 ? 'text-danger-600 dark:text-danger-400' : 'text-surface-400'"
+            >
               作廢率 {{ voidRate }}%
             </span>
           </div>
         </div>
 
-        <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between">
+        <div
+          class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-4 shadow-sm flex flex-col justify-between"
+        >
           <span class="text-xs font-bold text-surface-500 dark:text-surface-400">退款</span>
           <div class="mt-2 flex items-baseline gap-2 flex-wrap">
-            <span class="text-xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight">
+            <span
+              class="text-xl font-black text-surface-900 dark:text-surface-50 font-mono tracking-tight"
+            >
               NT$ {{ refundAmount.toLocaleString() }}
             </span>
-            <span class="text-[11px] font-bold text-surface-400">{{ refundedOrderCount }} 筆訂單有退款</span>
+            <span class="text-[11px] font-bold text-surface-400"
+              >{{ refundedOrderCount }} 筆訂單有退款</span
+            >
           </div>
         </div>
       </div>
@@ -162,9 +265,15 @@
         <div class="xl:col-span-8 card-panel p-5 flex flex-col gap-4">
           <div class="flex items-center justify-between">
             <h2 class="text-base font-black text-surface-900 dark:text-surface-100">
-              {{ selectTime[0] === selectTime[1] ? `${selectTime[0]} 時段營業額動態` : `${selectTime[0]} ~ ${selectTime[1]} 每日營業額趨勢` }}
+              {{
+                selectTime[0] === selectTime[1]
+                  ? `${selectTime[0]} 時段營業額動態`
+                  : `${selectTime[0]} ~ ${selectTime[1]} 每日營業額趨勢`
+              }}
             </h2>
-            <span class="text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 rounded-full">
+            <span
+              class="text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 px-2.5 py-1 rounded-full"
+            >
               累計: NT$ {{ totalRevenue.toLocaleString() }}
             </span>
           </div>
@@ -175,28 +284,58 @@
         </div>
 
         <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">熱銷品項排行榜 (Top 5)</span>
-          <RankedBarChart :items="salesReport?.topProducts ?? []" unit="件" color="#ef4444" empty-label="目前無銷售紀錄" />
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100"
+            >熱銷品項排行榜 (Top 5)</span
+          >
+          <RankedBarChart
+            :items="salesReport?.topProducts ?? []"
+            unit="件"
+            color="#ef4444"
+            empty-label="目前無銷售紀錄"
+          />
         </div>
 
         <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">分類別銷售佔比 (Top 5)</span>
-          <RankedBarChart :items="salesReport?.topCategories ?? []" unit="件" color="#f59e0b" empty-label="目前無分類銷售紀錄" />
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100"
+            >分類別銷售佔比 (Top 5)</span
+          >
+          <RankedBarChart
+            :items="salesReport?.topCategories ?? []"
+            unit="件"
+            color="#f59e0b"
+            empty-label="目前無分類銷售紀錄"
+          />
         </div>
 
         <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">加購選配榜單 (Top 5)</span>
-          <RankedBarChart :items="salesReport?.topAddOns ?? []" unit="份" color="#10b981" empty-label="目前無加購紀錄" />
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100"
+            >加購選配榜單 (Top 5)</span
+          >
+          <RankedBarChart
+            :items="salesReport?.topAddOns ?? []"
+            unit="份"
+            color="#10b981"
+            empty-label="目前無加購紀錄"
+          />
         </div>
 
         <div class="xl:col-span-4 card-panel p-4 flex flex-col gap-3">
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">內用／外帶佔比</span>
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100"
+            >內用／外帶佔比</span
+          >
           <ChannelDonutChart :items="salesReport?.channelBreakdown ?? []" />
         </div>
 
         <div class="xl:col-span-8 card-panel p-4 flex flex-col gap-3">
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">多元支付通路結構 (Top 5)</span>
-          <RankedBarChart :items="salesReport?.topPaymentMethods ?? []" unit="次交易" color="#0ea5e9" empty-label="目前無付款紀錄" />
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100"
+            >多元支付通路結構 (Top 5)</span
+          >
+          <RankedBarChart
+            :items="salesReport?.topPaymentMethods ?? []"
+            unit="次交易"
+            color="#0ea5e9"
+            empty-label="目前無付款紀錄"
+          />
         </div>
       </div>
     </div>
@@ -214,7 +353,9 @@
         </div>
         <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
           <span>總營業額 (Gross):</span>
-          <span class="font-black text-sm text-primary-600">NT$ {{ totalRevenue.toLocaleString() }}</span>
+          <span class="font-black text-sm text-primary-600"
+            >NT$ {{ totalRevenue.toLocaleString() }}</span
+          >
         </div>
         <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
           <span>完成交易單數:</span>
@@ -234,24 +375,40 @@
         </div>
         <div class="flex justify-between py-1 border-b border-surface-100 dark:border-surface-800">
           <span>作廢訂單 / 退款:</span>
-          <span class="font-bold">{{ voidedOrderCount }} 筆作廢 · NT$ {{ refundAmount.toLocaleString() }} 退款</span>
+          <span class="font-bold"
+            >{{ voidedOrderCount }} 筆作廢 · NT$ {{ refundAmount.toLocaleString() }} 退款</span
+          >
         </div>
 
         <div class="mt-2">
           <p class="font-bold mb-1">支付管道結算：</p>
-          <div v-for="p in salesReport?.topPaymentMethods" :key="p.name" class="flex justify-between text-surface-500 py-0.5">
+          <div
+            v-for="p in salesReport?.topPaymentMethods"
+            :key="p.name"
+            class="flex justify-between text-surface-500 py-0.5"
+          >
             <span>{{ p.name }}</span>
             <span>{{ p.count }} 次</span>
           </div>
         </div>
 
-        <div class="mt-4 flex justify-end gap-2 border-t border-surface-200 dark:border-surface-700 pt-3">
+        <div
+          class="mt-4 flex justify-end gap-2 border-t border-surface-200 dark:border-surface-700 pt-3"
+        >
           <button
-            type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-xs font-bold"
-            @click="dialogSettlement = false">關閉</button>
+            type="button"
+            class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-xs font-bold"
+            @click="dialogSettlement = false"
+          >
+            關閉
+          </button>
           <button
-            type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-xs font-bold text-white shadow-sm"
-            @click="handlePrintSettlement">模擬列印</button>
+            type="button"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-xs font-bold text-white shadow-sm"
+            @click="handlePrintSettlement"
+          >
+            模擬列印
+          </button>
         </div>
       </div>
     </ModalDialog>
@@ -261,14 +418,33 @@
 <script setup lang="ts">
 import * as echarts from 'echarts/core'
 import { LineChart } from 'echarts/charts'
-import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components'
+import {
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent
+} from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue'
 import { Calendar, Download, Printer, Flame } from 'lucide-vue-next'
 
-echarts.use([LineChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer])
+echarts.use([
+  LineChart,
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
+  CanvasRenderer
+])
 import { useQuery } from '@tanstack/vue-query'
-import { getDate, getTime, formatBusinessDate, toBusinessDate, toNativeDate, fromNativeDate } from '@/utils/time'
+import {
+  getDate,
+  getTime,
+  formatBusinessDate,
+  toBusinessDate,
+  toNativeDate,
+  fromNativeDate
+} from '@/utils/time'
 import { fetchSalesReport } from '@/api/reports'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import TrendBadge from '@/components/ui/TrendBadge.vue'
@@ -295,7 +471,8 @@ function parseSlashDate(s: string): Date {
 
 const { data: salesReport } = useQuery({
   queryKey: computed(() => ['salesReport', selectTime.value[0], selectTime.value[1]] as const),
-  queryFn: () => fetchSalesReport(toBusinessDate(selectTime.value[0]), toBusinessDate(selectTime.value[1])),
+  queryFn: () =>
+    fetchSalesReport(toBusinessDate(selectTime.value[0]), toBusinessDate(selectTime.value[1]))
 })
 
 // 計算緊鄰前一段等長區間作為比較基準，複用 sales report API。
@@ -310,8 +487,14 @@ const previousPeriod = computed<[string, string]>(() => {
   return [formatSlashDate(prevStart), formatSlashDate(prevEnd)]
 })
 const { data: previousSalesReport } = useQuery({
-  queryKey: computed(() => ['salesReport', previousPeriod.value[0], previousPeriod.value[1]] as const),
-  queryFn: () => fetchSalesReport(toBusinessDate(previousPeriod.value[0]), toBusinessDate(previousPeriod.value[1])),
+  queryKey: computed(
+    () => ['salesReport', previousPeriod.value[0], previousPeriod.value[1]] as const
+  ),
+  queryFn: () =>
+    fetchSalesReport(
+      toBusinessDate(previousPeriod.value[0]),
+      toBusinessDate(previousPeriod.value[1])
+    )
 })
 
 // 當期與前期共用相同的 KPI 計算邏輯。
@@ -329,7 +512,9 @@ function computeTotals(report: typeof salesReport.value, singleDay: boolean) {
 }
 const isSingleDay = computed(() => selectTime.value[0] === selectTime.value[1])
 const current = computed(() => computeTotals(salesReport.value, isSingleDay.value))
-const previous = computed(() => computeTotals(previousSalesReport.value, previousPeriod.value[0] === previousPeriod.value[1]))
+const previous = computed(() =>
+  computeTotals(previousSalesReport.value, previousPeriod.value[0] === previousPeriod.value[1])
+)
 
 const totalRevenue = computed(() => current.value.totalRevenue)
 const totalUnits = computed(() => current.value.totalUnits)
@@ -342,10 +527,14 @@ function trendOf(currentValue: number, previousValue: number): { pct: number; up
   const pct = Math.round(((currentValue - previousValue) / previousValue) * 100)
   return { pct, up: pct >= 0 }
 }
-const revenueTrend = computed(() => trendOf(current.value.totalRevenue, previous.value.totalRevenue))
+const revenueTrend = computed(() =>
+  trendOf(current.value.totalRevenue, previous.value.totalRevenue)
+)
 const unitsTrend = computed(() => trendOf(current.value.totalUnits, previous.value.totalUnits))
 const ordersTrend = computed(() => trendOf(current.value.totalOrders, previous.value.totalOrders))
-const aovTrend = computed(() => trendOf(current.value.averageOrderValue, previous.value.averageOrderValue))
+const aovTrend = computed(() =>
+  trendOf(current.value.averageOrderValue, previous.value.averageOrderValue)
+)
 
 // 折扣、作廢、退款：只看當期，不比對前期（跟業界慣例一樣，異常率是拿來看
 // 現況高不高，不是拿來看漲跌）。四捨五入到小數點下一位。
@@ -354,10 +543,14 @@ const roundRate = (numerator: number, denominator: number) =>
 
 const discountAmount = computed(() => salesReport.value?.discountAmount ?? 0)
 // 折扣率的分母是折扣前毛額（淨營收 + 折扣金額），不是淨營收本身。
-const discountRate = computed(() => roundRate(discountAmount.value, totalRevenue.value + discountAmount.value))
+const discountRate = computed(() =>
+  roundRate(discountAmount.value, totalRevenue.value + discountAmount.value)
+)
 
 const voidedOrderCount = computed(() => salesReport.value?.voidedOrderCount ?? 0)
-const voidRate = computed(() => roundRate(voidedOrderCount.value, voidedOrderCount.value + totalOrders.value))
+const voidRate = computed(() =>
+  roundRate(voidedOrderCount.value, voidedOrderCount.value + totalOrders.value)
+)
 
 const refundedOrderCount = computed(() => salesReport.value?.refundedOrderCount ?? 0)
 const refundAmount = computed(() => salesReport.value?.refundAmount ?? 0)
@@ -450,7 +643,10 @@ const exportCsv = () => {
 
   const link = document.createElement('a')
   link.setAttribute('href', encodeURI(csv))
-  link.setAttribute('download', `POS_Report_${toBusinessDate(selectTime.value[0])}_${toBusinessDate(selectTime.value[1])}.csv`)
+  link.setAttribute(
+    'download',
+    `POS_Report_${toBusinessDate(selectTime.value[0])}_${toBusinessDate(selectTime.value[1])}.csv`
+  )
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
@@ -467,9 +663,9 @@ let chartInstance: echarts.ECharts | null = null
 let resizeObserver: ResizeObserver | null = null
 
 const isDark = computed(() => theme.value === 'dark')
-const getTextColor = () => isDark.value ? '#cbd5e1' : '#475569'
-const getSubtextColor = () => isDark.value ? '#64748b' : '#94a3b8'
-const getSplitLineColor = () => isDark.value ? '#334155' : '#f1f5f9'
+const getTextColor = () => (isDark.value ? '#cbd5e1' : '#475569')
+const getSubtextColor = () => (isDark.value ? '#64748b' : '#94a3b8')
+const getSplitLineColor = () => (isDark.value ? '#334155' : '#f1f5f9')
 
 const getOneDayOption = () => {
   if (!salesReport.value) return {}
@@ -490,7 +686,9 @@ const getOneDayOption = () => {
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: salesReport.value.hourlyRevenue.map(point => `${String(point.hour).padStart(2, '0')}:00`),
+      data: salesReport.value.hourlyRevenue.map(
+        (point) => `${String(point.hour).padStart(2, '0')}:00`
+      ),
       axisLine: { lineStyle: { color: getSubtextColor() } },
       axisLabel: { color: getSubtextColor(), fontSize: 12, fontWeight: 'bold' }
     },
@@ -520,7 +718,7 @@ const getOneDayOption = () => {
             { offset: 1, color: 'rgba(239, 68, 68, 0.02)' }
           ])
         },
-        data: salesReport.value.hourlyRevenue.map(point => point.revenue),
+        data: salesReport.value.hourlyRevenue.map((point) => point.revenue)
       }
     ]
   }
@@ -544,7 +742,7 @@ const getRangeOption = () => {
     grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
     xAxis: {
       type: 'category',
-      data: salesReport.value.dailyRevenue.map(point => formatBusinessDate(point.businessDate)),
+      data: salesReport.value.dailyRevenue.map((point) => formatBusinessDate(point.businessDate)),
       axisLine: { lineStyle: { color: getSubtextColor() } },
       axisLabel: { color: getSubtextColor(), fontSize: 12, fontWeight: 'bold' }
     },
@@ -572,7 +770,7 @@ const getRangeOption = () => {
             { offset: 1, color: 'rgba(239, 68, 68, 0.02)' }
           ])
         },
-        data: salesReport.value.dailyRevenue.map(point => point.revenue),
+        data: salesReport.value.dailyRevenue.map((point) => point.revenue)
       }
     ]
   }
@@ -583,18 +781,20 @@ const renderChart = () => {
   if (!chartInstance) {
     chartInstance = echarts.init(businessChartRef.value)
   }
-  const option = selectTime.value[0] === selectTime.value[1]
-    ? getOneDayOption()
-    : getRangeOption()
+  const option = selectTime.value[0] === selectTime.value[1] ? getOneDayOption() : getRangeOption()
 
   chartInstance.setOption(option, true)
 }
 
-watch([salesReport, () => selectTime.value, isDark], () => {
-  nextTick(() => {
-    renderChart()
-  })
-}, { deep: true })
+watch(
+  [salesReport, () => selectTime.value, isDark],
+  () => {
+    nextTick(() => {
+      renderChart()
+    })
+  },
+  { deep: true }
+)
 
 const handleResize = () => {
   chartInstance?.resize()

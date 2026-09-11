@@ -4,7 +4,7 @@ import {
   type CreateMemberRequest,
   type Member,
   type MemberDetail,
-  type UpdateMemberRequest,
+  type UpdateMemberRequest
 } from '@pos/contract'
 import { fetchJson } from './http'
 
@@ -27,14 +27,17 @@ export async function fetchMemberDetail(id: string): Promise<MemberDetail> {
 }
 
 export async function createMember(input: CreateMemberRequest): Promise<Member> {
-  const body = await fetchJson<unknown>('/api/members', { method: 'POST', body: JSON.stringify(input) })
+  const body = await fetchJson<unknown>('/api/members', {
+    method: 'POST',
+    body: JSON.stringify(input)
+  })
   return memberSchema.parse(body)
 }
 
 export async function updateMember(id: string, input: UpdateMemberRequest): Promise<Member> {
   const body = await fetchJson<unknown>(`/api/members/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    body: JSON.stringify(input),
+    body: JSON.stringify(input)
   })
   return memberSchema.parse(body)
 }

@@ -1,6 +1,11 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
-import { createRoleRequestSchema, roleSchema, updateRoleRequestSchema, type AuthorityKey } from '@pos/contract'
+import {
+  createRoleRequestSchema,
+  roleSchema,
+  updateRoleRequestSchema,
+  type AuthorityKey
+} from '@pos/contract'
 import { roles, staff } from '../db/schema'
 import type { AnyDb } from '../db/types'
 import { requireCapability } from '../middleware/require-capability'
@@ -23,12 +28,14 @@ const errorSchema = z.object({ error: z.string() })
 async function wouldLeaveNoRoleAdmin(
   db: AnyDb,
   roleIdBeingChanged: string,
-  nextCapabilities: AuthorityKey[],
+  nextCapabilities: AuthorityKey[]
 ): Promise<boolean> {
   const allRoles = await db.select().from(roles).all()
   const allStaff = await db.select({ roleId: staff.roleId }).from(staff).all()
   const capabilitiesById = new Map(allRoles.map((role) => [role.id, role.capabilities]))
-  const currentlyHasAdmin = allStaff.some((row) => capabilitiesById.get(row.roleId)?.includes('canManageRoles'))
+  const currentlyHasAdmin = allStaff.some((row) =>
+    capabilitiesById.get(row.roleId)?.includes('canManageRoles')
+  )
   // 系統本來就沒有人擁有這個權限（例如全新環境還沒指派任何管理者），
   // 不是這次變更造成的，不擋——只防「從有變沒有」這個轉折。
   if (!currentlyHasAdmin) return false
@@ -41,8 +48,11 @@ const listRolesRoute = createRoute({
   method: 'get',
   path: '/',
   responses: {
-    200: { description: '權限群組清單', content: { 'application/json': { schema: z.array(roleSchema) } } },
-  },
+    200: {
+      description: '權限群組清單',
+      content: { 'application/json': { schema: z.array(roleSchema) } }
+    }
+  }
 })
 
 const createRoleRoute = createRoute({
@@ -51,10 +61,16 @@ const createRoleRoute = createRoute({
   middleware: [requireDeviceToken, requireCapability('canManageRoles')] as const,
   request: { body: { content: { 'application/json': { schema: createRoleRequestSchema } } } },
   responses: {
-    201: { description: '權限群組建立成功', content: { 'application/json': { schema: roleSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    409: { description: '名稱已被使用', content: { 'application/json': { schema: errorSchema } } },
-  },
+    201: {
+      description: '權限群組建立成功',
+      content: { 'application/json': { schema: roleSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    409: { description: '名稱已被使用', content: { 'application/json': { schema: errorSchema } } }
+  }
 })
 
 const updateRoleRoute = createRoute({
@@ -63,14 +79,26 @@ const updateRoleRoute = createRoute({
   middleware: [requireDeviceToken, requireCapability('canManageRoles')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updateRoleRequestSchema } } },
+    body: { content: { 'application/json': { schema: updateRoleRequestSchema } } }
   },
   responses: {
-    200: { description: '權限群組更新成功', content: { 'application/json': { schema: roleSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個權限群組', content: { 'application/json': { schema: errorSchema } } },
-    409: { description: '名稱已被使用，或此變更會讓沒有人擁有權限管理能力', content: { 'application/json': { schema: errorSchema } } },
-  },
+    200: {
+      description: '權限群組更新成功',
+      content: { 'application/json': { schema: roleSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: {
+      description: '找不到這個權限群組',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    409: {
+      description: '名稱已被使用，或此變更會讓沒有人擁有權限管理能力',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const deleteRoleRoute = createRoute({
@@ -80,17 +108,29 @@ const deleteRoleRoute = createRoute({
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '權限群組已刪除' },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個權限群組', content: { 'application/json': { schema: errorSchema } } },
-    409: { description: '系統內建角色不可刪除，或仍有員工使用此角色', content: { 'application/json': { schema: errorSchema } } },
-  },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: {
+      description: '找不到這個權限群組',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    409: {
+      description: '系統內建角色不可刪除，或仍有員工使用此角色',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 export const roleRoutes = new OpenAPIHono<AppEnv>()
   .openapi(listRolesRoute, async (c) => {
     const db = c.get('db')
     const rows = await db.select().from(roles).all()
-    return c.json(rows.map((row) => roleSchema.parse(row)), 200)
+    return c.json(
+      rows.map((row) => roleSchema.parse(row)),
+      200
+    )
   })
   .openapi(createRoleRoute, async (c) => {
     const input = c.req.valid('json')

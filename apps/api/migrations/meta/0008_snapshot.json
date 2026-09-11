@@ -94,12 +94,8 @@
           "name": "cash_movements_shift_id_shifts_id_fk",
           "tableFrom": "cash_movements",
           "tableTo": "shifts",
-          "columnsFrom": [
-            "shift_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shift_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -191,12 +187,8 @@
           "name": "catalog_items_group_id_catalog_groups_id_fk",
           "tableFrom": "catalog_items",
           "tableTo": "catalog_groups",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -484,12 +476,8 @@
           "name": "order_lines_order_id_orders_order_id_fk",
           "tableFrom": "order_lines",
           "tableTo": "orders",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
+          "columnsTo": ["order_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -550,12 +538,8 @@
           "name": "order_refunds_order_id_orders_order_id_fk",
           "tableFrom": "order_refunds",
           "tableTo": "orders",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
+          "columnsTo": ["order_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -640,12 +624,8 @@
           "name": "order_tenders_order_id_orders_order_id_fk",
           "tableFrom": "order_tenders",
           "tableTo": "orders",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
+          "columnsTo": ["order_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -782,9 +762,7 @@
       "indexes": {
         "orders_idempotency_key_idx": {
           "name": "orders_idempotency_key_idx",
-          "columns": [
-            "idempotency_key"
-          ],
+          "columns": ["idempotency_key"],
           "isUnique": true
         }
       },
@@ -989,9 +967,7 @@
       "indexes": {
         "staff_account_idx": {
           "name": "staff_account_idx",
-          "columns": [
-            "account"
-          ],
+          "columns": ["account"],
           "isUnique": true
         }
       },

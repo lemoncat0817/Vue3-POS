@@ -9,7 +9,7 @@ describe('POST /api/devices（核發裝置憑證）', () => {
     const res = await app.request('/api/devices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: '前台收銀機' }),
+      body: JSON.stringify({ name: '前台收銀機' })
     })
     expect(res.status).toBe(401)
   })
@@ -19,12 +19,20 @@ describe('POST /api/devices（核發裝置憑證）', () => {
     const app = createTestApp(db)
     const res = await app.request('/api/devices', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Provisioning-Secret': TEST_PROVISIONING_SECRET },
-      body: JSON.stringify({ name: '前台收銀機' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Provisioning-Secret': TEST_PROVISIONING_SECRET
+      },
+      body: JSON.stringify({ name: '前台收銀機' })
     })
     expect(res.status).toBe(201)
 
-    const body = (await res.json()) as { id: string; name: string; token: string; revokedAt: string | null }
+    const body = (await res.json()) as {
+      id: string
+      name: string
+      token: string
+      revokedAt: string | null
+    }
     expect(body.name).toBe('前台收銀機')
     expect(body.token).toMatch(/^[0-9a-f]{64}$/)
     expect(body.revokedAt).toBeNull()
@@ -38,7 +46,7 @@ describe('POST /api/devices（核發裝置憑證）', () => {
   it('用核發密鑰打不進其他需要裝置憑證的端點（兩把密鑰不能互相冒充）', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/devices', {
-      headers: { 'X-Device-Token': TEST_PROVISIONING_SECRET },
+      headers: { 'X-Device-Token': TEST_PROVISIONING_SECRET }
     })
     expect(res.status).toBe(401)
   })
@@ -52,9 +60,14 @@ describe('GET /api/devices（裝置清單，需要裝置憑證）', () => {
   })
 
   it('有裝置憑證時回傳清單，不含憑證本身', async () => {
-    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb(), '前台收銀機')
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(
+      createTestDb(),
+      '前台收銀機'
+    )
 
-    const res = await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } })
+    const res = await app.request('/api/devices', {
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
     expect(res.status).toBe(200)
     const body = (await res.json()) as Array<Record<string, unknown>>
     expect(body).toHaveLength(1)
@@ -71,19 +84,24 @@ describe('POST /api/devices/:id/revoke（撤銷）', () => {
 
     const secondRes = await app.request('/api/devices', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Provisioning-Secret': TEST_PROVISIONING_SECRET },
-      body: JSON.stringify({ name: '後台備用機' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Provisioning-Secret': TEST_PROVISIONING_SECRET
+      },
+      body: JSON.stringify({ name: '後台備用機' })
     })
     const deviceB = (await secondRes.json()) as { id: string; token: string }
 
     const listBefore = (await (
-      await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } })
+      await app.request('/api/devices', {
+        headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+      })
     ).json()) as Array<{ id: string; name: string }>
     const deviceA = listBefore.find((d) => d.name === '前台收銀機')!
 
     const revokeRes = await app.request(`/api/devices/${deviceA.id}/revoke`, {
       method: 'POST',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(revokeRes.status).toBe(200)
 
@@ -102,7 +120,7 @@ describe('POST /api/devices/:id/revoke（撤銷）', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/devices/does-not-exist/revoke', {
       method: 'POST',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(res.status).toBe(404)
   })

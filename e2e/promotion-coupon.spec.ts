@@ -20,7 +20,7 @@ test('套用現金折價券後，畫面顯示與伺服端回應的折抵金額�
   await expect(page.getByText('$ 30 元')).toBeVisible()
 
   const orderResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByTestId('checkout-button').click()
   await page.getByRole('button', { name: '現金', exact: true }).click()
@@ -29,7 +29,11 @@ test('套用現金折價券後，畫面顯示與伺服端回應的折抵金額�
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
 
   const res = await orderResponse
-  const body = (await res.json()) as { orderPaymentPrice: number; orderDiscount: number; discountName: string }
+  const body = (await res.json()) as {
+    orderPaymentPrice: number
+    orderDiscount: number
+    discountName: string
+  }
   expect(body.discountName).toBe('$50折價券')
   expect(body.orderDiscount).toBe(50)
   expect(body.orderPaymentPrice).toBe(30)

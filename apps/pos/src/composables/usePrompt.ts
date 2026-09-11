@@ -30,7 +30,7 @@ const state = reactive<PromptState>({
   confirmText: '確定',
   cancelText: '取消',
   value: '',
-  resolve: null,
+  resolve: null
 })
 
 export function usePromptState() {

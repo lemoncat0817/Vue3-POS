@@ -47,11 +47,11 @@ export const offlineDb = new Dexie('pos-offline') as Dexie & {
 
 // createdAt 加索引以依送單順序處理。
 offlineDb.version(1).stores({
-  outboxOrders: 'id, status, createdAt',
+  outboxOrders: 'id, status, createdAt'
 })
 
 // 新增 parkedOrders 表，保留既有 outboxOrders 定義。
 offlineDb.version(2).stores({
   outboxOrders: 'id, status, createdAt',
-  parkedOrders: 'id, createdAt',
+  parkedOrders: 'id, createdAt'
 })

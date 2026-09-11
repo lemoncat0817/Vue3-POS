@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 // 驗證數據分析頁報表 API 請求、日期區間參數切換與圖表渲染。
 test('數據分析頁會向伺服端要報表資料，切換日期會重新查詢', async ({ page }) => {
   const firstReportResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/reports/sales') && res.request().method() === 'GET',
+    (res) => res.url().includes('/api/reports/sales') && res.request().method() === 'GET'
   )
 
   await page.goto('login')
@@ -32,7 +32,7 @@ test('數據分析頁會向伺服端要報表資料，切換日期會重新查�
 
   // 切換為跨日區間，確保填寫順序維持 from <= to。
   const rangeReportResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/reports/sales') && res.request().method() === 'GET',
+    (res) => res.url().includes('/api/reports/sales') && res.request().method() === 'GET'
   )
   const now = new Date()
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`

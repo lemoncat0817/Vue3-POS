@@ -17,14 +17,22 @@ describe('GET /api/staff', () => {
       account: 'lemon',
       roleId,
       pinHash: 'irrelevant-for-this-test',
-      pinSalt: 'irrelevant-for-this-test',
+      pinSalt: 'irrelevant-for-this-test'
     })
 
     const app = createTestApp(db)
     const res = await app.request('/api/staff')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([
-      { id: 's1', name: 'Lemon', jobTitle: '店長', account: 'lemon', roleId, roleName: '店長', capabilities: [] },
+      {
+        id: 's1',
+        name: 'Lemon',
+        jobTitle: '店長',
+        account: 'lemon',
+        roleId,
+        roleName: '店長',
+        capabilities: []
+      }
     ])
   })
 })
@@ -37,7 +45,7 @@ describe('POST /api/staff（權限拒絕案例）', () => {
     const res = await app.request('/api/staff', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' }),
+      body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' })
     })
     expect(res.status).toBe(401)
   })
@@ -49,7 +57,7 @@ describe('POST /api/staff（權限拒絕案例）', () => {
     const res = await app.request('/api/staff', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': 'wrong-token' },
-      body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' }),
+      body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' })
     })
     expect(res.status).toBe(401)
   })
@@ -59,20 +67,31 @@ describe('POST /api/staff（權限拒絕案例）', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/staff', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ ...staffBaseFields, roleId: 'does-not-exist', pin: '3456' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ ...staffBaseFields, roleId: 'does-not-exist', pin: '3456' })
     })
     expect(res.status).toBe(404)
   })
 
   it('裝置憑證正確時允許建立員工', async () => {
     const db = createTestDb()
-    const roleId = await seedRole(db, { name: '工讀生', capabilities: ['canCheckOrder', 'canEditOrderStatus'] })
+    const roleId = await seedRole(db, {
+      name: '工讀生',
+      capabilities: ['canCheckOrder', 'canEditOrderStatus']
+    })
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/staff', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' })
     })
     expect(res.status).toBe(201)
 
@@ -80,7 +99,12 @@ describe('POST /api/staff（權限拒絕案例）', () => {
     const list = (await (await app.request('/api/staff')).json()) as Record<string, unknown>[]
     const createdStaff = list.find((row) => row.account === staffBaseFields.account)
     expect(createdStaff).toEqual(
-      expect.objectContaining({ ...staffBaseFields, roleId, roleName: '工讀生', capabilities: ['canCheckOrder', 'canEditOrderStatus'] }),
+      expect.objectContaining({
+        ...staffBaseFields,
+        roleId,
+        roleName: '工讀生',
+        capabilities: ['canCheckOrder', 'canEditOrderStatus']
+      })
     )
     expect(createdStaff).not.toHaveProperty('pin')
     expect(createdStaff).not.toHaveProperty('pinHash')
@@ -92,17 +116,23 @@ describe('POST /api/staff（權限拒絕案例）', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
 
     const list = (await (
-      await app.request('/api/devices', { headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken } })
+      await app.request('/api/devices', {
+        headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+      })
     ).json()) as Array<{ id: string }>
     await app.request(`/api/devices/${list[0]!.id}/revoke`, {
       method: 'POST',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
 
     const res = await app.request('/api/staff', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' })
     })
     expect(res.status).toBe(401)
   })
@@ -116,38 +146,63 @@ describe('PUT /api/staff/:id', () => {
     const res = await app.request('/api/staff/does-not-exist', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...staffBaseFields, roleId }),
+      body: JSON.stringify({ ...staffBaseFields, roleId })
     })
     expect(res.status).toBe(401)
   })
 
   it('更新職稱與角色，不填 PIN 時沿用既有的雜湊值', async () => {
     const db = createTestDb()
-    const partTimerRoleId = await seedRole(db, { name: '工讀生', capabilities: ['canCheckOrder', 'canEditOrderStatus'] })
-    const dutyManagerRoleId = await seedRole(db, { name: '值班經理', capabilities: ['canCheckOrder'] })
+    const partTimerRoleId = await seedRole(db, {
+      name: '工讀生',
+      capabilities: ['canCheckOrder', 'canEditOrderStatus']
+    })
+    const dutyManagerRoleId = await seedRole(db, {
+      name: '值班經理',
+      capabilities: ['canCheckOrder']
+    })
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
-    const created = await (
+    const created = (await (
       await app.request('/api/staff', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ ...staffBaseFields, roleId: partTimerRoleId, pin: '3456' }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({ ...staffBaseFields, roleId: partTimerRoleId, pin: '3456' })
       })
-    ).json() as { id: string }
+    ).json()) as { id: string }
 
     const res = await app.request(`/api/staff/${created.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ ...staffBaseFields, jobTitle: '值班經理', roleId: dutyManagerRoleId }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ ...staffBaseFields, jobTitle: '值班經理', roleId: dutyManagerRoleId })
     })
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body).toEqual(expect.objectContaining({ jobTitle: '值班經理', roleId: dutyManagerRoleId, roleName: '值班經理', capabilities: ['canCheckOrder'] }))
+    expect(body).toEqual(
+      expect.objectContaining({
+        jobTitle: '值班經理',
+        roleId: dutyManagerRoleId,
+        roleName: '值班經理',
+        capabilities: ['canCheckOrder']
+      })
+    )
 
     // 原本的 PIN（3456）應該還能登入——沒填 pin 時不該把雜湊值清掉或改掉。
     const login = await app.request('/api/auth/operator-login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ account: 'emily', pin: '3456' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ account: 'emily', pin: '3456' })
     })
     expect(login.status).toBe(200)
   })
@@ -156,18 +211,26 @@ describe('PUT /api/staff/:id', () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { capabilities: [] })
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
-    const created = await (
+    const created = (await (
       await app.request('/api/staff', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' })
       })
-    ).json() as { id: string }
+    ).json()) as { id: string }
 
     const res = await app.request(`/api/staff/${created.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ ...staffBaseFields, roleId: 'does-not-exist' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ ...staffBaseFields, roleId: 'does-not-exist' })
     })
     expect(res.status).toBe(404)
   })
@@ -178,21 +241,33 @@ describe('PUT /api/staff/:id', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     await app.request('/api/staff', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ ...staffBaseFields, roleId, account: 'lemon', pin: '3456' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ ...staffBaseFields, roleId, account: 'lemon', pin: '3456' })
     })
-    const second = await (
+    const second = (await (
       await app.request('/api/staff', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ ...staffBaseFields, roleId, account: 'james', pin: '3456' }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({ ...staffBaseFields, roleId, account: 'james', pin: '3456' })
       })
-    ).json() as { id: string }
+    ).json()) as { id: string }
 
     const res = await app.request(`/api/staff/${second.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ ...staffBaseFields, roleId, account: 'lemon' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ ...staffBaseFields, roleId, account: 'lemon' })
     })
     expect(res.status).toBe(409)
   })
@@ -203,8 +278,12 @@ describe('PUT /api/staff/:id', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
     const res = await app.request('/api/staff/does-not-exist', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ ...staffBaseFields, roleId }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ ...staffBaseFields, roleId })
     })
     expect(res.status).toBe(404)
   })
@@ -215,21 +294,35 @@ describe('PUT /api/staff/:id', () => {
     // canManageRoles（受「不可歸零」保護的能力）。用 seedStaff: false
     // 跳過自動附掛的全權限操作員——否則店裡永遠還有別人擁有
     // canManageRoles，「歸零」這個條件永遠不會成立（見 helpers/app.ts）。
-    const adminRoleId = await seedRole(db, { name: '店長', capabilities: ['canManageStaff', 'canManageRoles'] })
+    const adminRoleId = await seedRole(db, {
+      name: '店長',
+      capabilities: ['canManageStaff', 'canManageRoles']
+    })
     const partTimerRoleId = await seedRole(db, { name: '工讀生', capabilities: [] })
     const adminStaffId = 'admin-1'
     await db.insert(staff).values({
-      id: adminStaffId, name: 'Lemon', jobTitle: '店長', account: 'lemon', roleId: adminRoleId,
-      pinHash: 'x', pinSalt: 'x',
+      id: adminStaffId,
+      name: 'Lemon',
+      jobTitle: '店長',
+      account: 'lemon',
+      roleId: adminRoleId,
+      pinHash: 'x',
+      pinSalt: 'x'
     })
-    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', { seedStaff: false })
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false
+    })
     const adminSessionToken = await issueTestSession(db, adminStaffId)
 
     // 這是全店唯一一位擁有 canManageRoles 的員工，改成無此權限的角色應該被擋下。
     const res = await app.request(`/api/staff/${adminStaffId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': adminSessionToken },
-      body: JSON.stringify({ ...staffBaseFields, roleId: partTimerRoleId }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': adminSessionToken
+      },
+      body: JSON.stringify({ ...staffBaseFields, roleId: partTimerRoleId })
     })
     expect(res.status).toBe(409)
   })
@@ -246,17 +339,21 @@ describe('DELETE /api/staff/:id（P18）', () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { capabilities: [] })
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
-    const created = await (
+    const created = (await (
       await app.request('/api/staff', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-        body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify({ ...staffBaseFields, roleId, pin: '3456' })
       })
-    ).json() as { id: string }
+    ).json()) as { id: string }
 
     const res = await app.request(`/api/staff/${created.id}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(res.status).toBe(204)
 
@@ -269,7 +366,7 @@ describe('DELETE /api/staff/:id（P18）', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/staff/does-not-exist', {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(res.status).toBe(404)
   })
@@ -278,18 +375,28 @@ describe('DELETE /api/staff/:id（P18）', () => {
     const db = createTestDb()
     // 同上一個測試：需要 canManageStaff 才能呼叫 DELETE，且用 seedStaff:
     // false 避免自動附掛的操作員讓「歸零」條件永遠不成立。
-    const adminRoleId = await seedRole(db, { name: '店長', capabilities: ['canManageStaff', 'canManageRoles'] })
+    const adminRoleId = await seedRole(db, {
+      name: '店長',
+      capabilities: ['canManageStaff', 'canManageRoles']
+    })
     const adminStaffId = 'admin-1'
     await db.insert(staff).values({
-      id: adminStaffId, name: 'Lemon', jobTitle: '店長', account: 'lemon', roleId: adminRoleId,
-      pinHash: 'x', pinSalt: 'x',
+      id: adminStaffId,
+      name: 'Lemon',
+      jobTitle: '店長',
+      account: 'lemon',
+      roleId: adminRoleId,
+      pinHash: 'x',
+      pinSalt: 'x'
     })
-    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', { seedStaff: false })
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false
+    })
     const adminSessionToken = await issueTestSession(db, adminStaffId)
 
     const res = await app.request(`/api/staff/${adminStaffId}`, {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': adminSessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': adminSessionToken }
     })
     expect(res.status).toBe(409)
   })

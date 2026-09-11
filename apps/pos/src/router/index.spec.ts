@@ -8,11 +8,26 @@ import type { AuthorityKey, StaffMember } from '@/types'
 // 驗證通用導航守衛（權限檢查與初次載入頁籤還原）。
 
 const ALL_CAPABILITIES: AuthorityKey[] = [
-  'canCompItem', 'canOpenCashier', 'canManageShift', 'canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder', 'canRefundOrVoid',
-  'canCheckBackgroundSetting', 'canSetCategory', 'canSetProduct', 'canSetAddOns',
-  'canSetOrderCoupon', 'canSetQuickDiscount',
-  'canCheckDataAnalysis', 'canCheckAuthority', 'canManageStaff', 'canManageRoles', 'canSetPayMethod', 'canCheckMembers',
-  'canManageTables',
+  'canCompItem',
+  'canOpenCashier',
+  'canManageShift',
+  'canCheckOrder',
+  'canEditOrderStatus',
+  'canDeleteOrder',
+  'canRefundOrVoid',
+  'canCheckBackgroundSetting',
+  'canSetCategory',
+  'canSetProduct',
+  'canSetAddOns',
+  'canSetOrderCoupon',
+  'canSetQuickDiscount',
+  'canCheckDataAnalysis',
+  'canCheckAuthority',
+  'canManageStaff',
+  'canManageRoles',
+  'canSetPayMethod',
+  'canCheckMembers',
+  'canManageTables'
 ]
 
 // 建立帶有指定權限清單的測試店員資料。
@@ -24,12 +39,12 @@ function buildStaff(overrides: Partial<Record<AuthorityKey, boolean>> = {}): Sta
     jobTitle: '店長',
     account: 'tester',
     password: '',
-    authorityCheckList,
+    authorityCheckList
   }
 }
 
 vi.mock('@/composables/useToast', () => ({
-  showToast: vi.fn(),
+  showToast: vi.fn()
 }))
 
 describe('router guard', () => {

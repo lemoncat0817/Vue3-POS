@@ -8,7 +8,7 @@ const validLine = {
   addList: '無添加配料' as const,
   addListPrice: 0,
   freeDiscount: false,
-  quickDiscountId: null,
+  quickDiscountId: null
 }
 
 const validRequest = {
@@ -20,7 +20,7 @@ const validRequest = {
   tenders: [{ method: '現金', amount: 80 }],
   appliedCoupon: { type: 'none' as const },
   orderChannel: '外帶' as const,
-  invoiceCarrier: { type: '無載具' as const },
+  invoiceCarrier: { type: '無載具' as const }
 }
 
 describe('createOrderRequestSchema', () => {
@@ -29,12 +29,18 @@ describe('createOrderRequestSchema', () => {
   })
 
   it('拒絕不合法的 idempotencyKey（不是 ULID）', () => {
-    const result = createOrderRequestSchema.safeParse({ ...validRequest, idempotencyKey: 'not-a-ulid' })
+    const result = createOrderRequestSchema.safeParse({
+      ...validRequest,
+      idempotencyKey: 'not-a-ulid'
+    })
     expect(result.success).toBe(false)
   })
 
   it('拒絕不合法的 businessDate 格式', () => {
-    const result = createOrderRequestSchema.safeParse({ ...validRequest, businessDate: '2024-06-10' })
+    const result = createOrderRequestSchema.safeParse({
+      ...validRequest,
+      businessDate: '2024-06-10'
+    })
     expect(result.success).toBe(false)
   })
 
@@ -46,23 +52,29 @@ describe('createOrderRequestSchema', () => {
   it('拒絕負數的杯數', () => {
     const result = createOrderRequestSchema.safeParse({
       ...validRequest,
-      lines: [{ ...validLine, count: -1 }],
+      lines: [{ ...validLine, count: -1 }]
     })
     expect(result.success).toBe(false)
   })
 
   it('appliedCoupon 接受 none／coupon 兩種形狀', () => {
-    expect(createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'none' } }).success).toBe(true)
     expect(
-      createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'coupon', couponId: 'coupon-1' } })
-        .success,
+      createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'none' } })
+        .success
+    ).toBe(true)
+    expect(
+      createOrderRequestSchema.safeParse({
+        ...validRequest,
+        appliedCoupon: { type: 'coupon', couponId: 'coupon-1' }
+      }).success
     ).toBe(true)
   })
 
   it('拒絕缺少 couponId 的折價券', () => {
-    expect(createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'coupon' } }).success).toBe(
-      false,
-    )
+    expect(
+      createOrderRequestSchema.safeParse({ ...validRequest, appliedCoupon: { type: 'coupon' } })
+        .success
+    ).toBe(false)
   })
 
   it('拒絕空的 tenders', () => {
@@ -75,8 +87,8 @@ describe('createOrderRequestSchema', () => {
       ...validRequest,
       tenders: [
         { method: '現金', amount: 30, receivedAmount: 50 },
-        { method: '信用卡', amount: 50 },
-      ],
+        { method: '信用卡', amount: 50 }
+      ]
     })
     expect(result.success).toBe(true)
   })
@@ -85,20 +97,24 @@ describe('createOrderRequestSchema', () => {
     expect(
       createOrderRequestSchema.safeParse({
         ...validRequest,
-        lines: [{ ...validLine, addList: ['芝芝'] }],
-      }).success,
+        lines: [{ ...validLine, addList: ['芝芝'] }]
+      }).success
     ).toBe(true)
     expect(
       createOrderRequestSchema.safeParse({
         ...validRequest,
-        lines: [{ ...validLine, addList: '其他字串' }],
-      }).success,
+        lines: [{ ...validLine, addList: '其他字串' }]
+      }).success
     ).toBe(false)
   })
 
   it('orderChannel 只接受內用／外帶', () => {
-    expect(createOrderRequestSchema.safeParse({ ...validRequest, orderChannel: '內用' }).success).toBe(true)
-    expect(createOrderRequestSchema.safeParse({ ...validRequest, orderChannel: '外送' }).success).toBe(false)
+    expect(
+      createOrderRequestSchema.safeParse({ ...validRequest, orderChannel: '內用' }).success
+    ).toBe(true)
+    expect(
+      createOrderRequestSchema.safeParse({ ...validRequest, orderChannel: '外送' }).success
+    ).toBe(false)
     const withoutChannel: Record<string, unknown> = { ...validRequest }
     delete withoutChannel.orderChannel
     expect(createOrderRequestSchema.safeParse(withoutChannel).success).toBe(false)
@@ -117,16 +133,30 @@ describe('invoiceCarrierSchema', () => {
   })
 
   it('手機條碼必須是「/」開頭加 7 碼數字或大寫英文字母', () => {
-    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: '/ABC1234' }).success).toBe(true)
-    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: 'ABC1234' }).success).toBe(false)
-    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: '/ABC123' }).success).toBe(false)
-    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: '/abc1234' }).success).toBe(false)
+    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: '/ABC1234' }).success).toBe(
+      true
+    )
+    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: 'ABC1234' }).success).toBe(
+      false
+    )
+    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: '/ABC123' }).success).toBe(
+      false
+    )
+    expect(invoiceCarrierSchema.safeParse({ type: '手機條碼', value: '/abc1234' }).success).toBe(
+      false
+    )
   })
 
   it('統一編號必須是 8 碼數字', () => {
-    expect(invoiceCarrierSchema.safeParse({ type: '統一編號', value: '12345678' }).success).toBe(true)
-    expect(invoiceCarrierSchema.safeParse({ type: '統一編號', value: '1234567' }).success).toBe(false)
-    expect(invoiceCarrierSchema.safeParse({ type: '統一編號', value: 'abcdefgh' }).success).toBe(false)
+    expect(invoiceCarrierSchema.safeParse({ type: '統一編號', value: '12345678' }).success).toBe(
+      true
+    )
+    expect(invoiceCarrierSchema.safeParse({ type: '統一編號', value: '1234567' }).success).toBe(
+      false
+    )
+    expect(invoiceCarrierSchema.safeParse({ type: '統一編號', value: 'abcdefgh' }).success).toBe(
+      false
+    )
   })
 })
 
@@ -136,12 +166,18 @@ describe('tenderInputSchema', () => {
   })
 
   it('接受 receivedAmount 大於等於 amount', () => {
-    expect(tenderInputSchema.safeParse({ method: '現金', amount: 88, receivedAmount: 100 }).success).toBe(true)
-    expect(tenderInputSchema.safeParse({ method: '現金', amount: 88, receivedAmount: 88 }).success).toBe(true)
+    expect(
+      tenderInputSchema.safeParse({ method: '現金', amount: 88, receivedAmount: 100 }).success
+    ).toBe(true)
+    expect(
+      tenderInputSchema.safeParse({ method: '現金', amount: 88, receivedAmount: 88 }).success
+    ).toBe(true)
   })
 
   it('拒絕 receivedAmount 小於 amount（不可能找出負的零錢）', () => {
-    expect(tenderInputSchema.safeParse({ method: '現金', amount: 88, receivedAmount: 50 }).success).toBe(false)
+    expect(
+      tenderInputSchema.safeParse({ method: '現金', amount: 88, receivedAmount: 50 }).success
+    ).toBe(false)
   })
 
   it('接受 amount 為 0（折抵到 0 元時仍需一筆 tender 結案）', () => {

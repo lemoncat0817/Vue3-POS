@@ -145,13 +145,9 @@
         "cash_movements_shift_id_shifts_id_fk": {
           "name": "cash_movements_shift_id_shifts_id_fk",
           "tableFrom": "cash_movements",
-          "columnsFrom": [
-            "shift_id"
-          ],
+          "columnsFrom": ["shift_id"],
           "tableTo": "shifts",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -411,9 +407,7 @@
       "indexes": {
         "members_phone_idx": {
           "name": "members_phone_idx",
-          "columns": [
-            "phone"
-          ],
+          "columns": ["phone"],
           "isUnique": true
         }
       },
@@ -497,13 +491,9 @@
         "modifier_options_group_id_modifier_groups_id_fk": {
           "name": "modifier_options_group_id_modifier_groups_id_fk",
           "tableFrom": "modifier_options",
-          "columnsFrom": [
-            "group_id"
-          ],
+          "columnsFrom": ["group_id"],
           "tableTo": "modifier_groups",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -644,13 +634,9 @@
         "order_lines_order_id_orders_order_id_fk": {
           "name": "order_lines_order_id_orders_order_id_fk",
           "tableFrom": "order_lines",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "order_id"
-          ],
+          "columnsTo": ["order_id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -710,13 +696,9 @@
         "order_refunds_order_id_orders_order_id_fk": {
           "name": "order_refunds_order_id_orders_order_id_fk",
           "tableFrom": "order_refunds",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "order_id"
-          ],
+          "columnsTo": ["order_id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -800,13 +782,9 @@
         "order_tenders_order_id_orders_order_id_fk": {
           "name": "order_tenders_order_id_orders_order_id_fk",
           "tableFrom": "order_tenders",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "order_id"
-          ],
+          "columnsTo": ["order_id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -1010,9 +988,7 @@
       "indexes": {
         "orders_idempotency_key_idx": {
           "name": "orders_idempotency_key_idx",
-          "columns": [
-            "idempotency_key"
-          ],
+          "columns": ["idempotency_key"],
           "isUnique": true
         }
       },
@@ -1020,13 +996,9 @@
         "orders_member_id_members_id_fk": {
           "name": "orders_member_id_members_id_fk",
           "tableFrom": "orders",
-          "columnsFrom": [
-            "member_id"
-          ],
+          "columnsFrom": ["member_id"],
           "tableTo": "members",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -1096,36 +1068,25 @@
         "product_modifier_groups_product_id_products_id_fk": {
           "name": "product_modifier_groups_product_id_products_id_fk",
           "tableFrom": "product_modifier_groups",
-          "columnsFrom": [
-            "product_id"
-          ],
+          "columnsFrom": ["product_id"],
           "tableTo": "products",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "product_modifier_groups_group_id_modifier_groups_id_fk": {
           "name": "product_modifier_groups_group_id_modifier_groups_id_fk",
           "tableFrom": "product_modifier_groups",
-          "columnsFrom": [
-            "group_id"
-          ],
+          "columnsFrom": ["group_id"],
           "tableTo": "modifier_groups",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {
         "product_modifier_groups_product_id_group_id_pk": {
-          "columns": [
-            "product_id",
-            "group_id"
-          ],
+          "columns": ["product_id", "group_id"],
           "name": "product_modifier_groups_product_id_group_id_pk"
         }
       },
@@ -1176,13 +1137,9 @@
         "products_category_id_categories_id_fk": {
           "name": "products_category_id_categories_id_fk",
           "tableFrom": "products",
-          "columnsFrom": [
-            "category_id"
-          ],
+          "columnsFrom": ["category_id"],
           "tableTo": "categories",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -1296,9 +1253,7 @@
       "indexes": {
         "roles_name_idx": {
           "name": "roles_name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },
@@ -1472,9 +1427,7 @@
       "indexes": {
         "staff_account_idx": {
           "name": "staff_account_idx",
-          "columns": [
-            "account"
-          ],
+          "columns": ["account"],
           "isUnique": true
         }
       },
@@ -1482,13 +1435,9 @@
         "staff_role_id_roles_id_fk": {
           "name": "staff_role_id_roles_id_fk",
           "tableFrom": "staff",
-          "columnsFrom": [
-            "role_id"
-          ],
+          "columnsFrom": ["role_id"],
           "tableTo": "roles",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }

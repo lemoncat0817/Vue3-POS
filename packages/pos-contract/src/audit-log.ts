@@ -9,13 +9,13 @@ export const auditLogSchema = z.object({
   action: auditLogActionSchema,
   operator: z.string().min(1),
   detail: z.string(),
-  createdAt: z.string(),
+  createdAt: z.string()
 })
 export type AuditLog = z.infer<typeof auditLogSchema>
 
 export const createAuditLogRequestSchema = z.object({
   action: auditLogActionSchema,
   operator: z.string().min(1),
-  detail: z.string(),
+  detail: z.string()
 })
 export type CreateAuditLogRequest = z.infer<typeof createAuditLogRequestSchema>

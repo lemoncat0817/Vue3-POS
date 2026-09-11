@@ -23,7 +23,7 @@ export interface LineDiscountFlags {
 /** 沒有套用任何折扣的初始狀態。 */
 export const NO_DISCOUNT: LineDiscountFlags = {
   freeDiscount: false,
-  quickDiscountId: null,
+  quickDiscountId: null
 }
 
 /** 計價所需的品項基本資料（單價、數量、加購項目加總金額）。 */
@@ -42,14 +42,20 @@ export interface PricedLine {
 }
 
 /** 依折扣旗標計算金額。優先序：招待 > 快速折扣；結果箝制不為負。 */
-export function priceLine(base: LineBase, flags: LineDiscountFlags, quickDiscounts: readonly QuickDiscount[]): PricedLine {
+export function priceLine(
+  base: LineBase,
+  flags: LineDiscountFlags,
+  quickDiscounts: readonly QuickDiscount[]
+): PricedLine {
   const originalPrice = base.price * base.count + base.addListPrice * base.count
 
   if (flags.freeDiscount) {
     return { totalPrice: 0, discount: originalPrice, quickDiscountName: '' }
   }
 
-  const applied = flags.quickDiscountId ? quickDiscounts.find((d) => d.id === flags.quickDiscountId) : undefined
+  const applied = flags.quickDiscountId
+    ? quickDiscounts.find((d) => d.id === flags.quickDiscountId)
+    : undefined
   if (!applied) {
     return { totalPrice: originalPrice, discount: 0, quickDiscountName: '' }
   }

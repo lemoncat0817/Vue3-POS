@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test'
 
 // 驗證斷網時訂單寫入離線佇列，恢復連線後由 SyncWorker 自動重試同步且無重複送單。
-test('斷網時送出的 3 張訂單先落地本機佇列，重新連線後自動同步且不重複', async ({ page, context }) => {
+test('斷網時送出的 3 張訂單先落地本機佇列，重新連線後自動同步且不重複', async ({
+  page,
+  context
+}) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
   await page.getByPlaceholder('請輸入 PIN').fill('1234')

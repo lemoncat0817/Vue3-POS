@@ -5,19 +5,19 @@ import { toOrderCoupons, toQuickDiscounts } from './promotions'
 const samplePromotions: PromotionsResponse = {
   orderCoupons: [
     { id: 'money-1', name: '$50折價券', kind: 'amount', value: 50 },
-    { id: 'percent-1', name: '整單95折', kind: 'percent', value: 0.95 },
+    { id: 'percent-1', name: '整單95折', kind: 'percent', value: 0.95 }
   ],
   quickDiscounts: [
     { id: 'quick-1', name: '常客優惠', kind: 'amount', value: 5 },
-    { id: 'quick-2', name: '九折優惠', kind: 'percent', value: 0.9 },
-  ],
+    { id: 'quick-2', name: '九折優惠', kind: 'percent', value: 0.9 }
+  ]
 }
 
 describe('toOrderCoupons', () => {
   it('保留 id／name／kind／value', () => {
     expect(toOrderCoupons(samplePromotions)).toEqual([
       { id: 'money-1', name: '$50折價券', kind: 'amount', value: 50 },
-      { id: 'percent-1', name: '整單95折', kind: 'percent', value: 0.95 },
+      { id: 'percent-1', name: '整單95折', kind: 'percent', value: 0.95 }
     ])
   })
 })

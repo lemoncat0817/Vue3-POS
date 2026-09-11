@@ -2,7 +2,7 @@ import {
   staffSchema,
   type CreateStaffRequest,
   type Staff,
-  type UpdateStaffRequest,
+  type UpdateStaffRequest
 } from '@pos/contract'
 import { fetchJson } from './http'
 
@@ -13,14 +13,17 @@ export async function fetchStaffList(): Promise<Staff[]> {
 }
 
 export async function createStaff(input: CreateStaffRequest): Promise<Staff> {
-  const body = await fetchJson<unknown>('/api/staff', { method: 'POST', body: JSON.stringify(input) })
+  const body = await fetchJson<unknown>('/api/staff', {
+    method: 'POST',
+    body: JSON.stringify(input)
+  })
   return staffSchema.parse(body)
 }
 
 export async function updateStaff(id: string, input: UpdateStaffRequest): Promise<Staff> {
   const body = await fetchJson<unknown>(`/api/staff/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    body: JSON.stringify(input),
+    body: JSON.stringify(input)
   })
   return staffSchema.parse(body)
 }

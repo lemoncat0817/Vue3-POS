@@ -9,10 +9,22 @@ import globals from 'globals'
 const FRAMEWORK_IMPORT_RESTRICTIONS = {
   patterns: [
     {
-      group: ['vue', 'vue-router', 'pinia', 'pinia-*', 'element-plus', 'element-plus/*', '@element-plus/*', '@vue/*', 'echarts', 'echarts/*', '@pos/app'],
-      message: '此套件不得依賴 Vue／UI 框架。',
-    },
-  ],
+      group: [
+        'vue',
+        'vue-router',
+        'pinia',
+        'pinia-*',
+        'element-plus',
+        'element-plus/*',
+        '@element-plus/*',
+        '@vue/*',
+        'echarts',
+        'echarts/*',
+        '@pos/app'
+      ],
+      message: '此套件不得依賴 Vue／UI 框架。'
+    }
+  ]
 }
 
 export default withVueTs(
@@ -26,8 +38,8 @@ export default withVueTs(
       'playwright-report/**',
       'test-results/**',
       // 排除 wrangler dev 建置產物，避免 ESLint 檢查打包後的 minified 代碼。
-      'apps/api/.wrangler/**',
-    ],
+      'apps/api/.wrangler/**'
+    ]
   },
 
   js.configs.recommended,
@@ -40,39 +52,39 @@ export default withVueTs(
     name: 'pos/browser-app',
     files: ['apps/pos/src/**/*.{ts,vue}'],
     languageOptions: {
-      globals: { ...globals.browser },
-    },
+      globals: { ...globals.browser }
+    }
   },
 
   {
     name: 'pos/node-config',
     files: ['**/*.config.{js,ts,mjs,cjs}', 'apps/pos/vite.config.ts', 'eslint.config.js'],
     languageOptions: {
-      globals: { ...globals.node },
-    },
+      globals: { ...globals.node }
+    }
   },
 
   {
     name: 'pos/server-and-domain',
     files: ['apps/api/src/**/*.ts', 'packages/*/src/**/*.ts'],
     languageOptions: {
-      globals: { ...globals.node },
-    },
+      globals: { ...globals.node }
+    }
   },
 
   {
     name: 'pos/domain-purity',
     files: ['packages/pos-domain/src/**/*.ts', 'packages/pos-contract/src/**/*.ts'],
     rules: {
-      'no-restricted-imports': ['error', FRAMEWORK_IMPORT_RESTRICTIONS],
-    },
+      'no-restricted-imports': ['error', FRAMEWORK_IMPORT_RESTRICTIONS]
+    }
   },
   {
     name: 'pos/api-purity',
     files: ['apps/api/src/**/*.ts'],
     rules: {
-      'no-restricted-imports': ['error', FRAMEWORK_IMPORT_RESTRICTIONS],
-    },
+      'no-restricted-imports': ['error', FRAMEWORK_IMPORT_RESTRICTIONS]
+    }
   },
 
   {
@@ -80,9 +92,9 @@ export default withVueTs(
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
       'vue/multi-word-component-names': ['error', { ignores: ['index'] }],
-      'vue/block-lang': ['error', { script: { lang: 'ts' } }],
-    },
+      'vue/block-lang': ['error', { script: { lang: 'ts' } }]
+    }
   },
 
-  prettierSkipFormatting,
+  prettierSkipFormatting
 )

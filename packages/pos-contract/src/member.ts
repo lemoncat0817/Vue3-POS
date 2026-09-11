@@ -6,13 +6,13 @@ export const memberSchema = z.object({
   name: z.string().min(1),
   phone: z.string().min(1),
   points: z.number().int().nonnegative(),
-  createdAt: z.string(),
+  createdAt: z.string()
 })
 export type Member = z.infer<typeof memberSchema>
 
 export const createMemberRequestSchema = z.object({
   name: z.string().min(1),
-  phone: z.string().min(1),
+  phone: z.string().min(1)
 })
 export type CreateMemberRequest = z.infer<typeof createMemberRequestSchema>
 
@@ -24,12 +24,12 @@ export const memberOrderSummarySchema = z.object({
   orderId: z.string(),
   orderTime: z.string(),
   orderStatus: z.string(),
-  orderPaymentPrice: z.number().int().nonnegative(),
+  orderPaymentPrice: z.number().int().nonnegative()
 })
 export type MemberOrderSummary = z.infer<typeof memberOrderSummarySchema>
 
 /** 會員詳細資料＋消費紀錄，GET /api/members/:id 的回應形狀。 */
 export const memberDetailSchema = memberSchema.extend({
-  orders: z.array(memberOrderSummarySchema),
+  orders: z.array(memberOrderSummarySchema)
 })
 export type MemberDetail = z.infer<typeof memberDetailSchema>

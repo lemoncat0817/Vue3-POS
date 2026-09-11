@@ -18,7 +18,7 @@ export async function issueOperatorSession(db: AnyDb, staffId: string): Promise<
     tokenSalt: salt,
     createdAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + SESSION_TTL_MS).toISOString(),
-    revokedAt: null,
+    revokedAt: null
   })
   return token
 }
@@ -26,9 +26,16 @@ export async function issueOperatorSession(db: AnyDb, staffId: string): Promise<
 type OperatorSessionRow = typeof operatorSessions.$inferSelect
 
 /** 找出 token 對應的有效 session（未撤銷、未過期）。逐一驗證雜湊值以支援個別核發與單獨撤銷，比照 requireDeviceToken 的作法。 */
-export async function findActiveOperatorSession(db: AnyDb, token: string): Promise<OperatorSessionRow | null> {
+export async function findActiveOperatorSession(
+  db: AnyDb,
+  token: string
+): Promise<OperatorSessionRow | null> {
   const now = new Date().toISOString()
-  const candidates = await db.select().from(operatorSessions).where(isNull(operatorSessions.revokedAt)).all()
+  const candidates = await db
+    .select()
+    .from(operatorSessions)
+    .where(isNull(operatorSessions.revokedAt))
+    .all()
   for (const session of candidates) {
     if (session.expiresAt <= now) continue
     if (await verifySecret(token, session.tokenHash, session.tokenSalt)) {
@@ -42,5 +49,8 @@ export async function findActiveOperatorSession(db: AnyDb, token: string): Promi
 export async function revokeOperatorSession(db: AnyDb, token: string): Promise<void> {
   const session = await findActiveOperatorSession(db, token)
   if (!session) return
-  await db.update(operatorSessions).set({ revokedAt: new Date().toISOString() }).where(eq(operatorSessions.id, session.id))
+  await db
+    .update(operatorSessions)
+    .set({ revokedAt: new Date().toISOString() })
+    .where(eq(operatorSessions.id, session.id))
 }

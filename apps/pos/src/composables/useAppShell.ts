@@ -7,7 +7,7 @@ import {
   BarChart3,
   ShieldCheck,
   Users,
-  LayoutGrid,
+  LayoutGrid
 } from 'lucide-vue-next'
 import { revokeSession } from '@/api/auth'
 import { useCatalogStore } from '@/stores/catalog'
@@ -26,7 +26,7 @@ export const navItems = [
   { path: '/dataAnalysis', label: '數據分析', icon: BarChart3 },
   { path: '/authorityManagement', label: '權限管理', icon: ShieldCheck },
   { path: '/members', label: '會員管理', icon: Users },
-  { path: '/tables', label: '桌況管理', icon: LayoutGrid },
+  { path: '/tables', label: '桌況管理', icon: LayoutGrid }
 ]
 
 export function useAppShell() {
@@ -47,7 +47,7 @@ export function useAppShell() {
         title: '警告',
         description: '前往後台設定頁面後將清空點餐頁面,是否要前往後台設定頁面?',
         confirmText: '確定前往',
-        cancelText: '取消前往',
+        cancelText: '取消前往'
       })
       if (result !== 'confirm') {
         showToast('取消前往後台設定頁面', 'error')
@@ -63,7 +63,7 @@ export function useAppShell() {
       title: '警告',
       description: '是否要登出?',
       confirmText: '登出',
-      cancelText: '取消登出',
+      cancelText: '取消登出'
     })
     if (result !== 'confirm') {
       showToast('操作取消', 'error')
@@ -94,6 +94,6 @@ export function useAppShell() {
     syncStatus,
     cashierDisplayName,
     changePage,
-    logout,
+    logout
   }
 }

@@ -1,5 +1,6 @@
 /** API 用戶端共用 fetch 封裝，預設指向 localhost:8787。 */
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:8787'
+export const API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:8787'
 
 /** 終端機裝置憑證，未設定時異動端點將收到 401。 */
 const DEVICE_TOKEN = import.meta.env.VITE_DEVICE_TOKEN as string | undefined
@@ -30,7 +31,7 @@ export function setOperatorSessionInvalidHandler(handler: (() => void) | null): 
 export class ApiError extends Error {
   constructor(
     message: string,
-    public readonly status: number,
+    public readonly status: number
   ) {
     super(message)
     this.name = 'ApiError'
@@ -48,22 +49,29 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
       // 預設值（見 api/orders.ts 的退款／作廢，主管二次授權時要送核可者
       // 剛登入核發的 session，不是目前登入中的操作員）。
       ...(currentOperatorSession ? { 'X-Operator-Session': currentOperatorSession } : {}),
-      ...init?.headers,
-    },
+      ...init?.headers
+    }
   })
   if (!res.ok) {
     // 盡量帶上伺服端 { error: string } body 的實際訊息（見各 routes 的 errorSchema），
     // 解析失敗（非 JSON、或沒有 error 欄位）時退回原本的通用訊息。
     const serverMessage = await res
       .json()
-      .then((body: unknown) => (body && typeof body === 'object' && 'error' in body ? String((body as { error: unknown }).error) : null))
+      .then((body: unknown) =>
+        body && typeof body === 'object' && 'error' in body
+          ? String((body as { error: unknown }).error)
+          : null
+      )
       .catch(() => null)
     // 操作員 session 缺漏或過期是唯一會帶「操作員 session」字樣的 401 訊息
     // ——裝置憑證錯誤與 PIN 登入失敗的 401 都不會，藉此區分不會誤觸強制登出。
     if (res.status === 401 && serverMessage?.includes('操作員 session')) {
       onOperatorSessionInvalid?.()
     }
-    throw new ApiError(serverMessage ?? `${init?.method ?? 'GET'} ${path} 失敗：HTTP ${res.status}`, res.status)
+    throw new ApiError(
+      serverMessage ?? `${init?.method ?? 'GET'} ${path} 失敗：HTTP ${res.status}`,
+      res.status
+    )
   }
   // 204 No Content 無 body，直接回傳 undefined。
   if (res.status === 204) {

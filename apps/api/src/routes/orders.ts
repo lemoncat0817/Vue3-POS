@@ -9,7 +9,7 @@ import {
   type InvoiceCarrier,
   type InvoiceStatus,
   type OrderLineInput,
-  type TenderInput,
+  type TenderInput
 } from '@pos/contract'
 import { priceLine, summarizeOrderRefunds, type QuickDiscount } from '@pos/domain'
 import {
@@ -21,7 +21,7 @@ import {
   orders,
   orderTenders,
   products,
-  quickDiscounts as quickDiscountsTable,
+  quickDiscounts as quickDiscountsTable
 } from '../db/schema'
 import { checkCapability, requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -37,27 +37,28 @@ const createOrderRoute = createRoute({
   middleware: [requireDeviceToken] as const,
   request: {
     body: {
-      content: { 'application/json': { schema: createOrderRequestSchema } },
-    },
+      content: { 'application/json': { schema: createOrderRequestSchema } }
+    }
   },
   responses: {
     200: {
       description: '訂單已存在（同一個 idempotencyKey 重送，回傳原本那筆，不會建立第二筆）',
-      content: { 'application/json': { schema: orderSchema } },
+      content: { 'application/json': { schema: orderSchema } }
     },
     201: {
       description: '訂單建立成功',
-      content: { 'application/json': { schema: orderSchema } },
+      content: { 'application/json': { schema: orderSchema } }
     },
     400: {
-      description: '套用的折價券不存在、tenders 金額總和跟應付金額不符，或沒有可用的發票字軌（P23）',
-      content: { 'application/json': { schema: z.object({ error: z.string() }) } },
+      description:
+        '套用的折價券不存在、tenders 金額總和跟應付金額不符，或沒有可用的發票字軌（P23）',
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } }
     },
     401: {
       description: '裝置憑證無效或缺漏',
-      content: { 'application/json': { schema: z.object({ error: z.string() }) } },
-    },
-  },
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } }
+    }
+  }
 })
 
 const listOrdersRoute = createRoute({
@@ -66,9 +67,9 @@ const listOrdersRoute = createRoute({
   responses: {
     200: {
       description: '訂單清單',
-      content: { 'application/json': { schema: z.array(orderSchema) } },
-    },
-  },
+      content: { 'application/json': { schema: z.array(orderSchema) } }
+    }
+  }
 })
 
 const errorSchema = z.object({ error: z.string() })
@@ -83,11 +84,11 @@ const updateOrderStatusRequestSchema = z
   .object({
     orderStatus: orderStatusSchema,
     operator: z.string().min(1),
-    reason: z.string().min(1).optional(),
+    reason: z.string().min(1).optional()
   })
   .refine((data) => data.orderStatus !== '已取消' || data.reason !== undefined, {
     message: '作廢訂單必須填寫原因',
-    path: ['reason'],
+    path: ['reason']
   })
 
 const updateOrderStatusRoute = createRoute({
@@ -96,14 +97,23 @@ const updateOrderStatusRoute = createRoute({
   middleware: [requireDeviceToken] as const,
   request: {
     params: z.object({ orderId: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updateOrderStatusRequestSchema } } },
+    body: { content: { 'application/json': { schema: updateOrderStatusRequestSchema } } }
   },
   responses: {
-    200: { description: '訂單狀態更新成功', content: { 'application/json': { schema: orderSchema } } },
-    401: { description: '裝置憑證無效或缺漏、或缺少操作員身分', content: { 'application/json': { schema: errorSchema } } },
-    403: { description: '這個帳號沒有執行此操作的權限', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這筆訂單', content: { 'application/json': { schema: errorSchema } } },
-  },
+    200: {
+      description: '訂單狀態更新成功',
+      content: { 'application/json': { schema: orderSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏、或缺少操作員身分',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    403: {
+      description: '這個帳號沒有執行此操作的權限',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: { description: '找不到這筆訂單', content: { 'application/json': { schema: errorSchema } } }
+  }
 })
 
 // 只允許對「已完成」的訂單退款（已作廢的訂單整筆不算數，不需另外退錢，
@@ -115,15 +125,24 @@ const createRefundRoute = createRoute({
   middleware: [requireDeviceToken, requireCapability('canRefundOrVoid')] as const,
   request: {
     params: z.object({ orderId: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: refundInputSchema } } },
+    body: { content: { 'application/json': { schema: refundInputSchema } } }
   },
   responses: {
-    200: { description: '這個 refundId 已經退過款（冪等），回傳目前的訂單狀態', content: { 'application/json': { schema: orderSchema } } },
+    200: {
+      description: '這個 refundId 已經退過款（冪等），回傳目前的訂單狀態',
+      content: { 'application/json': { schema: orderSchema } }
+    },
     201: { description: '退款成功', content: { 'application/json': { schema: orderSchema } } },
-    400: { description: '這筆訂單已作廢，或退款金額超過目前還能退的額度', content: { 'application/json': { schema: errorSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這筆訂單', content: { 'application/json': { schema: errorSchema } } },
-  },
+    400: {
+      description: '這筆訂單已作廢，或退款金額超過目前還能退的額度',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: { description: '找不到這筆訂單', content: { 'application/json': { schema: errorSchema } } }
+  }
 })
 
 // 真的從資料庫刪掉整筆訂單（含明細），不是軟刪除——沿用既有「刪除訂單」
@@ -133,13 +152,16 @@ const deleteOrderRoute = createRoute({
   path: '/{orderId}',
   middleware: [requireDeviceToken, requireCapability('canDeleteOrder')] as const,
   request: {
-    params: z.object({ orderId: z.string().min(1) }),
+    params: z.object({ orderId: z.string().min(1) })
   },
   responses: {
     204: { description: '訂單已刪除' },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這筆訂單', content: { 'application/json': { schema: errorSchema } } },
-  },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: { description: '找不到這筆訂單', content: { 'application/json': { schema: errorSchema } } }
+  }
 })
 
 type OrderRow = typeof orders.$inferSelect
@@ -147,7 +169,12 @@ type OrderLineRow = typeof orderLines.$inferSelect
 type OrderTenderRow = typeof orderTenders.$inferSelect
 type OrderRefundRow = typeof orderRefunds.$inferSelect
 
-function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderTenderRow[], refunds: OrderRefundRow[]) {
+function toOrderResponse(
+  order: OrderRow,
+  lines: OrderLineRow[],
+  tenders: OrderTenderRow[],
+  refunds: OrderRefundRow[]
+) {
   const sortedRefunds = [...refunds].sort((a, b) => a.at.localeCompare(b.at))
   const { refundedAmount } = summarizeOrderRefunds(order.orderPaymentPrice, sortedRefunds)
   return orderSchema.parse({
@@ -169,7 +196,7 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderT
       amount: refund.amount,
       reason: refund.reason,
       operator: refund.operator,
-      at: refund.at,
+      at: refund.at
     })),
     refundedAmount,
     voidReason: order.voidReason,
@@ -187,7 +214,7 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderT
       .map((tender) => ({
         method: tender.method,
         amount: tender.amount,
-        ...(tender.receivedAmount === null ? {} : { receivedAmount: tender.receivedAmount }),
+        ...(tender.receivedAmount === null ? {} : { receivedAmount: tender.receivedAmount })
       })),
     orderData: lines.map((line) => ({
       name: line.name,
@@ -199,8 +226,8 @@ function toOrderResponse(order: OrderRow, lines: OrderLineRow[], tenders: OrderT
       quickDiscountId: line.quickDiscountId,
       discount: line.discount,
       totalPrice: line.totalPrice,
-      quickDiscountName: line.quickDiscountName,
-    })),
+      quickDiscountName: line.quickDiscountName
+    }))
   })
 }
 
@@ -252,7 +279,9 @@ async function nextInvoiceNumber(db: AnyDb): Promise<string> {
     returning track_code as trackCode, current_number as currentNumber
   `)
   if (!row) {
-    throw new Error('沒有可用的發票字軌（沒有啟用中的字軌，或號碼已用完），請先在後台設定電子發票字軌')
+    throw new Error(
+      '沒有可用的發票字軌（沒有啟用中的字軌，或號碼已用完），請先在後台設定電子發票字軌'
+    )
   }
   return `${row.trackCode}${String(row.currentNumber).padStart(8, '0')}`
 }
@@ -267,17 +296,30 @@ function toInvoiceCarrier(type: InvoiceCarrier['type'], value: string | null): I
 // ——改過名字的品項，舊訂單不會再扣到它的庫存，屬已知限制。庫存為 null
 // 或找不到對應品項時直接略過，扣到 0 就不再往下扣，也不會因庫存不夠
 // 擋下訂單：目前只做「扣減與示警」，真正的超賣防護留待之後需要再做。
-async function deductStock(db: AnyDb, lines: Pick<OrderLineInput, 'name' | 'count' | 'addList'>[]): Promise<void> {
+async function deductStock(
+  db: AnyDb,
+  lines: Pick<OrderLineInput, 'name' | 'count' | 'addList'>[]
+): Promise<void> {
   for (const line of lines) {
     const item = await db.select().from(products).where(eq(products.name, line.name)).get()
     if (item && item.stock !== null) {
-      await db.update(products).set({ stock: Math.max(0, item.stock - line.count) }).where(eq(products.id, item.id))
+      await db
+        .update(products)
+        .set({ stock: Math.max(0, item.stock - line.count) })
+        .where(eq(products.id, item.id))
     }
     if (Array.isArray(line.addList)) {
       for (const addOnName of line.addList) {
-        const addOn = await db.select().from(addOnOptions).where(eq(addOnOptions.name, addOnName)).get()
+        const addOn = await db
+          .select()
+          .from(addOnOptions)
+          .where(eq(addOnOptions.name, addOnName))
+          .get()
         if (addOn && addOn.stock !== null) {
-          await db.update(addOnOptions).set({ stock: Math.max(0, addOn.stock - line.count) }).where(eq(addOnOptions.id, addOn.id))
+          await db
+            .update(addOnOptions)
+            .set({ stock: Math.max(0, addOn.stock - line.count) })
+            .where(eq(addOnOptions.id, addOn.id))
         }
       }
     }
@@ -297,13 +339,20 @@ async function resolveMemberId(db: AnyDb, memberId: string | undefined): Promise
 }
 
 /** 送單成功後，如果這筆訂單掛了會員，依實付金額累加點數。memberId 這裡已經是 resolveMemberId() 確認過存在的。 */
-async function accrueMemberPoints(db: AnyDb, memberId: string | null, orderPaymentPrice: number): Promise<void> {
+async function accrueMemberPoints(
+  db: AnyDb,
+  memberId: string | null,
+  orderPaymentPrice: number
+): Promise<void> {
   if (!memberId) return
   const member = await db.select().from(members).where(eq(members.id, memberId)).get()
   if (!member) return
   const earned = Math.floor(orderPaymentPrice / POINTS_PER_CURRENCY_UNIT)
   if (earned <= 0) return
-  await db.update(members).set({ points: member.points + earned }).where(eq(members.id, memberId))
+  await db
+    .update(members)
+    .set({ points: member.points + earned })
+    .where(eq(members.id, memberId))
 }
 
 // 用戶端只送「套用了哪張」，實際折抵金額查真正的折價券資料重算，不
@@ -311,12 +360,16 @@ async function accrueMemberPoints(db: AnyDb, memberId: string | null, orderPayme
 async function resolveOrderPayment(
   db: AnyDb,
   appliedCoupon: AppliedCoupon,
-  orderTotalPrice: number,
+  orderTotalPrice: number
 ): Promise<{ orderPaymentPrice: number; discountName: string } | { error: string }> {
   if (appliedCoupon.type === 'none') {
     return { orderPaymentPrice: orderTotalPrice, discountName: '無' }
   }
-  const coupon = await db.select().from(orderCoupons).where(eq(orderCoupons.id, appliedCoupon.couponId)).get()
+  const coupon = await db
+    .select()
+    .from(orderCoupons)
+    .where(eq(orderCoupons.id, appliedCoupon.couponId))
+    .get()
   if (!coupon) return { error: '找不到這張折價券' }
   const orderPaymentPrice =
     coupon.kind === 'amount'
@@ -328,13 +381,16 @@ async function resolveOrderPayment(
 // 驗證混合支付金額總和並算出找零，不信任用戶端自己算的合計。
 function validateTenders(
   tenders: readonly TenderInput[],
-  orderPaymentPrice: number,
+  orderPaymentPrice: number
 ): { changeDue: number } | { error: string } {
   const totalTendered = tenders.reduce((sum, tender) => sum + tender.amount, 0)
   if (totalTendered !== orderPaymentPrice) {
     return { error: `付款金額總和（${totalTendered}）與應付金額（${orderPaymentPrice}）不符` }
   }
-  const changeDue = tenders.reduce((sum, tender) => sum + ((tender.receivedAmount ?? tender.amount) - tender.amount), 0)
+  const changeDue = tenders.reduce(
+    (sum, tender) => sum + ((tender.receivedAmount ?? tender.amount) - tender.amount),
+    0
+  )
   return { changeDue }
 }
 
@@ -343,11 +399,27 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const input = c.req.valid('json')
     const db = c.get('db')
 
-    const existing = await db.select().from(orders).where(eq(orders.idempotencyKey, input.idempotencyKey)).get()
+    const existing = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.idempotencyKey, input.idempotencyKey))
+      .get()
     if (existing) {
-      const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, existing.orderId)).all()
-      const existingTenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, existing.orderId)).all()
-      const existingRefunds = await db.select().from(orderRefunds).where(eq(orderRefunds.orderId, existing.orderId)).all()
+      const lines = await db
+        .select()
+        .from(orderLines)
+        .where(eq(orderLines.orderId, existing.orderId))
+        .all()
+      const existingTenders = await db
+        .select()
+        .from(orderTenders)
+        .where(eq(orderTenders.orderId, existing.orderId))
+        .all()
+      const existingRefunds = await db
+        .select()
+        .from(orderRefunds)
+        .where(eq(orderRefunds.orderId, existing.orderId))
+        .all()
       return c.json(toOrderResponse(existing, lines, existingTenders, existingRefunds), 200)
     }
 
@@ -362,12 +434,13 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       const priced = priceLine(
         { price: line.price, count: line.count, addListPrice: line.addListPrice },
         line,
-        quickDiscountsNow,
+        quickDiscountsNow
       )
       return { ...line, ...priced }
     })
 
-    const orderTotalPrice = pricedLines.reduce((sum, line) => sum + line.totalPrice, 0) + input.bagCount
+    const orderTotalPrice =
+      pricedLines.reduce((sum, line) => sum + line.totalPrice, 0) + input.bagCount
     const payment = await resolveOrderPayment(db, input.appliedCoupon, orderTotalPrice)
     if ('error' in payment) {
       return c.json({ error: payment.error }, 400)
@@ -417,20 +490,21 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       voidedAt: null,
       invoiceNumber,
       invoiceCarrierType: input.invoiceCarrier.type,
-      invoiceCarrierValue: input.invoiceCarrier.type === '無載具' ? null : input.invoiceCarrier.value,
+      invoiceCarrierValue:
+        input.invoiceCarrier.type === '無載具' ? null : input.invoiceCarrier.value,
       memberId,
       invoiceStatus: 'issued',
       invoiceSubmittedAt: null,
       // 純紀錄用途，不像 memberId 需要驗證存在性（不是外鍵，只是字串）。
       tableNumber: input.tableNumber ?? null,
-      note: input.note?.trim() || null,
+      note: input.note?.trim() || null
     }
     const newTenders: Omit<OrderTenderRow, 'id'>[] = input.tenders.map((tender, seq) => ({
       orderId,
       seq,
       method: tender.method,
       amount: tender.amount,
-      receivedAmount: tender.receivedAmount ?? null,
+      receivedAmount: tender.receivedAmount ?? null
     }))
 
     // 刻意不用 db.transaction()：better-sqlite3 要求同步回呼、D1 的
@@ -445,8 +519,16 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     await deductStock(db, input.lines)
     await accrueMemberPoints(db, memberId, orderPaymentPrice)
 
-    const insertedLines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
-    const insertedTenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
+    const insertedLines = await db
+      .select()
+      .from(orderLines)
+      .where(eq(orderLines.orderId, orderId))
+      .all()
+    const insertedTenders = await db
+      .select()
+      .from(orderTenders)
+      .where(eq(orderTenders.orderId, orderId))
+      .all()
     return c.json(toOrderResponse(newOrder, insertedLines, insertedTenders, []), 201)
   })
   .openapi(listOrdersRoute, async (c) => {
@@ -481,10 +563,10 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
           order,
           linesByOrder.get(order.orderId) ?? [],
           tendersByOrder.get(order.orderId) ?? [],
-          refundsByOrder.get(order.orderId) ?? [],
-        ),
+          refundsByOrder.get(order.orderId) ?? []
+        )
       ),
-      200,
+      200
     )
   })
   .openapi(updateOrderStatusRoute, async (c) => {
@@ -496,8 +578,12 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     // 見 apps/pos/src/views/order/index.vue 的 requestRefundOrVoidApproval）；
     // 其餘狀態變更只需 canEditOrderStatus，所需權限要看請求內容才能決定，
     // 沒辦法用靜態的 requireCapability() 中介軟體。
-    const capabilityCheck = await checkCapability(c, orderStatus === '已取消' ? 'canRefundOrVoid' : 'canEditOrderStatus')
-    if (!capabilityCheck.ok) return c.json({ error: capabilityCheck.message }, capabilityCheck.status)
+    const capabilityCheck = await checkCapability(
+      c,
+      orderStatus === '已取消' ? 'canRefundOrVoid' : 'canEditOrderStatus'
+    )
+    if (!capabilityCheck.ok)
+      return c.json({ error: capabilityCheck.message }, capabilityCheck.status)
 
     const existing = await db.select().from(orders).where(eq(orders.orderId, orderId)).get()
     if (!existing) {
@@ -515,11 +601,30 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const invoiceStatusField: { invoiceStatus?: InvoiceStatus } =
       orderStatus === '已取消' ? { invoiceStatus: 'voided' } : { invoiceStatus: 'issued' }
 
-    await db.update(orders).set({ orderStatus, ...voidFields, ...invoiceStatusField }).where(eq(orders.orderId, orderId))
+    await db
+      .update(orders)
+      .set({ orderStatus, ...voidFields, ...invoiceStatusField })
+      .where(eq(orders.orderId, orderId))
     const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
-    const tenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
-    const refunds = await db.select().from(orderRefunds).where(eq(orderRefunds.orderId, orderId)).all()
-    return c.json(toOrderResponse({ ...existing, orderStatus, ...voidFields, ...invoiceStatusField }, lines, tenders, refunds), 200)
+    const tenders = await db
+      .select()
+      .from(orderTenders)
+      .where(eq(orderTenders.orderId, orderId))
+      .all()
+    const refunds = await db
+      .select()
+      .from(orderRefunds)
+      .where(eq(orderRefunds.orderId, orderId))
+      .all()
+    return c.json(
+      toOrderResponse(
+        { ...existing, orderStatus, ...voidFields, ...invoiceStatusField },
+        lines,
+        tenders,
+        refunds
+      ),
+      200
+    )
   })
   .openapi(createRefundRoute, async (c) => {
     const { orderId } = c.req.valid('param')
@@ -531,12 +636,20 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '找不到這筆訂單' }, 404)
     }
 
-    const existingRefunds = await db.select().from(orderRefunds).where(eq(orderRefunds.orderId, orderId)).all()
+    const existingRefunds = await db
+      .select()
+      .from(orderRefunds)
+      .where(eq(orderRefunds.orderId, orderId))
+      .all()
 
     // 冪等：同一個 refundId 重送回傳目前狀態，不重複建立退款紀錄。
     if (existingRefunds.some((refund) => refund.id === input.refundId)) {
       const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
-      const tenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
+      const tenders = await db
+        .select()
+        .from(orderTenders)
+        .where(eq(orderTenders.orderId, orderId))
+        .all()
       return c.json(toOrderResponse(existing, lines, tenders, existingRefunds), 200)
     }
 
@@ -546,7 +659,10 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
 
     const { refundableAmount } = summarizeOrderRefunds(existing.orderPaymentPrice, existingRefunds)
     if (input.amount > refundableAmount) {
-      return c.json({ error: `退款金額（${input.amount}）超過這筆訂單目前還能退的額度（${refundableAmount}）` }, 400)
+      return c.json(
+        { error: `退款金額（${input.amount}）超過這筆訂單目前還能退的額度（${refundableAmount}）` },
+        400
+      )
     }
 
     const newRefund: OrderRefundRow = {
@@ -555,12 +671,16 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       amount: input.amount,
       reason: input.reason,
       operator: input.operator,
-      at: new Date().toISOString(),
+      at: new Date().toISOString()
     }
     await db.insert(orderRefunds).values(newRefund)
 
     const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
-    const tenders = await db.select().from(orderTenders).where(eq(orderTenders.orderId, orderId)).all()
+    const tenders = await db
+      .select()
+      .from(orderTenders)
+      .where(eq(orderTenders.orderId, orderId))
+      .all()
     return c.json(toOrderResponse(existing, lines, tenders, [...existingRefunds, newRefund]), 201)
   })
   .openapi(deleteOrderRoute, async (c) => {

@@ -1,4 +1,10 @@
-import { shiftSchema, type CloseShiftRequest, type OpenShiftRequest, type AddCashMovementRequest, type Shift } from '@pos/contract'
+import {
+  shiftSchema,
+  type CloseShiftRequest,
+  type OpenShiftRequest,
+  type AddCashMovementRequest,
+  type Shift
+} from '@pos/contract'
 import { ApiError, fetchJson } from './http'
 
 /** 班別結帳 API 用戶端（開帳、現金異動、收班需裝置憑證）。 */
@@ -17,23 +23,29 @@ export async function fetchCurrentShift(): Promise<Shift | null> {
 export async function openShift(input: OpenShiftRequest): Promise<Shift> {
   const body = await fetchJson<unknown>('/api/shifts', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: JSON.stringify(input)
   })
   return shiftSchema.parse(body)
 }
 
-export async function addCashMovement(shiftId: string, input: AddCashMovementRequest): Promise<Shift> {
-  const body = await fetchJson<unknown>(`/api/shifts/${encodeURIComponent(shiftId)}/cash-movements`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  })
+export async function addCashMovement(
+  shiftId: string,
+  input: AddCashMovementRequest
+): Promise<Shift> {
+  const body = await fetchJson<unknown>(
+    `/api/shifts/${encodeURIComponent(shiftId)}/cash-movements`,
+    {
+      method: 'POST',
+      body: JSON.stringify(input)
+    }
+  )
   return shiftSchema.parse(body)
 }
 
 export async function closeShift(shiftId: string, input: CloseShiftRequest): Promise<Shift> {
   const body = await fetchJson<unknown>(`/api/shifts/${encodeURIComponent(shiftId)}/close`, {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: JSON.stringify(input)
   })
   return shiftSchema.parse(body)
 }

@@ -9,13 +9,13 @@ export const diningTableSchema = z.object({
   tableNumber: z.string().min(1),
   seats: z.number().int().positive(),
   status: tableStatusSchema,
-  note: z.string(),
+  note: z.string()
 })
 export type DiningTable = z.infer<typeof diningTableSchema>
 
 export const createTableRequestSchema = z.object({
   tableNumber: z.string().min(1),
-  seats: z.number().int().positive(),
+  seats: z.number().int().positive()
 })
 export type CreateTableRequest = z.infer<typeof createTableRequestSchema>
 
@@ -24,6 +24,6 @@ export type UpdateTableRequest = z.infer<typeof updateTableRequestSchema>
 
 export const updateTableStatusRequestSchema = z.object({
   status: tableStatusSchema,
-  note: z.string().optional(),
+  note: z.string().optional()
 })
 export type UpdateTableStatusRequest = z.infer<typeof updateTableStatusRequestSchema>

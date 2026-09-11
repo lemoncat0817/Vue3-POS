@@ -31,7 +31,7 @@ const state = reactive<ConfirmState>({
   cancelText: '取消',
   variant: 'info',
   singleButton: false,
-  resolve: null,
+  resolve: null
 })
 
 /** 給 ConfirmDialogHost.vue 讀取目前要顯示的內容，不對外匯出。 */

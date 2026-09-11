@@ -7,7 +7,7 @@ import { enqueueOrder } from './outbox'
 import { syncOnce, syncStatus } from './sync-worker'
 
 vi.mock('@/api/orders', () => ({
-  createOrder: vi.fn(),
+  createOrder: vi.fn()
 }))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { createOrder } = (await import('@/api/orders')) as any
@@ -29,13 +29,13 @@ const payload = (idempotencyKey: string): CreateOrderRequest => ({
       bottleDiscount: false,
       oftenUseDiscount1: false,
       oftenUseDiscount2: false,
-      oftenUseDiscount3: false,
-    },
+      oftenUseDiscount3: false
+    }
   ],
   bagCount: 0,
   payment: '現金',
   orderDiscount: 0,
-  discountName: '無',
+  discountName: '無'
 })
 
 function fakeOrder(orderId: string): Order {
@@ -51,7 +51,7 @@ function fakeOrder(orderId: string): Order {
     orderPayment: '現金',
     orderDiscount: 0,
     orderPaymentPrice: 80,
-    discountName: '無',
+    discountName: '無'
   }
 }
 
@@ -69,7 +69,10 @@ describe('syncOnce', () => {
     const onSynced = vi.fn()
     await syncOnce(onSynced)
 
-    expect(onSynced).toHaveBeenCalledWith('local-1', expect.objectContaining({ orderId: '202406101' }))
+    expect(onSynced).toHaveBeenCalledWith(
+      'local-1',
+      expect.objectContaining({ orderId: '202406101' })
+    )
     expect(await offlineDb.outboxOrders.count()).toBe(0)
     expect(syncStatus.pendingCount).toBe(0)
   })

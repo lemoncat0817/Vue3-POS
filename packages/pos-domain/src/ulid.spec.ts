@@ -9,7 +9,7 @@ describe('ulid', () => {
     fc.assert(
       fc.property(fc.integer({ min: 0, max: Date.now() * 2 }), (time) => {
         expect(ulid(time)).toMatch(ULID_PATTERN)
-      }),
+      })
     )
   })
 

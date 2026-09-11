@@ -7,7 +7,7 @@ import {
   toggleQuickDiscount,
   type LineBase,
   type LineDiscountFlags,
-  type QuickDiscount,
+  type QuickDiscount
 } from './pricing'
 import { DEFAULT_QUICK_DISCOUNTS as QUICK_DISCOUNTS } from './fixtures/quick-discounts'
 
@@ -15,13 +15,13 @@ const quickDiscountIdArb = fc.constantFrom<string | null>(null, ...QUICK_DISCOUN
 
 const flagsArb: fc.Arbitrary<LineDiscountFlags> = fc.record({
   freeDiscount: fc.boolean(),
-  quickDiscountId: quickDiscountIdArb,
+  quickDiscountId: quickDiscountIdArb
 })
 
 const lineBaseArb: fc.Arbitrary<LineBase> = fc.record({
   price: fc.integer({ min: 0, max: 300 }),
   count: fc.integer({ min: 1, max: 99 }),
-  addListPrice: fc.integer({ min: 0, max: 100 }),
+  addListPrice: fc.integer({ min: 0, max: 100 })
 })
 
 describe('priceLine — 對照原本各折扣情境的正向計算式', () => {
@@ -60,7 +60,11 @@ describe('priceLine — 對照原本各折扣情境的正向計算式', () => {
 
   it('找不到對應 id 的快速折扣時，視為未套用（例如後台已刪除該筆折扣）', () => {
     const base: LineBase = { price: 90, count: 1, addListPrice: 0 }
-    const priced = priceLine(base, { freeDiscount: false, quickDiscountId: 'does-not-exist' }, QUICK_DISCOUNTS)
+    const priced = priceLine(
+      base,
+      { freeDiscount: false, quickDiscountId: 'does-not-exist' },
+      QUICK_DISCOUNTS
+    )
     expect(priced.totalPrice).toBe(90)
     expect(priced.discount).toBe(0)
   })
@@ -73,7 +77,7 @@ describe('計價不變式', () => {
         const priced = priceLine(base, flags, QUICK_DISCOUNTS)
         const originalPrice = base.price * base.count + base.addListPrice * base.count
         expect(priced.totalPrice + priced.discount).toBe(originalPrice)
-      }),
+      })
     )
   })
 
@@ -82,7 +86,7 @@ describe('計價不變式', () => {
       fc.property(lineBaseArb, flagsArb, (base, flags) => {
         const priced = priceLine(base, flags, QUICK_DISCOUNTS)
         expect(priced.totalPrice).toBeGreaterThanOrEqual(0)
-      }),
+      })
     )
   })
 
@@ -91,7 +95,7 @@ describe('計價不變式', () => {
       fc.property(lineBaseArb, flagsArb, (base, flags) => {
         const priced = priceLine(base, { ...flags, freeDiscount: true }, QUICK_DISCOUNTS)
         expect(priced.totalPrice).toBe(0)
-      }),
+      })
     )
   })
 
@@ -100,7 +104,7 @@ describe('計價不變式', () => {
       fc.property(flagsArb, (flags) => {
         const result = toggleFree(toggleFree(flags))
         expect(result).toEqual({ ...NO_DISCOUNT, freeDiscount: flags.freeDiscount })
-      }),
+      })
     )
   })
 
@@ -109,7 +113,7 @@ describe('計價不變式', () => {
       fc.property(flagsArb, fc.constantFrom(...QUICK_DISCOUNTS.map((d) => d.id)), (flags, id) => {
         const result = toggleQuickDiscount(flags, id)
         expect(result.quickDiscountId === null || result.quickDiscountId === id).toBe(true)
-      }),
+      })
     )
   })
 
@@ -119,12 +123,14 @@ describe('計價不變式', () => {
         const once = toggleQuickDiscount(flags, id)
         const twice = toggleQuickDiscount(once, id)
         expect(twice.quickDiscountId).toBe(flags.quickDiscountId === id ? id : null)
-      }),
+      })
     )
   })
 
   it('不變式：後台可自由增刪快速折扣清單，priceLine() 不假設固定筆數', () => {
-    const shortList: QuickDiscount[] = [{ id: 'only-one', name: '單一折扣', kind: 'amount', value: 3 }]
+    const shortList: QuickDiscount[] = [
+      { id: 'only-one', name: '單一折扣', kind: 'amount', value: 3 }
+    ]
     const base: LineBase = { price: 50, count: 2, addListPrice: 0 }
     const priced = priceLine(base, { freeDiscount: false, quickDiscountId: 'only-one' }, shortList)
     expect(priced.totalPrice).toBe(94) // 100 - 3*2

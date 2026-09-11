@@ -17,12 +17,15 @@ import { useTheme } from '@/composables/useTheme'
 
 echarts.use([BarChart, GridComponent, TooltipComponent, CanvasRenderer])
 
-const props = withDefaults(defineProps<{
-  items: { name: string; count: number }[]
-  unit: string
-  color?: string
-  emptyLabel: string
-}>(), { color: '#0ea5e9' })
+const props = withDefaults(
+  defineProps<{
+    items: { name: string; count: number }[]
+    unit: string
+    color?: string
+    emptyLabel: string
+  }>(),
+  { color: '#0ea5e9' }
+)
 
 const { theme } = useTheme()
 const isDark = computed(() => theme.value === 'dark')
@@ -48,8 +51,10 @@ const buildOption = () => {
       textStyle: { color: textColor },
       formatter: (params: unknown) => {
         const [point] = params as { name: string; value: number }[]
-        return point ? `${point.name}<br/><span style="font-weight:bold;">${point.value.toLocaleString()} ${props.unit}</span>` : ''
-      },
+        return point
+          ? `${point.name}<br/><span style="font-weight:bold;">${point.value.toLocaleString()} ${props.unit}</span>`
+          : ''
+      }
     },
     xAxis: { type: 'value', show: false },
     yAxis: {
@@ -57,7 +62,7 @@ const buildOption = () => {
       data: sorted.map((item) => item.name),
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: textColor, fontSize: 12, fontWeight: 'bold' },
+      axisLabel: { color: textColor, fontSize: 12, fontWeight: 'bold' }
     },
     series: [
       {
@@ -71,10 +76,10 @@ const buildOption = () => {
           color: subtextColor,
           fontSize: 11,
           fontWeight: 'bold',
-          formatter: (p: { value: number }) => p.value.toLocaleString(),
-        },
-      },
-    ],
+          formatter: (p: { value: number }) => p.value.toLocaleString()
+        }
+      }
+    ]
   }
 }
 

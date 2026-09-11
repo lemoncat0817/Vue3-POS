@@ -3,7 +3,7 @@ import {
   submitInvoicesResponseSchema,
   type CreateInvoiceTrackRequest,
   type InvoiceTrack,
-  type SubmitInvoicesResponse,
+  type SubmitInvoicesResponse
 } from '@pos/contract'
 import { fetchJson } from './http'
 
@@ -14,7 +14,10 @@ export async function fetchInvoiceTracks(): Promise<InvoiceTrack[]> {
 }
 
 export async function createInvoiceTrack(input: CreateInvoiceTrackRequest): Promise<InvoiceTrack> {
-  const body = await fetchJson<unknown>('/api/invoices/tracks', { method: 'POST', body: JSON.stringify(input) })
+  const body = await fetchJson<unknown>('/api/invoices/tracks', {
+    method: 'POST',
+    body: JSON.stringify(input)
+  })
   return invoiceTrackSchema.parse(body)
 }
 

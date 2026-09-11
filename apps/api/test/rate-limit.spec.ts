@@ -8,7 +8,9 @@ describe('速率限制', () => {
   it('GET 端點不受限制，就算計數器已經爆表也一樣能查詢', async () => {
     const db = createTestDb()
     const app = createTestApp(db)
-    await db.run(sql`insert into rate_limit_counters (key, window_start, count) values ('anonymous', ${Date.now()}, 9999)`)
+    await db.run(
+      sql`insert into rate_limit_counters (key, window_start, count) values ('anonymous', ${Date.now()}, 9999)`
+    )
     const res = await app.request('/api/catalog')
     expect(res.status).toBe(200)
   })
@@ -24,8 +26,12 @@ describe('速率限制', () => {
 
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '測試分類' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '測試分類' })
     })
     expect(res.status).toBe(429)
     expect(res.headers.get('Retry-After')).toBeTruthy()
@@ -44,8 +50,12 @@ describe('速率限制', () => {
 
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '測試分類2' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '測試分類2' })
     })
     expect(res.status).toBe(201)
   })

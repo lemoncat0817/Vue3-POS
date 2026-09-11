@@ -18,7 +18,10 @@ import type { AppEnv } from '../types'
  * 資訊，直接信任等於誰都能填別人的 id 冒充身分；session token 是 PIN
  * 登入成功才會核發、伺服端只存雜湊值、可以單獨撤銷與設定效期。
  */
-async function resolveCapabilities(db: AnyDb, sessionToken: string | null): Promise<AuthorityKey[] | null> {
+async function resolveCapabilities(
+  db: AnyDb,
+  sessionToken: string | null
+): Promise<AuthorityKey[] | null> {
   if (!sessionToken) return null
   const session = await findActiveOperatorSession(db, sessionToken)
   if (!session) return null
@@ -38,11 +41,20 @@ export type CapabilityCheckResult = { ok: true } | { ok: false; status: 401 | 40
  * 狀態變更這種「所需權限要看請求內容才決定」的路由直接呼叫；一般路由請用
  * 下面的 requireCapability() 中介軟體。
  */
-export async function checkCapability(c: Context<AppEnv>, key: AuthorityKey): Promise<CapabilityCheckResult> {
+export async function checkCapability(
+  c: Context<AppEnv>,
+  key: AuthorityKey
+): Promise<CapabilityCheckResult> {
   const sessionToken = c.req.header('X-Operator-Session') ?? null
   const capabilities = await resolveCapabilities(c.get('db'), sessionToken)
   if (capabilities === null) {
-    return { ok: false, status: 401, message: sessionToken ? '操作員 session 無效或已過期' : '缺少操作員 session（X-Operator-Session）' }
+    return {
+      ok: false,
+      status: 401,
+      message: sessionToken
+        ? '操作員 session 無效或已過期'
+        : '缺少操作員 session（X-Operator-Session）'
+    }
   }
   if (!capabilities.includes(key)) {
     return { ok: false, status: 403, message: '這個帳號沒有執行此操作的權限' }

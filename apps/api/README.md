@@ -60,9 +60,11 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
    pnpm --filter @pos/api run db:migrate:remote
    ```
 4. **設定核發密鑰**（見下方「裝置憑證」說明）：
+
    ```sh
    pnpm exec wrangler secret put PROVISIONING_SECRET
    ```
+
    本機開發（`wrangler dev`）用 `.dev.vars` 檔案設定同一個變數，例如
    `PROVISIONING_SECRET=dev-provisioning-secret`（`.dev.vars` 已加進
    .gitignore，不會被提交）。
@@ -73,9 +75,11 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
    `http://localhost:4173`（`vite preview`，`pnpm run test:e2e` 用的
    就是這個）或 `http://localhost:5173`（`vite dev`），需要另外加進
    白名單才能跨源打到本機的 `wrangler dev`，例如：
+
    ```
    ALLOWED_ORIGINS=http://localhost:4173,http://localhost:5173
    ```
+
 5. **部署**：
    ```sh
    pnpm --filter @pos/api run deploy

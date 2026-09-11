@@ -4,7 +4,7 @@ import {
   createMemberRequestSchema,
   memberDetailSchema,
   memberSchema,
-  updateMemberRequestSchema,
+  updateMemberRequestSchema
 } from '@pos/contract'
 import { members, orders } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
@@ -20,12 +20,18 @@ const listMembersRoute = createRoute({
   middleware: [requireDeviceToken] as const,
   request: {
     // 支援依手機號碼精確查詢，供結帳流程快速檢索。
-    query: z.object({ phone: z.string().min(1).optional() }),
+    query: z.object({ phone: z.string().min(1).optional() })
   },
   responses: {
-    200: { description: '會員列表', content: { 'application/json': { schema: memberSchema.array() } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-  },
+    200: {
+      description: '會員列表',
+      content: { 'application/json': { schema: memberSchema.array() } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const createMemberRoute = createRoute({
@@ -35,9 +41,15 @@ const createMemberRoute = createRoute({
   request: { body: { content: { 'application/json': { schema: createMemberRequestSchema } } } },
   responses: {
     201: { description: '會員建立成功', content: { 'application/json': { schema: memberSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    409: { description: '這個手機號碼已經是會員', content: { 'application/json': { schema: errorSchema } } },
-  },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    409: {
+      description: '這個手機號碼已經是會員',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const getMemberRoute = createRoute({
@@ -46,10 +58,16 @@ const getMemberRoute = createRoute({
   middleware: [requireDeviceToken] as const,
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
-    200: { description: '會員詳細資料＋消費紀錄', content: { 'application/json': { schema: memberDetailSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個會員', content: { 'application/json': { schema: errorSchema } } },
-  },
+    200: {
+      description: '會員詳細資料＋消費紀錄',
+      content: { 'application/json': { schema: memberDetailSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: { description: '找不到這個會員', content: { 'application/json': { schema: errorSchema } } }
+  }
 })
 
 const updateMemberRoute = createRoute({
@@ -58,14 +76,23 @@ const updateMemberRoute = createRoute({
   middleware: [requireDeviceToken, requireCapability('canCheckMembers')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updateMemberRequestSchema } } },
+    body: { content: { 'application/json': { schema: updateMemberRequestSchema } } }
   },
   responses: {
     200: { description: '會員更新成功', content: { 'application/json': { schema: memberSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個會員', content: { 'application/json': { schema: errorSchema } } },
-    409: { description: '這個手機號碼已經是別的會員', content: { 'application/json': { schema: errorSchema } } },
-  },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: {
+      description: '找不到這個會員',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    409: {
+      description: '這個手機號碼已經是別的會員',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const deleteMemberRoute = createRoute({
@@ -75,9 +102,12 @@ const deleteMemberRoute = createRoute({
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '會員已刪除' },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這個會員', content: { 'application/json': { schema: errorSchema } } },
-  },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: { description: '找不到這個會員', content: { 'application/json': { schema: errorSchema } } }
+  }
 })
 
 export const memberRoutes = new OpenAPIHono<AppEnv>()
@@ -94,7 +124,12 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     const db = c.get('db')
     const existing = await db.select().from(members).where(eq(members.phone, input.phone)).get()
     if (existing) return c.json({ error: '這個手機號碼已經是會員' }, 409)
-    const newMember = { id: crypto.randomUUID(), ...input, points: 0, createdAt: new Date().toISOString() }
+    const newMember = {
+      id: crypto.randomUUID(),
+      ...input,
+      points: 0,
+      createdAt: new Date().toISOString()
+    }
     await db.insert(members).values(newMember)
     return c.json(newMember, 201)
   })
@@ -108,7 +143,7 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
         orderId: orders.orderId,
         orderTime: orders.orderTime,
         orderStatus: orders.orderStatus,
-        orderPaymentPrice: orders.orderPaymentPrice,
+        orderPaymentPrice: orders.orderPaymentPrice
       })
       .from(orders)
       .where(eq(orders.memberId, id))
@@ -123,7 +158,8 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     const existing = await db.select().from(members).where(eq(members.id, id)).get()
     if (!existing) return c.json({ error: '找不到這個會員' }, 404)
     const phoneTaken = await db.select().from(members).where(eq(members.phone, input.phone)).get()
-    if (phoneTaken && phoneTaken.id !== id) return c.json({ error: '這個手機號碼已經是別的會員' }, 409)
+    if (phoneTaken && phoneTaken.id !== id)
+      return c.json({ error: '這個手機號碼已經是別的會員' }, 409)
     await db.update(members).set(input).where(eq(members.id, id))
     return c.json({ ...existing, ...input }, 200)
   })

@@ -9,7 +9,10 @@ import { seedRole } from './roles'
 export const TEST_PROVISIONING_SECRET = 'test-provisioning-secret'
 
 export function createTestApp(db: AnyDb) {
-  return createApp(db, { provisioningSecret: TEST_PROVISIONING_SECRET, allowedOrigins: ['http://localhost:4173'] })
+  return createApp(db, {
+    provisioningSecret: TEST_PROVISIONING_SECRET,
+    allowedOrigins: ['http://localhost:4173']
+  })
 }
 
 /**
@@ -29,7 +32,7 @@ async function seedTestStaff(db: AnyDb): Promise<{ staffId: string; sessionToken
     account: `test-staff-${staffId}`,
     roleId,
     pinHash: 'test-hash',
-    pinSalt: 'test-salt',
+    pinSalt: 'test-salt'
   })
   const sessionToken = await issueOperatorSession(db, staffId)
   return { staffId, sessionToken }
@@ -55,15 +58,24 @@ export async function issueTestSession(db: AnyDb, staffId: string): Promise<stri
 export async function createTestAppWithDevice(
   db: AnyDb,
   deviceName = 'test-device',
-  options: { seedStaff?: boolean } = {},
-): Promise<{ app: ReturnType<typeof createApp>; deviceToken: string; staffId: string; sessionToken: string }> {
+  options: { seedStaff?: boolean } = {}
+): Promise<{
+  app: ReturnType<typeof createApp>
+  deviceToken: string
+  staffId: string
+  sessionToken: string
+}> {
   const app = createTestApp(db)
   const res = await app.request('/api/devices', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Provisioning-Secret': TEST_PROVISIONING_SECRET },
-    body: JSON.stringify({ name: deviceName }),
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Provisioning-Secret': TEST_PROVISIONING_SECRET
+    },
+    body: JSON.stringify({ name: deviceName })
   })
   const body = (await res.json()) as { token: string }
-  const { staffId, sessionToken } = options.seedStaff === false ? { staffId: '', sessionToken: '' } : await seedTestStaff(db)
+  const { staffId, sessionToken } =
+    options.seedStaff === false ? { staffId: '', sessionToken: '' } : await seedTestStaff(db)
   return { app, deviceToken: body.token, staffId, sessionToken }
 }

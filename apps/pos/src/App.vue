@@ -8,7 +8,6 @@
   <ReceiptPreviewDialogHost />
 </template>
 
-
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
@@ -23,7 +22,13 @@ import { useDiscountStore } from '@/stores/discount'
 import { useOrderStore } from '@/stores/order'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 import { useRolesStore } from '@/stores/roles'
-import { fetchCatalog, toLocalAddOns, toLocalCategories, toLocalModifierGroups, toLocalProducts } from '@/api/catalog'
+import {
+  fetchCatalog,
+  toLocalAddOns,
+  toLocalCategories,
+  toLocalModifierGroups,
+  toLocalProducts
+} from '@/api/catalog'
 import { fetchPromotions, toOrderCoupons, toQuickDiscounts } from '@/api/promotions'
 import { fetchPaymentMethods } from '@/api/payment-methods'
 import { fetchStaffList } from '@/api/staff'
@@ -40,7 +45,7 @@ const { data: catalog } = useQuery({
   queryKey: ['catalog'],
   queryFn: fetchCatalog,
   staleTime: Infinity,
-  retry: 1,
+  retry: 1
 })
 watch(catalog, (value) => {
   if (!value) return
@@ -48,7 +53,7 @@ watch(catalog, (value) => {
     categories: toLocalCategories(value),
     products: toLocalProducts(value),
     modifierGroups: toLocalModifierGroups(value),
-    addOns: toLocalAddOns(value),
+    addOns: toLocalAddOns(value)
   })
 })
 
@@ -58,13 +63,13 @@ const { data: promotions } = useQuery({
   queryKey: ['promotions'],
   queryFn: fetchPromotions,
   staleTime: Infinity,
-  retry: 1,
+  retry: 1
 })
 watch(promotions, (value) => {
   if (!value) return
   discountStore.hydratePromotionsFromServer({
     orderCoupons: toOrderCoupons(value),
-    quickDiscounts: toQuickDiscounts(value),
+    quickDiscounts: toQuickDiscounts(value)
   })
 })
 
@@ -74,7 +79,7 @@ const { data: paymentMethods } = useQuery({
   queryKey: ['payment-methods'],
   queryFn: fetchPaymentMethods,
   staleTime: Infinity,
-  retry: 1,
+  retry: 1
 })
 watch(paymentMethods, (value) => {
   if (!value) return
@@ -87,7 +92,7 @@ const { data: staffListResponse } = useQuery({
   queryKey: ['staff'],
   queryFn: fetchStaffList,
   staleTime: Infinity,
-  retry: 1,
+  retry: 1
 })
 watch(staffListResponse, (value) => {
   if (!value) return
@@ -100,7 +105,7 @@ const { data: roleListResponse } = useQuery({
   queryKey: ['roles'],
   queryFn: fetchRoleList,
   staleTime: Infinity,
-  retry: 1,
+  retry: 1
 })
 watch(roleListResponse, (value) => {
   if (!value) return

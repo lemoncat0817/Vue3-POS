@@ -2,7 +2,14 @@ import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { CreateOrderRequest } from '@pos/contract'
 import { offlineDb } from './db'
-import { countPending, enqueueOrder, listDueOrders, markFailed, markSynced, markSyncing } from './outbox'
+import {
+  countPending,
+  enqueueOrder,
+  listDueOrders,
+  markFailed,
+  markSynced,
+  markSyncing
+} from './outbox'
 
 const samplePayload: CreateOrderRequest = {
   idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
@@ -21,13 +28,13 @@ const samplePayload: CreateOrderRequest = {
       bottleDiscount: false,
       oftenUseDiscount1: false,
       oftenUseDiscount2: false,
-      oftenUseDiscount3: false,
-    },
+      oftenUseDiscount3: false
+    }
   ],
   bagCount: 0,
   payment: '現金',
   orderDiscount: 0,
-  discountName: '無',
+  discountName: '無'
 }
 
 beforeEach(async () => {
@@ -39,7 +46,11 @@ describe('enqueueOrder / listDueOrders', () => {
     await enqueueOrder(samplePayload, 'local-1')
     const due = await listDueOrders()
     expect(due).toHaveLength(1)
-    expect(due[0]).toMatchObject({ id: samplePayload.idempotencyKey, localOrderId: 'local-1', status: 'pending' })
+    expect(due[0]).toMatchObject({
+      id: samplePayload.idempotencyKey,
+      localOrderId: 'local-1',
+      status: 'pending'
+    })
   })
 
   it('nextAttemptAt 還沒到的項目不會被 listDueOrders 取出（指數退避期間跳過）', async () => {
@@ -52,8 +63,14 @@ describe('enqueueOrder / listDueOrders', () => {
   })
 
   it('依 createdAt 順序回傳（保留送單先後順序）', async () => {
-    await enqueueOrder({ ...samplePayload, idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FA1' }, 'local-1')
-    await enqueueOrder({ ...samplePayload, idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FA2' }, 'local-2')
+    await enqueueOrder(
+      { ...samplePayload, idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FA1' },
+      'local-1'
+    )
+    await enqueueOrder(
+      { ...samplePayload, idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FA2' },
+      'local-2'
+    )
     const due = await listDueOrders()
     expect(due.map((o) => o.localOrderId)).toEqual(['local-1', 'local-2'])
   })

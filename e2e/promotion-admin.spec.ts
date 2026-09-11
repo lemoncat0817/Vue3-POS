@@ -15,7 +15,10 @@ test('後台新增／刪除訂單折價券會真的呼叫伺服端，重新整�
   const couponName = `E2E測試折價券-${Date.now()}`
 
   const createResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/promotions/order-coupons') && res.request().method() === 'POST' && res.ok(),
+    (res) =>
+      res.url().includes('/api/promotions/order-coupons') &&
+      res.request().method() === 'POST' &&
+      res.ok()
   )
   await page.getByRole('button', { name: '＋ 新增折價券', exact: true }).click()
   const addDialog = page.getByRole('dialog', { name: '新增訂單折價券' })
@@ -23,7 +26,12 @@ test('後台新增／刪除訂單折價券會真的呼叫伺服端，重新整�
   await addDialog.getByPlaceholder('純數字,例如:50,100...').fill('42')
   await addDialog.getByRole('button', { name: '新增', exact: true }).click()
 
-  const createBody = (await (await createResponse).json()) as { id: string; name: string; kind: string; value: number }
+  const createBody = (await (await createResponse).json()) as {
+    id: string
+    name: string
+    kind: string
+    value: number
+  }
   expect(createBody).toMatchObject({ name: couponName, kind: 'amount', value: 42 })
   expect(createBody.id).toMatch(/^[0-9a-f-]{36}$/)
 
@@ -39,7 +47,7 @@ test('後台新增／刪除訂單折價券會真的呼叫伺服端，重新整�
     (res) =>
       res.url().includes(`/api/promotions/order-coupons/${createBody.id}`) &&
       res.request().method() === 'DELETE' &&
-      res.status() === 204,
+      res.status() === 204
   )
   const row = page.locator('tr', { hasText: couponName })
   await row.getByRole('button', { name: '刪除', exact: true }).click()
@@ -67,7 +75,10 @@ test('後台編輯訂單折價券：切換類型後改用折數欄位、合法�
 
   const couponName = `E2E編輯測試券-${Date.now()}`
   const createResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/promotions/order-coupons') && res.request().method() === 'POST' && res.ok(),
+    (res) =>
+      res.url().includes('/api/promotions/order-coupons') &&
+      res.request().method() === 'POST' &&
+      res.ok()
   )
   await page.getByRole('button', { name: '＋ 新增折價券', exact: true }).click()
   const addDialog = page.getByRole('dialog', { name: '新增訂單折價券' })
@@ -91,15 +102,21 @@ test('後台編輯訂單折價券：切換類型後改用折數欄位、合法�
     (res) =>
       res.url().includes(`/api/promotions/order-coupons/${createBody.id}`) &&
       res.request().method() === 'PUT' &&
-      res.ok(),
+      res.ok()
   )
   await editDialog.getByRole('button', { name: '保存', exact: true }).click()
-  const updateBody = (await (await updateResponse).json()) as { name: string; kind: string; value: number }
+  const updateBody = (await (await updateResponse).json()) as {
+    name: string
+    kind: string
+    value: number
+  }
   expect(updateBody).toMatchObject({ name: couponName, kind: 'percent', value: 0.9 })
   await expect(page.getByTestId('toast-message')).toHaveText('保存成功')
 
   const deleteResponse = page.waitForResponse(
-    (res) => res.url().includes(`/api/promotions/order-coupons/${createBody.id}`) && res.request().method() === 'DELETE',
+    (res) =>
+      res.url().includes(`/api/promotions/order-coupons/${createBody.id}`) &&
+      res.request().method() === 'DELETE'
   )
   await row.getByRole('button', { name: '刪除', exact: true }).click()
   await page.getByRole('button', { name: '確定' }).click()

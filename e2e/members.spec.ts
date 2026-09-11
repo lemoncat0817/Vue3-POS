@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test'
 
 // 驗證會員建立、點餐點數累積、消費紀錄查詢與後台 CRUD 操作。
-test('結帳時查無會員可以直接建立，送單後依金額累加點數，後台看得到這筆消費紀錄', async ({ page }) => {
+test('結帳時查無會員可以直接建立，送單後依金額累加點數，後台看得到這筆消費紀錄', async ({
+  page
+}) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
   await page.getByPlaceholder('請輸入 PIN').fill('1234')
@@ -21,7 +23,7 @@ test('結帳時查無會員可以直接建立，送單後依金額累加點數�
   await page.getByTestId('search-member').click()
   await page.getByTestId('new-member-name').fill(memberName)
   const createMemberResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/members') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/members') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByTestId('create-member').click()
   const memberBody = (await (await createMemberResponse).json()) as { id: string; name: string }
@@ -29,7 +31,7 @@ test('結帳時查無會員可以直接建立，送單後依金額累加點數�
   await expect(page.getByTestId('member-button')).toHaveText(`會員：${memberName}`)
 
   const createOrderResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByTestId('checkout-button').click()
   await page.getByRole('button', { name: '現金', exact: true }).click()
@@ -37,7 +39,11 @@ test('結帳時查無會員可以直接建立，送單後依金額累加點數�
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
   await page.getByRole('button', { name: '繼續選取品項' }).click()
-  const orderBody = (await (await createOrderResponse).json()) as { orderId: string; memberId: string; orderPaymentPrice: number }
+  const orderBody = (await (await createOrderResponse).json()) as {
+    orderId: string
+    memberId: string
+    orderPaymentPrice: number
+  }
   expect(orderBody.memberId).toBe(memberBody.id)
   expect(orderBody.orderPaymentPrice).toBe(80)
 
@@ -56,7 +62,10 @@ test('結帳時查無會員可以直接建立，送單後依金額累加點數�
   await detailDialog.getByRole('button', { name: '關閉' }).click()
 
   const deleteResponse = page.waitForResponse(
-    (res) => res.url().includes(`/api/members/${memberBody.id}`) && res.request().method() === 'DELETE' && res.status() === 204,
+    (res) =>
+      res.url().includes(`/api/members/${memberBody.id}`) &&
+      res.request().method() === 'DELETE' &&
+      res.status() === 204
   )
   await row.getByRole('button', { name: '刪除', exact: true }).click()
   await page.getByRole('button', { name: '確定' }).click()
@@ -82,7 +91,7 @@ test('後台新增／編輯／刪除會員；重複的手機號碼會被擋', as
   await addDialog.getByLabel('姓名').fill(name)
   await addDialog.getByLabel('手機號碼').fill(phone)
   const createResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/members') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/members') && res.request().method() === 'POST' && res.ok()
   )
   await addDialog.getByRole('button', { name: '新增', exact: true }).click()
   const created = (await (await createResponse).json()) as { id: string }
@@ -106,9 +115,13 @@ test('後台新增／編輯／刪除會員；重複的手機號碼會被擋', as
   await expect(page.getByText(updatedName)).toBeVisible()
 
   const deleteResponse = page.waitForResponse(
-    (res) => res.url().includes(`/api/members/${created.id}`) && res.request().method() === 'DELETE',
+    (res) => res.url().includes(`/api/members/${created.id}`) && res.request().method() === 'DELETE'
   )
-  await page.getByRole('row').filter({ hasText: updatedName }).getByRole('button', { name: '刪除', exact: true }).click()
+  await page
+    .getByRole('row')
+    .filter({ hasText: updatedName })
+    .getByRole('button', { name: '刪除', exact: true })
+    .click()
   await page.getByRole('button', { name: '確定' }).click()
   await deleteResponse
   await expect(page.getByText(updatedName)).toHaveCount(0)

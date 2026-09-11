@@ -16,7 +16,7 @@ const validLine = {
   addList: '無添加配料' as const,
   addListPrice: 0,
   freeDiscount: false,
-  quickDiscountId: null,
+  quickDiscountId: null
 }
 
 function buildRequest(overrides: Record<string, unknown> = {}) {
@@ -30,7 +30,7 @@ function buildRequest(overrides: Record<string, unknown> = {}) {
     appliedCoupon: { type: 'none' },
     orderChannel: '外帶',
     invoiceCarrier: { type: '無載具' },
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -67,7 +67,7 @@ describe('GET /api/reports/sales', () => {
     expect(body.dailyRevenue).toEqual([
       { businessDate: '20260101', revenue: 0 },
       { businessDate: '20260102', revenue: 0 },
-      { businessDate: '20260103', revenue: 0 },
+      { businessDate: '20260103', revenue: 0 }
     ])
   })
 
@@ -77,23 +77,27 @@ describe('GET /api/reports/sales', () => {
     await db.insert(categories).values([{ id: 'cat-1', name: '飲品' }])
     await db.insert(products).values([
       { id: 'prod-1', categoryId: 'cat-1', name: '楊枝甘露2.0', basePrice: 80, stock: null },
-      { id: 'prod-2', categoryId: 'cat-1', name: '珍珠奶茶', basePrice: 80, stock: null },
+      { id: 'prod-2', categoryId: 'cat-1', name: '珍珠奶茶', basePrice: 80, stock: null }
     ])
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
 
     // 兩杯楊枝甘露（無配料）+ 一杯有加珍珠、椰果的飲料，同一張訂單。
     const createRes = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
       body: JSON.stringify(
         buildRequest({
           lines: [
             validLine,
-            { ...validLine, name: '珍珠奶茶', count: 1, addList: ['珍珠', '椰果'] },
+            { ...validLine, name: '珍珠奶茶', count: 1, addList: ['珍珠', '椰果'] }
           ],
-          tenders: [{ method: '現金', amount: 240 }], // 160 + 80
-        }),
-      ),
+          tenders: [{ method: '現金', amount: 240 }] // 160 + 80
+        })
+      )
     })
     expect(createRes.status).toBe(201)
     const created = await readJson(createRes)
@@ -102,7 +106,9 @@ describe('GET /api/reports/sales', () => {
     expect(res.status).toBe(200)
     const body = await readJson(res)
 
-    expect(body.dailyRevenue).toEqual([{ businessDate: '20260101', revenue: created.orderPaymentPrice }])
+    expect(body.dailyRevenue).toEqual([
+      { businessDate: '20260101', revenue: created.orderPaymentPrice }
+    ])
 
     const hourTen = body.hourlyRevenue.find((point: { hour: number }) => point.hour === 10)
     expect(hourTen.revenue).toBe(created.orderPaymentPrice)
@@ -112,15 +118,15 @@ describe('GET /api/reports/sales', () => {
     expect(body.topProducts).toEqual(
       expect.arrayContaining([
         { name: '楊枝甘露2.0', count: 2 },
-        { name: '珍珠奶茶', count: 1 },
-      ]),
+        { name: '珍珠奶茶', count: 1 }
+      ])
     )
     // '無添加配料' 那兩杯不該出現在配料排行——json_type 過濾掉非陣列的 addList。
     expect(body.topAddOns).toEqual(
       expect.arrayContaining([
         { name: '珍珠', count: 1 },
-        { name: '椰果', count: 1 },
-      ]),
+        { name: '椰果', count: 1 }
+      ])
     )
     expect(body.topAddOns).toHaveLength(2)
     expect(body.topPaymentMethods).toEqual([{ name: '現金', count: 1 }])
@@ -133,21 +139,33 @@ describe('GET /api/reports/sales', () => {
     const db = createTestDb()
     await seedPromotions(db)
     await db.insert(categories).values([{ id: 'cat-1', name: '飲品' }])
-    await db.insert(products).values([{ id: 'prod-1', categoryId: 'cat-1', name: '楊枝甘露2.0', basePrice: 80, stock: null }])
+    await db
+      .insert(products)
+      .values([
+        { id: 'prod-1', categoryId: 'cat-1', name: '楊枝甘露2.0', basePrice: 80, stock: null }
+      ])
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
 
     const createRes = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify(buildRequest()),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify(buildRequest())
     })
     expect(createRes.status).toBe(201)
     const created = await readJson(createRes)
 
     const voidRes = await app.request(`/api/orders/${created.orderId}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '客訴退單' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '客訴退單' })
     })
     expect(voidRes.status).toBe(200)
 
@@ -171,31 +189,50 @@ describe('GET /api/reports/sales', () => {
     // 外帶、套用 $50 折價券：160 - 50 = 110。
     const takeoutRes = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
       body: JSON.stringify(
         buildRequest({
           idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB1',
           orderChannel: '外帶',
           appliedCoupon: { type: 'coupon', couponId: 'money-1' },
-          tenders: [{ method: '現金', amount: 110 }],
-        }),
-      ),
+          tenders: [{ method: '現金', amount: 110 }]
+        })
+      )
     })
     expect(takeoutRes.status).toBe(201)
 
     // 內用、無折扣，之後退款 30 元。
     const dineInRes = await app.request('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB2', orderChannel: '內用' })),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify(
+        buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB2', orderChannel: '內用' })
+      )
     })
     expect(dineInRes.status).toBe(201)
     const dineInOrder = await readJson(dineInRes)
 
     const refundRes = await app.request(`/api/orders/${dineInOrder.orderId}/refunds`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ refundId: '01ARZ3NDEKTSV4RRFFQ69G5FC1', amount: 30, reason: '少一顆珍珠', operator: '店長 - Lemon' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({
+        refundId: '01ARZ3NDEKTSV4RRFFQ69G5FC1',
+        amount: 30,
+        reason: '少一顆珍珠',
+        operator: '店長 - Lemon'
+      })
     })
     expect(refundRes.status).toBe(201)
 
@@ -210,8 +247,8 @@ describe('GET /api/reports/sales', () => {
     expect(body.channelBreakdown).toEqual(
       expect.arrayContaining([
         { channel: '外帶', count: 1, revenue: 110 },
-        { channel: '內用', count: 1, revenue: 160 },
-      ]),
+        { channel: '內用', count: 1, revenue: 160 }
+      ])
     )
   })
 })

@@ -15,7 +15,7 @@ test('後台新增／刪除人員會真的呼叫伺服端，重新整理後狀�
   const staffAccount = `e2e${Date.now()}`
 
   const createResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/staff') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/staff') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByRole('button', { name: '＋ 新增人員', exact: true }).click()
   const addDialog = page.getByRole('dialog', { name: '新增人員' })
@@ -27,7 +27,11 @@ test('後台新增／刪除人員會真的呼叫伺服端，重新整理後狀�
   await page.getByRole('option', { name: '工讀生' }).click()
   await addDialog.getByRole('button', { name: '新增', exact: true }).click()
 
-  const createBody = (await (await createResponse).json()) as { id: string; name: string; account: string }
+  const createBody = (await (await createResponse).json()) as {
+    id: string
+    name: string
+    account: string
+  }
   expect(createBody).toMatchObject({ name: staffName, account: staffAccount })
   expect(typeof createBody.id).toBe('string')
   expect(createBody.id.length).toBeGreaterThan(0)
@@ -40,9 +44,15 @@ test('後台新增／刪除人員會真的呼叫伺服端，重新整理後狀�
   await expect(page.getByText(staffName)).toBeVisible()
 
   const deleteResponse = page.waitForResponse(
-    (res) => res.url().includes(`/api/staff/${createBody.id}`) && res.request().method() === 'DELETE' && res.status() === 204,
+    (res) =>
+      res.url().includes(`/api/staff/${createBody.id}`) &&
+      res.request().method() === 'DELETE' &&
+      res.status() === 204
   )
-  await page.getByRole('row', { name: new RegExp(staffName) }).getByRole('button', { name: '刪除', exact: true }).click()
+  await page
+    .getByRole('row', { name: new RegExp(staffName) })
+    .getByRole('button', { name: '刪除', exact: true })
+    .click()
   await page.getByRole('button', { name: '確定' }).click()
   await deleteResponse
   await expect(page.getByTestId('toast-message')).toHaveText('刪除成功')
@@ -67,7 +77,8 @@ test('後台新增／刪除付款方式會真的呼叫伺服端，重新整理�
   const methodName = `E2E測試付款-${Date.now()}`
 
   const createResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/payment-methods') && res.request().method() === 'POST' && res.ok(),
+    (res) =>
+      res.url().includes('/api/payment-methods') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByRole('button', { name: '＋ 新增付款方式', exact: true }).click()
   const addDialog = page.getByRole('dialog', { name: '新增付款方式' })
@@ -76,7 +87,11 @@ test('後台新增／刪除付款方式會真的呼叫伺服端，重新整理�
   await page.getByRole('option', { name: '感應', exact: true }).click()
   await addDialog.getByRole('button', { name: '新增', exact: true }).click()
 
-  const createBody = (await (await createResponse).json()) as { id: string; name: string; useMethod: string }
+  const createBody = (await (await createResponse).json()) as {
+    id: string
+    name: string
+    useMethod: string
+  }
   expect(createBody).toMatchObject({ name: methodName, useMethod: '感應' })
   expect(typeof createBody.id).toBe('string')
   expect(createBody.id.length).toBeGreaterThan(0)
@@ -90,9 +105,15 @@ test('後台新增／刪除付款方式會真的呼叫伺服端，重新整理�
   await expect(page.getByText(methodName)).toBeVisible()
 
   const deleteResponse = page.waitForResponse(
-    (res) => res.url().includes(`/api/payment-methods/${createBody.id}`) && res.request().method() === 'DELETE' && res.status() === 204,
+    (res) =>
+      res.url().includes(`/api/payment-methods/${createBody.id}`) &&
+      res.request().method() === 'DELETE' &&
+      res.status() === 204
   )
-  await page.getByRole('row', { name: methodName }).getByRole('button', { name: '刪除', exact: true }).click()
+  await page
+    .getByRole('row', { name: methodName })
+    .getByRole('button', { name: '刪除', exact: true })
+    .click()
   await page.getByRole('button', { name: '確定' }).click()
   await deleteResponse
   await expect(page.getByTestId('toast-message')).toHaveText('刪除成功')

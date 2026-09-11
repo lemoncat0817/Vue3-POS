@@ -13,7 +13,7 @@ const sampleLine: CartLineItem = {
   totalPrice: 80,
   freeDiscount: false,
   quickDiscountId: null,
-  quickDiscountName: '',
+  quickDiscountName: ''
 }
 
 describe('buildCreateOrderRequest', () => {
@@ -26,7 +26,7 @@ describe('buildCreateOrderRequest', () => {
       tenders: [{ method: '現金', amount: 80 }],
       appliedCoupon: { type: 'none' },
       orderChannel: '外帶',
-      invoiceCarrier: { type: '無載具' },
+      invoiceCarrier: { type: '無載具' }
     })
 
     expect(request.lines[0]).toMatchObject({ price: 80, count: 1 })
@@ -42,7 +42,7 @@ describe('buildCreateOrderRequest', () => {
       tenders: [{ method: '現金', amount: 80 }],
       appliedCoupon: { type: 'none' },
       orderChannel: '外帶',
-      invoiceCarrier: { type: '無載具' },
+      invoiceCarrier: { type: '無載具' }
     })
     const b = buildCreateOrderRequest({
       businessDate: '20240610',
@@ -52,7 +52,7 @@ describe('buildCreateOrderRequest', () => {
       tenders: [{ method: '現金', amount: 80 }],
       appliedCoupon: { type: 'none' },
       orderChannel: '外帶',
-      invoiceCarrier: { type: '無載具' },
+      invoiceCarrier: { type: '無載具' }
     })
 
     expect(a.idempotencyKey).toMatch(/^[0-9A-HJKMNP-TV-Z]{26}$/)
@@ -68,7 +68,7 @@ describe('buildCreateOrderRequest', () => {
       tenders: [{ method: '現金', amount: 80 }],
       appliedCoupon: { type: 'coupon', couponId: 'coupon-1' },
       orderChannel: '外帶',
-      invoiceCarrier: { type: '無載具' },
+      invoiceCarrier: { type: '無載具' }
     })
     expect(coupon.appliedCoupon).toEqual({ type: 'coupon', couponId: 'coupon-1' })
   })

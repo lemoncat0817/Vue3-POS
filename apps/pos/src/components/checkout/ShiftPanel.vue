@@ -1,9 +1,23 @@
 <template>
   <div
-class="flex cursor-pointer items-center gap-1" role="button" tabindex="0" data-testid="shift-status"
-    @click="open = true" @keyup.enter="open = true">
-    <p class="mr-2 font-bold text-surface-700 dark:text-surface-300 xl:text-lg lg:text-base md:text-sm text-xs">班別</p>
-    <p class="text-center font-bold xl:text-lg lg:text-base md:text-sm text-xs" :class="shift ? 'text-success-600 dark:text-success-400' : 'text-surface-400 dark:text-surface-500'">
+    class="flex cursor-pointer items-center gap-1"
+    role="button"
+    tabindex="0"
+    data-testid="shift-status"
+    @click="open = true"
+    @keyup.enter="open = true"
+  >
+    <p
+      class="mr-2 font-bold text-surface-700 dark:text-surface-300 xl:text-lg lg:text-base md:text-sm text-xs"
+    >
+      班別
+    </p>
+    <p
+      class="text-center font-bold xl:text-lg lg:text-base md:text-sm text-xs"
+      :class="
+        shift ? 'text-success-600 dark:text-success-400' : 'text-surface-400 dark:text-surface-500'
+      "
+    >
       {{ shift ? '營業中' : '尚未開帳' }}
     </p>
   </div>
@@ -12,72 +26,176 @@ class="flex cursor-pointer items-center gap-1" role="button" tabindex="0" data-t
     <div v-if="!shift" class="flex flex-col gap-3">
       <p class="text-sm text-surface-500 dark:text-surface-400">開帳零用金（找零準備金）</p>
       <input
-v-model.number="openingFloat" type="number" min="0"
-        class="w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+        v-model.number="openingFloat"
+        type="number"
+        min="0"
+        class="w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+      />
       <div class="mt-2 flex justify-end gap-2">
-        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800" @click="open = false">取消</button>
         <button
-type="button" :disabled="isSubmitting || !canManageShift"
+          type="button"
+          class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800"
+          @click="open = false"
+        >
+          取消
+        </button>
+        <button
+          type="button"
+          :disabled="isSubmitting || !canManageShift"
           class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
-          @click="submitOpen">開帳</button>
+          @click="submitOpen"
+        >
+          開帳
+        </button>
       </div>
     </div>
 
     <div v-else-if="!closing" class="flex flex-col gap-3">
-      <div class="grid grid-cols-2 gap-2 rounded-lg bg-surface-50 dark:bg-surface-800 p-3 text-sm text-surface-900 dark:text-surface-100">
-        <div><span class="text-surface-500 dark:text-surface-400">開帳人員：</span>{{ shift.openedBy }}</div>
-        <div><span class="text-surface-500 dark:text-surface-400">開帳時間：</span>{{ shift.openedAt.slice(11, 16) }}</div>
-        <div><span class="text-surface-500 dark:text-surface-400">開帳零用金：</span>$ {{ shift.openingFloat }}</div>
-        <div><span class="text-surface-500 dark:text-surface-400">現金存入／提出：</span>+{{ shift.cashIn }} / −{{ shift.cashOut }}</div>
-      </div>
-
-      <div v-if="shift.movements.length > 0" class="flex flex-col gap-1 text-xs text-surface-600 dark:text-surface-300">
-        <div v-for="movement in shift.movements" :key="movement.id" class="flex justify-between border-b border-surface-100 dark:border-surface-800 py-1">
-          <span>{{ movement.type === 'in' ? '存入' : '提出' }}：{{ movement.reason }}</span>
-          <span class="font-bold">{{ movement.type === 'in' ? '+' : '−' }}{{ movement.amount }}</span>
+      <div
+        class="grid grid-cols-2 gap-2 rounded-lg bg-surface-50 dark:bg-surface-800 p-3 text-sm text-surface-900 dark:text-surface-100"
+      >
+        <div>
+          <span class="text-surface-500 dark:text-surface-400">開帳人員：</span>{{ shift.openedBy }}
+        </div>
+        <div>
+          <span class="text-surface-500 dark:text-surface-400">開帳時間：</span
+          >{{ shift.openedAt.slice(11, 16) }}
+        </div>
+        <div>
+          <span class="text-surface-500 dark:text-surface-400">開帳零用金：</span>$
+          {{ shift.openingFloat }}
+        </div>
+        <div>
+          <span class="text-surface-500 dark:text-surface-400">現金存入／提出：</span>+{{
+            shift.cashIn
+          }}
+          / −{{ shift.cashOut }}
         </div>
       </div>
 
-      <div class="flex items-end gap-2 rounded-lg border border-surface-200 dark:border-surface-700 p-3">
+      <div
+        v-if="shift.movements.length > 0"
+        class="flex flex-col gap-1 text-xs text-surface-600 dark:text-surface-300"
+      >
+        <div
+          v-for="movement in shift.movements"
+          :key="movement.id"
+          class="flex justify-between border-b border-surface-100 dark:border-surface-800 py-1"
+        >
+          <span>{{ movement.type === 'in' ? '存入' : '提出' }}：{{ movement.reason }}</span>
+          <span class="font-bold"
+            >{{ movement.type === 'in' ? '+' : '−' }}{{ movement.amount }}</span
+          >
+        </div>
+      </div>
+
+      <div
+        class="flex items-end gap-2 rounded-lg border border-surface-200 dark:border-surface-700 p-3"
+      >
         <label class="flex-1 text-xs font-bold text-surface-500 dark:text-surface-400">
           金額
-          <input v-model.number="movementAmount" type="number" min="1" class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+          <input
+            v-model.number="movementAmount"
+            type="number"
+            min="1"
+            class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+          />
         </label>
         <label class="flex-1 text-xs font-bold text-surface-500 dark:text-surface-400">
           原因
-          <input v-model="movementReason" type="text" placeholder="例如：追加零錢準備金" class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+          <input
+            v-model="movementReason"
+            type="text"
+            placeholder="例如：追加零錢準備金"
+            class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+          />
         </label>
-        <button type="button" :disabled="isSubmitting || !canManageShift" class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:cursor-not-allowed disabled:opacity-40" @click="submitMovement('in')">存入</button>
-        <button type="button" :disabled="isSubmitting || !canManageShift" class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:cursor-not-allowed disabled:opacity-40" @click="submitMovement('out')">提出</button>
+        <button
+          type="button"
+          :disabled="isSubmitting || !canManageShift"
+          class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:cursor-not-allowed disabled:opacity-40"
+          @click="submitMovement('in')"
+        >
+          存入
+        </button>
+        <button
+          type="button"
+          :disabled="isSubmitting || !canManageShift"
+          class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:cursor-not-allowed disabled:opacity-40"
+          @click="submitMovement('out')"
+        >
+          提出
+        </button>
       </div>
 
       <div class="mt-2 flex justify-end gap-2">
-        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800" @click="open = false">關閉</button>
-        <button type="button" :disabled="!canManageShift" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40" @click="closing = true">收班</button>
+        <button
+          type="button"
+          class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800"
+          @click="open = false"
+        >
+          關閉
+        </button>
+        <button
+          type="button"
+          :disabled="!canManageShift"
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
+          @click="closing = true"
+        >
+          收班
+        </button>
       </div>
     </div>
 
     <div v-else-if="shift" class="flex flex-col gap-3">
-      <p class="text-sm text-surface-500 dark:text-surface-400">依面額點鈔後，實際清點到的現金總額</p>
-      <input v-model.number="actualCash" type="number" min="0" class="w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
-      <div class="grid grid-cols-2 gap-2 rounded-lg bg-surface-50 dark:bg-surface-800 p-3 text-center text-sm">
+      <p class="text-sm text-surface-500 dark:text-surface-400">
+        依面額點鈔後，實際清點到的現金總額
+      </p>
+      <input
+        v-model.number="actualCash"
+        type="number"
+        min="0"
+        class="w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+      />
+      <div
+        class="grid grid-cols-2 gap-2 rounded-lg bg-surface-50 dark:bg-surface-800 p-3 text-center text-sm"
+      >
         <div>
           <p class="text-xs font-bold text-surface-500 dark:text-surface-400">應有現金</p>
-          <p class="text-lg font-bold text-surface-900 dark:text-surface-100">$ {{ previewExpectedCash }}</p>
+          <p class="text-lg font-bold text-surface-900 dark:text-surface-100">
+            $ {{ previewExpectedCash }}
+          </p>
         </div>
         <div>
           <p class="text-xs font-bold text-surface-500 dark:text-surface-400">帳差</p>
-          <p class="text-lg font-bold" :class="previewVariance === 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'">
+          <p
+            class="text-lg font-bold"
+            :class="
+              previewVariance === 0
+                ? 'text-success-600 dark:text-success-400'
+                : 'text-danger-600 dark:text-danger-400'
+            "
+          >
             {{ previewVariance > 0 ? '+' : '' }}{{ previewVariance }}
           </p>
         </div>
       </div>
       <div class="mt-2 flex justify-end gap-2">
-        <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800" @click="closing = false">返回</button>
         <button
-type="button" :disabled="isSubmitting || !canManageShift"
+          type="button"
+          class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800"
+          @click="closing = false"
+        >
+          返回
+        </button>
+        <button
+          type="button"
+          :disabled="isSubmitting || !canManageShift"
           class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
-          @click="submitClose">確認收班</button>
+          @click="submitClose"
+        >
+          確認收班
+        </button>
       </div>
     </div>
   </ModalDialog>
@@ -110,7 +228,7 @@ const actualCash = ref(0)
 
 const { data: shift, refetch } = useQuery({
   queryKey: ['shift', 'current'],
-  queryFn: fetchCurrentShift,
+  queryFn: fetchCurrentShift
 })
 
 const previewExpectedCash = computed(() => {
@@ -159,7 +277,7 @@ async function submitMovement(type: CashMovementType) {
       type,
       amount: movementAmount.value,
       reason: movementReason.value.trim(),
-      operator: props.operator,
+      operator: props.operator
     })
     await refetch()
     movementAmount.value = 0
@@ -176,9 +294,15 @@ async function submitClose() {
   if (!shift.value) return
   isSubmitting.value = true
   try {
-    const closed = await closeShift(shift.value.id, { operator: props.operator, actualCash: actualCash.value })
+    const closed = await closeShift(shift.value.id, {
+      operator: props.operator,
+      actualCash: actualCash.value
+    })
     await refetch()
-    showToast(`收班完成，帳差 ${closed.variance !== null && closed.variance > 0 ? '+' : ''}${closed.variance}`, closed.variance === 0 ? 'success' : 'error')
+    showToast(
+      `收班完成，帳差 ${closed.variance !== null && closed.variance > 0 ? '+' : ''}${closed.variance}`,
+      closed.variance === 0 ? 'success' : 'error'
+    )
     open.value = false
   } catch {
     showToast('收班失敗，請確認網路連線後再試一次', 'error')

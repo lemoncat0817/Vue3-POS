@@ -8,7 +8,7 @@ export default mergeConfig(
     test: {
       environment: 'jsdom',
       include: ['src/**/*.{test,spec}.ts'],
-      exclude: ['src/**/*.e2e.spec.ts'],
-    },
-  }),
+      exclude: ['src/**/*.e2e.spec.ts']
+    }
+  })
 )

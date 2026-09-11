@@ -7,7 +7,7 @@ import {
   promotionsResponseSchema,
   quickDiscountSchema,
   updateOrderCouponRequestSchema,
-  updateQuickDiscountRequestSchema,
+  updateQuickDiscountRequestSchema
 } from '@pos/contract'
 import { orderCoupons, quickDiscounts } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
@@ -22,20 +22,28 @@ const getPromotionsRoute = createRoute({
   responses: {
     200: {
       description: '目前的促銷資料（訂單折價券、快速折扣）',
-      content: { 'application/json': { schema: promotionsResponseSchema } },
-    },
-  },
+      content: { 'application/json': { schema: promotionsResponseSchema } }
+    }
+  }
 })
 
 const createOrderCouponRoute = createRoute({
   method: 'post',
   path: '/order-coupons',
   middleware: [requireDeviceToken, requireCapability('canSetOrderCoupon')] as const,
-  request: { body: { content: { 'application/json': { schema: createOrderCouponRequestSchema } } } },
-  responses: {
-    201: { description: '訂單折價券建立成功', content: { 'application/json': { schema: orderCouponSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+  request: {
+    body: { content: { 'application/json': { schema: createOrderCouponRequestSchema } } }
   },
+  responses: {
+    201: {
+      description: '訂單折價券建立成功',
+      content: { 'application/json': { schema: orderCouponSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const updateOrderCouponRoute = createRoute({
@@ -44,13 +52,22 @@ const updateOrderCouponRoute = createRoute({
   middleware: [requireDeviceToken, requireCapability('canSetOrderCoupon')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updateOrderCouponRequestSchema } } },
+    body: { content: { 'application/json': { schema: updateOrderCouponRequestSchema } } }
   },
   responses: {
-    200: { description: '訂單折價券更新成功', content: { 'application/json': { schema: orderCouponSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這張折價券', content: { 'application/json': { schema: errorSchema } } },
-  },
+    200: {
+      description: '訂單折價券更新成功',
+      content: { 'application/json': { schema: orderCouponSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: {
+      description: '找不到這張折價券',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const deleteOrderCouponRoute = createRoute({
@@ -60,20 +77,34 @@ const deleteOrderCouponRoute = createRoute({
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '訂單折價券已刪除' },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這張折價券', content: { 'application/json': { schema: errorSchema } } },
-  },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: {
+      description: '找不到這張折價券',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const createQuickDiscountRoute = createRoute({
   method: 'post',
   path: '/quick-discounts',
   middleware: [requireDeviceToken, requireCapability('canSetQuickDiscount')] as const,
-  request: { body: { content: { 'application/json': { schema: createQuickDiscountRequestSchema } } } },
-  responses: {
-    201: { description: '快速折扣建立成功', content: { 'application/json': { schema: quickDiscountSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
+  request: {
+    body: { content: { 'application/json': { schema: createQuickDiscountRequestSchema } } }
   },
+  responses: {
+    201: {
+      description: '快速折扣建立成功',
+      content: { 'application/json': { schema: quickDiscountSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const updateQuickDiscountRoute = createRoute({
@@ -82,13 +113,22 @@ const updateQuickDiscountRoute = createRoute({
   middleware: [requireDeviceToken, requireCapability('canSetQuickDiscount')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updateQuickDiscountRequestSchema } } },
+    body: { content: { 'application/json': { schema: updateQuickDiscountRequestSchema } } }
   },
   responses: {
-    200: { description: '快速折扣更新成功', content: { 'application/json': { schema: quickDiscountSchema } } },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這筆快速折扣', content: { 'application/json': { schema: errorSchema } } },
-  },
+    200: {
+      description: '快速折扣更新成功',
+      content: { 'application/json': { schema: quickDiscountSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: {
+      description: '找不到這筆快速折扣',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 const deleteQuickDiscountRoute = createRoute({
@@ -98,9 +138,15 @@ const deleteQuickDiscountRoute = createRoute({
   request: { params: z.object({ id: z.string().min(1) }) },
   responses: {
     204: { description: '快速折扣已刪除' },
-    401: { description: '裝置憑證無效或缺漏', content: { 'application/json': { schema: errorSchema } } },
-    404: { description: '找不到這筆快速折扣', content: { 'application/json': { schema: errorSchema } } },
-  },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: {
+      description: '找不到這筆快速折扣',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
 })
 
 export const promotionRoutes = new OpenAPIHono<AppEnv>()
@@ -108,15 +154,25 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
     const db = c.get('db')
     const [coupons, quick] = await Promise.all([
       db.select().from(orderCoupons).all(),
-      db.select().from(quickDiscounts).all(),
+      db.select().from(quickDiscounts).all()
     ])
 
     return c.json(
       promotionsResponseSchema.parse({
-        orderCoupons: coupons.map((row) => ({ id: row.id, name: row.name, kind: row.kind, value: row.value })),
-        quickDiscounts: quick.map((row) => ({ id: row.id, name: row.name, kind: row.kind, value: row.value })),
+        orderCoupons: coupons.map((row) => ({
+          id: row.id,
+          name: row.name,
+          kind: row.kind,
+          value: row.value
+        })),
+        quickDiscounts: quick.map((row) => ({
+          id: row.id,
+          name: row.name,
+          kind: row.kind,
+          value: row.value
+        }))
       }),
-      200,
+      200
     )
   })
   .openapi(createOrderCouponRoute, async (c) => {

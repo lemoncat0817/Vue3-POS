@@ -1,19 +1,19 @@
 export const getDate = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-  const format = (num: number) => num < 10 ? `0${num}` : num;
-  return `${year}/${format(month)}/${format(day)}`;
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const day = now.getDate()
+  const format = (num: number) => (num < 10 ? `0${num}` : num)
+  return `${year}/${format(month)}/${format(day)}`
 }
 
 export const getTime = () => {
-  const now = new Date();
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-  const second = now.getSeconds();
-  const format = (num: number) => num < 10 ? `0${num}` : num;
-  return `${format(hour)}:${format(minute)}:${format(second)}`;
+  const now = new Date()
+  const hour = now.getHours()
+  const minute = now.getMinutes()
+  const second = now.getSeconds()
+  const format = (num: number) => (num < 10 ? `0${num}` : num)
+  return `${format(hour)}:${format(minute)}:${format(second)}`
 }
 
 /** 'YYYY/MM/DD' 轉成 API 用的 YYYYMMDD 營業日格式。 */

@@ -16,7 +16,8 @@ test('後台新增／刪除分類會真的呼叫伺服端，重新整理後狀�
   const categoryName = `E2E測試分類-${Date.now()}`
 
   const createResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/catalog/categories') && res.request().method() === 'POST' && res.ok(),
+    (res) =>
+      res.url().includes('/api/catalog/categories') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByRole('button', { name: '＋ 新增分類', exact: true }).click()
   const addDialog = page.getByRole('dialog', { name: '新增分類' })
@@ -37,9 +38,15 @@ test('後台新增／刪除分類會真的呼叫伺服端，重新整理後狀�
   await expect(page.getByText(categoryName)).toBeVisible()
 
   const deleteResponse = page.waitForResponse(
-    (res) => res.url().includes(`/api/catalog/categories/${createBody.id}`) && res.request().method() === 'DELETE' && res.status() === 204,
+    (res) =>
+      res.url().includes(`/api/catalog/categories/${createBody.id}`) &&
+      res.request().method() === 'DELETE' &&
+      res.status() === 204
   )
-  await page.getByRole('row', { name: categoryName }).getByRole('button', { name: '刪除', exact: true }).click()
+  await page
+    .getByRole('row', { name: categoryName })
+    .getByRole('button', { name: '刪除', exact: true })
+    .click()
   await page.getByRole('button', { name: '確定' }).click()
   await deleteResponse
   await expect(page.getByTestId('toast-message')).toHaveText('刪除成功')

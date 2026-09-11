@@ -10,7 +10,7 @@ import type {
   OrderStatus,
   PaymentUseMethod,
   QuickDiscountKind,
-  TableStatus,
+  TableStatus
 } from '@pos/contract'
 
 // D1（SQLite）資料表定義。型別刻意用乾淨的 number／boolean／JSON，不照搬
@@ -22,7 +22,7 @@ import type {
 
 export const categories = sqliteTable('categories', {
   id: text('id').primaryKey(),
-  name: text('name').notNull(),
+  name: text('name').notNull()
 })
 
 export const products = sqliteTable('products', {
@@ -33,14 +33,14 @@ export const products = sqliteTable('products', {
   name: text('name').notNull(),
   basePrice: integer('base_price').notNull(),
   // null 代表不追蹤此品項庫存，見 @pos/contract 的 catalogStockSchema。
-  stock: integer('stock'),
+  stock: integer('stock')
 })
 
 export const modifierGroups = sqliteTable('modifier_groups', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   selectionType: text('selection_type').$type<ModifierSelectionType>().notNull(),
-  required: integer('required', { mode: 'boolean' }).notNull(),
+  required: integer('required', { mode: 'boolean' }).notNull()
 })
 
 export const modifierOptions = sqliteTable('modifier_options', {
@@ -49,7 +49,7 @@ export const modifierOptions = sqliteTable('modifier_options', {
     .notNull()
     .references(() => modifierGroups.id),
   name: text('name').notNull(),
-  priceDelta: integer('price_delta').notNull(),
+  priceDelta: integer('price_delta').notNull()
 })
 
 // 品項與規格群組的多對多關聯：同一群組（例如「甜度」）可掛在任意數量的品項上。
@@ -61,16 +61,16 @@ export const productModifierGroups = sqliteTable(
       .references(() => products.id),
     groupId: text('group_id')
       .notNull()
-      .references(() => modifierGroups.id),
+      .references(() => modifierGroups.id)
   },
-  (table) => [primaryKey({ columns: [table.productId, table.groupId] })],
+  (table) => [primaryKey({ columns: [table.productId, table.groupId] })]
 )
 
 export const addOnOptions = sqliteTable('add_on_options', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   price: integer('price').notNull(),
-  stock: integer('stock'),
+  stock: integer('stock')
 })
 
 // ---------- 促銷 ----------
@@ -82,7 +82,7 @@ export const orderCoupons = sqliteTable('order_coupons', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   kind: text('kind').$type<QuickDiscountKind>().notNull(),
-  value: real('value').notNull(),
+  value: real('value').notNull()
 })
 
 // 快速折扣：點餐頁購物車可直接套用在勾選品項上的具名折扣，後台可自由新增／
@@ -91,7 +91,7 @@ export const quickDiscounts = sqliteTable('quick_discounts', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   kind: text('kind').$type<QuickDiscountKind>().notNull(),
-  value: real('value').notNull(),
+  value: real('value').notNull()
 })
 
 // ---------- 裝置憑證 ----------
@@ -107,7 +107,7 @@ export const devices = sqliteTable('devices', {
   createdAt: text('created_at')
     .notNull()
     .default(sql`(current_timestamp)`),
-  revokedAt: text('revoked_at'),
+  revokedAt: text('revoked_at')
 })
 
 // ---------- 員工與權限群組 ----------
@@ -122,9 +122,9 @@ export const roles = sqliteTable(
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     capabilities: text('capabilities', { mode: 'json' }).$type<AuthorityKey[]>().notNull(),
-    isSystem: integer('is_system', { mode: 'boolean' }).notNull().default(false),
+    isSystem: integer('is_system', { mode: 'boolean' }).notNull().default(false)
   },
-  (table) => [uniqueIndex('roles_name_idx').on(table.name)],
+  (table) => [uniqueIndex('roles_name_idx').on(table.name)]
 )
 
 export const staff = sqliteTable(
@@ -144,9 +144,9 @@ export const staff = sqliteTable(
     // 連續輸入錯誤次數與鎖定到期時間（見 routes/auth.ts）：PIN 只有
     // 4～6 碼，遠比密碼容易暴力猜中，需要這道防線。
     failedPinAttempts: integer('failed_pin_attempts').notNull().default(0),
-    lockedUntil: text('locked_until'),
+    lockedUntil: text('locked_until')
   },
-  (table) => [uniqueIndex('staff_account_idx').on(table.account)],
+  (table) => [uniqueIndex('staff_account_idx').on(table.account)]
 )
 
 // PIN 登入成功後核發的操作員 session，取代直接信任用戶端回報的 staffId
@@ -163,7 +163,7 @@ export const operatorSessions = sqliteTable('operator_sessions', {
   tokenSalt: text('token_salt').notNull(),
   createdAt: text('created_at').notNull(),
   expiresAt: text('expires_at').notNull(),
-  revokedAt: text('revoked_at'),
+  revokedAt: text('revoked_at')
 })
 
 // 付款方式。後台設定允許用哪些方式收款——跟訂單 tenders[] 裡的 method
@@ -172,7 +172,7 @@ export const paymentMethods = sqliteTable('payment_methods', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   disabled: integer('disabled', { mode: 'boolean' }).notNull(),
-  useMethod: text('use_method').$type<PaymentUseMethod>().notNull(),
+  useMethod: text('use_method').$type<PaymentUseMethod>().notNull()
 })
 
 // ---------- 訂單 ----------
@@ -209,7 +209,10 @@ export const orders = sqliteTable(
     // 每筆訂單一律開立發票號碼，此欄位上線前的歷史訂單以空字串佔位（畫面上
     // 顯示為「無，此功能上線前建立」），不是假造發票號碼。
     invoiceNumber: text('invoice_number').notNull().default(''),
-    invoiceCarrierType: text('invoice_carrier_type').$type<InvoiceCarrierType>().notNull().default('無載具'),
+    invoiceCarrierType: text('invoice_carrier_type')
+      .$type<InvoiceCarrierType>()
+      .notNull()
+      .default('無載具'),
     // 只有手機條碼／統一編號才有值，見 @pos/contract 的 invoiceCarrierSchema。
     invoiceCarrierValue: text('invoice_carrier_value'),
     // 這筆訂單掛在哪個會員名下，沒有掛會員是 null。
@@ -221,9 +224,9 @@ export const orders = sqliteTable(
     // 內用桌號，純紀錄用途，故意不設外鍵指到 dining_tables——桌況跟訂單各自獨立維護。
     tableNumber: text('table_number'),
     // 訂單備註（外送地址、取件時間、客製化需求等），純文字紀錄用途，伺服端不解析內容。
-    note: text('note'),
+    note: text('note')
   },
-  (table) => [uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey)],
+  (table) => [uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey)]
 )
 
 // ---------- 會員與顧客經營 ----------
@@ -239,9 +242,9 @@ export const members = sqliteTable(
     points: integer('points').notNull().default(0),
     createdAt: text('created_at')
       .notNull()
-      .default(sql`(current_timestamp)`),
+      .default(sql`(current_timestamp)`)
   },
-  (table) => [uniqueIndex('members_phone_idx').on(table.phone)],
+  (table) => [uniqueIndex('members_phone_idx').on(table.phone)]
 )
 
 // 訂單序號的原子計數器。用 SQLite 的 `INSERT ... ON CONFLICT DO UPDATE
@@ -250,14 +253,14 @@ export const members = sqliteTable(
 // routes/orders.ts 的 nextOrderSequence()）。
 export const orderSequences = sqliteTable('order_sequences', {
   businessDate: text('business_date').primaryKey(),
-  counter: integer('counter').notNull(),
+  counter: integer('counter').notNull()
 })
 
 // 發票號碼的舊版計數器（單一固定前綴＋全域遞增流水號，不做字軌輪替）。
 // 已被下方 invoiceTracks 取代，表留著不刪但新的 nextInvoiceNumber() 不再讀寫它。
 export const invoiceSequences = sqliteTable('invoice_sequences', {
   id: text('id').primaryKey(),
-  counter: integer('counter').notNull(),
+  counter: integer('counter').notNull()
 })
 
 // 電子發票字軌。真正的字軌由財政部核發、商家申請取得，這裡設計成後台
@@ -269,7 +272,7 @@ export const invoiceTracks = sqliteTable('invoice_tracks', {
   rangeStart: integer('range_start').notNull(),
   rangeEnd: integer('range_end').notNull(),
   currentNumber: integer('current_number').notNull(),
-  isActive: integer('is_active', { mode: 'boolean' }).notNull(),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull()
 })
 
 export const orderLines = sqliteTable('order_lines', {
@@ -288,7 +291,7 @@ export const orderLines = sqliteTable('order_lines', {
   // 套用哪一筆快速折扣，沒套用是 null；name 是下單當下的名稱快照，避免
   // 後台之後改名或刪除該筆快速折扣時，歷史訂單的顯示跟著跑掉。
   quickDiscountId: text('quick_discount_id'),
-  quickDiscountName: text('quick_discount_name').notNull().default(''),
+  quickDiscountName: text('quick_discount_name').notNull().default('')
 })
 
 // 一筆訂單實際收到的每一筆支付，取代舊的 orders.orderPayment 單一字串
@@ -303,7 +306,7 @@ export const orderTenders = sqliteTable('order_tenders', {
   seq: integer('seq').notNull(),
   method: text('method').notNull(),
   amount: integer('amount').notNull(),
-  receivedAmount: integer('received_amount'),
+  receivedAmount: integer('received_amount')
 })
 
 // 訂單的退款紀錄，跟作廢（orders.voidReason 那組欄位）是不同概念：作廢
@@ -318,7 +321,7 @@ export const orderRefunds = sqliteTable('order_refunds', {
   amount: integer('amount').notNull(),
   reason: text('reason').notNull(),
   operator: text('operator').notNull(),
-  at: text('at').notNull(),
+  at: text('at').notNull()
 })
 
 // 班別。單店單機情境下同一時間全店只允許一筆 status='open' 的班別，這條
@@ -337,7 +340,7 @@ export const shifts = sqliteTable('shifts', {
   refunds: integer('refunds'),
   expectedCash: integer('expected_cash'),
   actualCash: integer('actual_cash'),
-  variance: integer('variance'),
+  variance: integer('variance')
 })
 
 /** 班別期間的現金異動（中途提現／存入），見 @pos/domain 的 summarizeShiftCash()。 */
@@ -350,7 +353,7 @@ export const cashMovements = sqliteTable('cash_movements', {
   amount: integer('amount').notNull(),
   reason: text('reason').notNull(),
   operator: text('operator').notNull(),
-  at: text('at').notNull(),
+  at: text('at').notNull()
 })
 
 // ---------- API 安全加固 ----------
@@ -361,7 +364,7 @@ export const cashMovements = sqliteTable('cash_movements', {
 export const rateLimitCounters = sqliteTable('rate_limit_counters', {
   key: text('key').primaryKey(),
   windowStart: integer('window_start').notNull(),
-  count: integer('count').notNull(),
+  count: integer('count').notNull()
 })
 
 // 稽核紀錄，取代原本只印在瀏覽器主控台的做法（分頁關閉紀錄就消失）。
@@ -370,7 +373,7 @@ export const auditLogs = sqliteTable('audit_logs', {
   action: text('action').$type<AuditLogAction>().notNull(),
   operator: text('operator').notNull(),
   detail: text('detail').notNull(),
-  createdAt: text('created_at').notNull(),
+  createdAt: text('created_at').notNull()
 })
 
 // ---------- 桌況管理 ----------
@@ -382,7 +385,7 @@ export const diningTables = sqliteTable('dining_tables', {
   tableNumber: text('table_number').notNull(),
   seats: integer('seats').notNull(),
   status: text('status').$type<TableStatus>().notNull().default('empty'),
-  note: text('note').notNull().default(''),
+  note: text('note').notNull().default('')
 })
 
 export const schema = {
@@ -411,5 +414,5 @@ export const schema = {
   auditLogs,
   members,
   invoiceTracks,
-  diningTables,
+  diningTables
 }

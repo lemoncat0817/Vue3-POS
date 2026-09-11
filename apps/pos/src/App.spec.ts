@@ -10,7 +10,7 @@ import App from './App.vue'
 beforeEach(() => {
   vi.stubGlobal(
     'fetch',
-    vi.fn(() => Promise.reject(new Error('測試環境沒有後端，模擬離線'))),
+    vi.fn(() => Promise.reject(new Error('測試環境沒有後端，模擬離線')))
   )
 })
 afterEach(() => {
@@ -25,15 +25,15 @@ describe('App', () => {
       routes: [
         { path: '/', component: { template: '<div>root</div>' } },
         { path: '/home', component: { template: '<div>點餐</div>' } },
-        { path: '/order', component: { template: '<div>查看訂單</div>' } },
-      ],
+        { path: '/order', component: { template: '<div>查看訂單</div>' } }
+      ]
     })
     router.push('/home')
     await router.isReady()
 
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const wrapper = mount(App, {
-      global: { plugins: [createPinia(), router, [VueQueryPlugin, { queryClient }]] },
+      global: { plugins: [createPinia(), router, [VueQueryPlugin, { queryClient }]] }
     })
     await flushPromises()
 

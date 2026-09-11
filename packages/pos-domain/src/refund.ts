@@ -16,12 +16,15 @@ export interface OrderRefundSummary {
   isFullyRefunded: boolean
 }
 
-export function summarizeOrderRefunds(orderPaymentPrice: number, refunds: readonly RefundRecord[]): OrderRefundSummary {
+export function summarizeOrderRefunds(
+  orderPaymentPrice: number,
+  refunds: readonly RefundRecord[]
+): OrderRefundSummary {
   const refundedAmount = refunds.reduce((sum, refund) => sum + refund.amount, 0)
   const refundableAmount = Math.max(0, orderPaymentPrice - refundedAmount)
   return {
     refundedAmount,
     refundableAmount,
-    isFullyRefunded: refundableAmount === 0,
+    isFullyRefunded: refundableAmount === 0
   }
 }

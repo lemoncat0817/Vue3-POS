@@ -17,7 +17,7 @@ export function backoffDelay(attempts: number): number {
 export const syncStatus = reactive({
   pendingCount: 0,
   isSyncing: false,
-  lastError: null as string | null,
+  lastError: null as string | null
 })
 
 export async function refreshPendingCount(): Promise<void> {
@@ -26,7 +26,7 @@ export async function refreshPendingCount(): Promise<void> {
 
 /** 依佇列順序逐筆同步訂單至伺服端；任一筆失敗即中斷當前批次以待重試。 */
 export async function syncOnce(
-  onSynced: (localOrderId: string, order: Order) => void,
+  onSynced: (localOrderId: string, order: Order) => void
 ): Promise<void> {
   if (syncStatus.isSyncing) return
   syncStatus.isSyncing = true
@@ -44,7 +44,10 @@ export async function syncOnce(
   }
 }
 
-async function syncOne(entry: OutboxOrder, onSynced: (localOrderId: string, order: Order) => void): Promise<boolean> {
+async function syncOne(
+  entry: OutboxOrder,
+  onSynced: (localOrderId: string, order: Order) => void
+): Promise<boolean> {
   await markSyncing(entry.id)
   try {
     const order = await createOrder(entry.payload)

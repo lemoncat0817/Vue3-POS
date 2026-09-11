@@ -6,7 +6,7 @@ export const paymentMethodSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   disabled: z.boolean(),
-  useMethod: paymentUseMethodSchema,
+  useMethod: paymentUseMethodSchema
 })
 export type PaymentMethodRecord = z.infer<typeof paymentMethodSchema>
 

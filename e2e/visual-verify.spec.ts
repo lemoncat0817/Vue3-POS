@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 
-test('Visual verification across viewports and dark mode without layout breaking', async ({ page }, testInfo) => {
+test('Visual verification across viewports and dark mode without layout breaking', async ({
+  page
+}, testInfo) => {
   test.setTimeout(60000)
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('login')
@@ -10,9 +12,14 @@ test('Visual verification across viewports and dark mode without layout breaking
   await expect(page).toHaveURL(/\/home$/)
   await page.waitForTimeout(1000)
 
-  const toastClose = page.getByRole('button', { name: /close|關閉/i }).or(page.locator('.toast-close, [aria-label="Close"]'))
-  if (await toastClose.count() > 0) {
-    await toastClose.first().click().catch(() => {})
+  const toastClose = page
+    .getByRole('button', { name: /close|關閉/i })
+    .or(page.locator('.toast-close, [aria-label="Close"]'))
+  if ((await toastClose.count()) > 0) {
+    await toastClose
+      .first()
+      .click()
+      .catch(() => {})
   }
 
   await page.getByRole('button', { name: /飲品/ }).click()

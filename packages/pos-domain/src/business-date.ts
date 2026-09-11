@@ -7,7 +7,10 @@
 export const DEFAULT_BUSINESS_DAY_START_HOUR = 4
 
 /** 計算某個時間點所屬的營業日（本地時間 YYYYMMDD 格式）。 */
-export function getBusinessDate(at: Date, startHour: number = DEFAULT_BUSINESS_DAY_START_HOUR): string {
+export function getBusinessDate(
+  at: Date,
+  startHour: number = DEFAULT_BUSINESS_DAY_START_HOUR
+): string {
   const shifted = new Date(at.getFullYear(), at.getMonth(), at.getDate())
   if (at.getHours() < startHour) {
     shifted.setDate(shifted.getDate() - 1)

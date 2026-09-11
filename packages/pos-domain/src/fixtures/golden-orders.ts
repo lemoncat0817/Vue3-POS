@@ -20,7 +20,7 @@ export const GOLDEN_ORDERS = [
         totalPrice: 270,
         freeDiscount: false,
         quickDiscountId: null,
-        quickDiscountName: '',
+        quickDiscountName: ''
       },
       {
         id: 2,
@@ -33,7 +33,7 @@ export const GOLDEN_ORDERS = [
         totalPrice: 450,
         freeDiscount: false,
         quickDiscountId: 'quick-2',
-        quickDiscountName: '大宗採購優惠',
+        quickDiscountName: '大宗採購優惠'
       },
       {
         id: 3,
@@ -46,7 +46,7 @@ export const GOLDEN_ORDERS = [
         totalPrice: 90,
         freeDiscount: false,
         quickDiscountId: null,
-        quickDiscountName: '',
+        quickDiscountName: ''
       },
       {
         id: 4,
@@ -59,8 +59,8 @@ export const GOLDEN_ORDERS = [
         totalPrice: 120,
         freeDiscount: false,
         quickDiscountId: null,
-        quickDiscountName: '',
-      },
+        quickDiscountName: ''
+      }
     ],
     orderBagCount: 0,
     orderCupCount: 14,
@@ -68,7 +68,7 @@ export const GOLDEN_ORDERS = [
     orderPayment: '現金',
     orderDiscount: 50,
     orderPaymentPrice: 880,
-    discountName: '$50折價券',
+    discountName: '$50折價券'
   },
   {
     orderId: '202406105',
@@ -87,8 +87,8 @@ export const GOLDEN_ORDERS = [
         totalPrice: 75,
         freeDiscount: false,
         quickDiscountId: 'quick-1',
-        quickDiscountName: '常客優惠',
-      },
+        quickDiscountName: '常客優惠'
+      }
     ],
     orderBagCount: 0,
     orderCupCount: 1,
@@ -96,7 +96,7 @@ export const GOLDEN_ORDERS = [
     orderPayment: 'ApplePay',
     orderDiscount: 0,
     orderPaymentPrice: 75,
-    discountName: '無',
+    discountName: '無'
   },
   {
     orderId: '202406106',
@@ -115,7 +115,7 @@ export const GOLDEN_ORDERS = [
         totalPrice: 120,
         freeDiscount: false,
         quickDiscountId: null,
-        quickDiscountName: '',
+        quickDiscountName: ''
       },
       {
         id: 2,
@@ -128,8 +128,8 @@ export const GOLDEN_ORDERS = [
         totalPrice: 350,
         freeDiscount: false,
         quickDiscountId: null,
-        quickDiscountName: '',
-      },
+        quickDiscountName: ''
+      }
     ],
     orderBagCount: 0,
     orderCupCount: 7,
@@ -137,7 +137,7 @@ export const GOLDEN_ORDERS = [
     orderPayment: '現金',
     orderDiscount: 50,
     orderPaymentPrice: 420,
-    discountName: '$50折價券',
+    discountName: '$50折價券'
   },
   {
     orderId: '202406107',
@@ -156,7 +156,7 @@ export const GOLDEN_ORDERS = [
         totalPrice: 1215,
         freeDiscount: false,
         quickDiscountId: 'quick-3',
-        quickDiscountName: '九折優惠',
+        quickDiscountName: '九折優惠'
       },
       {
         id: 2,
@@ -169,7 +169,7 @@ export const GOLDEN_ORDERS = [
         totalPrice: 1080,
         freeDiscount: false,
         quickDiscountId: 'quick-3',
-        quickDiscountName: '九折優惠',
+        quickDiscountName: '九折優惠'
       },
       {
         id: 3,
@@ -182,8 +182,8 @@ export const GOLDEN_ORDERS = [
         totalPrice: 567,
         freeDiscount: false,
         quickDiscountId: 'quick-3',
-        quickDiscountName: '九折優惠',
-      },
+        quickDiscountName: '九折優惠'
+      }
     ],
     orderBagCount: 0,
     orderCupCount: 52,
@@ -191,6 +191,6 @@ export const GOLDEN_ORDERS = [
     orderPayment: 'LinePay',
     orderDiscount: 150,
     orderPaymentPrice: 2712,
-    discountName: '$150折價券',
-  },
+    discountName: '$150折價券'
+  }
 ] as const

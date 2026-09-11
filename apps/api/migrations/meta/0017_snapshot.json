@@ -146,12 +146,8 @@
           "name": "cash_movements_shift_id_shifts_id_fk",
           "tableFrom": "cash_movements",
           "tableTo": "shifts",
-          "columnsFrom": [
-            "shift_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shift_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -411,9 +407,7 @@
       "indexes": {
         "members_phone_idx": {
           "name": "members_phone_idx",
-          "columns": [
-            "phone"
-          ],
+          "columns": ["phone"],
           "isUnique": true
         }
       },
@@ -498,12 +492,8 @@
           "name": "modifier_options_group_id_modifier_groups_id_fk",
           "tableFrom": "modifier_options",
           "tableTo": "modifier_groups",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -638,12 +628,8 @@
           "name": "order_lines_order_id_orders_order_id_fk",
           "tableFrom": "order_lines",
           "tableTo": "orders",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
+          "columnsTo": ["order_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -704,12 +690,8 @@
           "name": "order_refunds_order_id_orders_order_id_fk",
           "tableFrom": "order_refunds",
           "tableTo": "orders",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
+          "columnsTo": ["order_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -794,12 +776,8 @@
           "name": "order_tenders_order_id_orders_order_id_fk",
           "tableFrom": "order_tenders",
           "tableTo": "orders",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
+          "columnsTo": ["order_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -996,9 +974,7 @@
       "indexes": {
         "orders_idempotency_key_idx": {
           "name": "orders_idempotency_key_idx",
-          "columns": [
-            "idempotency_key"
-          ],
+          "columns": ["idempotency_key"],
           "isUnique": true
         }
       },
@@ -1007,12 +983,8 @@
           "name": "orders_member_id_members_id_fk",
           "tableFrom": "orders",
           "tableTo": "members",
-          "columnsFrom": [
-            "member_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["member_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1114,12 +1086,8 @@
           "name": "product_modifier_groups_product_id_products_id_fk",
           "tableFrom": "product_modifier_groups",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1127,22 +1095,15 @@
           "name": "product_modifier_groups_group_id_modifier_groups_id_fk",
           "tableFrom": "product_modifier_groups",
           "tableTo": "modifier_groups",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "product_modifier_groups_product_id_group_id_pk": {
-          "columns": [
-            "product_id",
-            "group_id"
-          ],
+          "columns": ["product_id", "group_id"],
           "name": "product_modifier_groups_product_id_group_id_pk"
         }
       },
@@ -1194,12 +1155,8 @@
           "name": "products_category_id_categories_id_fk",
           "tableFrom": "products",
           "tableTo": "categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1442,9 +1399,7 @@
       "indexes": {
         "staff_account_idx": {
           "name": "staff_account_idx",
-          "columns": [
-            "account"
-          ],
+          "columns": ["account"],
           "isUnique": true
         }
       },

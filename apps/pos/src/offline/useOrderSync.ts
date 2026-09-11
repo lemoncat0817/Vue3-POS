@@ -13,6 +13,6 @@ export function useOrderSync() {
     syncStatus,
     start: () => startSyncWorker(onSynced),
     stop: stopSyncWorker,
-    syncNow: () => syncOnce(onSynced),
+    syncNow: () => syncOnce(onSynced)
   }
 }

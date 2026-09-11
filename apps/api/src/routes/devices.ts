@@ -12,18 +12,18 @@ const createDeviceRoute = createRoute({
   path: '/',
   middleware: [requireProvisioningSecret] as const,
   request: {
-    body: { content: { 'application/json': { schema: createDeviceRequestSchema } } },
+    body: { content: { 'application/json': { schema: createDeviceRequestSchema } } }
   },
   responses: {
     201: {
       description: '裝置憑證核發成功，token 只會出現這一次',
-      content: { 'application/json': { schema: createDeviceResponseSchema } },
+      content: { 'application/json': { schema: createDeviceResponseSchema } }
     },
     401: {
       description: '核發密鑰無效或缺漏',
-      content: { 'application/json': { schema: z.object({ error: z.string() }) } },
-    },
-  },
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } }
+    }
+  }
 })
 
 const listDevicesRoute = createRoute({
@@ -33,9 +33,9 @@ const listDevicesRoute = createRoute({
   responses: {
     200: {
       description: '裝置清單（不含憑證本身）',
-      content: { 'application/json': { schema: z.array(deviceSchema) } },
-    },
-  },
+      content: { 'application/json': { schema: z.array(deviceSchema) } }
+    }
+  }
 })
 
 const revokeDeviceRoute = createRoute({
@@ -43,18 +43,18 @@ const revokeDeviceRoute = createRoute({
   path: '/{id}/revoke',
   middleware: [requireDeviceToken] as const,
   request: {
-    params: z.object({ id: z.string().min(1) }),
+    params: z.object({ id: z.string().min(1) })
   },
   responses: {
     200: {
       description: '裝置憑證已撤銷',
-      content: { 'application/json': { schema: deviceSchema } },
+      content: { 'application/json': { schema: deviceSchema } }
     },
     404: {
       description: '找不到這個裝置',
-      content: { 'application/json': { schema: z.object({ error: z.string() }) } },
-    },
-  },
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } }
+    }
+  }
 })
 
 type DeviceRow = typeof devices.$inferSelect
@@ -64,7 +64,7 @@ function toDeviceResponse(row: DeviceRow) {
     id: row.id,
     name: row.name,
     createdAt: row.createdAt,
-    revokedAt: row.revokedAt,
+    revokedAt: row.revokedAt
   })
 }
 
@@ -81,7 +81,7 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
       tokenHash: hash,
       tokenSalt: salt,
       createdAt: new Date().toISOString(),
-      revokedAt: null,
+      revokedAt: null
     }
     await db.insert(devices).values(newDevice)
 
@@ -92,7 +92,7 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
     const rows = await db.select().from(devices).all()
     return c.json(
       rows.map((row) => toDeviceResponse(row)),
-      200,
+      200
     )
   })
   .openapi(revokeDeviceRoute, async (c) => {

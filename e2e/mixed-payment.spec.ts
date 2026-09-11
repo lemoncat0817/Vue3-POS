@@ -22,7 +22,7 @@ test('現金找零：實收金額大於應付金額時，面板與伺服端回�
   await expect(page.getByText('$ 440')).toBeVisible()
 
   const orderResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   const body = (await (await orderResponse).json()) as {
@@ -58,7 +58,7 @@ test('混合支付：現金＋信用卡各分擔一部分，伺服端摘要用�
   await page.getByRole('button', { name: '加入', exact: true }).click()
 
   const orderResponse = page.waitForResponse(
-    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok(),
+    (res) => res.url().includes('/api/orders') && res.request().method() === 'POST' && res.ok()
   )
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   const body = (await (await orderResponse).json()) as { orderPayment: string; changeDue: number }

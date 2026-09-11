@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { createRoleRequestSchema, createStaffRequestSchema, operatorLoginRequestSchema, pinSchema } from './staff'
+import {
+  createRoleRequestSchema,
+  createStaffRequestSchema,
+  operatorLoginRequestSchema,
+  pinSchema
+} from './staff'
 
 describe('pinSchema', () => {
   it('接受 4 到 6 碼數字', () => {
@@ -20,7 +25,7 @@ describe('createStaffRequestSchema', () => {
     jobTitle: '工讀生',
     account: 'emily',
     roleId: 'role-part-timer',
-    pin: '3456',
+    pin: '3456'
   }
 
   it('接受帶 PIN 的完整輸入', () => {
@@ -36,7 +41,10 @@ describe('createStaffRequestSchema', () => {
 
 describe('createRoleRequestSchema', () => {
   it('接受名稱與權限清單', () => {
-    expect(createRoleRequestSchema.safeParse({ name: '值班經理', capabilities: ['canCheckOrder'] }).success).toBe(true)
+    expect(
+      createRoleRequestSchema.safeParse({ name: '值班經理', capabilities: ['canCheckOrder'] })
+        .success
+    ).toBe(true)
   })
 
   it('拒絕空名稱', () => {
@@ -44,16 +52,22 @@ describe('createRoleRequestSchema', () => {
   })
 
   it('拒絕未知的權限鍵值', () => {
-    expect(createRoleRequestSchema.safeParse({ name: '值班經理', capabilities: ['notARealKey'] }).success).toBe(false)
+    expect(
+      createRoleRequestSchema.safeParse({ name: '值班經理', capabilities: ['notARealKey'] }).success
+    ).toBe(false)
   })
 })
 
 describe('operatorLoginRequestSchema', () => {
   it('接受 account／pin', () => {
-    expect(operatorLoginRequestSchema.safeParse({ account: 'emily', pin: '3456' }).success).toBe(true)
+    expect(operatorLoginRequestSchema.safeParse({ account: 'emily', pin: '3456' }).success).toBe(
+      true
+    )
   })
 
   it('pin 格式不對也算合法輸入（格式驗證不應該洩漏帳號是否存在，錯誤要在業務邏輯層統一擋下）', () => {
-    expect(operatorLoginRequestSchema.safeParse({ account: 'emily', pin: 'wrong' }).success).toBe(true)
+    expect(operatorLoginRequestSchema.safeParse({ account: 'emily', pin: 'wrong' }).success).toBe(
+      true
+    )
   })
 })

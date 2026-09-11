@@ -27,7 +27,7 @@ export const AUTHORITY_FIELDS: AuthorityField[] = [
   { label: '設定人員名單', value: 'canManageStaff', dependsOn: 'canCheckAuthority' },
   { label: '設定權限群組', value: 'canManageRoles', dependsOn: 'canCheckAuthority' },
   { label: '查看會員管理', value: 'canCheckMembers' },
-  { label: '查看桌況管理', value: 'canManageTables' },
+  { label: '查看桌況管理', value: 'canManageTables' }
 ]
 
 const PARENT_KEYS = ['canCheckOrder', 'canCheckBackgroundSetting', 'canCheckAuthority'] as const
@@ -37,7 +37,9 @@ export function cascadeAuthorityCheckList(list: AuthorityKey[]): AuthorityKey[] 
   let next = list
   for (const parent of PARENT_KEYS) {
     if (!next.includes(parent)) {
-      const dependents = AUTHORITY_FIELDS.filter((field) => field.dependsOn === parent).map((field) => field.value)
+      const dependents = AUTHORITY_FIELDS.filter((field) => field.dependsOn === parent).map(
+        (field) => field.value
+      )
       next = next.filter((item) => !dependents.includes(item))
     }
   }
@@ -51,16 +53,16 @@ export interface AuthorityGroup {
   children: AuthorityField[]
 }
 export function groupAuthorityFields(): AuthorityGroup[] {
-  const roots = AUTHORITY_FIELDS.filter((field) =>
-    !field.dependsOn && AUTHORITY_FIELDS.some((child) => child.dependsOn === field.value),
+  const roots = AUTHORITY_FIELDS.filter(
+    (field) => !field.dependsOn && AUTHORITY_FIELDS.some((child) => child.dependsOn === field.value)
   )
   const grouped: AuthorityGroup[] = roots.map((root) => ({
     title: root.label,
     root,
-    children: AUTHORITY_FIELDS.filter((field) => field.dependsOn === root.value),
+    children: AUTHORITY_FIELDS.filter((field) => field.dependsOn === root.value)
   }))
-  const others = AUTHORITY_FIELDS.filter((field) =>
-    !field.dependsOn && !roots.some((root) => root.value === field.value),
+  const others = AUTHORITY_FIELDS.filter(
+    (field) => !field.dependsOn && !roots.some((root) => root.value === field.value)
   )
   if (others.length > 0) {
     grouped.push({ title: '其他', children: others })

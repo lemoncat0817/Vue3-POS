@@ -26,7 +26,10 @@ test('掛單後購物車清空，取單能把品項與備註原封不動地拿�
   await expect(page.getByText('目前無待付款的品項')).toBeVisible()
 
   await page.getByTestId('parked-orders-button').click()
-  await page.getByTestId('parked-order-row').getByRole('button', { name: '取單', exact: true }).click()
+  await page
+    .getByTestId('parked-order-row')
+    .getByRole('button', { name: '取單', exact: true })
+    .click()
   await expect(page.getByTestId('toast-message')).toHaveText('已取單')
   await expect(page.getByTestId('cart-row')).toContainText('薯條')
   await expect(page.getByText('目前無待付款的品項')).toHaveCount(0)
@@ -57,8 +60,13 @@ test('取單時目前購物車還有品項，需要確認才會覆蓋', async ({
   await page.getByRole('button', { name: '新增', exact: true }).click()
 
   await page.getByTestId('parked-orders-button').click()
-  await page.getByTestId('parked-order-row').getByRole('button', { name: '取單', exact: true }).click()
-  await expect(page.getByText('目前待付款清單還有品項，取單會覆蓋目前清單，是否繼續？')).toBeVisible()
+  await page
+    .getByTestId('parked-order-row')
+    .getByRole('button', { name: '取單', exact: true })
+    .click()
+  await expect(
+    page.getByText('目前待付款清單還有品項，取單會覆蓋目前清單，是否繼續？')
+  ).toBeVisible()
   await page.getByRole('button', { name: '繼續取單' }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('已取單')
 })

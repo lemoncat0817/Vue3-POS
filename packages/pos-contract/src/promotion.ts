@@ -14,7 +14,7 @@ export const orderCouponSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   kind: quickDiscountKindSchema,
-  value: z.number().nonnegative(),
+  value: z.number().nonnegative()
 })
 export type OrderCoupon = z.infer<typeof orderCouponSchema>
 export const createOrderCouponRequestSchema = orderCouponSchema.omit({ id: true })
@@ -32,7 +32,7 @@ export const quickDiscountSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   kind: quickDiscountKindSchema,
-  value: z.number().nonnegative(),
+  value: z.number().nonnegative()
 })
 export type QuickDiscount = z.infer<typeof quickDiscountSchema>
 export const createQuickDiscountRequestSchema = quickDiscountSchema.omit({ id: true })
@@ -43,13 +43,13 @@ export type UpdateQuickDiscountRequest = z.infer<typeof updateQuickDiscountReque
 /** GET /api/promotions 的完整回應：點餐頁一次要用到的所有促銷資料。 */
 export const promotionsResponseSchema = z.object({
   orderCoupons: z.array(orderCouponSchema),
-  quickDiscounts: z.array(quickDiscountSchema),
+  quickDiscounts: z.array(quickDiscountSchema)
 })
 export type PromotionsResponse = z.infer<typeof promotionsResponseSchema>
 
 /** 訂單套用促銷意圖：只收券 ID，實際折抵金額由伺服端查詢折價券後重算，不信任用戶端數值。 */
 export const appliedCouponSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('none') }),
-  z.object({ type: z.literal('coupon'), couponId: z.string().min(1) }),
+  z.object({ type: z.literal('coupon'), couponId: z.string().min(1) })
 ])
 export type AppliedCoupon = z.infer<typeof appliedCouponSchema>

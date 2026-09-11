@@ -33,7 +33,7 @@ describe('POST /api/promotions/order-coupons', () => {
     const res = await app.request('/api/promotions/order-coupons', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: '$50折價券', kind: 'amount', value: 50 }),
+      body: JSON.stringify({ name: '$50折價券', kind: 'amount', value: 50 })
     })
     expect(res.status).toBe(401)
   })
@@ -42,8 +42,12 @@ describe('POST /api/promotions/order-coupons', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/promotions/order-coupons', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '$50折價券', kind: 'amount', value: 50 }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '$50折價券', kind: 'amount', value: 50 })
     })
     expect(res.status).toBe(201)
     const body = (await res.json()) as { id: string; name: string; kind: string; value: number }
@@ -60,11 +64,13 @@ describe('DELETE /api/promotions/order-coupons/:id', () => {
 
     const del = await app.request('/api/promotions/order-coupons/money-1', {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(del.status).toBe(204)
 
-    const list = (await (await app.request('/api/promotions')).json()) as { orderCoupons: Array<{ id: string }> }
+    const list = (await (await app.request('/api/promotions')).json()) as {
+      orderCoupons: Array<{ id: string }>
+    }
     expect(list.orderCoupons.find((c) => c.id === 'money-1')).toBeUndefined()
   })
 
@@ -72,7 +78,7 @@ describe('DELETE /api/promotions/order-coupons/:id', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/promotions/order-coupons/does-not-exist', {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(res.status).toBe(404)
   })
@@ -86,8 +92,12 @@ describe('PUT /api/promotions/order-coupons/:id', () => {
 
     const res = await app.request('/api/promotions/order-coupons/money-1', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '$80折價券', kind: 'amount', value: 80 }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '$80折價券', kind: 'amount', value: 80 })
     })
     expect(res.status).toBe(200)
     const body = (await res.json()) as { id: string; name: string; kind: string; value: number }
@@ -101,8 +111,12 @@ describe('PUT /api/promotions/order-coupons/:id', () => {
 
     const res = await app.request('/api/promotions/order-coupons/percent-1', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '整單9折', kind: 'percent', value: 0.9 }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '整單9折', kind: 'percent', value: 0.9 })
     })
     expect(res.status).toBe(200)
     const body = (await res.json()) as { id: string; name: string; kind: string; value: number }
@@ -113,8 +127,12 @@ describe('PUT /api/promotions/order-coupons/:id', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/promotions/order-coupons/does-not-exist', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: 'x', kind: 'amount', value: 1 }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: 'x', kind: 'amount', value: 1 })
     })
     expect(res.status).toBe(404)
   })
@@ -125,8 +143,12 @@ describe('POST /api/promotions/quick-discounts', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/promotions/quick-discounts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '生日優惠', kind: 'percent', value: 0.8 }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '生日優惠', kind: 'percent', value: 0.8 })
     })
     expect(res.status).toBe(201)
     const body = (await res.json()) as { id: string; name: string; kind: string; value: number }
@@ -143,8 +165,12 @@ describe('PUT /api/promotions/quick-discounts/:id', () => {
 
     const res = await app.request('/api/promotions/quick-discounts/quick-1', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '常客優惠（調整後）', kind: 'amount', value: 8 }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '常客優惠（調整後）', kind: 'amount', value: 8 })
     })
     expect(res.status).toBe(200)
     const body = (await res.json()) as { id: string; name: string; value: number }
@@ -153,16 +179,24 @@ describe('PUT /api/promotions/quick-discounts/:id', () => {
     const list = (await (await app.request('/api/promotions')).json()) as {
       quickDiscounts: Array<{ id: string; name: string }>
     }
-    expect(list.quickDiscounts.find((d) => d.id === 'quick-1')).toMatchObject({ name: '常客優惠（調整後）' })
-    expect(list.quickDiscounts.find((d) => d.id === 'quick-2')).toMatchObject({ name: '大宗採購優惠' })
+    expect(list.quickDiscounts.find((d) => d.id === 'quick-1')).toMatchObject({
+      name: '常客優惠（調整後）'
+    })
+    expect(list.quickDiscounts.find((d) => d.id === 'quick-2')).toMatchObject({
+      name: '大宗採購優惠'
+    })
   })
 
   it('更新不存在的快速折扣回傳 404', async () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/promotions/quick-discounts/does-not-exist', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: 'x', kind: 'amount', value: 0 }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: 'x', kind: 'amount', value: 0 })
     })
     expect(res.status).toBe(404)
   })
@@ -176,11 +210,13 @@ describe('DELETE /api/promotions/quick-discounts/:id', () => {
 
     const res = await app.request('/api/promotions/quick-discounts/quick-1', {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(res.status).toBe(204)
 
-    const list = (await (await app.request('/api/promotions')).json()) as { quickDiscounts: Array<{ id: string }> }
+    const list = (await (await app.request('/api/promotions')).json()) as {
+      quickDiscounts: Array<{ id: string }>
+    }
     expect(list.quickDiscounts.find((d) => d.id === 'quick-1')).toBeUndefined()
   })
 
@@ -188,7 +224,7 @@ describe('DELETE /api/promotions/quick-discounts/:id', () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/promotions/quick-discounts/does-not-exist', {
       method: 'DELETE',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(res.status).toBe(404)
   })

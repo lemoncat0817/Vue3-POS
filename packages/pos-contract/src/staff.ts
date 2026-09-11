@@ -21,7 +21,7 @@ export const authorityKeySchema = z.enum([
   'canManageRoles',
   'canSetPayMethod',
   'canCheckMembers',
-  'canManageTables',
+  'canManageTables'
 ])
 export type AuthorityKey = z.infer<typeof authorityKeySchema>
 
@@ -30,13 +30,13 @@ export const roleSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   capabilities: z.array(authorityKeySchema),
-  isSystem: z.boolean(),
+  isSystem: z.boolean()
 })
 export type Role = z.infer<typeof roleSchema>
 
 export const createRoleRequestSchema = z.object({
   name: z.string().min(1),
-  capabilities: z.array(authorityKeySchema),
+  capabilities: z.array(authorityKeySchema)
 })
 export type CreateRoleRequest = z.infer<typeof createRoleRequestSchema>
 
@@ -55,7 +55,7 @@ export const staffSchema = z.object({
   account: z.string().min(1),
   roleId: z.string().min(1),
   roleName: z.string().min(1),
-  capabilities: z.array(authorityKeySchema),
+  capabilities: z.array(authorityKeySchema)
 })
 export type Staff = z.infer<typeof staffSchema>
 
@@ -67,7 +67,7 @@ export const createStaffRequestSchema = z.object({
   jobTitle: z.string().min(1),
   account: z.string().min(1),
   roleId: z.string().min(1),
-  pin: pinSchema,
+  pin: pinSchema
 })
 export type CreateStaffRequest = z.infer<typeof createStaffRequestSchema>
 
@@ -77,14 +77,14 @@ export const updateStaffRequestSchema = z.object({
   jobTitle: z.string().min(1),
   account: z.string().min(1),
   roleId: z.string().min(1),
-  pin: pinSchema.optional(),
+  pin: pinSchema.optional()
 })
 export type UpdateStaffRequest = z.infer<typeof updateStaffRequestSchema>
 
 /** 操作員登入請求。pin 格式不做限制，統一由業務層回傳 401 避免探測帳號存在與否。 */
 export const operatorLoginRequestSchema = z.object({
   account: z.string().min(1),
-  pin: z.string().min(1),
+  pin: z.string().min(1)
 })
 export type OperatorLoginRequest = z.infer<typeof operatorLoginRequestSchema>
 

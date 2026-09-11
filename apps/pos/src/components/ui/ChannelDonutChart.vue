@@ -37,11 +37,11 @@ const buildOption = () => {
       borderColor: isDark.value ? '#334155' : '#e2e8f0',
       textStyle: { color: textColor },
       formatter: (p: { name: string; value: number; percent: number; data: { revenue: number } }) =>
-        `${p.name}<br/>${p.value.toLocaleString()} 筆（${p.percent}%）<br/>NT$ ${p.data.revenue.toLocaleString()}`,
+        `${p.name}<br/>${p.value.toLocaleString()} 筆（${p.percent}%）<br/>NT$ ${p.data.revenue.toLocaleString()}`
     },
     legend: {
       bottom: 0,
-      textStyle: { color: textColor, fontSize: 12, fontWeight: 'bold' },
+      textStyle: { color: textColor, fontSize: 12, fontWeight: 'bold' }
     },
     series: [
       {
@@ -54,10 +54,10 @@ const buildOption = () => {
           name: item.channel,
           value: item.count,
           revenue: item.revenue,
-          itemStyle: { color: CHANNEL_COLOR[item.channel] ?? '#94a3b8' },
-        })),
-      },
-    ],
+          itemStyle: { color: CHANNEL_COLOR[item.channel] ?? '#94a3b8' }
+        }))
+      }
+    ]
   }
 }
 

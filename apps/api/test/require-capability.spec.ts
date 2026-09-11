@@ -14,7 +14,10 @@ import { seedRole } from './helpers/roles'
  * createTestAppWithDevice() 附掛的全權限操作員驗證過「權限足夠時能正常
  * 運作」。
  */
-async function seedStaffWithCapabilities(db: TestDb, capabilities: AuthorityKey[]): Promise<{ staffId: string; sessionToken: string }> {
+async function seedStaffWithCapabilities(
+  db: TestDb,
+  capabilities: AuthorityKey[]
+): Promise<{ staffId: string; sessionToken: string }> {
   const roleId = await seedRole(db, { capabilities })
   const staffId = crypto.randomUUID()
   await db.insert(staff).values({
@@ -24,7 +27,7 @@ async function seedStaffWithCapabilities(db: TestDb, capabilities: AuthorityKey[
     account: `staff-${staffId}`,
     roleId,
     pinHash: 'x',
-    pinSalt: 'x',
+    pinSalt: 'x'
   })
   const sessionToken = await issueTestSession(db, staffId)
   return { staffId, sessionToken }
@@ -36,7 +39,7 @@ describe('requireCapability()：以 POST /api/catalog/categories 為代表', () 
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
-      body: JSON.stringify({ name: '主餐' }),
+      body: JSON.stringify({ name: '主餐' })
     })
     expect(res.status).toBe(401)
     expect(await res.json()).toMatchObject({ error: expect.stringContaining('操作員 session') })
@@ -46,8 +49,12 @@ describe('requireCapability()：以 POST /api/catalog/categories 為代表', () 
     const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': 'does-not-exist' },
-      body: JSON.stringify({ name: '主餐' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': 'does-not-exist'
+      },
+      body: JSON.stringify({ name: '主餐' })
     })
     expect(res.status).toBe(401)
   })
@@ -59,8 +66,12 @@ describe('requireCapability()：以 POST /api/catalog/categories 為代表', () 
 
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': staffId },
-      body: JSON.stringify({ name: '主餐' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': staffId
+      },
+      body: JSON.stringify({ name: '主餐' })
     })
     expect(res.status).toBe(401)
   })
@@ -72,14 +83,18 @@ describe('requireCapability()：以 POST /api/catalog/categories 為代表', () 
 
     const logout = await app.request('/api/auth/logout', {
       method: 'POST',
-      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(logout.status).toBe(204)
 
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '主餐' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '主餐' })
     })
     expect(res.status).toBe(401)
   })
@@ -91,8 +106,12 @@ describe('requireCapability()：以 POST /api/catalog/categories 為代表', () 
 
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '主餐' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '主餐' })
     })
     expect(res.status).toBe(403)
     expect(await res.json()).toMatchObject({ error: expect.stringContaining('權限') })
@@ -105,8 +124,12 @@ describe('requireCapability()：以 POST /api/catalog/categories 為代表', () 
 
     const res = await app.request('/api/catalog/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ name: '主餐' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '主餐' })
     })
     expect(res.status).toBe(201)
   })
@@ -120,8 +143,12 @@ describe('requireCapability()：訂單狀態變更依請求內容決定所需權
 
     const res = await app.request('/api/orders/does-not-exist/status', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ orderStatus: '已完成', operator: '測試員工' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ orderStatus: '已完成', operator: '測試員工' })
     })
     // 訂單不存在會是 404，但代表已經通過權限檢查——重點是不是 403。
     expect(res.status).toBe(404)
@@ -134,8 +161,12 @@ describe('requireCapability()：訂單狀態變更依請求內容決定所需權
 
     const res = await app.request('/api/orders/does-not-exist/status', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken },
-      body: JSON.stringify({ orderStatus: '已取消', operator: '測試員工', reason: '測試' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ orderStatus: '已取消', operator: '測試員工', reason: '測試' })
     })
     expect(res.status).toBe(403)
   })

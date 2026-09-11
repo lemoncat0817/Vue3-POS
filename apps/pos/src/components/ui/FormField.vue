@@ -7,13 +7,20 @@
       :step="step"
       :disabled="disabled"
       class="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm font-normal text-surface-900 outline-none transition-colors disabled:cursor-not-allowed disabled:bg-surface-100 disabled:text-surface-400 dark:bg-surface-800 dark:text-surface-100 dark:disabled:bg-surface-900 dark:disabled:text-surface-600"
-      :class="errorMessage
-        ? 'border-danger-400 focus:border-danger-500 focus:ring-1 focus:ring-danger-500'
-        : 'border-surface-300 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700'"
+      :class="
+        errorMessage
+          ? 'border-danger-400 focus:border-danger-500 focus:ring-1 focus:ring-danger-500'
+          : 'border-surface-300 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700'
+      "
       :placeholder="placeholder"
       @input="handleChange"
-      @blur="handleBlur" />
-    <span v-if="errorMessage" class="mt-1 block text-xs font-bold text-danger-600 dark:text-danger-400">{{ errorMessage }}</span>
+      @blur="handleBlur"
+    />
+    <span
+      v-if="errorMessage"
+      class="mt-1 block text-xs font-bold text-danger-600 dark:text-danger-400"
+      >{{ errorMessage }}</span
+    >
   </label>
 </template>
 
@@ -30,5 +37,7 @@ const props = defineProps<{
   disabled?: boolean
 }>()
 
-const { value, errorMessage, handleChange, handleBlur } = useField<string | number>(() => props.name)
+const { value, errorMessage, handleChange, handleBlur } = useField<string | number>(
+  () => props.name
+)
 </script>
