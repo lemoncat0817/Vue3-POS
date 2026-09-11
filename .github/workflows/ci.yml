@@ -2,7 +2,7 @@
 #
 # Required GitHub Actions secrets:
 #   VITE_DEVICE_TOKEN       — already configured; baked into the frontend production build
-#   CLOUDFLARE_API_TOKEN    — still needed; wrangler deploy (Workers Edit + Account read)
+#   CLOUDFLARE_API_TOKEN    — already configured; wrangler deploy (Workers Edit + Account read)
 #
 # Optional secret or variable:
 #   CLOUDFLARE_ACCOUNT_ID   — cc1bea6538e772965248fa1fdef2844c (set if wrangler cannot infer the account)

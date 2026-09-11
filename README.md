@@ -153,7 +153,7 @@ Repo **Settings → Pages → Source** 請設成 **GitHub Actions**。
 Secrets：
 
 - `VITE_DEVICE_TOKEN`（前端 production build）
-- `CLOUDFLARE_API_TOKEN`（wrangler 部署 Worker；尚未設定時 CI 無法部署 API）
+- `CLOUDFLARE_API_TOKEN`（wrangler 部署 Worker）
 
 Variables：
 
