@@ -1,8 +1,11 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import { googleAuth } from '@hono/oauth-providers/google'
 import { githubAuth } from '@hono/oauth-providers/github'
 import { upsertOAuthUser } from '../auth/oauth-user'
 import { issueWebSession } from '../auth/web-session'
+import { ensureTenantOnboarded, provisionDeviceForLogin } from '../auth/onboarding'
+import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
 
 export type OAuthConfig = {
@@ -19,6 +22,36 @@ export type OAuthConfig = {
 function buildRedirect(frontendUrl: string, params: Record<string, string>): string {
   const fragment = new URLSearchParams(params).toString()
   return `${frontendUrl}#${fragment}`
+}
+
+/**
+ * 兩個 provider 拿到 userId 之後共用的收尾流程：核發 web session、視需要
+ * 幫這個租戶灌種子資料（見 auth/onboarding.ts 的 ensureTenantOnboarded，
+ * 冪等，只有第一次登入才會真的建立資料）、核發這台瀏覽器專屬的裝置憑證，
+ * 三者的明碼都只在這次登入回應裡出現一次，之後只存雜湊值。
+ */
+async function completeLogin(
+  c: Context<AppEnv>,
+  frontendUrl: string,
+  userId: string,
+  provider: 'google' | 'github',
+  deviceName: string
+): Promise<Response> {
+  const db: AnyDb = c.get('db')
+  const sessionToken = await issueWebSession(db, userId)
+  const onboarding = await ensureTenantOnboarded(db, userId)
+  const deviceToken = await provisionDeviceForLogin(db, userId, deviceName)
+
+  const params: Record<string, string> = {
+    session: sessionToken,
+    device: deviceToken,
+    provider
+  }
+  if (onboarding) {
+    params.ownerAccount = onboarding.ownerAccount
+    params.ownerPin = onboarding.ownerPin
+  }
+  return c.redirect(buildRedirect(frontendUrl, params))
 }
 
 /**
@@ -50,10 +83,7 @@ export function createOAuthRoutes(config: OAuthConfig) {
         displayName: profile.name ?? profile.email,
         avatarUrl: profile.picture ?? null
       })
-      const sessionToken = await issueWebSession(db, userId)
-      return c.redirect(
-        buildRedirect(config.frontendUrl, { session: sessionToken, provider: 'google' })
-      )
+      return completeLogin(c, config.frontendUrl, userId, 'google', 'Google 登入的瀏覽器')
     }
   )
 
@@ -80,10 +110,7 @@ export function createOAuthRoutes(config: OAuthConfig) {
         displayName: profile.name ?? profile.login ?? String(profile.id),
         avatarUrl: profile.avatar_url ?? null
       })
-      const sessionToken = await issueWebSession(db, userId)
-      return c.redirect(
-        buildRedirect(config.frontendUrl, { session: sessionToken, provider: 'github' })
-      )
+      return completeLogin(c, config.frontendUrl, userId, 'github', 'GitHub 登入的瀏覽器')
     }
   )
 

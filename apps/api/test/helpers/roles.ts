@@ -17,7 +17,7 @@ export async function seedRole(
   await db.insert(roles).values({
     id,
     tenantId: input.tenantId ?? null,
-    // 沒指定名稱時用 id 組出預設值，避免同一個測試 db 裡多次呼叫撞上 roles_name_idx。
+    // 沒指定名稱時用 id 組出預設值，避免同一個測試 db 裡多次呼叫撞上 roles_tenant_name_idx。
     name: input.name ?? `測試角色-${id}`,
     capabilities: input.capabilities ?? [],
     isSystem: input.isSystem ?? false

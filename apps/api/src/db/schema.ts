@@ -177,10 +177,12 @@ export const roles = sqliteTable(
     capabilities: text('capabilities', { mode: 'json' }).$type<AuthorityKey[]>().notNull(),
     isSystem: integer('is_system', { mode: 'boolean' }).notNull().default(false)
   },
-  // 暫時維持單欄唯一索引：改成 (tenantId, name) 複合鍵要等 Phase 5 把既有
-  // 資料回填成真正的租戶 id 才能做——tenantId 目前全是 NULL，SQLite 的
-  // UNIQUE 索引視 NULL 互不相等，複合鍵在這個階段等於沒有保護作用。
-  (table) => [uniqueIndex('roles_name_idx').on(table.name)]
+  // (tenantId, name) 複合唯一索引：每個新租戶 onboarding 都會種內建的
+  // 「店長／值班經理／工讀生」三個角色名稱（見 auth/onboarding.ts），globally
+  // unique 會讓第二個租戶一註冊就撞唯一鍵。tenantId 為 null 的舊資料（多租戶
+  // 上線前的過渡期）不在這道保護範圍內——SQLite 的 UNIQUE 索引視 NULL 互不
+  // 相等，這是已知、可接受的過渡期限制。
+  (table) => [uniqueIndex('roles_tenant_name_idx').on(table.tenantId, table.name)]
 )
 
 export const staff = sqliteTable(
@@ -203,9 +205,10 @@ export const staff = sqliteTable(
     failedPinAttempts: integer('failed_pin_attempts').notNull().default(0),
     lockedUntil: text('locked_until')
   },
-  // 暫時維持單欄唯一索引，理由同 roles_name_idx——複合鍵留到 Phase 5 回填
-  // 真正的租戶 id 之後再引入。
-  (table) => [uniqueIndex('staff_account_idx').on(table.account)]
+  // (tenantId, account) 複合唯一索引，理由同 roles_tenant_name_idx——每個新
+  // 租戶 onboarding 都會種一個 owner 帳號，不同租戶的 account 字串本來就會
+  // 重複。
+  (table) => [uniqueIndex('staff_tenant_account_idx').on(table.tenantId, table.account)]
 )
 
 // PIN 登入成功後核發的操作員 session，取代直接信任用戶端回報的 staffId
@@ -289,11 +292,14 @@ export const orders = sqliteTable(
     note: text('note')
   },
   (table) => [
-    // 暫時維持單欄唯一索引與單欄索引，理由同 roles_name_idx——複合鍵／
-    // 複合索引留到 Phase 5 回填真正的租戶 id 之後再引入。
-    uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey),
-    index('orders_order_time_idx').on(table.orderTime),
-    index('orders_order_status_idx').on(table.orderStatus)
+    // (tenantId, idempotencyKey) 複合唯一索引：冪等鍵的唯一性只需要在同一
+    // 租戶內成立。
+    uniqueIndex('orders_tenant_idempotency_key_idx').on(table.tenantId, table.idempotencyKey),
+    // 訂單列表頁預設依時間排序分頁，狀態是最常用的快捷篩選（見
+    // views/order/index.vue 的狀態快捷鍵）。每個查詢一定先過濾 tenantId，
+    // 索引改成 tenantId 開頭的複合索引才吃得到。
+    index('orders_tenant_order_time_idx').on(table.tenantId, table.orderTime),
+    index('orders_tenant_order_status_idx').on(table.tenantId, table.orderStatus)
   ]
 )
 
@@ -313,22 +319,26 @@ export const members = sqliteTable(
       .notNull()
       .default(sql`(current_timestamp)`)
   },
-  // 暫時維持單欄唯一索引，理由同 roles_name_idx——複合鍵留到 Phase 5 回填
-  // 真正的租戶 id 之後再引入。
-  (table) => [uniqueIndex('members_phone_idx').on(table.phone)]
+  // (tenantId, phone) 複合唯一索引，理由同 roles_tenant_name_idx——手機號碼
+  // 的唯一性只需要在同一租戶內成立。
+  (table) => [uniqueIndex('members_tenant_phone_idx').on(table.tenantId, table.phone)]
 )
 
 // 訂單序號的原子計數器。用 SQLite 的 `INSERT ... ON CONFLICT DO UPDATE
 // ... RETURNING` 在單一陳述式內完成「讀當前值、加一、寫回」，避免兩台
 // 終端幾乎同時送單時算出相同序號、後 insert 者因主鍵衝突失敗（見
 // routes/orders.ts 的 nextOrderSequence()）。
-// tenantId 先當一般欄位加，主鍵暫時維持 businessDate 單欄，理由同 roles_name_idx
-// ——改成 (tenantId, businessDate) 複合主鍵要等 Phase 5 回填真正的租戶 id。
-export const orderSequences = sqliteTable('order_sequences', {
-  tenantId: text('tenant_id').references(() => users.id),
-  businessDate: text('business_date').primaryKey(),
-  counter: integer('counter').notNull()
-})
+// 複合主鍵 (tenantId, businessDate)：序號計數器每個租戶各自獨立起算，理由同
+// roles_tenant_name_idx。
+export const orderSequences = sqliteTable(
+  'order_sequences',
+  {
+    tenantId: text('tenant_id').references(() => users.id),
+    businessDate: text('business_date').notNull(),
+    counter: integer('counter').notNull()
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.businessDate] })]
+)
 
 // 發票號碼的舊版計數器（單一固定前綴＋全域遞增流水號，不做字軌輪替）。
 // 已被下方 invoiceTracks 取代，表留著不刪但新的 nextInvoiceNumber() 不再讀寫它。

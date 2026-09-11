@@ -272,13 +272,26 @@ async function loadQuickDiscounts(db: AnyDb, tenantId: string | null): Promise<Q
 // 時，起始值用 COALESCE 抓 orders 表裡該營業日已用掉的最大序號＋1
 // （沒有才是 1）——避免撞到用舊版「查訂單數＋1」算出來的既有資料。
 // 假設 orderId 固定是 8 碼營業日＋序號（businessDateSchema 已驗證 8 碼）。
-async function nextOrderSequence(db: AnyDb, businessDate: string): Promise<number> {
+async function nextOrderSequence(
+  db: AnyDb,
+  tenantId: string | null,
+  businessDate: string
+): Promise<number> {
   // 刻意不把 Column 物件內插進這段 sql``——drizzle 會展開成完整限定名稱，
   // 但 SQLite 的 INSERT／ON CONFLICT／SET 欄位清單只接受不限定名稱。
-  // 表名／欄位名是寫死常值，直接寫字面量，只有 businessDate 用參數帶入。
+  // 表名／欄位名是寫死常值，只有 tenantId／businessDate 用參數帶入。
+  //
+  // 初始值的 coalesce 子查詢刻意不加租戶過濾：orders.order_id 是全租戶共用
+  // 的 PRIMARY KEY（= businessDate + 序號），不是每個租戶各自獨立的欄位，
+  // 序號一定要避開「全部租戶」當天已經用掉的號碼，否則會撞到別的租戶已經
+  // insert 的 orderId 導致 PRIMARY KEY constraint 失敗。代價是不同租戶同一
+  // 天的訂單編號不會各自從 1 開始（看得出總量、看不到內容），這是已知、
+  // 可接受的取捨——真的要讓每個租戶編號互相獨立，需要把 orderId 改成不再
+  // 是全租戶共用的主鍵，屬於更大範圍的改動。
   const row = await db.get<{ counter: number }>(sql`
-    insert into order_sequences (business_date, counter)
+    insert into order_sequences (tenant_id, business_date, counter)
     values (
+      ${tenantId},
       ${businessDate},
       coalesce(
         (select max(cast(substr(order_id, 9) as integer))
@@ -286,7 +299,7 @@ async function nextOrderSequence(db: AnyDb, businessDate: string): Promise<numbe
         0
       ) + 1
     )
-    on conflict (business_date) do update set counter = counter + 1
+    on conflict (tenant_id, business_date) do update set counter = counter + 1
     returning counter
   `)
   if (!row) {
@@ -499,7 +512,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     // 序號核發之後，如果下面的 insert 因為其他原因失敗，這個序號就浪費
     // 掉了（不會被回收重用）——序號中間有空隙是可以接受的，序號撞號
     // （見 nextOrderSequence 的說明）不行。
-    const sequence = await nextOrderSequence(db, input.businessDate)
+    const sequence = await nextOrderSequence(db, tenantId, input.businessDate)
     const orderId = `${input.businessDate}${sequence}`
 
     const quickDiscountsNow = await loadQuickDiscounts(db, tenantId)
