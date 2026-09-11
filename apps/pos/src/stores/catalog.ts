@@ -9,10 +9,9 @@ export const useCatalogStore = defineStore('catalog', () => {
   const discountStore = useDiscountStore()
 
   // 這裡的陣列是離線種子資料，正常由 apps/api 當唯一來源（見
-  // src/api/catalog.ts）。catalogSource 只在「這個瀏覽器從未同步過伺服端
-  // 菜單」時套用一次 hydrateCatalogFromServer()，之後永遠以本機（可能已
-  // 被管理員編輯過）的資料為準，避免每次啟動都覆蓋管理員的異動。
-  const catalogSource = ref<'seed' | 'server'>('seed')
+  // src/api/catalog.ts）。開機拿得到伺服端資料就整份覆蓋這裡（見下方
+  // hydrateCatalogFromServer）；種子資料只在離線／伺服端連不上時當作
+  // 最後手段的畫面內容，不會跟真正的菜單資料混在一起比對合併。
 
   // 展示用種子資料：跨主餐/輕食/飲品/甜點的示範菜單，證明這套目錄模型
   // 不綁定單一產業——熟度、甜度/冰塊/容器大小都是可掛用的規格群組，不是
@@ -199,23 +198,22 @@ export const useCatalogStore = defineStore('catalog', () => {
     return Math.round(cartLines.value.reduce((acc, cur) => acc + cur.totalPrice, 0)) + currentBagCount.value - cartPayPrice.value
   })
 
-  // 見上方 catalogSource 的說明：只在第一次套用，之後不會再覆蓋本機資料。
+  // 開機每次拿到伺服端資料都整份覆蓋——D1 已經是可信賴的持久層，管理端的
+  // 異動也都直接寫進去，不需要再靠「只信任本機」來防止被蓋掉；反而是只信
+  // 任本機會讓多裝置／多分頁各自卡在自己最後一次同步的舊資料出不來。
   const hydrateCatalogFromServer = (catalog: {
     categories: Category[]
     products: Product[]
     modifierGroups: ModifierGroup[]
     addOns: AddOnOption[]
   }) => {
-    if (catalogSource.value === 'server') return
     categories.value = catalog.categories
     products.value = catalog.products
     modifierGroups.value = catalog.modifierGroups
     addOns.value = catalog.addOns
-    catalogSource.value = 'server'
   }
 
   return {
-    catalogSource,
     hydrateCatalogFromServer,
     categories,
     products,

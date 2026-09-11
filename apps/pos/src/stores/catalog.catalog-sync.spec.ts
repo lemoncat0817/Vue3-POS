@@ -2,13 +2,12 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import { useCatalogStore } from './catalog'
 
-/** 驗證 hydrateCatalogFromServer() 僅初次注入伺服端資料，避免覆蓋本機編輯。 */
+/** 驗證 hydrateCatalogFromServer() 每次都以伺服端資料整份覆蓋本機。 */
 describe('useCatalogStore — hydrateCatalogFromServer()', () => {
   it('第一次呼叫時，用伺服端資料取代種子資料', () => {
     setActivePinia(createPinia())
     const catalogStore = useCatalogStore()
 
-    expect(catalogStore.catalogSource).toBe('seed')
     catalogStore.hydrateCatalogFromServer({
       categories: [{ id: 'cat-1', name: '測試分類' }],
       products: [],
@@ -16,12 +15,11 @@ describe('useCatalogStore — hydrateCatalogFromServer()', () => {
       addOns: [{ id: 'a1', name: '測試加購', price: 5, stock: null }],
     })
 
-    expect(catalogStore.catalogSource).toBe('server')
     expect(catalogStore.categories).toEqual([{ id: 'cat-1', name: '測試分類' }])
     expect(catalogStore.addOns).toEqual([{ id: 'a1', name: '測試加購', price: 5, stock: null }])
   })
 
-  it('已經同步過一次之後，再呼叫不會覆蓋本機（可能已被管理員編輯過）的資料', () => {
+  it('再次呼叫會用最新的伺服端資料整份覆蓋，包含本機在這之間做的異動', () => {
     setActivePinia(createPinia())
     const catalogStore = useCatalogStore()
 
@@ -31,7 +29,7 @@ describe('useCatalogStore — hydrateCatalogFromServer()', () => {
       modifierGroups: [],
       addOns: [],
     })
-    // 模擬管理員在背景設定頁新增了一個分類。
+    // 模擬管理員在背景設定頁新增了一個分類，但沒有重新整理頁面。
     catalogStore.categories.push({ id: 'cat-2', name: '管理員新增的分類' })
 
     catalogStore.hydrateCatalogFromServer({
@@ -41,8 +39,7 @@ describe('useCatalogStore — hydrateCatalogFromServer()', () => {
       addOns: [],
     })
 
-    // 第二次呼叫應該被忽略：本機新增的分類還在，名字也沒被伺服端覆蓋。
-    expect(catalogStore.categories).toHaveLength(2)
-    expect(catalogStore.categories[1]).toMatchObject({ name: '管理員新增的分類' })
+    // 下一次開機同步一律以伺服端為準——這裡的異動如果沒真的寫進資料庫，本來就不該留著。
+    expect(catalogStore.categories).toEqual([{ id: 'cat-1', name: '測試分類（伺服端又改了名字）' }])
   })
 })
