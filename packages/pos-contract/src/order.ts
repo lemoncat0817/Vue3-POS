@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { businessDateSchema, ulidSchema } from './common'
 import { invoiceStatusSchema } from './invoice'
+import { createPaginatedResponseSchema, paginationQuerySchema } from './pagination'
 import { appliedCouponSchema } from './promotion'
 
 // 訂單相關的 schema。設計原則：用戶端只送出「選了什麼」（品項基本資料
@@ -178,3 +179,37 @@ export const orderSchema = z.object({
   invoiceSubmittedAt: z.string().nullable()
 })
 export type Order = z.infer<typeof orderSchema>
+
+// 訂單列表頁的查詢參數：分頁＋進階篩選。dateFrom／dateTo 用
+// <input type="date"> 原生的 YYYY-MM-DD 格式，直接對應 orders.orderTime
+// （ISO 字串）的日期前綴做字串區間比對，不在這裡額外轉換。各篩選欄位
+// 留空即視為不限，由呼叫端決定要不要把空字串排除在 query string 外。
+export const listOrdersQuerySchema = paginationQuerySchema.extend({
+  keyword: z.string().optional(),
+  dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '必須是 YYYY-MM-DD 格式').optional(),
+  dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '必須是 YYYY-MM-DD 格式').optional(),
+  channel: orderChannelSchema.optional(),
+  staff: z.string().optional(),
+  status: orderStatusSchema.optional(),
+  payMethod: z.string().optional()
+})
+export type ListOrdersQuery = z.infer<typeof listOrdersQuerySchema>
+
+export const orderListResponseSchema = createPaginatedResponseSchema(orderSchema)
+export type OrderListResponse = z.infer<typeof orderListResponseSchema>
+
+// 訂單列表頁的 KPI 摘要，刻意跟分頁清單分開成獨立端點：摘要永遠是對
+// 「全部訂單」算的聚合數字，不受目前分頁／篩選條件影響，不該因為使用者
+// 換頁或篩選而重算或消失。staffNames 是服務人員篩選下拉選單的選項來源
+// ——人數有限（店員編制），一次性回傳不分頁。
+export const orderSummarySchema = z.object({
+  totalCount: z.number().int().nonnegative(),
+  /** 僅計入已完成訂單，且已扣除該筆訂單的退款金額，算法對齊原本前端本機統計的定義。 */
+  totalRevenue: z.number().int(),
+  completedCount: z.number().int().nonnegative(),
+  voidCount: z.number().int().nonnegative(),
+  /** 有退款紀錄的訂單筆數（任何狀態都算，與 totalRevenue 的「僅已完成」不同）。 */
+  refundCount: z.number().int().nonnegative(),
+  staffNames: z.array(z.string())
+})
+export type OrderSummary = z.infer<typeof orderSummarySchema>

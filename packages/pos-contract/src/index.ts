@@ -1,5 +1,6 @@
 /** @pos/contract — API 契約單一來源，以 Zod 定義請求／回應 schema，供 apps/api 與 apps/pos 共用。 */
 export * from './common'
+export * from './pagination'
 export * from './catalog'
 export * from './device'
 export * from './promotion'
