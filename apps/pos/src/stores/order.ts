@@ -5,8 +5,6 @@ import type { OrderRecord, PaymentMethod } from '@/types'
 
 export const useOrderStore = defineStore('order', () => {
   const currentOrderNumber = ref(1)
-  // 付款方式資料來源：初次啟動時自伺服端注入，後續以本機（含管理員異動）為準。
-  const paymentSource = ref<'seed' | 'server'>('seed')
   const paymentList = ref<PaymentMethod[]>([{
     "id": 1,
     "name": '現金',
@@ -96,16 +94,14 @@ export const useOrderStore = defineStore('order', () => {
     }
   }
 
-  // 僅在尚未同步過伺服端資料時套用，避免覆蓋本機編輯。
+  // 開機每次拿到伺服端資料都整份覆蓋，本機資料只在離線／連不上時當 fallback。
   const hydratePaymentMethodsFromServer = (methods: PaymentMethod[]) => {
-    if (paymentSource.value === 'server') return
     paymentList.value = methods
-    paymentSource.value = 'server'
   }
 
   return {
     currentOrderNumber, order, paymentList,
-    paymentSource, hydratePaymentMethodsFromServer,
+    hydratePaymentMethodsFromServer,
     nextOrderId, issueOrderId, reconcileOrderId,
   }
 }, {
