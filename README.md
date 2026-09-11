@@ -135,3 +135,28 @@ pnpm lint        # 執行 ESLint
 pnpm test        # 執行 Vitest 單元測試
 pnpm test:e2e    # 執行 Playwright 端對端測試
 ```
+
+## CI/CD
+
+`.github/workflows/ci.yml` 在 push／merge 到 `master`（以及手動 `workflow_dispatch`）時會：
+
+1. 跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`（不含 e2e）
+2. 以 Actions 部署前端到 GitHub Pages（**不是** `gh-pages` 分支）
+3. 以 wrangler 部署後端 Worker（**不會**自動跑 D1 migrate／seed）
+
+打到 `master` 或 `refactor/modernization` 的 pull request 只跑品質檢查、不部署。
+
+Repo **Settings → Pages → Source** 請設成 **GitHub Actions**。
+
+### 需要的 GitHub Secrets / Variables
+
+Secrets：
+
+- `VITE_DEVICE_TOKEN`（前端 production build）
+- `CLOUDFLARE_API_TOKEN`（wrangler 部署 Worker）
+
+Variables：
+
+- `VITE_API_BASE_URL`（例如 `https://pos-api.jimdeng0817.workers.dev`）
+- `VITE_BASE_PATH`（GitHub Pages 專案站必須是 `/Vue3-POS/`）
+- `CLOUDFLARE_ACCOUNT_ID`（可選；wrangler 需要時設為 Cloudflare account id）

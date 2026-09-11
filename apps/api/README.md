@@ -48,14 +48,10 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
 專案準備到「你登入後幾個指令就能部署」的狀態：
 
 1. **登入**：`pnpm exec wrangler login`（會開瀏覽器走 OAuth）。
-2. **建立 D1 資料庫**：
-   ```sh
-   pnpm exec wrangler d1 create pos-db
-   ```
-   指令會印出 `database_id`，貼到 `wrangler.jsonc` 的
-   `d1_databases[0].database_id`（目前是佔位字串
-   `REPLACE_AFTER_WRANGLER_D1_CREATE`）。
-3. **套用 migration 到正式環境**：
+2. **D1 資料庫**：`wrangler.jsonc` 已綁定正式環境的 `pos-db`（binding 名稱
+   `DB`）。若要在自己的帳號另建一個，再執行 `pnpm exec wrangler d1 create pos-db`
+   並把印出的 `database_id` 貼回 `d1_databases[0].database_id`。
+3. **套用 migration 到正式環境**（刻意不放進 CI；每次部署 Worker 不會自動 migrate）：
    ```sh
    pnpm --filter @pos/api run db:migrate:remote
    ```
@@ -84,6 +80,8 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
    ```sh
    pnpm --filter @pos/api run deploy
    ```
+   merge 到 `master` 後 GitHub Actions 也會跑同一個指令（見根目錄 README 的 CI/CD；
+   CI **不會**自動 migrate／seed）。
 6. **核發第一台裝置的憑證**（部署完成、拿到正式 API 網址之後）：
    ```sh
    curl -X POST https://<你的 Workers 網址>/api/devices \
