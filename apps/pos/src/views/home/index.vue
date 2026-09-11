@@ -200,11 +200,12 @@
               <th class="px-1 py-2">折扣金額</th>
               <th class="px-2 py-2">使用折扣</th>
               <th class="px-2 py-2">小計</th>
+              <th class="px-1 py-2 w-7"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
             <tr v-if="catalogStore.cartLines.length === 0">
-              <td colspan="10" class="py-12 text-center text-surface-400 dark:text-surface-500">
+              <td colspan="11" class="py-12 text-center text-surface-400 dark:text-surface-500">
                 <div class="flex flex-col items-center gap-2">
                   <p class="font-bold text-sm">目前無待付款的品項</p>
                   <p class="text-xs">請點選左側選單加入購物車</p>
@@ -288,6 +289,16 @@
               <!-- e2e 依賴第 10 欄 (index 9) 為 line total，勿調整欄位順序 -->
               <td class="px-2 py-2 font-black font-mono text-surface-900 dark:text-surface-100">
                 ${{ row.totalPrice }}
+              </td>
+              <td class="px-1 py-2 text-center">
+                <button
+                  type="button"
+                  class="p-1 rounded-lg text-surface-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/40 transition-colors select-none cursor-pointer group"
+                  title="刪除此品項"
+                  @click.stop="removeLine(row)"
+                >
+                  <Trash2 class="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
+                </button>
               </td>
             </tr>
           </tbody>
@@ -556,6 +567,7 @@ import { ApiError } from '@/api/http'
 import { enqueueOrder } from '@/offline/outbox'
 import { useOrderSync } from '@/offline/useOrderSync'
 import QuantityKeypadPopover from '@/components/ui/QuantityKeypadPopover.vue'
+import { Trash2 } from 'lucide-vue-next'
 
 const orderSync = useOrderSync()
 
@@ -736,6 +748,18 @@ const quickDiscountsForPricing = (): QuickDiscount[] =>
     kind: d.kind,
     value: Number(d.value)
   }))
+
+// 單行快速刪除購物車品項
+const removeLine = async (item: CartLineItem) => {
+  const result = await confirm({
+    title: '確認刪除',
+    description: `確定要自購物車移除「${item.name}」嗎？`
+  })
+  if (result !== 'confirm') return
+  catalogStore.cartLines = catalogStore.cartLines.filter((line) => line !== item)
+  selectedLines.value = selectedLines.value.filter((selected) => selected !== item)
+  showToast(`已移除「${item.name}」`, 'success')
+}
 
 // 修改購物車單一品項數量，並即時以 priceLine() 重算小計與折扣
 const updateLineCount = (item: CartLineItem, newCountStr: string | number) => {
