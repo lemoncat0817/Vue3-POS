@@ -242,9 +242,79 @@ export const useCatalogStore = defineStore(
         : 0
     })
 
+    const editingLine = ref<CartLineItem | null>(null)
+    const isSuppressingProductReset = ref(false)
+
+    const startEditLine = (line: CartLineItem) => {
+      const baseName = line.name.split(",")[0]?.trim() ?? ""
+      const targetProduct = line.productId
+        ? products.value.find((p) => String(p.id) === String(line.productId))
+        : products.value.find((p) => p.name === baseName)
+
+      if (!targetProduct) return false
+
+      isSuppressingProductReset.value = true
+      editingLine.value = line
+      selectedCategoryId.value = String(targetProduct.categoryId)
+      selectedProduct.value = targetProduct
+      productCount.value = String(line.count)
+
+      if (line.selectedModifiers) {
+        selectedModifiers.value = JSON.parse(JSON.stringify(line.selectedModifiers))
+      } else {
+        const parts = line.name.split(",")
+        const modPart = parts[1]
+        if (modPart) {
+          const optNames = modPart.split("/")
+          const groups = modifierGroupsOf(targetProduct)
+          const mods: Record<string, string[]> = {}
+          for (const g of groups) {
+            const matched = g.options.filter((opt) => optNames.includes(opt.name))
+            if (matched.length > 0) mods[String(g.id)] = matched.map((m) => String(m.id))
+          }
+          selectedModifiers.value = mods
+        } else {
+          selectedModifiers.value = {}
+        }
+      }
+
+      if (line.selectedAddOnIds && line.selectedAddOnIds.length > 0) {
+        selectedAddOnList.value = addOns.value.filter((a) =>
+          line.selectedAddOnIds?.includes(String(a.id))
+        )
+      } else if (line.addList) {
+        const addNames = Array.isArray(line.addList)
+          ? line.addList
+          : line.addList === "無添加配料"
+            ? []
+            : [line.addList]
+        selectedAddOnList.value = addOns.value.filter((a) => addNames.includes(a.name))
+      } else {
+        selectedAddOnList.value = []
+      }
+
+      productPanel.value = 0
+
+      setTimeout(() => {
+        isSuppressingProductReset.value = false
+      }, 50)
+
+      return true
+    }
+
+    const cancelEditLine = () => {
+      editingLine.value = null
+      selectedCategoryId.value = ""
+      selectedProduct.value = []
+      selectedModifiers.value = {}
+      selectedAddOnList.value = []
+      productCount.value = "0"
+    }
+
     watch(
       () => selectedCategoryId.value,
       () => {
+        if (isSuppressingProductReset.value) return
         selectedProduct.value = []
         selectedModifiers.value = {}
         selectedAddOnList.value = []
@@ -253,6 +323,7 @@ export const useCatalogStore = defineStore(
     watch(
       () => selectedProduct.value,
       () => {
+        if (isSuppressingProductReset.value) return
         selectedModifiers.value = {}
         selectedAddOnList.value = []
       }
@@ -261,6 +332,7 @@ export const useCatalogStore = defineStore(
     const initialized = ref(false)
     onMounted(() => {
       initialized.value = true
+      editingLine.value = null
     })
     // store（狀態層）不直接彈窗，只遞增計數器；UI 提示交給實際顯示畫面的
     // 元件（home/index.vue）自己 watch 這個計數器。initialized 守衛防的是
@@ -351,7 +423,10 @@ export const useCatalogStore = defineStore(
       cartTotalMoney,
       cartClearedNotice,
       suppressClearedNotice,
-      currentItemCount
+      currentItemCount,
+      editingLine,
+      startEditLine,
+      cancelEditLine
     }
   },
   {

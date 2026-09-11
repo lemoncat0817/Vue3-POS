@@ -13,6 +13,13 @@
         >
           「{{ fromSelection(catalogStore.selectedProduct)?.name }}」
         </span>
+        <span
+          v-if="catalogStore.editingLine"
+          class="rounded-full bg-warning-500/15 text-warning-700 dark:text-warning-300 border border-warning-500/30 px-2 py-0.5 text-[10px] font-black flex items-center gap-1"
+        >
+          <Pencil class="w-2.5 h-2.5" />
+          編輯購物車品項
+        </span>
       </div>
 
       <div class="flex items-center gap-1.5">
@@ -247,7 +254,25 @@
             }}
           </span>
         </div>
+        <div v-if="catalogStore.editingLine" class="flex items-center gap-1.5">
+          <button
+            type="button"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-700 active:scale-95 transition-all select-none cursor-pointer"
+            @click="emit('cancelEdit')"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            class="rounded-xl bg-primary-600 px-4 py-2 text-xs font-black text-white hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 transition-all select-none cursor-pointer flex items-center gap-1"
+            @click="emit('saveEdit')"
+          >
+            <Check class="w-3.5 h-3.5" />
+            更新品項
+          </button>
+        </div>
         <button
+          v-else
           type="button"
           class="rounded-xl bg-primary-600 px-5 py-2 text-xs font-black text-white hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 transition-all select-none cursor-pointer"
           @click="emit('addProduct')"
@@ -268,11 +293,15 @@ import { showToast } from '@/composables/useToast'
 import type { AddOnOption, FormNumeric, ModifierGroup } from '@/types'
 import { fromSelection } from '@/utils/selection'
 import QuantityKeypadPopover from '@/components/ui/QuantityKeypadPopover.vue'
-import { Keyboard } from 'lucide-vue-next'
+import { Keyboard, Pencil, Check } from 'lucide-vue-next'
 
 const isKeypadOpen = ref(false)
 
-const emit = defineEmits<{ (e: 'addProduct'): void }>()
+const emit = defineEmits<{
+  (e: 'addProduct'): void
+  (e: 'saveEdit'): void
+  (e: 'cancelEdit'): void
+}>()
 
 const modifierGroups = computed(() =>
   catalogStore.modifierGroupsOf(fromSelection(catalogStore.selectedProduct))
@@ -351,6 +380,9 @@ const resetAll = async () => {
   catalogStore.selectedProduct = []
   catalogStore.selectedModifiers = {}
   catalogStore.selectedAddOnList = []
+  if (catalogStore.editingLine) {
+    catalogStore.cancelEditLine()
+  }
   showToast('重置成功', 'success')
 }
 </script>

@@ -70,4 +70,8 @@ export interface CartLineItem {
   /** 套用哪一筆快速折扣，沒套用是 null。 */
   quickDiscountId: string | null
   quickDiscountName: string
+  /** 供購物車就地規格再編輯用的快照（選填，避免影響伺服端契約） */
+  productId?: string
+  selectedModifiers?: Record<string, string[]>
+  selectedAddOnIds?: string[]
 }

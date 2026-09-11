@@ -73,7 +73,12 @@
           <ProductMenu />
         </div>
 
-        <ProductModifiers class="mt-2 shrink-0" @add-product="addNewProduct" />
+        <ProductModifiers
+          class="mt-2 shrink-0"
+          @add-product="addNewProduct"
+          @save-edit="saveEditProduct"
+          @cancel-edit="catalogStore.cancelEditLine()"
+        />
       </div>
     </div>
 
@@ -200,7 +205,7 @@
               <th class="px-1 py-2">折扣金額</th>
               <th class="px-2 py-2">使用折扣</th>
               <th class="px-2 py-2">小計</th>
-              <th class="px-1 py-2 w-7"></th>
+              <th class="px-1 py-2 w-14"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
@@ -217,7 +222,12 @@
               :key="row.id"
               data-testid="cart-row"
               class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
-              :class="{ 'bg-primary-50/40 dark:bg-primary-950/20': selectedLines.includes(row) }"
+              :class="{
+                'bg-primary-50/40 dark:bg-primary-950/20':
+                  selectedLines.includes(row) && catalogStore.editingLine !== row,
+                'bg-primary-100/60 dark:bg-primary-950/50 ring-2 ring-inset ring-primary-500/50':
+                  catalogStore.editingLine === row
+              }"
             >
               <td class="px-2 py-2">
                 <input
@@ -229,10 +239,28 @@
               </td>
               <td class="px-1 py-2 font-mono text-surface-500">{{ index + 1 }}</td>
               <td
-                class="px-2 py-2 font-bold text-surface-900 dark:text-surface-100 max-w-[120px] truncate"
-                :title="row.name"
+                class="px-2 py-2 font-bold max-w-[130px] truncate cursor-pointer group/name select-none"
+                :title="`${row.name} (點擊重新編輯規格)`"
+                @click="handleStartEditLine(row)"
               >
-                {{ row.name }}
+                <div class="flex items-center gap-1">
+                  <span
+                    class="truncate transition-colors"
+                    :class="
+                      catalogStore.editingLine === row
+                        ? 'text-primary-600 dark:text-primary-400 font-black'
+                        : 'text-surface-900 dark:text-surface-100 group-hover/name:text-primary-600 dark:group-hover/name:text-primary-400'
+                    "
+                  >
+                    {{ row.name }}
+                  </span>
+                  <span
+                    v-if="catalogStore.editingLine === row"
+                    class="shrink-0 rounded bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 px-1 py-0.5 text-[9px] font-black border border-primary-300 dark:border-primary-700"
+                  >
+                    編輯中
+                  </span>
+                </div>
               </td>
               <td class="px-1 py-2 font-mono">${{ row.price }}</td>
               <td
@@ -290,15 +318,30 @@
               <td class="px-2 py-2 font-black font-mono text-surface-900 dark:text-surface-100">
                 ${{ row.totalPrice }}
               </td>
-              <td class="px-1 py-2 text-center">
-                <button
-                  type="button"
-                  class="p-1 rounded-lg text-surface-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/40 transition-colors select-none cursor-pointer group"
-                  title="刪除此品項"
-                  @click.stop="removeLine(row)"
-                >
-                  <Trash2 class="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
-                </button>
+              <td class="px-1 py-2 text-center whitespace-nowrap">
+                <div class="inline-flex items-center justify-center gap-0.5">
+                  <button
+                    type="button"
+                    class="p-1 rounded-lg transition-colors select-none cursor-pointer group"
+                    :class="
+                      catalogStore.editingLine === row
+                        ? 'text-primary-600 bg-primary-100/80 dark:bg-primary-900/60 ring-1 ring-primary-500'
+                        : 'text-surface-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/40'
+                    "
+                    :title="catalogStore.editingLine === row ? '正在編輯此品項' : '編輯品項規格與配料'"
+                    @click.stop="handleStartEditLine(row)"
+                  >
+                    <Pencil class="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 rounded-lg text-surface-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/40 transition-colors select-none cursor-pointer group"
+                    title="刪除此品項"
+                    @click.stop="removeLine(row)"
+                  >
+                    <Trash2 class="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -567,7 +610,7 @@ import { ApiError } from '@/api/http'
 import { enqueueOrder } from '@/offline/outbox'
 import { useOrderSync } from '@/offline/useOrderSync'
 import QuantityKeypadPopover from '@/components/ui/QuantityKeypadPopover.vue'
-import { Trash2 } from 'lucide-vue-next'
+import { Trash2, Pencil } from 'lucide-vue-next'
 
 const orderSync = useOrderSync()
 
@@ -626,7 +669,10 @@ const addNewProduct = () => {
     totalPrice: catalogStore.productCurrentTotal,
     freeDiscount: false,
     quickDiscountId: null,
-    quickDiscountName: ''
+    quickDiscountName: '',
+    productId: String(selectedProduct.id),
+    selectedModifiers: JSON.parse(JSON.stringify(catalogStore.selectedModifiers)),
+    selectedAddOnIds: catalogStore.selectedAddOnList.map((item) => String(item.id))
   }
   catalogStore.cartLines.push(newLine)
   catalogStore.selectedCategoryId = ''
@@ -647,6 +693,7 @@ const clearNotPay = async () => {
   }
   const result = await confirm({ title: '警告', description: '確定要清除所有待付款的品項嗎?' })
   if (result !== 'confirm') return
+  catalogStore.cancelEditLine()
   catalogStore.cartLines = []
   showToast('清除成功', 'success')
 }
@@ -749,6 +796,78 @@ const quickDiscountsForPricing = (): QuickDiscount[] =>
     value: Number(d.value)
   }))
 
+// 開始重新編輯購物車品項
+const handleStartEditLine = (line: CartLineItem) => {
+  const ok = catalogStore.startEditLine(line)
+  if (!ok) {
+    showToast('找不到此品項的原始菜單資料，無法重新客製', 'error')
+  }
+}
+
+// 儲存重新編輯的品項規格與數量
+const saveEditProduct = () => {
+  const line = catalogStore.editingLine
+  if (!line) return
+
+  const selectedProduct = fromSelection(catalogStore.selectedProduct)
+  if (selectedProduct === undefined) {
+    void alert({ title: '通知', description: '品項未選擇', confirmText: '繼續選取' })
+    return
+  }
+  if (!catalogStore.requiredModifiersSatisfied) {
+    void alert({ title: '通知', description: '規格尚未選擇完整', confirmText: '繼續選取' })
+    return
+  }
+  const count = parseInt(catalogStore.productCount)
+  if (isNaN(count) || count < 1) {
+    void alert({ title: '通知', description: '數量不能小於一份', confirmText: '繼續設定' })
+    return
+  }
+
+  const modifierNames = catalogStore.selectedModifierNames
+  const unitPrice = Number(selectedProduct.basePrice) + catalogStore.selectedModifierPriceDelta
+  const addList = catalogStore.selectedAddOnList.map((item) => item.name)
+  const addListPrice = catalogStore.selectedAddOnList.reduce(
+    (acc, cur) => acc + Number(cur.price),
+    0
+  )
+
+  // 保留原有折扣旗標重新以 priceLine 計算折扣後小計
+  const flags: LineDiscountFlags = {
+    freeDiscount: line.freeDiscount,
+    quickDiscountId: line.quickDiscountId
+  }
+  const quickDiscounts = quickDiscountsForPricing()
+  const priced = priceLine(
+    {
+      price: unitPrice,
+      addListPrice,
+      count
+    },
+    flags,
+    quickDiscounts
+  )
+
+  // 原地更新購物車品項屬性
+  line.name =
+    modifierNames.length === 0
+      ? selectedProduct.name
+      : `${selectedProduct.name},${modifierNames.join('/')}`
+  line.price = unitPrice
+  line.count = count
+  line.addList = addList.length === 0 ? '無添加配料' : addList
+  line.addListPrice = addListPrice
+  line.discount = priced.discount
+  line.totalPrice = priced.totalPrice
+  line.quickDiscountName = priced.quickDiscountName
+  line.productId = String(selectedProduct.id)
+  line.selectedModifiers = JSON.parse(JSON.stringify(catalogStore.selectedModifiers))
+  line.selectedAddOnIds = catalogStore.selectedAddOnList.map((item) => String(item.id))
+
+  catalogStore.cancelEditLine()
+  showToast(`已更新「${line.name.split(',')[0] ?? line.name}」規格`, 'success')
+}
+
 // 單行快速刪除購物車品項
 const removeLine = async (item: CartLineItem) => {
   const result = await confirm({
@@ -756,6 +875,9 @@ const removeLine = async (item: CartLineItem) => {
     description: `確定要自購物車移除「${item.name}」嗎？`
   })
   if (result !== 'confirm') return
+  if (catalogStore.editingLine === item) {
+    catalogStore.cancelEditLine()
+  }
   catalogStore.cartLines = catalogStore.cartLines.filter((line) => line !== item)
   selectedLines.value = selectedLines.value.filter((selected) => selected !== item)
   showToast(`已移除「${item.name}」`, 'success')
