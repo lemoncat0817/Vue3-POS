@@ -1,9 +1,15 @@
 <template>
   <div class="w-full flex flex-col items-center bg-surface-50/50 dark:bg-surface-950 px-4 py-6">
     <div class="w-full max-w-7xl flex flex-col gap-5">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm">
+      <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm"
+      >
         <div>
-          <h1 class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight">會員管理</h1>
+          <h1
+            class="text-2xl lg:text-3xl font-black text-surface-900 dark:text-surface-100 tracking-tight"
+          >
+            會員管理
+          </h1>
           <p class="mt-1 text-xs lg:text-sm text-surface-500 dark:text-surface-400">
             查詢顧客消費歷程、管理會員集點與維護顧客資料庫
           </p>
@@ -14,127 +20,261 @@
             type="button"
             class="flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2 text-xs lg:text-sm font-bold text-white transition-all hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 select-none"
             :class="{ 'pointer-events-none opacity-40': !canManage }"
-            @click="openAddDialog">
+            @click="openAddDialog"
+          >
             <UserPlus class="h-4 w-4" />
             <span>新增會員</span>
           </button>
         </div>
       </div>
 
-      <div class="w-full rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm p-4 overflow-hidden">
-        <div class="flex items-center justify-between pb-3 border-b border-surface-100 dark:border-surface-800">
-          <div class="text-sm font-black text-surface-800 dark:text-surface-200">會員名單</div>
-          <span class="text-xs font-bold text-surface-500">共 {{ members.length }} 位會員</span>
+      <div
+        class="w-full overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm"
+      >
+        <div
+          class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
+        >
+          <div class="text-sm font-black text-surface-900 dark:text-surface-100">會員名單</div>
         </div>
 
-      <table class="mt-4 w-full text-center text-sm">
-        <thead class="bg-surface-100 text-xs font-bold text-surface-500 dark:bg-surface-800 dark:text-surface-400">
-          <tr>
-            <th class="px-2 py-2">序號</th>
-            <th class="px-2 py-2">姓名</th>
-            <th class="px-2 py-2">手機</th>
-            <th class="px-2 py-2">點數</th>
-            <th class="px-2 py-2">加入時間</th>
-            <th class="px-2 py-2">操作</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-          <tr v-if="members.length === 0">
-            <td colspan="6" class="px-2 py-8 text-surface-400 dark:text-surface-500">還沒有任何會員</td>
-          </tr>
-          <tr
-            v-for="(member, index) in members" :key="member.id"
-            class="transition-colors hover:bg-surface-50 dark:hover:bg-surface-950">
-            <td class="px-2 py-2">{{ index + 1 }}</td>
-            <td class="px-2 py-2">{{ member.name }}</td>
-            <td class="px-2 py-2">{{ member.phone }}</td>
-            <td class="px-2 py-2 font-bold text-primary-600 dark:text-primary-400">{{ member.points }}</td>
-            <td class="px-2 py-2">{{ member.createdAt.slice(0, 10) }}</td>
-            <td class="px-2 py-2">
-              <div class="flex justify-center gap-2">
-                <button
-                  type="button"
-                  class="rounded-lg border border-surface-300 px-2 py-1 text-xs font-bold text-surface-700 transition-colors hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
-                  @click="openDetail(member)">消費紀錄</button>
-                <button
-                  type="button"
-                  class="rounded-lg border border-surface-300 px-2 py-1 text-xs font-bold text-surface-700 transition-colors hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
-                  :class="{ 'pointer-events-none opacity-40': !canManage }"
-                  @click="openEditDialog(member)">編輯</button>
-                <button
-                  type="button"
-                  class="rounded-lg border border-danger-200 px-2 py-1 text-xs font-bold text-danger-600 transition-colors hover:bg-danger-50 dark:border-danger-800 dark:text-danger-400 dark:hover:bg-danger-950"
-                  :class="{ 'pointer-events-none opacity-40': !canManage }"
-                  @click="deleteMemberRow(member)">刪除</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <ModalDialog v-model:open="addDialog" title="新增會員">
-      <Form v-slot="{ isSubmitting }" :validation-schema="toTypedSchema(memberSchema())" :initial-values="{ name: '', phone: '' }" @submit="onSubmitAdd">
-        <FormField name="name" label="姓名" :disabled="isSubmitting" placeholder="例如: 王小明" />
-        <FormField name="phone" label="手機號碼" :disabled="isSubmitting" placeholder="例如: 0912345678" />
-        <div class="mt-2 flex justify-end gap-2">
-          <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="addDialog = false">取消</button>
-          <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">新增</button>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead
+              class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
+            >
+              <tr>
+                <th class="w-16 px-4 py-3.5 text-center">序號</th>
+                <th class="px-4 py-3.5 text-left">姓名</th>
+                <th class="px-4 py-3.5 text-left">手機</th>
+                <th class="px-4 py-3.5 text-right">點數</th>
+                <th class="px-4 py-3.5 text-left">加入時間</th>
+                <th class="px-4 py-3.5 text-center">操作</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr v-if="members.length === 0">
+                <td
+                  colspan="6"
+                  class="px-4 py-16 text-center text-surface-400 dark:text-surface-500"
+                >
+                  <div class="flex flex-col items-center justify-center gap-2">
+                    <Users class="h-10 w-10 text-surface-300 dark:text-surface-700" />
+                    <span class="text-base font-semibold text-surface-700 dark:text-surface-300"
+                      >目前無會員</span
+                    >
+                    <span class="text-xs text-surface-400 dark:text-surface-500"
+                      >尚未建立任何會員資料，可點選上方「新增會員」</span
+                    >
+                  </div>
+                </td>
+              </tr>
+              <tr
+                v-for="(member, index) in sliceMembers"
+                :key="member.id"
+                class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
+              >
+                <td class="px-4 py-3.5 text-center font-mono text-xs text-surface-400">
+                  {{ (memberPage - 1) * memberPageSize + index + 1 }}
+                </td>
+                <td class="px-4 py-3.5 text-left font-bold text-surface-900 dark:text-surface-100">
+                  {{ member.name }}
+                </td>
+                <td class="px-4 py-3.5 text-left font-mono text-surface-600 dark:text-surface-400">
+                  {{ member.phone }}
+                </td>
+                <td
+                  class="px-4 py-3.5 text-right font-mono font-bold text-primary-600 dark:text-primary-400"
+                >
+                  {{ member.points }}
+                </td>
+                <td class="px-4 py-3.5 text-left text-surface-500 dark:text-surface-400">
+                  {{ member.createdAt.slice(0, 10) }}
+                </td>
+                <td class="px-4 py-3.5 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button
+                      type="button"
+                      class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
+                      @click="openDetail(member)"
+                    >
+                      消費紀錄
+                    </button>
+                    <button
+                      type="button"
+                      class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
+                      :class="{ 'pointer-events-none opacity-40': !canManage }"
+                      @click="openEditDialog(member)"
+                    >
+                      編輯
+                    </button>
+                    <button
+                      type="button"
+                      class="pos-btn pos-btn-danger px-2.5 py-1 text-xs"
+                      :class="{ 'pointer-events-none opacity-40': !canManage }"
+                      @click="deleteMemberRow(member)"
+                    >
+                      刪除
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </Form>
-    </ModalDialog>
+        <TablePagination
+          :page="memberPage"
+          :page-count="memberPageCount"
+          :total="members.length"
+          :current-count="sliceMembers.length"
+          unit="位會員"
+          @update:page="(p) => (memberPage = p)"
+        />
+      </div>
 
-    <ModalDialog v-model:open="editDialog" title="編輯會員">
-      <Form
-        v-slot="{ isSubmitting }"
-        :validation-schema="toTypedSchema(memberSchema(currentMember?.id))"
-        :initial-values="{ name: currentMember?.name ?? '', phone: currentMember?.phone ?? '' }"
-        @submit="onSubmitEdit">
-        <FormField name="name" label="姓名" :disabled="isSubmitting" placeholder="例如: 王小明" />
-        <FormField name="phone" label="手機號碼" :disabled="isSubmitting" placeholder="例如: 0912345678" />
-        <div class="mt-2 flex justify-end gap-2">
-          <button type="button" class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800" @click="editDialog = false">取消</button>
-          <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50">保存</button>
+      <ModalDialog v-model:open="addDialog" title="新增會員">
+        <Form
+          v-slot="{ isSubmitting }"
+          :validation-schema="toTypedSchema(memberSchema())"
+          :initial-values="{ name: '', phone: '' }"
+          @submit="onSubmitAdd"
+        >
+          <FormField name="name" label="姓名" :disabled="isSubmitting" placeholder="例如: 王小明" />
+          <FormField
+            name="phone"
+            label="手機號碼"
+            :disabled="isSubmitting"
+            placeholder="例如: 0912345678"
+          />
+          <div class="mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              class="pos-btn pos-btn-secondary px-4 py-2 text-sm font-bold"
+              @click="addDialog = false"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              :disabled="isSubmitting"
+              class="pos-btn pos-btn-primary px-4 py-2 text-sm font-bold"
+            >
+              新增
+            </button>
+          </div>
+        </Form>
+      </ModalDialog>
+
+      <ModalDialog v-model:open="editDialog" title="編輯會員">
+        <Form
+          v-slot="{ isSubmitting }"
+          :validation-schema="toTypedSchema(memberSchema(currentMember?.id))"
+          :initial-values="{ name: currentMember?.name ?? '', phone: currentMember?.phone ?? '' }"
+          @submit="onSubmitEdit"
+        >
+          <FormField name="name" label="姓名" :disabled="isSubmitting" placeholder="例如: 王小明" />
+          <FormField
+            name="phone"
+            label="手機號碼"
+            :disabled="isSubmitting"
+            placeholder="例如: 0912345678"
+          />
+          <div class="mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              class="pos-btn pos-btn-secondary px-4 py-2 text-sm font-bold"
+              @click="editDialog = false"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              :disabled="isSubmitting"
+              class="pos-btn pos-btn-primary px-4 py-2 text-sm font-bold"
+            >
+              保存
+            </button>
+          </div>
+        </Form>
+      </ModalDialog>
+
+      <ModalDialog v-model:open="detailDialog" :title="`${detail?.name ?? ''} 的消費紀錄`">
+        <div
+          class="mb-3 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3.5 py-2.5"
+        >
+          <span class="text-xs font-bold text-surface-600 dark:text-surface-400">目前累積點數</span>
+          <span class="font-mono text-sm font-black text-primary-600 dark:text-primary-400"
+            >{{ detail?.points ?? 0 }} 點</span
+          >
         </div>
-      </Form>
-    </ModalDialog>
-
-    <ModalDialog v-model:open="detailDialog" :title="`${detail?.name ?? ''} 的消費紀錄`">
-      <p class="text-sm text-surface-600 dark:text-surface-400">目前累積點數：<span class="font-bold text-primary-600 dark:text-primary-400">{{ detail?.points ?? 0 }}</span></p>
-      <table class="mt-3 w-full text-center text-sm">
-        <thead class="bg-surface-100 text-xs font-bold text-surface-500 dark:bg-surface-800 dark:text-surface-400">
-          <tr>
-            <th class="px-2 py-2">訂單編號</th>
-            <th class="px-2 py-2">時間</th>
-            <th class="px-2 py-2">狀態</th>
-            <th class="px-2 py-2">金額</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-          <tr v-if="!detail || detail.orders.length === 0">
-            <td colspan="4" class="px-2 py-6 text-surface-400 dark:text-surface-500">還沒有消費紀錄</td>
-          </tr>
-          <tr v-for="order in detail?.orders ?? []" :key="order.orderId">
-            <td class="px-2 py-2">{{ order.orderId }}</td>
-            <td class="px-2 py-2">{{ order.orderTime }}</td>
-            <td class="px-2 py-2">{{ order.orderStatus }}</td>
-            <td class="px-2 py-2">{{ order.orderPaymentPrice }} 元</td>
-          </tr>
-        </tbody>
-      </table>
-    </ModalDialog>
+        <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+          <table class="w-full text-left text-sm">
+            <thead
+              class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
+            >
+              <tr>
+                <th class="px-3 py-2.5 text-left">訂單編號</th>
+                <th class="px-3 py-2.5 text-left">時間</th>
+                <th class="px-3 py-2.5 text-center">狀態</th>
+                <th class="px-3 py-2.5 text-right">金額</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr v-if="!detail || detail.orders.length === 0">
+                <td
+                  colspan="4"
+                  class="px-3 py-8 text-center text-surface-400 dark:text-surface-500"
+                >
+                  <div class="flex flex-col items-center justify-center gap-1.5">
+                    <Receipt class="h-8 w-8 text-surface-300 dark:text-surface-700" />
+                    <span class="text-xs font-semibold text-surface-600 dark:text-surface-400"
+                      >還沒有消費紀錄</span
+                    >
+                  </div>
+                </td>
+              </tr>
+              <tr
+                v-for="order in detail?.orders ?? []"
+                :key="order.orderId"
+                class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
+              >
+                <td
+                  class="px-3 py-2.5 font-mono text-xs font-bold text-surface-900 dark:text-surface-100"
+                >
+                  {{ order.orderId }}
+                </td>
+                <td class="px-3 py-2.5 text-xs text-surface-500 dark:text-surface-400">
+                  {{ order.orderTime }}
+                </td>
+                <td class="px-3 py-2.5 text-center">
+                  <span
+                    class="inline-flex items-center rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[11px] font-bold text-surface-600 dark:text-surface-300"
+                  >
+                    {{ order.orderStatus }}
+                  </span>
+                </td>
+                <td
+                  class="px-3 py-2.5 text-right font-mono text-xs font-bold text-surface-900 dark:text-surface-100"
+                >
+                  {{ order.orderPaymentPrice }} 元
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ModalDialog>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { UserPlus } from 'lucide-vue-next'
-import { onMounted, ref } from 'vue'
+import { Receipt, UserPlus, Users } from 'lucide-vue-next'
+import { computed, onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form } from 'vee-validate'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import FormField from '@/components/ui/FormField.vue'
+import TablePagination from '@/components/ui/TablePagination.vue'
 import { useLoginStore } from '@/stores/login'
 import { hasCapability } from '@/utils/selection'
 import { ApiError } from '@/api/http'
@@ -145,7 +285,7 @@ import {
   deleteMember,
   fetchMemberDetail,
   fetchMembers,
-  updateMember,
+  updateMember
 } from '@/api/members'
 import type { Member, MemberDetail } from '@pos/contract'
 
@@ -162,6 +302,15 @@ function apiErrorMessage(err: unknown): string {
 
 // 會員名單為後台管理專用資料，無需離線可用，掛載時直接向伺服端獲取最新清單。
 const members = ref<Member[]>([])
+const memberPage = ref(1)
+const memberPageSize = 10
+const memberPageCount = computed(() =>
+  Math.max(1, Math.ceil(members.value.length / memberPageSize))
+)
+const sliceMembers = computed(() => {
+  const start = (memberPage.value - 1) * memberPageSize
+  return members.value.slice(start, start + memberPageSize)
+})
 onMounted(async () => {
   try {
     members.value = await fetchMembers()
@@ -173,10 +322,14 @@ onMounted(async () => {
 function memberSchema(excludeId?: string) {
   return z.object({
     name: z.string().trim().min(1, '請輸入姓名'),
-    phone: z.string().trim().min(1, '請輸入手機號碼').refine(
-      (phone) => !members.value.some((item) => item.phone === phone && item.id !== excludeId),
-      '這個手機號碼已經是會員',
-    ),
+    phone: z
+      .string()
+      .trim()
+      .min(1, '請輸入手機號碼')
+      .refine(
+        (phone) => !members.value.some((item) => item.phone === phone && item.id !== excludeId),
+        '這個手機號碼已經是會員'
+      )
   })
 }
 
@@ -223,7 +376,11 @@ async function onSubmitEdit(values: Record<string, unknown>) {
 
 async function deleteMemberRow(member: Member) {
   if (!canManage()) return
-  const result = await confirm({ title: '警告', description: `是否刪除會員 ${member.name}？`, variant: 'danger' })
+  const result = await confirm({
+    title: '警告',
+    description: `是否刪除會員 ${member.name}？`,
+    variant: 'danger'
+  })
   if (result !== 'confirm') return
   try {
     await deleteMember(member.id)
