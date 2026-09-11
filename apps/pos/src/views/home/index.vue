@@ -1,39 +1,67 @@
 <template>
-  <div class="flex flex-col lg:flex-row w-full h-full overflow-hidden bg-surface-100/50 dark:bg-surface-950">
+  <div
+    class="flex flex-col lg:flex-row w-full h-full overflow-hidden bg-surface-100/50 dark:bg-surface-950"
+  >
     <div class="flex-1 flex flex-col h-full min-w-0 p-3 overflow-hidden">
-      <div class="flex items-center justify-between rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 px-4 py-2.5 shadow-sm mb-3 shrink-0">
+      <div
+        class="flex items-center justify-between rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 px-4 py-2.5 shadow-sm mb-3 shrink-0"
+      >
         <div class="flex items-center gap-4">
           <div class="flex items-baseline gap-2">
-            <span class="text-sm font-black text-surface-900 dark:text-surface-100">{{ getDate() }}</span>
-            <span class="text-xs font-mono font-bold text-surface-500 dark:text-surface-400">{{ time }}</span>
+            <span class="text-sm font-black text-surface-900 dark:text-surface-100">{{
+              getDate()
+            }}</span>
+            <span class="text-xs font-mono font-bold text-surface-500 dark:text-surface-400">{{
+              time
+            }}</span>
           </div>
           <span class="h-4 w-px bg-surface-200 dark:bg-surface-700"></span>
           <div class="flex items-center gap-2">
-            <div class="flex items-center gap-1 rounded-md bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 px-2 py-0.5 text-xs font-bold">
+            <div
+              class="flex items-center gap-1 rounded-md bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 px-2 py-0.5 text-xs font-bold"
+            >
               <span>機台編號</span>
               <span class="font-mono">A</span>
             </div>
-            <ShiftPanel :operator="`${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`" />
+            <ShiftPanel
+              :operator="`${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`"
+            />
             <!-- 開收銀機是收銀機層級的操作（不對應特定訂單），比照班別面板放在頭部，不跟購物車操作混在一起。 -->
             <button
               type="button"
               class="rounded-md border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors select-none"
-              :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canOpenCashier') }"
-              @click="openCashier">
+              :class="{
+                'opacity-40 pointer-events-none': !hasCapability(
+                  loginStore.userInfo,
+                  'canOpenCashier'
+                )
+              }"
+              @click="openCashier"
+            >
               開收銀機
             </button>
           </div>
         </div>
 
-        <div class="flex items-center gap-3 text-xs font-bold text-surface-600 dark:text-surface-300">
-          <div class="flex items-center gap-1.5 rounded-lg bg-surface-50 dark:bg-surface-800 px-2.5 py-1">
+        <div
+          class="flex items-center gap-3 text-xs font-bold text-surface-600 dark:text-surface-300"
+        >
+          <div
+            class="flex items-center gap-1.5 rounded-lg bg-surface-50 dark:bg-surface-800 px-2.5 py-1"
+          >
             <span class="text-surface-400">已選份數:</span>
-            <span class="text-primary-600 dark:text-primary-400 font-black">{{ catalogStore.currentItemCount }}</span>
+            <span class="text-primary-600 dark:text-primary-400 font-black">{{
+              catalogStore.currentItemCount
+            }}</span>
             <span>份</span>
           </div>
-          <div class="flex items-center gap-1.5 rounded-lg bg-surface-50 dark:bg-surface-800 px-2.5 py-1">
+          <div
+            class="flex items-center gap-1.5 rounded-lg bg-surface-50 dark:bg-surface-800 px-2.5 py-1"
+          >
             <span class="text-surface-400">包材:</span>
-            <span class="text-primary-600 dark:text-primary-400 font-black">{{ catalogStore.currentBagCount }}</span>
+            <span class="text-primary-600 dark:text-primary-400 font-black">{{
+              catalogStore.currentBagCount
+            }}</span>
             <span>份</span>
           </div>
         </div>
@@ -50,48 +78,74 @@
       </div>
     </div>
 
-    <div class="w-full lg:w-[480px] xl:w-[520px] flex flex-col h-full shrink-0 border-l border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-xl overflow-hidden">
-      <div class="p-3 border-b border-surface-200 dark:border-surface-800 bg-surface-50/70 dark:bg-surface-900/90 shrink-0">
+    <div
+      class="w-full lg:w-[480px] xl:w-[520px] flex flex-col h-full shrink-0 border-l border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-xl overflow-hidden"
+    >
+      <div
+        class="p-3 border-b border-surface-200 dark:border-surface-800 bg-surface-50/70 dark:bg-surface-900/90 shrink-0"
+      >
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-2">
             <span class="text-xs font-bold text-surface-400">單號</span>
-            <span class="text-base font-black text-primary-600 dark:text-primary-400 font-mono tracking-wide">
+            <span
+              class="text-base font-black text-primary-600 dark:text-primary-400 font-mono tracking-wide"
+            >
               #{{ orderStore.nextOrderId }}
             </span>
             <span class="text-xs text-surface-500 font-medium">
-              ({{ fromSelection(loginStore.userInfo)?.jobTitle }} - {{ fromSelection(loginStore.userInfo)?.name }})
+              ({{ fromSelection(loginStore.userInfo)?.jobTitle }} -
+              {{ fromSelection(loginStore.userInfo)?.name }})
             </span>
           </div>
 
           <!-- data-testid 與樣式類別為 e2e 依賴，勿調整 -->
-          <div class="flex items-center gap-1 bg-surface-200/70 dark:bg-surface-800 p-0.5 rounded-xl" data-testid="order-channel-toggle">
+          <div
+            class="flex items-center gap-1 bg-surface-200/70 dark:bg-surface-800 p-0.5 rounded-xl"
+            data-testid="order-channel-toggle"
+          >
             <button
               type="button"
               class="rounded-lg px-2.5 py-1 text-xs font-bold transition-all select-none"
-              :class="orderChannel === '外帶'
-                ? 'bg-primary-600 text-white shadow-sm'
-                : 'text-surface-600 dark:text-surface-300 hover:text-surface-900'"
-              @click="orderChannel = '外帶'">外帶</button>
+              :class="
+                orderChannel === '外帶'
+                  ? 'bg-primary-600 text-white shadow-sm'
+                  : 'text-surface-600 dark:text-surface-300 hover:text-surface-900'
+              "
+              @click="orderChannel = '外帶'"
+            >
+              外帶
+            </button>
             <button
               type="button"
               class="rounded-lg px-2.5 py-1 text-xs font-bold transition-all select-none"
-              :class="orderChannel === '內用'
-                ? 'bg-primary-600 text-white shadow-sm'
-                : 'text-surface-600 dark:text-surface-300 hover:text-surface-900'"
-              @click="orderChannel = '內用'">內用</button>
+              :class="
+                orderChannel === '內用'
+                  ? 'bg-primary-600 text-white shadow-sm'
+                  : 'text-surface-600 dark:text-surface-300 hover:text-surface-900'
+              "
+              @click="orderChannel = '內用'"
+            >
+              內用
+            </button>
             <input
               v-if="orderChannel === '內用'"
-              v-model="tableNumberInput" type="text" placeholder="桌號"
+              v-model="tableNumberInput"
+              type="text"
+              placeholder="桌號"
               data-testid="table-number-input"
-              class="w-14 rounded-md border border-surface-300 bg-white px-1.5 py-0.5 text-xs font-bold text-surface-700 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 ml-1" />
+              class="w-14 rounded-md border border-surface-300 bg-white px-1.5 py-0.5 text-xs font-bold text-surface-700 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 ml-1"
+            />
           </div>
         </div>
 
         <div class="pt-1 border-t border-surface-200/50 dark:border-surface-800">
           <input
-            v-model="orderNote" type="text" maxlength="200"
+            v-model="orderNote"
+            type="text"
+            maxlength="200"
             placeholder="訂單備註（選填，例如：外送地址、取件時間、特殊需求...）"
-            class="w-full rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1.5 text-xs text-surface-700 dark:text-surface-200 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
+            class="w-full rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1.5 text-xs text-surface-700 dark:text-surface-200 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+          />
         </div>
 
         <div class="flex items-center justify-between gap-1 pt-1.5">
@@ -99,32 +153,44 @@
             <button
               type="button"
               class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 select-none shadow-sm transition-colors"
-              @click="clearSelectNotPay">
+              @click="clearSelectNotPay"
+            >
               刪除已勾選品項
             </button>
             <button
               type="button"
               class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-danger-50 hover:text-danger-600 hover:border-danger-200 select-none shadow-sm transition-colors"
-              @click="clearNotPay">
+              @click="clearNotPay"
+            >
               清空全部品項
             </button>
           </div>
 
           <div class="flex items-center gap-1.5">
-            <ParkedOrdersPanel v-model:order-channel="orderChannel" v-model:invoice-carrier="invoiceCarrier" v-model:order-note="orderNote" />
+            <ParkedOrdersPanel
+              v-model:order-channel="orderChannel"
+              v-model:invoice-carrier="invoiceCarrier"
+              v-model:order-note="orderNote"
+            />
           </div>
         </div>
       </div>
 
-      <div class="flex-1 min-h-[160px] overflow-y-auto border-b border-surface-200 dark:border-surface-800">
+      <div
+        class="flex-1 min-h-[160px] overflow-y-auto border-b border-surface-200 dark:border-surface-800"
+      >
         <table class="w-full text-center text-xs">
-          <thead class="sticky top-0 bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 font-bold border-b border-surface-200 dark:border-surface-700 z-10">
+          <thead
+            class="sticky top-0 z-10 border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
+          >
             <tr>
               <th class="px-2 py-2">
                 <input
-                  type="checkbox" :checked="allNotPaySelected"
+                  type="checkbox"
+                  :checked="allNotPaySelected"
                   class="rounded text-primary-600 focus:ring-primary-500 cursor-pointer"
-                  @change="toggleSelectAll(($event.target as HTMLInputElement).checked)" />
+                  @change="toggleSelectAll(($event.target as HTMLInputElement).checked)"
+                />
               </th>
               <th class="px-1 py-2">序號</th>
               <th class="px-2 py-2">商品</th>
@@ -151,49 +217,85 @@
               :key="row.id"
               data-testid="cart-row"
               class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
-              :class="{ 'bg-primary-50/40 dark:bg-primary-950/20': selectedLines.includes(row) }">
+              :class="{ 'bg-primary-50/40 dark:bg-primary-950/20': selectedLines.includes(row) }"
+            >
               <td class="px-2 py-2">
                 <input
-                  type="checkbox" :checked="selectedLines.includes(row)"
+                  type="checkbox"
+                  :checked="selectedLines.includes(row)"
                   class="rounded text-primary-600 focus:ring-primary-500 cursor-pointer"
-                  @change="toggleSelect(row, ($event.target as HTMLInputElement).checked)" />
+                  @change="toggleSelect(row, ($event.target as HTMLInputElement).checked)"
+                />
               </td>
               <td class="px-1 py-2 font-mono text-surface-500">{{ index + 1 }}</td>
-              <td class="px-2 py-2 font-bold text-surface-900 dark:text-surface-100 max-w-[120px] truncate" :title="row.name">{{ row.name }}</td>
+              <td
+                class="px-2 py-2 font-bold text-surface-900 dark:text-surface-100 max-w-[120px] truncate"
+                :title="row.name"
+              >
+                {{ row.name }}
+              </td>
               <td class="px-1 py-2 font-mono">${{ row.price }}</td>
-              <td class="px-2 py-2 text-surface-500 max-w-[90px] truncate" :title="String(row.addList)">{{ row.addList }}</td>
+              <td
+                class="px-2 py-2 text-surface-500 max-w-[90px] truncate"
+                :title="String(row.addList)"
+              >
+                {{ row.addList }}
+              </td>
               <td class="px-1 py-2 font-mono">${{ row.addListPrice }}</td>
-              <td class="px-1 py-2 font-black text-primary-600 dark:text-primary-400">{{ row.count }}</td>
-              <td class="px-1 py-2 font-mono text-danger-600 dark:text-danger-400">-${{ row.discount }}</td>
+              <td class="px-1 py-2 font-black text-primary-600 dark:text-primary-400">
+                {{ row.count }}
+              </td>
+              <td class="px-1 py-2 font-mono text-danger-600 dark:text-danger-400">
+                -${{ row.discount }}
+              </td>
               <td class="px-2 py-2">
-                <div v-if="!row.freeDiscount && !row.quickDiscountName" class="text-surface-400 text-[10px]">
+                <div
+                  v-if="!row.freeDiscount && !row.quickDiscountName"
+                  class="text-surface-400 text-[10px]"
+                >
                   無
                 </div>
                 <div v-else class="flex flex-wrap gap-1 justify-center">
-                  <span v-if="row.freeDiscount" class="rounded-full bg-info-100 px-1.5 py-0.5 text-[10px] text-info-700 dark:bg-info-950 dark:text-info-300">招待</span>
-                  <span v-if="row.quickDiscountName" class="rounded-full bg-warning-100 px-1.5 py-0.5 text-[10px] text-warning-700 dark:bg-warning-950 dark:text-warning-300">{{ row.quickDiscountName }}</span>
+                  <span
+                    v-if="row.freeDiscount"
+                    class="rounded-full bg-info-100 px-1.5 py-0.5 text-[10px] text-info-700 dark:bg-info-950 dark:text-info-300"
+                    >招待</span
+                  >
+                  <span
+                    v-if="row.quickDiscountName"
+                    class="rounded-full bg-warning-100 px-1.5 py-0.5 text-[10px] text-warning-700 dark:bg-warning-950 dark:text-warning-300"
+                    >{{ row.quickDiscountName }}</span
+                  >
                 </div>
               </td>
               <!-- e2e 依賴第 10 欄 (index 9) 為 line total，勿調整欄位順序 -->
-              <td class="px-2 py-2 font-black font-mono text-surface-900 dark:text-surface-100">${{ row.totalPrice }}</td>
+              <td class="px-2 py-2 font-black font-mono text-surface-900 dark:text-surface-100">
+                ${{ row.totalPrice }}
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="p-2.5 border-b border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-900/60 shrink-0 flex flex-col gap-1.5">
+      <div
+        class="p-2.5 border-b border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-900/60 shrink-0 flex flex-col gap-1.5"
+      >
         <div class="grid grid-cols-2 gap-1.5">
           <button
             type="button"
             class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            @click="openBagDialog">
+            @click="openBagDialog"
+          >
             加購包材
           </button>
           <button
             type="button"
             class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            :class="{ 'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canCompItem') }"
-            @click="applyFreeDiscount">
+            :class="{
+              'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canCompItem')
+            }"
+            @click="applyFreeDiscount"
+          >
             招待
           </button>
         </div>
@@ -204,7 +306,8 @@
           <button
             type="button"
             class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            @click="openDiscountMenu">
+            @click="openDiscountMenu"
+          >
             優惠券
           </button>
         </div>
@@ -212,10 +315,12 @@
         <!-- 快速折扣：依後台設定的清單動態渲染，筆數不固定 -->
         <div v-if="discountStore.quickDiscounts.length > 0" class="flex flex-wrap gap-1.5">
           <button
-            v-for="quickDiscount in discountStore.quickDiscounts" :key="String(quickDiscount.id)"
+            v-for="quickDiscount in discountStore.quickDiscounts"
+            :key="String(quickDiscount.id)"
             type="button"
             class="flex-1 min-w-[88px] rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            @click="applyQuickDiscount(quickDiscount.id)">
+            @click="applyQuickDiscount(quickDiscount.id)"
+          >
             {{ quickDiscount.name }}
           </button>
         </div>
@@ -225,25 +330,37 @@
         <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-surface-500">
           <div class="flex justify-between">
             <span>累積金額:</span>
-            <span class="font-bold text-surface-800 dark:text-surface-200">$ {{ catalogStore.cartTotalMoney }}</span>
+            <span class="font-bold text-surface-800 dark:text-surface-200"
+              >$ {{ catalogStore.cartTotalMoney }}</span
+            >
           </div>
           <div class="flex justify-between">
             <span>優惠折抵:</span>
-            <span class="font-bold text-danger-600 dark:text-danger-400">-$ {{ catalogStore.useDiscountPrice }}</span>
+            <span class="font-bold text-danger-600 dark:text-danger-400"
+              >-$ {{ catalogStore.useDiscountPrice }}</span
+            >
           </div>
           <div class="flex justify-between">
             <span>包材份數:</span>
-            <span class="font-bold text-surface-800 dark:text-surface-200">{{ catalogStore.currentBagCount }} 份</span>
+            <span class="font-bold text-surface-800 dark:text-surface-200"
+              >{{ catalogStore.currentBagCount }} 份</span
+            >
           </div>
           <div class="flex justify-between">
             <span>總出餐數:</span>
-            <span class="font-bold text-surface-800 dark:text-surface-200">{{ catalogStore.currentItemCount }} 份</span>
+            <span class="font-bold text-surface-800 dark:text-surface-200"
+              >{{ catalogStore.currentItemCount }} 份</span
+            >
           </div>
         </div>
 
-        <div class="flex items-center justify-between pt-2 border-t border-surface-200 dark:border-surface-800">
+        <div
+          class="flex items-center justify-between pt-2 border-t border-surface-200 dark:border-surface-800"
+        >
           <div class="flex flex-col">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-surface-400">應付總額 DUE TOTAL</span>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-surface-400"
+              >應付總額 DUE TOTAL</span
+            >
             <span class="text-2xl font-black text-primary-600 dark:text-primary-400 font-mono">
               $ {{ catalogStore.cartPayPrice }} 元
             </span>
@@ -253,61 +370,126 @@
             type="button"
             data-testid="checkout-button"
             class="h-12 px-8 rounded-xl bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-black text-base lg:text-lg shadow-lg shadow-primary-600/30 transition-all select-none flex items-center justify-center gap-2"
-            @click="openPaymentPanel">
+            @click="openPaymentPanel"
+          >
             結帳
           </button>
         </div>
 
         <PaymentPanel
-          :open="dialogPayment" :due-amount="catalogStore.cartPayPrice" :payment-methods="orderStore.paymentList"
-          @cancel="cancelPayment" @submit="submitPayment" />
+          :open="dialogPayment"
+          :due-amount="catalogStore.cartPayPrice"
+          :payment-methods="orderStore.paymentList"
+          @cancel="cancelPayment"
+          @submit="submitPayment"
+        />
 
         <ModalDialog v-model:open="dialogBag" title="加購包材數量">
           <div class="mx-2 flex items-center gap-4">
             <SliderRoot
-              :model-value="[bagCount]" :min="0" :max="100" :step="1"
+              :model-value="[bagCount]"
+              :min="0"
+              :max="100"
+              :step="1"
               class="relative flex h-5 flex-1 items-center"
-              @update:model-value="(value) => { bagCount = value?.[0] ?? 0 }">
+              @update:model-value="
+                (value) => {
+                  bagCount = value?.[0] ?? 0
+                }
+              "
+            >
               <SliderTrack class="relative h-1.5 w-full rounded-full bg-surface-200">
                 <SliderRange class="absolute h-full rounded-full bg-primary-500" />
               </SliderTrack>
-              <SliderThumb class="block h-4 w-4 rounded-full border-2 border-primary-500 bg-white shadow focus:outline-none" />
+              <SliderThumb
+                class="block h-4 w-4 rounded-full border-2 border-primary-500 bg-white shadow focus:outline-none"
+              />
             </SliderRoot>
             <input
-              v-model.number="bagCount" type="number" min="0" max="100"
-              class="w-16 rounded-lg border border-surface-300 px-2 py-1 text-center text-sm" />
+              v-model.number="bagCount"
+              type="number"
+              min="0"
+              max="100"
+              class="w-16 rounded-lg border border-surface-300 px-2 py-1 text-center text-sm"
+            />
           </div>
           <div class="mt-6 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeBagCount">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="changeBagCount">確定</button>
+            <button
+              type="button"
+              class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100"
+              @click="closeBagCount"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700"
+              @click="changeBagCount"
+            >
+              確定
+            </button>
           </div>
         </ModalDialog>
 
         <ModalDialog v-model:open="dialogDiscount" title="選擇優惠券">
           <div class="mx-2 max-h-[60vh] overflow-auto">
-            <p v-if="discountStore.orderCoupons.length === 0" class="py-10 text-center text-sm text-surface-400">無可用優惠券</p>
+            <p
+              v-if="discountStore.orderCoupons.length === 0"
+              class="py-10 text-center text-sm text-surface-400"
+            >
+              無可用優惠券
+            </p>
             <div v-else class="mb-2">
               <div
-                v-for="item in sliceOrderCoupons" :key="item.id"
+                v-for="item in sliceOrderCoupons"
+                :key="item.id"
                 class="h-16 mb-1.5 flex items-center justify-between gap-3 px-4 cursor-pointer bg-white dark:bg-surface-800 border rounded-xl border-surface-200 dark:border-surface-700"
-                :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300': discountStore.selectingOrderCouponId === item.id }"
-                @click="selectOrderCoupon(item.id)">
+                :class="{
+                  'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300':
+                    discountStore.selectingOrderCouponId === item.id
+                }"
+                @click="selectOrderCoupon(item.id)"
+              >
                 <p class="text-xl font-bold select-none">{{ item.name }}</p>
                 <span
                   class="shrink-0 rounded-md px-2 py-0.5 text-xs font-bold"
-                  :class="item.kind === 'amount' ? 'bg-success-50 text-success-600 dark:bg-success-950/40 dark:text-success-400' : 'bg-info-50 text-info-600 dark:bg-info-950/40 dark:text-info-400'">
+                  :class="
+                    item.kind === 'amount'
+                      ? 'bg-success-50 text-success-600 dark:bg-success-950/40 dark:text-success-400'
+                      : 'bg-info-50 text-info-600 dark:bg-info-950/40 dark:text-info-400'
+                  "
+                >
                   {{ item.kind === 'amount' ? '定額' : '折數' }}
                 </span>
               </div>
             </div>
-            <div class="flex h-10 w-full items-center justify-between rounded-lg bg-surface-100 px-3 text-sm text-surface-600">
+            <div
+              class="flex h-10 w-full items-center justify-between rounded-lg bg-surface-100 px-3 text-sm text-surface-600"
+            >
               <p>{{ `共 ${discountStore.orderCoupons.length} 樣` }}</p>
-              <AppPagination :page="orderCouponCurrentPage" :page-count="orderCouponPageCount" :total="discountStore.orderCoupons.length" @update:page="handleOrderCouponCurrentChange" />
+              <AppPagination
+                :page="orderCouponCurrentPage"
+                :page-count="orderCouponPageCount"
+                :total="discountStore.orderCoupons.length"
+                @update:page="handleOrderCouponCurrentChange"
+              />
             </div>
           </div>
           <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100" @click="closeDiscount">取消</button>
-            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="useDiscount">確定</button>
+            <button
+              type="button"
+              class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100"
+              @click="closeDiscount"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700"
+              @click="useDiscount"
+            >
+              確定
+            </button>
           </div>
         </ModalDialog>
       </div>
@@ -342,7 +524,14 @@ import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { CartLineItem, FormNumeric, OrderChannel, OrderRecord } from '@/types'
 import { fromSelection, hasCapability } from '@/utils/selection'
-import { getBusinessDate, priceLine, toggleFree, toggleQuickDiscount, type LineDiscountFlags, type QuickDiscount } from '@pos/domain'
+import {
+  getBusinessDate,
+  priceLine,
+  toggleFree,
+  toggleQuickDiscount,
+  type LineDiscountFlags,
+  type QuickDiscount
+} from '@pos/domain'
 import type { AppliedCoupon, InvoiceCarrier, Member } from '@pos/contract'
 import { buildCreateOrderRequest } from '@/api/orders'
 import { createAuditLog } from '@/api/audit-logs'
@@ -356,7 +545,7 @@ const time = ref('')
 onMounted(() => {
   setInterval(() => {
     time.value = getTime()
-  }, 1000);
+  }, 1000)
 })
 // 已知缺陷：未保存 setInterval 回傳的 id，clearInterval(undefined) 實際上不會清除計時器。
 onUnmounted(() => {
@@ -364,13 +553,16 @@ onUnmounted(() => {
 })
 
 // catalogStore 不直接彈窗，只在待付款清單清空時遞增 cartClearedNotice，這裡負責顯示提示。
-watch(() => catalogStore.cartClearedNotice, () => {
-  void alert({
-    title: '通知',
-    description: '待付款清單已無品項，套用優惠券以及加購的包材份數已重置',
-    confirmText: '繼續選取品項',
-  })
-})
+watch(
+  () => catalogStore.cartClearedNotice,
+  () => {
+    void alert({
+      title: '通知',
+      description: '待付款清單已無品項，套用優惠券以及加購的包材份數已重置',
+      confirmText: '繼續選取品項'
+    })
+  }
+)
 
 const addNewProduct = () => {
   const selectedProduct = fromSelection(catalogStore.selectedProduct)
@@ -389,16 +581,22 @@ const addNewProduct = () => {
   const modifierNames = catalogStore.selectedModifierNames
   const newLine: CartLineItem = {
     id: catalogStore.cartLines.length + 1,
-    name: modifierNames.length === 0 ? selectedProduct.name : `${selectedProduct.name},${modifierNames.join('/')}`,
+    name:
+      modifierNames.length === 0
+        ? selectedProduct.name
+        : `${selectedProduct.name},${modifierNames.join('/')}`,
     price: Number(selectedProduct.basePrice) + catalogStore.selectedModifierPriceDelta,
     count: parseInt(catalogStore.productCount),
     discount: 0,
-    addList: catalogStore.selectedAddOnList.map(item => item.name).length === 0 ? '無添加配料' : catalogStore.selectedAddOnList.map(item => item.name),
+    addList:
+      catalogStore.selectedAddOnList.map((item) => item.name).length === 0
+        ? '無添加配料'
+        : catalogStore.selectedAddOnList.map((item) => item.name),
     addListPrice: catalogStore.selectedAddOnList.reduce((acc, cur) => acc + Number(cur.price), 0),
     totalPrice: catalogStore.productCurrentTotal,
     freeDiscount: false,
     quickDiscountId: null,
-    quickDiscountName: '',
+    quickDiscountName: ''
   }
   catalogStore.cartLines.push(newLine)
   catalogStore.selectedCategoryId = ''
@@ -410,7 +608,11 @@ const addNewProduct = () => {
 
 const clearNotPay = async () => {
   if (catalogStore.cartLines.length === 0) {
-    void alert({ title: '通知', description: '待付款清單為空，無法清空項目', confirmText: '繼續選取品項' })
+    void alert({
+      title: '通知',
+      description: '待付款清單為空，無法清空項目',
+      confirmText: '繼續選取品項'
+    })
     return
   }
   const result = await confirm({ title: '警告', description: '確定要清除所有待付款的品項嗎?' })
@@ -419,8 +621,11 @@ const clearNotPay = async () => {
   showToast('清除成功', 'success')
 }
 const selectedLines = ref<CartLineItem[]>([])
-const allNotPaySelected = computed(() =>
-  catalogStore.cartLines.length > 0 && selectedLines.value.length === catalogStore.cartLines.length)
+const allNotPaySelected = computed(
+  () =>
+    catalogStore.cartLines.length > 0 &&
+    selectedLines.value.length === catalogStore.cartLines.length
+)
 const toggleSelectAll = (checked: boolean) => {
   selectedLines.value = checked ? [...catalogStore.cartLines] : []
 }
@@ -428,7 +633,7 @@ const toggleSelect = (item: CartLineItem, checked: boolean) => {
   if (checked) {
     if (!selectedLines.value.includes(item)) selectedLines.value.push(item)
   } else {
-    selectedLines.value = selectedLines.value.filter(selected => selected !== item)
+    selectedLines.value = selectedLines.value.filter((selected) => selected !== item)
   }
 }
 const clearSelectNotPay = async () => {
@@ -438,7 +643,9 @@ const clearSelectNotPay = async () => {
   }
   const result = await confirm({ title: '警告', description: '確定要清除所有已選的待付款品項嗎?' })
   if (result !== 'confirm') return
-  catalogStore.cartLines = catalogStore.cartLines.filter(item => !selectedLines.value.includes(item))
+  catalogStore.cartLines = catalogStore.cartLines.filter(
+    (item) => !selectedLines.value.includes(item)
+  )
   showToast('清除成功', 'success')
 }
 
@@ -484,33 +691,48 @@ const openCashier = async () => {
     description: '沒有對應交易的開錢箱動作需要記錄理由，方便之後對帳與稽核',
     label: '理由',
     placeholder: '例如：協助客人換零錢、盤點現金',
-    confirmText: '開啟',
+    confirmText: '開啟'
   })
   if (reason === null) return
   try {
     await createAuditLog({
       action: 'cashier_open',
       operator: `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`,
-      detail: reason,
+      detail: reason
     })
     showToast('收銀機已開啟', 'success')
   } catch (err) {
-    showToast(err instanceof ApiError ? `操作失敗：${err.message}` : '連不上伺服端，請確認網路連線', 'error')
+    showToast(
+      err instanceof ApiError ? `操作失敗：${err.message}` : '連不上伺服端，請確認網路連線',
+      'error'
+    )
   }
 }
 
 // 把 discountStore.quickDiscounts（表單輸入可能是字串）轉成 pos-domain
 // 計價引擎要的數值型快速折扣清單。
 const quickDiscountsForPricing = (): QuickDiscount[] =>
-  discountStore.quickDiscounts.map((d) => ({ id: String(d.id), name: d.name, kind: d.kind, value: Number(d.value) }))
+  discountStore.quickDiscounts.map((d) => ({
+    id: String(d.id),
+    name: d.name,
+    kind: d.kind,
+    value: Number(d.value)
+  }))
 
 // 對目前已勾選的品項套用同一種旗標切換，並用 priceLine() 重新計算金額，
 // 取代逐一折扣各自手動改欄位的寫法。
 const applyDiscountToggle = (toggle: (flags: LineDiscountFlags) => LineDiscountFlags) => {
   const discounts = quickDiscountsForPricing()
-  selectedLines.value.forEach(item => {
-    const nextFlags = toggle({ freeDiscount: item.freeDiscount, quickDiscountId: item.quickDiscountId })
-    const priced = priceLine({ price: Number(item.price), count: item.count, addListPrice: item.addListPrice }, nextFlags, discounts)
+  selectedLines.value.forEach((item) => {
+    const nextFlags = toggle({
+      freeDiscount: item.freeDiscount,
+      quickDiscountId: item.quickDiscountId
+    })
+    const priced = priceLine(
+      { price: Number(item.price), count: item.count, addListPrice: item.addListPrice },
+      nextFlags,
+      discounts
+    )
     Object.assign(item, nextFlags, priced)
   })
 }
@@ -519,7 +741,11 @@ const noSelectionAlert = () => {
   void alert({ title: '通知', description: '尚未選取品項', confirmText: '繼續選取品項' })
 }
 const stillFreeAlert = () => {
-  void alert({ title: '通知', description: '選取的品項中有品項尚未取消招待無法再套用折扣', confirmText: '重新選取' })
+  void alert({
+    title: '通知',
+    description: '選取的品項中有品項尚未取消招待無法再套用折扣',
+    confirmText: '重新選取'
+  })
 }
 
 // 招待
@@ -536,17 +762,21 @@ const applyQuickDiscount = (id: FormNumeric) => {
     noSelectionAlert()
     return
   }
-  if (selectedLines.value.every(item => item.freeDiscount)) {
+  if (selectedLines.value.every((item) => item.freeDiscount)) {
     stillFreeAlert()
     return
   }
-  applyDiscountToggle(flags => toggleQuickDiscount(flags, String(id)))
+  applyDiscountToggle((flags) => toggleQuickDiscount(flags, String(id)))
 }
 
 const dialogDiscount = ref(false)
 const openDiscountMenu = () => {
   if (catalogStore.cartLines.length <= 0) {
-    void alert({ title: '通知', description: '待付款清單是空的無法使用優惠券', confirmText: '繼續選取' })
+    void alert({
+      title: '通知',
+      description: '待付款清單是空的無法使用優惠券',
+      confirmText: '繼續選取'
+    })
   } else {
     discountStore.selectingOrderCouponId = discountStore.orderCouponId
     dialogDiscount.value = true
@@ -560,16 +790,23 @@ const handleOrderCouponCurrentChange = (page: number) => {
   orderCouponCurrentPage.value = page
 }
 const sliceOrderCoupons = computed(() => {
-  return discountStore.orderCoupons.slice((orderCouponCurrentPage.value - 1) * 5, orderCouponCurrentPage.value * 5)
+  return discountStore.orderCoupons.slice(
+    (orderCouponCurrentPage.value - 1) * 5,
+    orderCouponCurrentPage.value * 5
+  )
 })
-const orderCouponPageCount = computed(() => Math.max(Math.ceil(discountStore.orderCoupons.length / 5), 1))
+const orderCouponPageCount = computed(() =>
+  Math.max(Math.ceil(discountStore.orderCoupons.length / 5), 1)
+)
 const closeDiscount = () => {
   dialogDiscount.value = false
 }
 const useDiscount = () => {
   if (discountStore.selectingOrderCouponId !== 0) {
     discountStore.orderCouponId = discountStore.selectingOrderCouponId
-    const coupon = discountStore.orderCoupons.find(item => item.id === discountStore.orderCouponId)!
+    const coupon = discountStore.orderCoupons.find(
+      (item) => item.id === discountStore.orderCouponId
+    )!
     discountStore.currentDiscountName = coupon.name
     dialogDiscount.value = false
     showToast(`使用${coupon.name}成功`, 'success')
@@ -586,7 +823,11 @@ const useDiscount = () => {
 const dialogPayment = ref(false)
 const openPaymentPanel = () => {
   if (catalogStore.cartLines.length <= 0 && catalogStore.currentBagCount <= 0) {
-    void alert({ title: '通知', description: '訂單內沒有品項無法送單', confirmText: '繼續添加品項' })
+    void alert({
+      title: '通知',
+      description: '訂單內沒有品項無法送單',
+      confirmText: '繼續添加品項'
+    })
     return
   }
   dialogPayment.value = true
@@ -611,7 +852,8 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     orderPayment: tenders.map((tender) => tender.method).join('、'),
     orderDiscount: catalogStore.useDiscountPrice,
     orderPaymentPrice: catalogStore.cartPayPrice,
-    discountName: discountStore.currentDiscountName === '' ? '無' : discountStore.currentDiscountName,
+    discountName:
+      discountStore.currentDiscountName === '' ? '無' : discountStore.currentDiscountName,
     refundedAmount: 0,
     voidReason: null,
     voidedBy: null,
@@ -621,7 +863,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     invoiceCarrier: invoiceCarrier.value,
     memberId: currentOrderMember.value?.id ?? null,
     tableNumber: orderChannel.value === '內用' ? tableNumberInput.value.trim() || null : null,
-    note: orderNote.value.trim() || null,
+    note: orderNote.value.trim() || null
   }
   orderStore.order.push(toPayOrder)
   showToast('訂單送出成功', 'success')
@@ -663,7 +905,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     invoiceCarrier: toPayOrder.invoiceCarrier,
     memberId: toPayOrder.memberId ?? null,
     tableNumber: toPayOrder.tableNumber ?? null,
-    note: toPayOrder.note ?? null,
+    note: toPayOrder.note ?? null
   })
   void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
   invoiceCarrier.value = { type: '無載具' }
