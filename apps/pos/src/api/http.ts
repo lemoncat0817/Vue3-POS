@@ -17,6 +17,16 @@ export function setOperatorSession(token: string | null): void {
   currentOperatorSession = token
 }
 
+/**
+ * 操作員 session 失效時的全域回呼（見 router/index.ts 註冊：強制登出＋導回登入頁）。
+ * 用回呼而不是直接在這裡 import store／router，是為了避免 http.ts 被
+ * stores/login.ts（設定 X-Operator-Session）與 router（導頁）互相 import 形成循環依賴。
+ */
+let onOperatorSessionInvalid: (() => void) | null = null
+export function setOperatorSessionInvalidHandler(handler: (() => void) | null): void {
+  onOperatorSessionInvalid = handler
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -48,6 +58,11 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
       .json()
       .then((body: unknown) => (body && typeof body === 'object' && 'error' in body ? String((body as { error: unknown }).error) : null))
       .catch(() => null)
+    // 操作員 session 缺漏或過期是唯一會帶「操作員 session」字樣的 401 訊息
+    // ——裝置憑證錯誤與 PIN 登入失敗的 401 都不會，藉此區分不會誤觸強制登出。
+    if (res.status === 401 && serverMessage?.includes('操作員 session')) {
+      onOperatorSessionInvalid?.()
+    }
     throw new ApiError(serverMessage ?? `${init?.method ?? 'GET'} ${path} 失敗：HTTP ${res.status}`, res.status)
   }
   // 204 No Content 無 body，直接回傳 undefined。

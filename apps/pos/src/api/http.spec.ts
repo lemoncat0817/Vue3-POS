@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, fetchJson } from './http'
+import { ApiError, fetchJson, setOperatorSessionInvalidHandler } from './http'
 
 describe('fetchJson', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    setOperatorSessionInvalidHandler(null)
   })
 
   it('204 No Content 不呼叫 res.json()（空 body 解析會丟例外），直接回傳 undefined', async () => {
@@ -40,6 +41,30 @@ describe('fetchJson', () => {
     await expect(fetchJson('/api/roles/role-1', { method: 'PUT' })).rejects.toMatchObject(
       new ApiError('此變更會讓沒有人擁有權限管理能力', 409),
     )
+  })
+
+  it('操作員 session 缺漏或過期的 401 會觸發全域強制登出回呼', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({ error: '缺少操作員 session（X-Operator-Session）' }) } as Response),
+      ),
+    )
+    const handler = vi.fn()
+    setOperatorSessionInvalidHandler(handler)
+    await expect(fetchJson('/api/members', { method: 'POST' })).rejects.toThrow()
+    expect(handler).toHaveBeenCalledOnce()
+  })
+
+  it('裝置憑證錯誤的 401 不會觸發強制登出回呼（跟操作員 session 無關）', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({ error: '裝置憑證無效或缺漏' }) } as Response)),
+    )
+    const handler = vi.fn()
+    setOperatorSessionInvalidHandler(handler)
+    await expect(fetchJson('/api/members')).rejects.toThrow()
+    expect(handler).not.toHaveBeenCalled()
   })
 
   it('正常回應照樣解析 JSON body', async () => {
