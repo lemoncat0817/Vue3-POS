@@ -59,6 +59,15 @@
         </div>
       </div>
 
+      <!-- 連不上伺服端時退回本機快取，跨終端看不到全店訂單、也可能不是最新狀態。 -->
+      <div
+        v-if="isOffline"
+        class="flex items-center gap-2 rounded-xl border border-warning-300 dark:border-warning-800 bg-warning-50 dark:bg-warning-950/40 px-4 py-2.5 text-xs font-semibold text-warning-700 dark:text-warning-300"
+      >
+        <AlertTriangle class="h-4 w-4 shrink-0" />
+        目前連不上伺服端，顯示本機快取的訂單紀錄（只有這台裝置建立過的訂單，且可能非最新狀態）
+      </div>
+
       <!-- KPI Summary Cards Banner -->
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
         <!-- Card 1: 訂單總量 -->
@@ -235,23 +244,17 @@
             <span class="text-surface-500 dark:text-surface-400">訂單期間</span>
             <div class="flex items-center gap-1.5">
               <input
+                v-model="filterDateFrom"
                 type="date"
                 aria-label="起始日期"
-                :value="filterDateFrom ? toNativeDate(filterDateFrom) : ''"
                 class="w-full rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-2.5 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
-                @change="
-                  (e) => (filterDateFrom = fromNativeDate((e.target as HTMLInputElement).value))
-                "
               />
               <span class="text-surface-400">~</span>
               <input
+                v-model="filterDateTo"
                 type="date"
                 aria-label="結束日期"
-                :value="filterDateTo ? toNativeDate(filterDateTo) : ''"
                 class="w-full rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 px-2.5 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none transition-all focus:border-primary-500 focus:bg-white dark:focus:bg-surface-800 focus:ring-2 focus:ring-primary-500/20"
-                @change="
-                  (e) => (filterDateTo = fromNativeDate((e.target as HTMLInputElement).value))
-                "
               />
             </div>
           </label>
@@ -347,10 +350,7 @@
                 </th>
               </tr>
             </thead>
-            <tbody
-              :key="tableRenderKey"
-              class="divide-y divide-surface-100 dark:divide-surface-800"
-            >
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
               <template v-if="table.getRowModel().rows.length === 0">
                 <tr>
                   <td
@@ -359,8 +359,12 @@
                   >
                     <div class="flex flex-col items-center justify-center gap-2">
                       <Receipt class="h-10 w-10 text-surface-300 dark:text-surface-700" />
-                      <span class="text-base font-semibold">目前無訂單</span>
-                      <span class="text-xs text-surface-400">找不到符合篩選條件的交易資料</span>
+                      <span class="text-base font-semibold">{{
+                        loading ? '載入中…' : '目前無訂單'
+                      }}</span>
+                      <span v-if="!loading" class="text-xs text-surface-400"
+                        >找不到符合篩選條件的交易資料</span
+                      >
                     </div>
                   </td>
                 </tr>
@@ -626,12 +630,12 @@
 
         <!-- Pagination Bar -->
         <TablePagination
-          :page="table.getState().pagination.pageIndex + 1"
-          :page-count="table.getPageCount()"
-          :total="filterOrder.length"
-          :current-count="table.getRowModel().rows.length"
+          :page="page"
+          :page-count="totalPages"
+          :total="totalCount"
+          :current-count="orders.length"
           unit="筆訂單"
-          @update:page="(p) => table.setPageIndex(p - 1)"
+          @update:page="goToPage"
         />
       </div>
     </div>
@@ -639,18 +643,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, ref, watch } from 'vue'
+import { computed, h, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  FlexRender,
-  createColumnHelper,
-  getCoreRowModel,
-  getPaginationRowModel,
-  useVueTable
-} from '@tanstack/vue-table'
+import { FlexRender, createColumnHelper, getCoreRowModel, useVueTable } from '@tanstack/vue-table'
 import { Receipt, CheckCircle2, AlertTriangle, RotateCcw, ChevronRight, X } from 'lucide-vue-next'
 import TablePagination from '@/components/ui/TablePagination.vue'
-import { fromNativeDate, getDate, toNativeDate } from '@/utils/time'
+import { getDate } from '@/utils/time'
 import { useOrderStore } from '@/stores/order'
 const orderStore = useOrderStore()
 import { useLoginStore } from '@/stores/login'
@@ -658,6 +656,9 @@ const loginStore = useLoginStore()
 import { fromSelection, hasCapability } from '@/utils/selection'
 import {
   deleteOrder as deleteOrderRequest,
+  getOrderSummary,
+  listOrders,
+  orderToRecord,
   refundOrder as refundOrderRequest,
   updateOrderStatus
 } from '@/api/orders'
@@ -670,6 +671,7 @@ import { requestRefund } from '@/composables/useRefund'
 import { showReceipt } from '@/composables/useReceiptPreview'
 import { showToast } from '@/composables/useToast'
 import { ulid } from '@pos/domain'
+import type { OrderSummary } from '@pos/contract'
 import type { OrderRecord } from '@/types'
 
 // P6：訂單還在離線佇列裡等待第一次同步時，伺服端根本沒有這筆訂單，
@@ -685,28 +687,50 @@ function orderApiErrorMessage(err: unknown): string {
   return '連不上伺服端，請確認網路連線'
 }
 
-// 訂單統計數據
+// 訂單 KPI 摘要現在來自 GET /api/orders/summary（見 @pos/contract 的
+// orderSummarySchema）：數字是對全部訂單算的聚合值，不受目前分頁／篩選
+// 影響。連不上伺服端時退回本機快取算出的近似值（見下方 loadSummary）。
+const summary = ref<OrderSummary | null>(null)
 const orderStats = computed(() => {
+  const totalCount = summary.value?.totalCount ?? 0
+  const completedCount = summary.value?.completedCount ?? 0
+  return {
+    totalCount,
+    totalRevenue: summary.value?.totalRevenue ?? 0,
+    completedCount,
+    voidCount: summary.value?.voidCount ?? 0,
+    refundCount: summary.value?.refundCount ?? 0,
+    completeRate: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 100
+  }
+})
+const staffOptions = computed(() => summary.value?.staffNames ?? [])
+
+// 連不上伺服端時的本機近似統計，算法對齊伺服端 orderSummarySchema 的定義；
+// 只是本機快取只有這台裝置自己建立過的訂單，不是全店數字。
+function localSummaryFallback(): OrderSummary {
   const all = orderStore.order
-  const totalCount = all.length
-  const completedOrders = all.filter((o) => o.orderStatus === '已完成')
-  const totalRevenue = completedOrders.reduce(
+  const completed = all.filter((o) => o.orderStatus === '已完成')
+  const totalRevenue = completed.reduce(
     (sum, o) => sum + (o.orderPaymentPrice || 0) - (o.refundedAmount || 0),
     0
   )
-  const voidCount = all.filter((o) => o.orderStatus === '已取消').length
-  const refundCount = all.filter((o) => (o.refundedAmount ?? 0) > 0).length
-  const completeRate =
-    totalCount > 0 ? Math.round((completedOrders.length / totalCount) * 100) : 100
   return {
-    totalCount,
+    totalCount: all.length,
     totalRevenue,
-    completedCount: completedOrders.length,
-    voidCount,
-    refundCount,
-    completeRate
+    completedCount: completed.length,
+    voidCount: all.filter((o) => o.orderStatus === '已取消').length,
+    refundCount: all.filter((o) => (o.refundedAmount ?? 0) > 0).length,
+    staffNames: Array.from(new Set(all.map((o) => o.staff))).sort()
   }
-})
+}
+
+async function loadSummary() {
+  try {
+    summary.value = await getOrderSummary()
+  } catch {
+    summary.value = localSummaryFallback()
+  }
+}
 
 // 篩選條件與 URL query 雙向同步以利狀態保存與分享。
 const route = useRoute()
@@ -723,6 +747,9 @@ const filterStaff = ref(queryString('staff'))
 const filterOrderStatus = ref(queryString('status'))
 const filterOrderPayMethod = ref(queryString('payMethod'))
 
+const page = ref(Number(queryString('page')) || 1)
+const pageSize = 10
+
 watch(
   [
     filterKeyword,
@@ -731,7 +758,8 @@ watch(
     filterChannel,
     filterStaff,
     filterOrderStatus,
-    filterOrderPayMethod
+    filterOrderPayMethod,
+    page
   ],
   () => {
     const query: Record<string, string> = {}
@@ -742,6 +770,7 @@ watch(
     if (filterStaff.value) query.staff = filterStaff.value
     if (filterOrderStatus.value) query.status = filterOrderStatus.value
     if (filterOrderPayMethod.value) query.payMethod = filterOrderPayMethod.value
+    if (page.value > 1) query.page = String(page.value)
     void router.replace({ query })
   }
 )
@@ -758,26 +787,79 @@ const hasActiveFilter = computed(() => {
   )
 })
 
-// 服務人員選項只列出實際出現在訂單資料裡的人，避免打錯字篩不到。
-const staffOptions = computed(() =>
-  Array.from(new Set(orderStore.order.map((o) => o.staff))).sort()
-)
+// 訂單清單現在來自 GET /api/orders（後端分頁＋篩選），orders 永遠只是
+// 「目前這一頁」的資料，不是全部訂單——跟過去本機全量資料再用 vue-table
+// 前端分頁是不同的模型，見下方 useVueTable 的 manualPagination。
+const orders = ref<OrderRecord[]>([])
+const totalCount = ref(0)
+const totalPages = ref(1)
+const loading = ref(false)
+// 連不上伺服端時退回本機快取（見 loadOrders 的 catch 分支）：只有這台
+// 裝置自己建立過的訂單，且可能不是最新狀態，畫面上需要明確提示。
+const isOffline = ref(false)
 
-// 訂單期間用 orderTime 的日期前綴（YYYY/MM/DD）做字串區間比對；訂單編號
-// 用 includes 子字串比對，避免輸入特殊字元時被誤判為正規表示式出錯。
-const filterOrder = computed(() => {
-  return orderStore.order.filter((item) => {
-    const orderDate = item.orderTime.slice(0, 10)
+function normalizedDatePrefix(orderTime: string): string {
+  // 本機尚未同步的訂單用 'YYYY/MM/DD HH:mm:ss'，伺服端回傳的是 ISO 字串
+  // （'YYYY-MM-DDTHH:mm:ss.sssZ'）；兩者都取前 10 碼再統一成 '-' 分隔，
+  // 才能跟 <input type="date"> 的原生格式比較。
+  return orderTime.slice(0, 10).replaceAll('/', '-')
+}
+
+// 本機快取沒有後端的篩選／分頁能力，用跟伺服端一致的邏輯在本機做一次
+// 近似篩選＋分頁；排序只能近似（本機陣列依建立順序 push，反轉約等於新到舊）。
+function applyLocalFallback() {
+  const filtered = orderStore.order.filter((item) => {
+    const orderDate = normalizedDatePrefix(item.orderTime)
     return (
       item.orderId.includes(filterKeyword.value) &&
       (filterDateFrom.value === '' || orderDate >= filterDateFrom.value) &&
       (filterDateTo.value === '' || orderDate <= filterDateTo.value) &&
       (filterChannel.value === '' || (item.orderChannel ?? '外帶') === filterChannel.value) &&
       (filterStaff.value === '' || item.staff === filterStaff.value) &&
-      item.orderStatus.includes(filterOrderStatus.value) &&
+      (filterOrderStatus.value === '' || item.orderStatus === filterOrderStatus.value) &&
       (filterOrderPayMethod.value === '' || item.orderPayment.includes(filterOrderPayMethod.value))
     )
   })
+  const sorted = [...filtered].reverse()
+  totalCount.value = sorted.length
+  totalPages.value = Math.max(1, Math.ceil(sorted.length / pageSize))
+  const start = (page.value - 1) * pageSize
+  orders.value = sorted.slice(start, start + pageSize)
+}
+
+async function loadOrders() {
+  loading.value = true
+  try {
+    const response = await listOrders({
+      page: page.value,
+      pageSize,
+      keyword: filterKeyword.value || undefined,
+      dateFrom: filterDateFrom.value || undefined,
+      dateTo: filterDateTo.value || undefined,
+      channel: (filterChannel.value || undefined) as '內用' | '外帶' | undefined,
+      staff: filterStaff.value || undefined,
+      status: (filterOrderStatus.value || undefined) as '已完成' | '已取消' | undefined,
+      payMethod: filterOrderPayMethod.value || undefined
+    })
+    orders.value = response.items.map(orderToRecord)
+    totalCount.value = response.pagination.totalCount
+    totalPages.value = response.pagination.totalPages
+    isOffline.value = false
+  } catch {
+    isOffline.value = true
+    applyLocalFallback()
+  } finally {
+    loading.value = false
+  }
+}
+
+function goToPage(target: number) {
+  page.value = target
+}
+
+onMounted(() => {
+  void loadOrders()
+  void loadSummary()
 })
 
 const resetFilter = () => {
@@ -802,6 +884,34 @@ const quickFilterStatus = (status: string) => {
     filterOrderStatus.value = status
   }
 }
+
+// 關鍵字是文字輸入，每打一個字都查後端太浪費，debounce 300ms；其他篩選
+// 欄位是下拉選單／日期選擇器，離散變動，不需要 debounce。
+let keywordDebounceTimer: ReturnType<typeof setTimeout> | undefined
+
+// 篩選條件變動時換回第 1 頁再重新查詢；如果已經在第 1 頁，page 不會變，
+// watch(page, ...) 不會觸發，這裡要補一次 loadOrders() 才不會漏掉。
+// 先清掉關鍵字的 debounce timer，避免「重置篩選」等同時改掉關鍵字的
+// 操作，立即查詢一次之後 300ms 後又因為過期的 timer 多查一次。
+function resetPageAndReload() {
+  clearTimeout(keywordDebounceTimer)
+  if (page.value !== 1) {
+    page.value = 1
+  } else {
+    void loadOrders()
+  }
+}
+watch(
+  [filterDateFrom, filterDateTo, filterChannel, filterStaff, filterOrderStatus, filterOrderPayMethod],
+  resetPageAndReload
+)
+watch(filterKeyword, () => {
+  clearTimeout(keywordDebounceTimer)
+  keywordDebounceTimer = setTimeout(resetPageAndReload, 300)
+})
+watch(page, () => {
+  void loadOrders()
+})
 
 // 以 orderId 管理展開狀態，避免換頁或篩選時因 row index 變動錯位。
 const expandedOrderId = ref<string | null>(null)
@@ -830,15 +940,17 @@ function toggleSelectAllVisible(checked: boolean) {
     else selectedOrderIds.value.delete(id)
   }
 }
-// 篩選變動時同步移除已不可見的選取項目，避免選取狀態與畫面不一致。
-watch(filterOrder, (orders) => {
-  const stillVisible = new Set(orders.map((o) => o.orderId))
+// 換頁或篩選變動時同步移除已不在這一頁的選取項目，避免選取狀態與畫面
+// 不一致——批次操作（匯出）的範圍因此只能是「目前這一頁已勾選的」，
+// 不支援跨頁全選所有符合篩選條件的訂單。
+watch(orders, (visible) => {
+  const stillVisible = new Set(visible.map((o) => o.orderId))
   for (const id of selectedOrderIds.value) {
     if (!stillVisible.has(id)) selectedOrderIds.value.delete(id)
   }
 })
 function exportSelectedCsv() {
-  const selected = orderStore.order.filter((o) => selectedOrderIds.value.has(o.orderId))
+  const selected = orders.value.filter((o) => selectedOrderIds.value.has(o.orderId))
   if (selected.length === 0) return
   let csv = 'data:text/csv;charset=utf-8,﻿'
   csv += '訂單編號,訂單時間,服務人員,內用/外帶,訂單狀態,訂單金額,付款方式\n'
@@ -1006,21 +1118,17 @@ const columns = [
   })
 ]
 
+// manualPagination：orders 已經是伺服端分頁後的「這一頁」資料，不需要
+// （也不該再）讓 vue-table 自己在這份資料上再分一次頁。
 const table = useVueTable({
-  data: filterOrder,
+  data: orders,
   columns,
   getCoreRowModel: getCoreRowModel(),
-  getPaginationRowModel: getPaginationRowModel(),
-  initialState: { pagination: { pageSize: 10 } }
+  manualPagination: true
 })
 
 // 表頭只有一層（沒有分組欄位），直接取第一個 header group 的 leaf headers。
 const leafHeaders = computed(() => table.getHeaderGroups()[0]?.headers ?? [])
-
-// 緩存失效 key：當訂單狀態或退款金額變動時，保證 tbody 刷新
-const tableRenderKey = computed(() => {
-  return orderStore.order.map((o) => `${o.orderId}_${o.orderStatus}_${o.refundedAmount}`).join('|')
-})
 
 const currentOperator = () =>
   `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`
@@ -1095,6 +1203,9 @@ const editOrderStatus = async (id: string) => {
       reason,
       voidApprover?.sessionToken
     )
+    // 本機快取若也有這筆（離線時的 fallback 來源），同步更新，否則離線
+    // 時看到的會是作廢前的舊狀態。畫面本身一律重新向伺服端要這一頁＋
+    // KPI 摘要，不用本機補丁拼出下一次要顯示的資料。
     const local = orderStore.order.find((item) => item.orderId === id)
     if (local) {
       local.orderStatus = updated.orderStatus
@@ -1103,6 +1214,7 @@ const editOrderStatus = async (id: string) => {
       local.voidedAt = updated.voidedAt
       orderStore.order = [...orderStore.order]
     }
+    await Promise.all([loadOrders(), loadSummary()])
     showToast(`訂單狀態已設定為${nextStatus}`, 'success')
   } catch (err) {
     showToast(orderApiErrorMessage(err), 'error')
@@ -1139,6 +1251,7 @@ const refundOrder = async (order: OrderRecord) => {
       local.refundedAmount = updated.refundedAmount
       orderStore.order = [...orderStore.order]
     }
+    await Promise.all([loadOrders(), loadSummary()])
     showToast(`退款成功，已退 $${result.amount}`, 'success')
   } catch (err) {
     showToast(orderApiErrorMessage(err), 'error')
@@ -1160,6 +1273,8 @@ const deleteOrder = async (id: string) => {
   try {
     await deleteOrderRequest(id)
     orderStore.order = orderStore.order.filter((item) => item.orderId != id)
+    selectedOrderIds.value.delete(id)
+    await Promise.all([loadOrders(), loadSummary()])
     showToast('刪除成功', 'success')
   } catch (err) {
     showToast(orderApiErrorMessage(err), 'error')
