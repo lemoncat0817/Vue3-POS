@@ -38,7 +38,6 @@ function buildStaff(overrides: Partial<Record<AuthorityKey, boolean>> = {}): Sta
     name: '測試店員',
     jobTitle: '店長',
     account: 'tester',
-    password: '',
     authorityCheckList
   }
 }

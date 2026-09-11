@@ -35,8 +35,6 @@ export function toStaffMember(staff: Staff): StaffMember {
     name: staff.name,
     jobTitle: staff.jobTitle,
     account: staff.account,
-    // 前端改用 PIN 驗證，password 僅保留以相容 StaffMember 型別。
-    password: '',
     roleId: staff.roleId,
     roleName: staff.roleName,
     authorityCheckList: staff.capabilities
