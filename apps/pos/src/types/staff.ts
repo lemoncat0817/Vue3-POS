@@ -33,7 +33,6 @@ export interface StaffMember {
   name: string
   jobTitle: string
   account: string
-  password: string
   roleId: string
   roleName: string
   authorityCheckList: AuthorityKey[]

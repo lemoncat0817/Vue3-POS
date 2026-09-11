@@ -9,7 +9,6 @@ function staff(overrides: Partial<StaffMember> = {}): StaffMember {
     name: 'Lemon',
     jobTitle: '店長',
     account: 'lemon',
-    password: '',
     roleId: 'role-owner',
     roleName: '店長',
     authorityCheckList: ['canCheckOrder'],
