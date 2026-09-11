@@ -242,7 +242,25 @@
               </td>
               <td class="px-1 py-2 font-mono">${{ row.addListPrice }}</td>
               <td class="px-1 py-2 font-black text-primary-600 dark:text-primary-400">
-                {{ row.count }}
+                <QuantityKeypadPopover
+                  :model-value="row.count"
+                  @update:model-value="updateLineCount(row, $event)"
+                >
+                  <template #trigger="{ open }">
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center min-w-[2rem] h-6 px-1.5 rounded-md border border-primary-200 dark:border-primary-800 bg-primary-50/70 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 font-mono font-black text-xs hover:bg-primary-100 dark:hover:bg-primary-900/60 hover:border-primary-400 active:scale-95 transition-all select-none cursor-pointer shadow-xs group"
+                      :class="{ 'ring-2 ring-primary-500/40 border-primary-500': open }"
+                      title="點擊修改數量"
+                    >
+                      <span>{{ row.count }}</span>
+                      <span
+                        class="text-[9px] text-primary-500/70 ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >✎</span
+                      >
+                    </button>
+                  </template>
+                </QuantityKeypadPopover>
               </td>
               <td class="px-1 py-2 font-mono text-danger-600 dark:text-danger-400">
                 -${{ row.discount }}
@@ -537,6 +555,7 @@ import { createAuditLog } from '@/api/audit-logs'
 import { ApiError } from '@/api/http'
 import { enqueueOrder } from '@/offline/outbox'
 import { useOrderSync } from '@/offline/useOrderSync'
+import QuantityKeypadPopover from '@/components/ui/QuantityKeypadPopover.vue'
 
 const orderSync = useOrderSync()
 
@@ -717,6 +736,25 @@ const quickDiscountsForPricing = (): QuickDiscount[] =>
     kind: d.kind,
     value: Number(d.value)
   }))
+
+// 修改購物車單一品項數量，並即時以 priceLine() 重算小計與折扣
+const updateLineCount = (item: CartLineItem, newCountStr: string | number) => {
+  const parsed = parseInt(String(newCountStr))
+  const count = isNaN(parsed) || parsed < 1 ? 1 : parsed
+  item.count = count
+
+  const discounts = quickDiscountsForPricing()
+  const flags: LineDiscountFlags = {
+    freeDiscount: item.freeDiscount,
+    quickDiscountId: item.quickDiscountId
+  }
+  const priced = priceLine(
+    { price: Number(item.price), count: item.count, addListPrice: item.addListPrice },
+    flags,
+    discounts
+  )
+  Object.assign(item, priced)
+}
 
 // 對目前已勾選的品項套用同一種旗標切換，並用 priceLine() 重新計算金額，
 // 取代逐一折扣各自手動改欄位的寫法。

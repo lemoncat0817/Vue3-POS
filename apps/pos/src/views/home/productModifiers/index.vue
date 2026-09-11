@@ -165,19 +165,37 @@
         <span class="text-xs font-bold text-surface-500 dark:text-surface-400 mr-1">數量</span>
         <button
           type="button"
-          class="h-7 w-7 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 font-bold hover:bg-surface-100 text-sm flex items-center justify-center active:scale-95 select-none transition-colors"
+          class="h-7 w-7 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 font-bold hover:bg-surface-100 text-sm flex items-center justify-center active:scale-95 select-none transition-colors cursor-pointer"
           @click="decreaseCount"
         >
           -
         </button>
-        <span
-          class="text-sm font-black font-mono px-2 min-w-[2.5rem] text-center text-primary-600 dark:text-primary-400"
+
+        <!-- 數量徽章（點擊直接呼出數字鍵盤 Popover） -->
+        <QuantityKeypadPopover
+          v-model:open="isKeypadOpen"
+          :model-value="catalogStore.productCount"
+          @update:model-value="setCount"
         >
-          {{ productCountDisplay }} 份
-        </span>
+          <template #trigger="{ open }">
+            <button
+              type="button"
+              class="h-7 px-2.5 rounded-lg border border-primary-200 dark:border-primary-800 bg-primary-50/70 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 font-mono font-black text-sm flex items-center gap-1.5 hover:bg-primary-100 dark:hover:bg-primary-900/60 hover:border-primary-400 active:scale-95 transition-all select-none cursor-pointer shadow-xs"
+              :class="{ 'ring-2 ring-primary-500/40 border-primary-500': open }"
+              title="點擊自訂數量 (開啟數字鍵盤)"
+            >
+              <span>{{ productCountDisplay }}</span>
+              <span class="text-[11px] font-bold text-primary-600/70 dark:text-primary-400/70"
+                >份</span
+              >
+              <Keyboard class="w-3.5 h-3.5 text-primary-500/80 dark:text-primary-400/80" />
+            </button>
+          </template>
+        </QuantityKeypadPopover>
+
         <button
           type="button"
-          class="h-7 w-7 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 font-bold hover:bg-surface-100 text-sm flex items-center justify-center active:scale-95 select-none transition-colors"
+          class="h-7 w-7 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 font-bold hover:bg-surface-100 text-sm flex items-center justify-center active:scale-95 select-none transition-colors cursor-pointer"
           @click="increaseCount"
         >
           +
@@ -197,6 +215,20 @@
             @click="setCount(String(preset))"
           >
             {{ preset }}
+          </button>
+          <button
+            type="button"
+            class="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-black select-none transition-all active:scale-95 cursor-pointer"
+            :class="
+              ![1, 2, 3, 5].includes(productCountDisplay)
+                ? 'border-primary-500 bg-primary-600 text-white shadow-sm'
+                : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100'
+            "
+            title="開啟數字鍵盤自訂數量"
+            @click="isKeypadOpen = true"
+          >
+            <span>自訂</span>
+            <Keyboard class="w-3 h-3" />
           </button>
         </div>
       </div>
@@ -235,6 +267,10 @@ import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import type { AddOnOption, FormNumeric, ModifierGroup } from '@/types'
 import { fromSelection } from '@/utils/selection'
+import QuantityKeypadPopover from '@/components/ui/QuantityKeypadPopover.vue'
+import { Keyboard } from 'lucide-vue-next'
+
+const isKeypadOpen = ref(false)
 
 const emit = defineEmits<{ (e: 'addProduct'): void }>()
 
