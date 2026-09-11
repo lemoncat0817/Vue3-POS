@@ -31,7 +31,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  NODE_VERSION: '20'
+  # engines allow >=20.19; Node 20.20 + better-sqlite3 segfaults here
+  # (vitest surfaces that as tinypool ERR_IPC_CHANNEL_CLOSED).
+  NODE_VERSION: '22'
 
 jobs:
   quality:
@@ -62,13 +64,7 @@ jobs:
         run: pnpm lint
 
       - name: Unit tests
-        # Same gate as `pnpm test`, but serialise workspaces. On 2-core
-        # runners, recursive vitest (jsdom + better-sqlite3) can crash
-        # tinypool with ERR_IPC_CHANNEL_CLOSED.
-        run: pnpm -r --workspace-concurrency=1 --if-present run test
-        env:
-          VITEST_MAX_FORKS: 1
-          VITEST_MAX_THREADS: 1
+        run: pnpm test
 
   deploy-frontend:
     name: Deploy frontend (GitHub Pages)
