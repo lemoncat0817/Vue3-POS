@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { GOLDEN_ORDERS, getBusinessDate } from '@pos/domain'
+import { getBusinessDate } from '@pos/domain'
 import type { OrderRecord, PaymentMethod } from '@/types'
 
 export const useOrderStore = defineStore(
@@ -64,8 +64,10 @@ export const useOrderStore = defineStore(
         useMethod: '掃描'
       }
     ])
-    // 歷史訂單：預設為黃金資料集基準，structuredClone 隔離物件圖。
-    const order = ref<OrderRecord[]>(structuredClone(GOLDEN_ORDERS) as unknown as OrderRecord[])
+    // 歷史訂單：本機持久化清單，預設空陣列。GOLDEN_ORDERS 只是計價迴歸測試
+    // 基準（見 packages/pos-domain/src/fixtures/golden-orders.ts），不該當成
+    // 正式環境的初始訂單歷史種進每個使用者的 localStorage。
+    const order = ref<OrderRecord[]>([])
 
     // 送單當下依 getBusinessDate() 計算營業日，記錄上次核發日以利跨日重置序號。
     const lastBusinessDate = ref(getBusinessDate(new Date()))
