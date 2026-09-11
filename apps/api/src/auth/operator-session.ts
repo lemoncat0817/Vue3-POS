@@ -7,12 +7,17 @@ import type { AnyDb } from '../db/types'
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000
 
 /** PIN 登入成功後核發一組新的操作員 session，回傳明碼 token（只有呼叫端看得到這一次，之後只存雜湊值）。 */
-export async function issueOperatorSession(db: AnyDb, staffId: string): Promise<string> {
+export async function issueOperatorSession(
+  db: AnyDb,
+  tenantId: string | null,
+  staffId: string
+): Promise<string> {
   const token = generateSecureToken()
   const { hash, salt } = await hashSecret(token)
   const now = new Date()
   await db.insert(operatorSessions).values({
     id: crypto.randomUUID(),
+    tenantId,
     staffId,
     tokenHash: hash,
     tokenSalt: salt,

@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { sql } from 'drizzle-orm'
 import { salesReportQuerySchema, salesReportSchema } from '@pos/contract'
+import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
@@ -15,6 +16,7 @@ const errorSchema = z.object({ error: z.string() })
 const getSalesReportRoute = createRoute({
   method: 'get',
   path: '/sales',
+  middleware: [requireDeviceToken] as const,
   request: { query: salesReportQuerySchema },
   responses: {
     200: {
@@ -52,6 +54,7 @@ function businessDatesInRange(from: string, to: string): string[] {
 export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRoute, async (c) => {
   const { from, to } = c.req.valid('query')
   const db = c.get('db')
+  const tenantId = c.get('tenantId')
 
   const [
     dailyRows,
@@ -70,7 +73,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       select substr(order_id, 1, 8) as business_date, sum(order_payment_price) as revenue
       from orders
       where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
-        and order_status = '已完成'
+        and order_status = '已完成' and tenant_id is ${tenantId}
       group by business_date
     `),
     db.all<{ hour: number; revenue: number }>(sql`
@@ -78,7 +81,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
              sum(order_payment_price) as revenue
       from orders
       where substr(order_id, 1, 8) = ${from}
-        and order_status = '已完成'
+        and order_status = '已完成' and tenant_id is ${tenantId}
       group by hour
     `),
     // 完成訂單總筆數：獨立算好回傳，避免前端拿被 TOP_RANKING_LIMIT 截斷的
@@ -87,7 +90,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       select count(*) as count
       from orders
       where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
-        and order_status = '已完成'
+        and order_status = '已完成' and tenant_id is ${tenantId}
     `),
     // 折扣總額＝優惠券折抵（orderTotalPrice - orderPaymentPrice），已完成訂單才算，
     // 跟營收用同一個過濾條件，才能對得上「毛額 vs 淨額」。
@@ -95,14 +98,14 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       select sum(order_discount) as amount
       from orders
       where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
-        and order_status = '已完成'
+        and order_status = '已完成' and tenant_id is ${tenantId}
     `),
     // 作廢訂單筆數：故意不套用 order_status = '已完成' 的過濾，這裡要算的正是被排除在外的那些。
     db.all<{ count: number }>(sql`
       select count(*) as count
       from orders
       where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
-        and order_status = '已取消'
+        and order_status = '已取消' and tenant_id is ${tenantId}
     `),
     // 退款：訂單仍是「已完成」、只是退了部分或全部的錢，用訂單所屬營業日篩選區間
     // （不是退款發生的時間），跟報表其他欄位的區間定義一致。
@@ -111,13 +114,13 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       from order_refunds r
       join orders o on o.order_id = r.order_id
       where substr(o.order_id, 1, 8) >= ${from} and substr(o.order_id, 1, 8) <= ${to}
-        and o.order_status = '已完成'
+        and o.order_status = '已完成' and o.tenant_id is ${tenantId}
     `),
     db.all<{ channel: string; count: number; revenue: number }>(sql`
       select order_channel as channel, count(*) as count, sum(order_payment_price) as revenue
       from orders
       where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
-        and order_status = '已完成'
+        and order_status = '已完成' and tenant_id is ${tenantId}
       group by order_channel
     `),
     db.all<{ name: string; count: number }>(sql`
@@ -125,7 +128,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       from order_lines ol
       join orders o on o.order_id = ol.order_id
       where substr(o.order_id, 1, 8) >= ${from} and substr(o.order_id, 1, 8) <= ${to}
-        and o.order_status = '已完成'
+        and o.order_status = '已完成' and o.tenant_id is ${tenantId}
       group by ol.name
       order by count desc
       limit ${TOP_RANKING_LIMIT}
@@ -137,7 +140,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       join json_each(ol.add_list) je
       where json_type(ol.add_list) = 'array'
         and substr(o.order_id, 1, 8) >= ${from} and substr(o.order_id, 1, 8) <= ${to}
-        and o.order_status = '已完成'
+        and o.order_status = '已完成' and o.tenant_id is ${tenantId}
       group by je.value
       order by count desc
       limit ${TOP_RANKING_LIMIT}
@@ -147,21 +150,22 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
       select order_payment as name, count(*) as count
       from orders
       where substr(order_id, 1, 8) >= ${from} and substr(order_id, 1, 8) <= ${to}
-        and order_status = '已完成'
+        and order_status = '已完成' and tenant_id is ${tenantId}
       group by order_payment
       order by count desc
       limit ${TOP_RANKING_LIMIT}
     `),
     // 分類排行透過品項名稱回查 products/categories：訂單品項只存名稱快照，
     // 跟 deductStock() 用同一種「以名稱比對」的既有限制（改過名字的品項對不到）。
+    // 一併過濾 p.tenant_id：不同租戶可能有同名品項，理由同 deductStock()。
     db.all<{ name: string; count: number }>(sql`
       select c.name as name, sum(ol.count) as count
       from order_lines ol
       join orders o on o.order_id = ol.order_id
-      join products p on p.name = ol.name
+      join products p on p.name = ol.name and p.tenant_id is ${tenantId}
       join categories c on c.id = p.category_id
       where substr(o.order_id, 1, 8) >= ${from} and substr(o.order_id, 1, 8) <= ${to}
-        and o.order_status = '已完成'
+        and o.order_status = '已完成' and o.tenant_id is ${tenantId}
       group by c.name
       order by count desc
       limit ${TOP_RANKING_LIMIT}

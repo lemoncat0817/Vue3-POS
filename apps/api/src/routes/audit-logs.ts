@@ -3,6 +3,7 @@ import { desc } from 'drizzle-orm'
 import { auditLogSchema, createAuditLogRequestSchema } from '@pos/contract'
 import { auditLogs } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
 /** 稽核紀錄 API：記錄開錢箱等關鍵操作至伺服端資料庫。 */
@@ -37,15 +38,22 @@ export const auditLogRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createAuditLogRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
     const createdAt = new Date().toISOString()
     const result = await db
       .insert(auditLogs)
-      .values({ ...input, createdAt })
+      .values({ ...input, tenantId, createdAt })
       .returning()
     return c.json(result[0], 201)
   })
   .openapi(listAuditLogsRoute, async (c) => {
     const db = c.get('db')
-    const rows = await db.select().from(auditLogs).orderBy(desc(auditLogs.id)).all()
+    const tenantId = c.get('tenantId')
+    const rows = await db
+      .select()
+      .from(auditLogs)
+      .where(tenantFilter(auditLogs.tenantId, tenantId))
+      .orderBy(desc(auditLogs.id))
+      .all()
     return c.json(rows, 200)
   })

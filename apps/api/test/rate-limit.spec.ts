@@ -1,17 +1,19 @@
 import { sql } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
-import { createTestApp, createTestAppWithDevice } from './helpers/app'
+import { createTestAppWithDevice } from './helpers/app'
 import { createTestDb } from './helpers/db'
 
 // 速率限制驗證：透過操作 rate_limit_counters 模擬計數器達標，避免實際發送大量請求。
 describe('速率限制', () => {
   it('GET 端點不受限制，就算計數器已經爆表也一樣能查詢', async () => {
     const db = createTestDb()
-    const app = createTestApp(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false
+    })
     await db.run(
       sql`insert into rate_limit_counters (key, window_start, count) values ('anonymous', ${Date.now()}, 9999)`
     )
-    const res = await app.request('/api/catalog')
+    const res = await app.request('/api/catalog', { headers: { 'X-Device-Token': deviceToken } })
     expect(res.status).toBe(200)
   })
 

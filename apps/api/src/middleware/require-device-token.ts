@@ -17,6 +17,9 @@ export const requireDeviceToken = createMiddleware<AppEnv>(async (c, next) => {
   const activeDevices = await db.select().from(devices).where(isNull(devices.revokedAt)).all()
   for (const device of activeDevices) {
     if (await verifySecret(provided, device.tokenHash, device.tokenSalt)) {
+      // 裝置的 tenantId 就是這次請求的租戶邊界，後面所有查詢都靠這個值過濾
+      // （見 db/tenant-scope.ts）。單租戶過渡期資料是 null，等同「不過濾」。
+      c.set('tenantId', device.tenantId)
       await next()
       return
     }

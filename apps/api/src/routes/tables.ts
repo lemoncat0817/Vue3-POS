@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import {
   createTableRequestSchema,
   diningTableSchema,
@@ -9,6 +9,7 @@ import {
 import { diningTables } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
 /** 桌況管理 API：支援桌位資料維護與桌況狀態更新。 */
@@ -107,13 +108,25 @@ const deleteTableRoute = createRoute({
 export const tableRoutes = new OpenAPIHono<AppEnv>()
   .openapi(listTablesRoute, async (c) => {
     const db = c.get('db')
-    const rows = await db.select().from(diningTables).all()
+    const tenantId = c.get('tenantId')
+    const rows = await db
+      .select()
+      .from(diningTables)
+      .where(tenantFilter(diningTables.tenantId, tenantId))
+      .all()
     return c.json(rows, 200)
   })
   .openapi(createTableRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    const newTable = { id: crypto.randomUUID(), ...input, status: 'empty' as const, note: '' }
+    const tenantId = c.get('tenantId')
+    const newTable = {
+      id: crypto.randomUUID(),
+      tenantId,
+      ...input,
+      status: 'empty' as const,
+      note: ''
+    }
     await db.insert(diningTables).values(newTable)
     return c.json(newTable, 201)
   })
@@ -121,7 +134,12 @@ export const tableRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(diningTables).where(eq(diningTables.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(diningTables)
+      .where(and(eq(diningTables.id, id), tenantFilter(diningTables.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個桌位' }, 404)
     await db.update(diningTables).set(input).where(eq(diningTables.id, id))
     return c.json({ ...existing, ...input }, 200)
@@ -130,7 +148,12 @@ export const tableRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(diningTables).where(eq(diningTables.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(diningTables)
+      .where(and(eq(diningTables.id, id), tenantFilter(diningTables.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個桌位' }, 404)
     // note 為選填：未帶時保留既有備註，便於快速切換桌況。
     const updated = { status: input.status, note: input.note ?? existing.note }
@@ -140,7 +163,12 @@ export const tableRoutes = new OpenAPIHono<AppEnv>()
   .openapi(deleteTableRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(diningTables).where(eq(diningTables.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(diningTables)
+      .where(and(eq(diningTables.id, id), tenantFilter(diningTables.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個桌位' }, 404)
     await db.delete(diningTables).where(eq(diningTables.id, id))
     return c.body(null, 204)

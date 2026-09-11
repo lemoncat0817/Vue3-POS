@@ -1,7 +1,8 @@
 import { authorityKeySchema } from '@pos/contract'
 import { createApp } from '../../src/app'
+import { generateSecureToken, hashSecret } from '../../src/auth/hash'
 import { issueOperatorSession } from '../../src/auth/operator-session'
-import { staff } from '../../src/db/schema'
+import { devices, staff, users } from '../../src/db/schema'
 import type { AnyDb } from '../../src/db/types'
 import { seedRole } from './roles'
 
@@ -22,11 +23,15 @@ export function createTestApp(db: AnyDb) {
  * 自己 seedRole() 一個能力較少的角色與員工，再用 issueTestSession() 核發
  * 對應的 session。
  */
-async function seedTestStaff(db: AnyDb): Promise<{ staffId: string; sessionToken: string }> {
-  const roleId = await seedRole(db, { capabilities: [...authorityKeySchema.options] })
+async function seedTestStaff(
+  db: AnyDb,
+  tenantId: string | null
+): Promise<{ staffId: string; sessionToken: string }> {
+  const roleId = await seedRole(db, { capabilities: [...authorityKeySchema.options], tenantId })
   const staffId = crypto.randomUUID()
   await db.insert(staff).values({
     id: staffId,
+    tenantId,
     name: '測試操作員',
     jobTitle: '測試',
     account: `test-staff-${staffId}`,
@@ -34,13 +39,13 @@ async function seedTestStaff(db: AnyDb): Promise<{ staffId: string; sessionToken
     pinHash: 'test-hash',
     pinSalt: 'test-salt'
   })
-  const sessionToken = await issueOperatorSession(db, staffId)
+  const sessionToken = await issueOperatorSession(db, tenantId, staffId)
   return { staffId, sessionToken }
 }
 
 /** 測試用：直接核發一組操作員 session（見 auth/operator-session.ts），省去先跑一次 PIN 登入的流程。 */
 export async function issueTestSession(db: AnyDb, staffId: string): Promise<string> {
-  return issueOperatorSession(db, staffId)
+  return issueOperatorSession(db, null, staffId)
 }
 
 /**
@@ -58,7 +63,7 @@ export async function issueTestSession(db: AnyDb, staffId: string): Promise<stri
 export async function createTestAppWithDevice(
   db: AnyDb,
   deviceName = 'test-device',
-  options: { seedStaff?: boolean } = {}
+  options: { seedStaff?: boolean; tenantId?: string | null } = {}
 ): Promise<{
   app: ReturnType<typeof createApp>
   deviceToken: string
@@ -66,16 +71,51 @@ export async function createTestAppWithDevice(
   sessionToken: string
 }> {
   const app = createTestApp(db)
-  const res = await app.request('/api/devices', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Provisioning-Secret': TEST_PROVISIONING_SECRET
-    },
-    body: JSON.stringify({ name: deviceName })
-  })
-  const body = (await res.json()) as { token: string }
+  const tenantId = options.tenantId ?? null
+
+  let deviceToken: string
+  if (tenantId === null) {
+    // 沒指定租戶：照舊真的走核發端點（見 middleware/require-provisioning-secret.ts）。
+    const res = await app.request('/api/devices', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Provisioning-Secret': TEST_PROVISIONING_SECRET
+      },
+      body: JSON.stringify({ name: deviceName })
+    })
+    const body = (await res.json()) as { token: string }
+    deviceToken = body.token
+  } else {
+    // devices.tenantId 是外鍵指到 users.id，插入裝置前要先有這個租戶的
+    // users 列存在，不然會撞 FOREIGN KEY constraint（見 db/schema.ts）。
+    await db
+      .insert(users)
+      .values({
+        id: tenantId,
+        provider: 'google',
+        providerAccountId: tenantId,
+        email: `${tenantId}@example.com`,
+        displayName: tenantId
+      })
+      .onConflictDoNothing()
+
+    // 核發端點目前固定核發到「未分配租戶」的過渡池（見 routes/devices.ts），
+    // 沒有辦法指定 tenantId；要測試多租戶隔離，直接寫入 db，繞過端點。
+    deviceToken = generateSecureToken()
+    const { hash, salt } = await hashSecret(deviceToken)
+    await db.insert(devices).values({
+      id: crypto.randomUUID(),
+      tenantId,
+      name: deviceName,
+      tokenHash: hash,
+      tokenSalt: salt,
+      createdAt: new Date().toISOString(),
+      revokedAt: null
+    })
+  }
+
   const { staffId, sessionToken } =
-    options.seedStaff === false ? { staffId: '', sessionToken: '' } : await seedTestStaff(db)
-  return { app, deviceToken: body.token, staffId, sessionToken }
+    options.seedStaff === false ? { staffId: '', sessionToken: '' } : await seedTestStaff(db, tenantId)
+  return { app, deviceToken, staffId, sessionToken }
 }

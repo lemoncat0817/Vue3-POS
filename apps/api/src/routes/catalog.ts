@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import {
   addOnOptionSchema,
   categorySchema,
@@ -25,6 +25,7 @@ import {
 } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
 
@@ -33,6 +34,7 @@ const errorSchema = z.object({ error: z.string() })
 const getCatalogRoute = createRoute({
   method: 'get',
   path: '/',
+  middleware: [requireDeviceToken] as const,
   responses: {
     200: {
       description: '目前的菜單（分類、品項、規格群組、加購選項）',
@@ -288,17 +290,22 @@ const deleteAddOnRoute = createRoute({
 async function replaceModifierOptions(
   db: AnyDb,
   groupId: string,
+  tenantId: string | null,
   options: { name: string; priceDelta: number }[]
 ) {
   await db.delete(modifierOptions).where(eq(modifierOptions.groupId, groupId))
   if (options.length === 0) return
   await db
     .insert(modifierOptions)
-    .values(options.map((option) => ({ id: crypto.randomUUID(), groupId, ...option })))
+    .values(options.map((option) => ({ id: crypto.randomUUID(), tenantId, groupId, ...option })))
 }
 
-async function loadModifierGroup(db: AnyDb, id: string) {
-  const group = await db.select().from(modifierGroups).where(eq(modifierGroups.id, id)).get()
+async function loadModifierGroup(db: AnyDb, id: string, tenantId: string | null) {
+  const group = await db
+    .select()
+    .from(modifierGroups)
+    .where(and(eq(modifierGroups.id, id), tenantFilter(modifierGroups.tenantId, tenantId)))
+    .get()
   if (!group) return null
   const options = await db
     .select()
@@ -319,24 +326,56 @@ async function loadModifierGroup(db: AnyDb, id: string) {
 }
 
 /** 一次寫入品項掛用的規格群組：先刪光現有關聯再整批重建。 */
-async function replaceProductModifierGroups(db: AnyDb, productId: string, groupIds: string[]) {
+async function replaceProductModifierGroups(
+  db: AnyDb,
+  productId: string,
+  tenantId: string | null,
+  groupIds: string[]
+) {
   await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, productId))
   if (groupIds.length === 0) return
-  await db.insert(productModifierGroups).values(groupIds.map((groupId) => ({ productId, groupId })))
+  await db
+    .insert(productModifierGroups)
+    .values(groupIds.map((groupId) => ({ tenantId, productId, groupId })))
 }
 
 export const catalogRoutes = new OpenAPIHono<AppEnv>()
   .openapi(getCatalogRoute, async (c) => {
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
     const [categoryRows, productRows, groupRows, optionRows, productGroupRows, addOns] =
       await Promise.all([
-        db.select().from(categories).all(),
-        db.select().from(products).all(),
-        db.select().from(modifierGroups).all(),
-        db.select().from(modifierOptions).all(),
-        db.select().from(productModifierGroups).all(),
-        db.select().from(addOnOptions).all()
+        db
+          .select()
+          .from(categories)
+          .where(tenantFilter(categories.tenantId, tenantId))
+          .all(),
+        db
+          .select()
+          .from(products)
+          .where(tenantFilter(products.tenantId, tenantId))
+          .all(),
+        db
+          .select()
+          .from(modifierGroups)
+          .where(tenantFilter(modifierGroups.tenantId, tenantId))
+          .all(),
+        db
+          .select()
+          .from(modifierOptions)
+          .where(tenantFilter(modifierOptions.tenantId, tenantId))
+          .all(),
+        db
+          .select()
+          .from(productModifierGroups)
+          .where(tenantFilter(productModifierGroups.tenantId, tenantId))
+          .all(),
+        db
+          .select()
+          .from(addOnOptions)
+          .where(tenantFilter(addOnOptions.tenantId, tenantId))
+          .all()
       ])
 
     const optionsByGroup = new Map<string, typeof optionRows>()
@@ -386,7 +425,8 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createCategoryRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    const newCategory = { id: crypto.randomUUID(), ...input }
+    const tenantId = c.get('tenantId')
+    const newCategory = { id: crypto.randomUUID(), tenantId, ...input }
     await db.insert(categories).values(newCategory)
     return c.json(newCategory, 201)
   })
@@ -394,7 +434,12 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(categories).where(eq(categories.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(categories)
+      .where(and(eq(categories.id, id), tenantFilter(categories.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個分類' }, 404)
     await db.update(categories).set(input).where(eq(categories.id, id))
     return c.json({ id, ...input }, 200)
@@ -402,7 +447,12 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
   .openapi(deleteCategoryRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(categories).where(eq(categories.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(categories)
+      .where(and(eq(categories.id, id), tenantFilter(categories.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個分類' }, 404)
     const remainingProducts = await db
       .select()
@@ -418,48 +468,55 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createProductRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
     const category = await db
       .select()
       .from(categories)
-      .where(eq(categories.id, input.categoryId))
+      .where(and(eq(categories.id, input.categoryId), tenantFilter(categories.tenantId, tenantId)))
       .get()
     if (!category) return c.json({ error: '找不到對應的分類' }, 404)
     for (const groupId of input.modifierGroupIds) {
       const group = await db
         .select()
         .from(modifierGroups)
-        .where(eq(modifierGroups.id, groupId))
+        .where(and(eq(modifierGroups.id, groupId), tenantFilter(modifierGroups.tenantId, tenantId)))
         .get()
       if (!group) return c.json({ error: `找不到規格群組 ${groupId}` }, 404)
     }
     const newProduct = {
       id: crypto.randomUUID(),
+      tenantId,
       categoryId: input.categoryId,
       name: input.name,
       basePrice: input.basePrice,
       stock: input.stock
     }
     await db.insert(products).values(newProduct)
-    await replaceProductModifierGroups(db, newProduct.id, input.modifierGroupIds)
+    await replaceProductModifierGroups(db, newProduct.id, tenantId, input.modifierGroupIds)
     return c.json({ ...newProduct, modifierGroupIds: input.modifierGroupIds }, 201)
   })
   .openapi(updateProductRoute, async (c) => {
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(products).where(eq(products.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(products)
+      .where(and(eq(products.id, id), tenantFilter(products.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個品項' }, 404)
     const category = await db
       .select()
       .from(categories)
-      .where(eq(categories.id, input.categoryId))
+      .where(and(eq(categories.id, input.categoryId), tenantFilter(categories.tenantId, tenantId)))
       .get()
     if (!category) return c.json({ error: '找不到對應的分類' }, 404)
     for (const groupId of input.modifierGroupIds) {
       const group = await db
         .select()
         .from(modifierGroups)
-        .where(eq(modifierGroups.id, groupId))
+        .where(and(eq(modifierGroups.id, groupId), tenantFilter(modifierGroups.tenantId, tenantId)))
         .get()
       if (!group) return c.json({ error: `找不到規格群組 ${groupId}` }, 404)
     }
@@ -472,13 +529,18 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
         stock: input.stock
       })
       .where(eq(products.id, id))
-    await replaceProductModifierGroups(db, id, input.modifierGroupIds)
+    await replaceProductModifierGroups(db, id, tenantId, input.modifierGroupIds)
     return c.json({ id, ...input }, 200)
   })
   .openapi(deleteProductRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(products).where(eq(products.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(products)
+      .where(and(eq(products.id, id), tenantFilter(products.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個品項' }, 404)
     await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, id))
     await db.delete(products).where(eq(products.id, id))
@@ -487,35 +549,47 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createModifierGroupRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
     const newGroup = {
       id: crypto.randomUUID(),
+      tenantId,
       name: input.name,
       selectionType: input.selectionType,
       required: input.required
     }
     await db.insert(modifierGroups).values(newGroup)
-    await replaceModifierOptions(db, newGroup.id, input.options)
-    const created = await loadModifierGroup(db, newGroup.id)
+    await replaceModifierOptions(db, newGroup.id, tenantId, input.options)
+    const created = await loadModifierGroup(db, newGroup.id, tenantId)
     return c.json(created!, 201)
   })
   .openapi(updateModifierGroupRoute, async (c) => {
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(modifierGroups).where(eq(modifierGroups.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(modifierGroups)
+      .where(and(eq(modifierGroups.id, id), tenantFilter(modifierGroups.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個規格群組' }, 404)
     await db
       .update(modifierGroups)
       .set({ name: input.name, selectionType: input.selectionType, required: input.required })
       .where(eq(modifierGroups.id, id))
-    await replaceModifierOptions(db, id, input.options)
-    const updated = await loadModifierGroup(db, id)
+    await replaceModifierOptions(db, id, tenantId, input.options)
+    const updated = await loadModifierGroup(db, id, tenantId)
     return c.json(updated!, 200)
   })
   .openapi(deleteModifierGroupRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(modifierGroups).where(eq(modifierGroups.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(modifierGroups)
+      .where(and(eq(modifierGroups.id, id), tenantFilter(modifierGroups.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個規格群組' }, 404)
     await db.delete(modifierOptions).where(eq(modifierOptions.groupId, id))
     await db.delete(productModifierGroups).where(eq(productModifierGroups.groupId, id))
@@ -525,7 +599,8 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createAddOnRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    const newAddOn = { id: crypto.randomUUID(), ...input }
+    const tenantId = c.get('tenantId')
+    const newAddOn = { id: crypto.randomUUID(), tenantId, ...input }
     await db.insert(addOnOptions).values(newAddOn)
     return c.json(newAddOn, 201)
   })
@@ -533,7 +608,12 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(addOnOptions).where(eq(addOnOptions.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(addOnOptions)
+      .where(and(eq(addOnOptions.id, id), tenantFilter(addOnOptions.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個加購選項' }, 404)
     await db.update(addOnOptions).set(input).where(eq(addOnOptions.id, id))
     return c.json({ id, ...input }, 200)
@@ -541,7 +621,12 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
   .openapi(deleteAddOnRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(addOnOptions).where(eq(addOnOptions.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(addOnOptions)
+      .where(and(eq(addOnOptions.id, id), tenantFilter(addOnOptions.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個加購選項' }, 404)
     await db.delete(addOnOptions).where(eq(addOnOptions.id, id))
     return c.body(null, 204)

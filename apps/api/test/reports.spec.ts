@@ -48,21 +48,33 @@ afterEach(() => {
 })
 
 describe('GET /api/reports/sales', () => {
-  it('不需要裝置憑證即可查詢（唯讀報表，跟 GET /api/catalog、GET /api/promotions 同一套慣例）', async () => {
+  it('沒有裝置憑證時拒絕（跟其他唯讀端點一樣，多租戶後改成一律要驗證，見 P24）', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/reports/sales?from=20260101&to=20260101')
+    expect(res.status).toBe(401)
+  })
+
+  it('帶裝置憑證即可查詢', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/reports/sales?from=20260101&to=20260101', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     expect(res.status).toBe(200)
   })
 
   it('from 晚於 to 時回傳 400', async () => {
-    const app = createTestApp(createTestDb())
-    const res = await app.request('/api/reports/sales?from=20260107&to=20260101')
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/reports/sales?from=20260107&to=20260101', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     expect(res.status).toBe(400)
   })
 
   it('dailyRevenue 涵蓋查詢範圍內每一天，沒有訂單的日子是 0，不是缺漏', async () => {
-    const app = createTestApp(createTestDb())
-    const res = await app.request('/api/reports/sales?from=20260101&to=20260103')
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/reports/sales?from=20260101&to=20260103', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     const body = await readJson(res)
     expect(body.dailyRevenue).toEqual([
       { businessDate: '20260101', revenue: 0 },
@@ -102,7 +114,9 @@ describe('GET /api/reports/sales', () => {
     expect(createRes.status).toBe(201)
     const created = await readJson(createRes)
 
-    const res = await app.request('/api/reports/sales?from=20260101&to=20260101')
+    const res = await app.request('/api/reports/sales?from=20260101&to=20260101', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     expect(res.status).toBe(200)
     const body = await readJson(res)
 
@@ -169,7 +183,9 @@ describe('GET /api/reports/sales', () => {
     })
     expect(voidRes.status).toBe(200)
 
-    const res = await app.request('/api/reports/sales?from=20260101&to=20260101')
+    const res = await app.request('/api/reports/sales?from=20260101&to=20260101', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     const body = await readJson(res)
 
     expect(body.dailyRevenue).toEqual([{ businessDate: '20260101', revenue: 0 }])
@@ -236,7 +252,9 @@ describe('GET /api/reports/sales', () => {
     })
     expect(refundRes.status).toBe(201)
 
-    const res = await app.request('/api/reports/sales?from=20260101&to=20260101')
+    const res = await app.request('/api/reports/sales?from=20260101&to=20260101', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     const body = await readJson(res)
 
     expect(body.orderCount).toBe(2)

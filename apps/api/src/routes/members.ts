@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { desc, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import {
   createMemberRequestSchema,
   memberDetailSchema,
@@ -9,6 +9,7 @@ import {
 import { members, orders } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
 /** 會員管理 API：提供會員 CRUD 與消費紀錄查詢。 */
@@ -114,18 +115,28 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
   .openapi(listMembersRoute, async (c) => {
     const { phone } = c.req.valid('query')
     const db = c.get('db')
-    const rows = phone
-      ? await db.select().from(members).where(eq(members.phone, phone)).all()
-      : await db.select().from(members).all()
+    const tenantId = c.get('tenantId')
+    const tenantCond = tenantFilter(members.tenantId, tenantId)
+    const rows = await db
+      .select()
+      .from(members)
+      .where(phone ? and(eq(members.phone, phone), tenantCond) : tenantCond)
+      .all()
     return c.json(rows, 200)
   })
   .openapi(createMemberRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(members).where(eq(members.phone, input.phone)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(members)
+      .where(and(eq(members.phone, input.phone), tenantFilter(members.tenantId, tenantId)))
+      .get()
     if (existing) return c.json({ error: '這個手機號碼已經是會員' }, 409)
     const newMember = {
       id: crypto.randomUUID(),
+      tenantId,
       ...input,
       points: 0,
       createdAt: new Date().toISOString()
@@ -136,7 +147,12 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
   .openapi(getMemberRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const member = await db.select().from(members).where(eq(members.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const member = await db
+      .select()
+      .from(members)
+      .where(and(eq(members.id, id), tenantFilter(members.tenantId, tenantId)))
+      .get()
     if (!member) return c.json({ error: '找不到這個會員' }, 404)
     const memberOrders = await db
       .select({
@@ -155,9 +171,18 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(members).where(eq(members.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(members)
+      .where(and(eq(members.id, id), tenantFilter(members.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個會員' }, 404)
-    const phoneTaken = await db.select().from(members).where(eq(members.phone, input.phone)).get()
+    const phoneTaken = await db
+      .select()
+      .from(members)
+      .where(and(eq(members.phone, input.phone), tenantFilter(members.tenantId, tenantId)))
+      .get()
     if (phoneTaken && phoneTaken.id !== id)
       return c.json({ error: '這個手機號碼已經是別的會員' }, 409)
     await db.update(members).set(input).where(eq(members.id, id))
@@ -166,7 +191,12 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
   .openapi(deleteMemberRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(members).where(eq(members.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(members)
+      .where(and(eq(members.id, id), tenantFilter(members.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個會員' }, 404)
     // 訂單為交易憑證需保留，刪除會員時僅解除關聯（memberId 設為 null）。
     await db.update(orders).set({ memberId: null }).where(eq(orders.memberId, id))

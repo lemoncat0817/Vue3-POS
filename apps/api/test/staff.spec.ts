@@ -7,7 +7,13 @@ import { seedRole } from './helpers/roles'
 const staffBaseFields = { name: 'Emily', jobTitle: '工讀生', account: 'emily' }
 
 describe('GET /api/staff', () => {
-  it('不需要裝置憑證就能讀取員工名單', async () => {
+  it('沒有裝置憑證時拒絕，回傳 401', async () => {
+    const app = createTestApp(createTestDb())
+    const res = await app.request('/api/staff')
+    expect(res.status).toBe(401)
+  })
+
+  it('帶裝置憑證即可讀取員工名單', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { id: 'role-owner-test', name: '店長', capabilities: [] })
     await db.insert(staff).values({
@@ -20,8 +26,12 @@ describe('GET /api/staff', () => {
       pinSalt: 'irrelevant-for-this-test'
     })
 
-    const app = createTestApp(db)
-    const res = await app.request('/api/staff')
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false
+    })
+    const res = await app.request('/api/staff', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([
       {
@@ -96,7 +106,9 @@ describe('POST /api/staff（權限拒絕案例）', () => {
     expect(res.status).toBe(201)
 
     // list 還包含 createTestAppWithDevice() 附掛的測試操作員，只挑剛建立的這筆出來斷言。
-    const list = (await (await app.request('/api/staff')).json()) as Record<string, unknown>[]
+    const list = (await (
+      await app.request('/api/staff', { headers: { 'X-Device-Token': deviceToken } })
+    ).json()) as Record<string, unknown>[]
     const createdStaff = list.find((row) => row.account === staffBaseFields.account)
     expect(createdStaff).toEqual(
       expect.objectContaining({
@@ -358,7 +370,9 @@ describe('DELETE /api/staff/:id（P18）', () => {
     expect(res.status).toBe(204)
 
     // list 還包含 createTestAppWithDevice() 附掛的測試操作員，只確認剛刪除的這筆不見了。
-    const list = (await (await app.request('/api/staff')).json()) as Record<string, unknown>[]
+    const list = (await (
+      await app.request('/api/staff', { headers: { 'X-Device-Token': deviceToken } })
+    ).json()) as Record<string, unknown>[]
     expect(list.find((row) => row.account === staffBaseFields.account)).toBeUndefined()
   })
 

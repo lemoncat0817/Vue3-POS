@@ -10,6 +10,7 @@ import { summarizeShiftCash } from '@pos/domain'
 import { cashMovements, orderRefunds, orderTenders, orders, shifts } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
 
@@ -43,6 +44,7 @@ const openShiftRoute = createRoute({
 const getCurrentShiftRoute = createRoute({
   method: 'get',
   path: '/current',
+  middleware: [requireDeviceToken] as const,
   responses: {
     200: {
       description: '目前開帳中的班別',
@@ -143,8 +145,12 @@ function toShiftResponse(row: ShiftRow, movements: CashMovementRow[]) {
   })
 }
 
-async function loadShiftWithMovements(db: AnyDb, shiftId: string) {
-  const shift = await db.select().from(shifts).where(eq(shifts.id, shiftId)).get()
+async function loadShiftWithMovements(db: AnyDb, tenantId: string | null, shiftId: string) {
+  const shift = await db
+    .select()
+    .from(shifts)
+    .where(and(eq(shifts.id, shiftId), tenantFilter(shifts.tenantId, tenantId)))
+    .get()
   if (!shift) return undefined
   const movements = await db
     .select()
@@ -158,7 +164,12 @@ async function loadShiftWithMovements(db: AnyDb, shiftId: string) {
 const CASH_METHOD_NAME = '現金'
 
 /** 統計區間內現金 tender 總額。排除已取消訂單，避免虛增應有現金。 */
-async function sumCashSales(db: AnyDb, openedAt: string, closedAt: string): Promise<number> {
+async function sumCashSales(
+  db: AnyDb,
+  tenantId: string | null,
+  openedAt: string,
+  closedAt: string
+): Promise<number> {
   const rows = await db
     .select({ amount: orderTenders.amount })
     .from(orderTenders)
@@ -168,7 +179,8 @@ async function sumCashSales(db: AnyDb, openedAt: string, closedAt: string): Prom
         eq(orderTenders.method, CASH_METHOD_NAME),
         eq(orders.orderStatus, '已完成'),
         gte(orders.createdAt, openedAt),
-        lt(orders.createdAt, closedAt)
+        lt(orders.createdAt, closedAt),
+        tenantFilter(orders.tenantId, tenantId)
       )
     )
     .all()
@@ -176,11 +188,22 @@ async function sumCashSales(db: AnyDb, openedAt: string, closedAt: string): Prom
 }
 
 /** 統計區間內退款總額。依退款紀錄發生時間（at）歸屬班別，退款均視為現金抽屜支出。 */
-async function sumCashRefunds(db: AnyDb, openedAt: string, closedAt: string): Promise<number> {
+async function sumCashRefunds(
+  db: AnyDb,
+  tenantId: string | null,
+  openedAt: string,
+  closedAt: string
+): Promise<number> {
   const rows = await db
     .select({ amount: orderRefunds.amount })
     .from(orderRefunds)
-    .where(and(gte(orderRefunds.at, openedAt), lt(orderRefunds.at, closedAt)))
+    .where(
+      and(
+        gte(orderRefunds.at, openedAt),
+        lt(orderRefunds.at, closedAt),
+        tenantFilter(orderRefunds.tenantId, tenantId)
+      )
+    )
     .all()
   return rows.reduce((sum, row) => sum + row.amount, 0)
 }
@@ -189,21 +212,25 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
   .openapi(openShiftRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
-    const existing = await loadShiftWithMovements(db, input.shiftId)
+    const existing = await loadShiftWithMovements(db, tenantId, input.shiftId)
     if (existing) {
       return c.json(toShiftResponse(existing.shift, existing.movements), 200)
     }
 
-    const stillOpen = await db.select().from(shifts).where(eq(shifts.status, 'open')).get()
+    const stillOpen = await db
+      .select()
+      .from(shifts)
+      .where(and(eq(shifts.status, 'open'), tenantFilter(shifts.tenantId, tenantId)))
+      .get()
     if (stillOpen) {
       return c.json({ error: `班別 ${stillOpen.id} 尚未收班，請先完成收班再開新的班別` }, 409)
     }
 
     const newShift: ShiftRow = {
       id: input.shiftId,
-      // TODO(多租戶 Phase 5)：從 context 解出實際 tenantId，目前先佔 null。
-      tenantId: null,
+      tenantId,
       status: 'open',
       openedBy: input.operator,
       openedAt: new Date().toISOString(),
@@ -221,7 +248,12 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
   })
   .openapi(getCurrentShiftRoute, async (c) => {
     const db = c.get('db')
-    const shift = await db.select().from(shifts).where(eq(shifts.status, 'open')).get()
+    const tenantId = c.get('tenantId')
+    const shift = await db
+      .select()
+      .from(shifts)
+      .where(and(eq(shifts.status, 'open'), tenantFilter(shifts.tenantId, tenantId)))
+      .get()
     if (!shift) {
       return c.json({ error: '目前沒有開帳中的班別' }, 404)
     }
@@ -236,8 +268,9 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
-    const existing = await loadShiftWithMovements(db, id)
+    const existing = await loadShiftWithMovements(db, tenantId, id)
     if (!existing) {
       return c.json({ error: '找不到這筆班別' }, 404)
     }
@@ -246,6 +279,7 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
     }
 
     await db.insert(cashMovements).values({
+      tenantId,
       shiftId: id,
       type: input.type,
       amount: input.amount,
@@ -265,8 +299,9 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
-    const existing = await loadShiftWithMovements(db, id)
+    const existing = await loadShiftWithMovements(db, tenantId, id)
     if (!existing) {
       return c.json({ error: '找不到這筆班別' }, 404)
     }
@@ -275,8 +310,8 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
     }
 
     const closedAt = new Date().toISOString()
-    const cashSales = await sumCashSales(db, existing.shift.openedAt, closedAt)
-    const refunds = await sumCashRefunds(db, existing.shift.openedAt, closedAt)
+    const cashSales = await sumCashSales(db, tenantId, existing.shift.openedAt, closedAt)
+    const refunds = await sumCashRefunds(db, tenantId, existing.shift.openedAt, closedAt)
     const cashIn = existing.movements
       .filter((m) => m.type === 'in')
       .reduce((sum, m) => sum + m.amount, 0)

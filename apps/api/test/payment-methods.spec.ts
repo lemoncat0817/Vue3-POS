@@ -9,9 +9,19 @@ async function readJson(res: Response): Promise<any> {
 
 /** 付款方式管理 API 測試。 */
 describe('GET /api/payment-methods', () => {
-  it('不需要裝置憑證即可查詢，沒有資料時回傳空陣列', async () => {
+  it('沒有裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/payment-methods')
+    expect(res.status).toBe(401)
+  })
+
+  it('帶裝置憑證即可查詢，沒有資料時回傳空陣列', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb(), 'test-device', {
+      seedStaff: false
+    })
+    const res = await app.request('/api/payment-methods', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([])
   })
@@ -55,7 +65,9 @@ describe('付款方式寫入 API', () => {
     expect(updateRes.status).toBe(200)
     expect(await readJson(updateRes)).toMatchObject({ disabled: true })
 
-    const list = await readJson(await app.request('/api/payment-methods'))
+    const list = await readJson(
+      await app.request('/api/payment-methods', { headers: { 'X-Device-Token': deviceToken } })
+    )
     expect(list).toEqual([{ id: created.id, name: '現金', disabled: true, useMethod: '紙鈔' }])
 
     const deleteRes = await app.request(`/api/payment-methods/${created.id}`, {
@@ -63,7 +75,11 @@ describe('付款方式寫入 API', () => {
       headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(deleteRes.status).toBe(204)
-    expect(await readJson(await app.request('/api/payment-methods'))).toEqual([])
+    expect(
+      await readJson(
+        await app.request('/api/payment-methods', { headers: { 'X-Device-Token': deviceToken } })
+      )
+    ).toEqual([])
   })
 
   it('找不到付款方式時，編輯／刪除都回傳 404', async () => {

@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import {
   createOrderCouponRequestSchema,
   createQuickDiscountRequestSchema,
@@ -12,6 +12,7 @@ import {
 import { orderCoupons, quickDiscounts } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
@@ -19,6 +20,7 @@ const errorSchema = z.object({ error: z.string() })
 const getPromotionsRoute = createRoute({
   method: 'get',
   path: '/',
+  middleware: [requireDeviceToken] as const,
   responses: {
     200: {
       description: '目前的促銷資料（訂單折價券、快速折扣）',
@@ -152,9 +154,18 @@ const deleteQuickDiscountRoute = createRoute({
 export const promotionRoutes = new OpenAPIHono<AppEnv>()
   .openapi(getPromotionsRoute, async (c) => {
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
     const [coupons, quick] = await Promise.all([
-      db.select().from(orderCoupons).all(),
-      db.select().from(quickDiscounts).all()
+      db
+        .select()
+        .from(orderCoupons)
+        .where(tenantFilter(orderCoupons.tenantId, tenantId))
+        .all(),
+      db
+        .select()
+        .from(quickDiscounts)
+        .where(tenantFilter(quickDiscounts.tenantId, tenantId))
+        .all()
     ])
 
     return c.json(
@@ -178,7 +189,8 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createOrderCouponRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    const newCoupon = { id: crypto.randomUUID(), ...input }
+    const tenantId = c.get('tenantId')
+    const newCoupon = { id: crypto.randomUUID(), tenantId, ...input }
     await db.insert(orderCoupons).values(newCoupon)
     return c.json(orderCouponSchema.parse(newCoupon), 201)
   })
@@ -186,7 +198,12 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(orderCoupons).where(eq(orderCoupons.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(orderCoupons)
+      .where(and(eq(orderCoupons.id, id), tenantFilter(orderCoupons.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這張折價券' }, 404)
     await db.update(orderCoupons).set(input).where(eq(orderCoupons.id, id))
     return c.json(orderCouponSchema.parse({ id, ...input }), 200)
@@ -194,7 +211,12 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
   .openapi(deleteOrderCouponRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(orderCoupons).where(eq(orderCoupons.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(orderCoupons)
+      .where(and(eq(orderCoupons.id, id), tenantFilter(orderCoupons.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這張折價券' }, 404)
     await db.delete(orderCoupons).where(eq(orderCoupons.id, id))
     return c.body(null, 204)
@@ -202,7 +224,8 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createQuickDiscountRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    const newDiscount = { id: crypto.randomUUID(), ...input }
+    const tenantId = c.get('tenantId')
+    const newDiscount = { id: crypto.randomUUID(), tenantId, ...input }
     await db.insert(quickDiscounts).values(newDiscount)
     return c.json(quickDiscountSchema.parse(newDiscount), 201)
   })
@@ -210,7 +233,12 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(quickDiscounts).where(eq(quickDiscounts.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(quickDiscounts)
+      .where(and(eq(quickDiscounts.id, id), tenantFilter(quickDiscounts.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這筆快速折扣' }, 404)
     await db.update(quickDiscounts).set(input).where(eq(quickDiscounts.id, id))
     return c.json(quickDiscountSchema.parse({ id, ...input }), 200)
@@ -218,7 +246,12 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
   .openapi(deleteQuickDiscountRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(quickDiscounts).where(eq(quickDiscounts.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(quickDiscounts)
+      .where(and(eq(quickDiscounts.id, id), tenantFilter(quickDiscounts.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這筆快速折扣' }, 404)
     await db.delete(quickDiscounts).where(eq(quickDiscounts.id, id))
     return c.body(null, 204)

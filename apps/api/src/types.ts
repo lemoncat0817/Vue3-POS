@@ -8,5 +8,8 @@ export type AppEnv = {
     db: AnyDb
     /** 核發新裝置憑證用的密鑰（見 middleware/require-provisioning-secret.ts）。 */
     provisioningSecret: string
+    /** requireDeviceToken 通過驗證後，解出這台裝置所屬的租戶 id（見
+     *  middleware/require-device-token.ts）。單租戶過渡期資料為 null。 */
+    tenantId: string | null
   }
 }

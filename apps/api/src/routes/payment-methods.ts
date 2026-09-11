@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import {
   createPaymentMethodRequestSchema,
   paymentMethodSchema,
@@ -8,6 +8,7 @@ import {
 import { paymentMethods } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
@@ -16,6 +17,7 @@ const errorSchema = z.object({ error: z.string() })
 const listPaymentMethodsRoute = createRoute({
   method: 'get',
   path: '/',
+  middleware: [requireDeviceToken] as const,
   responses: {
     200: {
       description: '付款方式清單',
@@ -88,7 +90,12 @@ const deletePaymentMethodRoute = createRoute({
 export const paymentMethodRoutes = new OpenAPIHono<AppEnv>()
   .openapi(listPaymentMethodsRoute, async (c) => {
     const db = c.get('db')
-    const rows = await db.select().from(paymentMethods).all()
+    const tenantId = c.get('tenantId')
+    const rows = await db
+      .select()
+      .from(paymentMethods)
+      .where(tenantFilter(paymentMethods.tenantId, tenantId))
+      .all()
     return c.json(
       rows.map((row) => paymentMethodSchema.parse(row)),
       200
@@ -97,7 +104,8 @@ export const paymentMethodRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createPaymentMethodRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    const newMethod = { id: crypto.randomUUID(), ...input }
+    const tenantId = c.get('tenantId')
+    const newMethod = { id: crypto.randomUUID(), tenantId, ...input }
     await db.insert(paymentMethods).values(newMethod)
     return c.json(newMethod, 201)
   })
@@ -105,7 +113,12 @@ export const paymentMethodRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
-    const existing = await db.select().from(paymentMethods).where(eq(paymentMethods.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(paymentMethods)
+      .where(and(eq(paymentMethods.id, id), tenantFilter(paymentMethods.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個付款方式' }, 404)
     await db.update(paymentMethods).set(input).where(eq(paymentMethods.id, id))
     return c.json({ id, ...input }, 200)
@@ -113,7 +126,12 @@ export const paymentMethodRoutes = new OpenAPIHono<AppEnv>()
   .openapi(deletePaymentMethodRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(paymentMethods).where(eq(paymentMethods.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(paymentMethods)
+      .where(and(eq(paymentMethods.id, id), tenantFilter(paymentMethods.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個付款方式' }, 404)
     await db.delete(paymentMethods).where(eq(paymentMethods.id, id))
     return c.body(null, 204)

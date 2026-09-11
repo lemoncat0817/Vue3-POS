@@ -1,11 +1,12 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { createStaffRequestSchema, staffSchema, updateStaffRequestSchema } from '@pos/contract'
 import { hashSecret } from '../auth/hash'
 import { roles, staff } from '../db/schema'
 import type { AnyDb } from '../db/types'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
@@ -13,9 +14,14 @@ const errorSchema = z.object({ error: z.string() })
 /** 依 roleId 解析出 roleName／capabilities，組成回應用的 staffSchema 形狀。 */
 async function toStaffResponse(
   db: AnyDb,
+  tenantId: string | null,
   row: { id: string; name: string; jobTitle: string; account: string; roleId: string }
 ) {
-  const role = await db.select().from(roles).where(eq(roles.id, row.roleId)).get()
+  const role = await db
+    .select()
+    .from(roles)
+    .where(and(eq(roles.id, row.roleId), tenantFilter(roles.tenantId, tenantId)))
+    .get()
   if (!role) throw new Error(`staff ${row.id} 指向不存在的 roleId ${row.roleId}`)
   return staffSchema.parse({
     id: row.id,
@@ -32,11 +38,16 @@ async function toStaffResponse(
  * 這是唯一會造成永久鎖死的能力，理由見 routes/roles.ts 同名函式。 */
 async function wouldLeaveNoRoleAdmin(
   db: AnyDb,
+  tenantId: string | null,
   staffIdBeingChanged: string | null,
   nextRoleId: string | null
 ): Promise<boolean> {
-  const allRoles = await db.select().from(roles).all()
-  const allStaff = await db.select({ id: staff.id, roleId: staff.roleId }).from(staff).all()
+  const allRoles = await db.select().from(roles).where(tenantFilter(roles.tenantId, tenantId)).all()
+  const allStaff = await db
+    .select({ id: staff.id, roleId: staff.roleId })
+    .from(staff)
+    .where(tenantFilter(staff.tenantId, tenantId))
+    .all()
   const capabilitiesOf = (roleId: string) =>
     allRoles.find((role) => role.id === roleId)?.capabilities ?? []
 
@@ -57,6 +68,7 @@ async function wouldLeaveNoRoleAdmin(
 const listStaffRoute = createRoute({
   method: 'get',
   path: '/',
+  middleware: [requireDeviceToken] as const,
   responses: {
     200: {
       description: '員工名單',
@@ -144,18 +156,28 @@ const deleteStaffRoute = createRoute({
 export const staffRoutes = new OpenAPIHono<AppEnv>()
   .openapi(listStaffRoute, async (c) => {
     const db = c.get('db')
-    const rows = await db.select().from(staff).all()
-    const responses = await Promise.all(rows.map((row) => toStaffResponse(db, row)))
+    const tenantId = c.get('tenantId')
+    const rows = await db.select().from(staff).where(tenantFilter(staff.tenantId, tenantId)).all()
+    const responses = await Promise.all(rows.map((row) => toStaffResponse(db, tenantId, row)))
     return c.json(responses, 200)
   })
   .openapi(createStaffRoute, async (c) => {
     const { pin, roleId, ...input } = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
-    const role = await db.select().from(roles).where(eq(roles.id, roleId)).get()
+    const role = await db
+      .select()
+      .from(roles)
+      .where(and(eq(roles.id, roleId), tenantFilter(roles.tenantId, tenantId)))
+      .get()
     if (!role) return c.json({ error: '指定的權限群組不存在' }, 404)
 
-    const accountTaken = await db.select().from(staff).where(eq(staff.account, input.account)).get()
+    const accountTaken = await db
+      .select()
+      .from(staff)
+      .where(and(eq(staff.account, input.account), tenantFilter(staff.tenantId, tenantId)))
+      .get()
     if (accountTaken) return c.json({ error: '這個帳號已經被使用' }, 409)
 
     // PIN 只在這裡經手一次，雜湊後存進資料庫，明碼不落地（見
@@ -163,6 +185,7 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
     const { hash, salt } = await hashSecret(pin)
     const newStaff = {
       id: crypto.randomUUID(),
+      tenantId,
       ...input,
       roleId,
       pinHash: hash,
@@ -172,24 +195,37 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
     }
     await db.insert(staff).values(newStaff)
 
-    return c.json(await toStaffResponse(db, newStaff), 201)
+    return c.json(await toStaffResponse(db, tenantId, newStaff), 201)
   })
   .openapi(updateStaffRoute, async (c) => {
     const { id } = c.req.valid('param')
     const { pin, roleId, ...input } = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
-    const existing = await db.select().from(staff).where(eq(staff.id, id)).get()
+    const existing = await db
+      .select()
+      .from(staff)
+      .where(and(eq(staff.id, id), tenantFilter(staff.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個員工' }, 404)
 
-    const role = await db.select().from(roles).where(eq(roles.id, roleId)).get()
+    const role = await db
+      .select()
+      .from(roles)
+      .where(and(eq(roles.id, roleId), tenantFilter(roles.tenantId, tenantId)))
+      .get()
     if (!role) return c.json({ error: '指定的權限群組不存在' }, 404)
 
-    const accountTaken = await db.select().from(staff).where(eq(staff.account, input.account)).get()
+    const accountTaken = await db
+      .select()
+      .from(staff)
+      .where(and(eq(staff.account, input.account), tenantFilter(staff.tenantId, tenantId)))
+      .get()
     if (accountTaken && accountTaken.id !== id) {
       return c.json({ error: '這個帳號已經被其他員工使用' }, 409)
     }
-    if (await wouldLeaveNoRoleAdmin(db, id, roleId)) {
+    if (await wouldLeaveNoRoleAdmin(db, tenantId, id, roleId)) {
       return c.json({ error: '此變更會讓沒有人擁有「設定權限群組」的權限，操作已取消' }, 409)
     }
 
@@ -203,14 +239,19 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
       .set({ ...input, roleId, pinHash: pinFields.hash, pinSalt: pinFields.salt })
       .where(eq(staff.id, id))
 
-    return c.json(await toStaffResponse(db, { id, ...input, roleId }), 200)
+    return c.json(await toStaffResponse(db, tenantId, { id, ...input, roleId }), 200)
   })
   .openapi(deleteStaffRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
-    const existing = await db.select().from(staff).where(eq(staff.id, id)).get()
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(staff)
+      .where(and(eq(staff.id, id), tenantFilter(staff.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個員工' }, 404)
-    if (await wouldLeaveNoRoleAdmin(db, id, null)) {
+    if (await wouldLeaveNoRoleAdmin(db, tenantId, id, null)) {
       return c.json({ error: '此操作會讓沒有人擁有「設定權限群組」的權限，操作已取消' }, 409)
     }
     await db.delete(staff).where(eq(staff.id, id))

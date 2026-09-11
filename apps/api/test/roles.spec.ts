@@ -5,7 +5,13 @@ import { createTestDb } from './helpers/db'
 import { seedRole } from './helpers/roles'
 
 describe('GET /api/roles', () => {
-  it('不需要裝置憑證就能讀取權限群組清單', async () => {
+  it('沒有裝置憑證時拒絕，回傳 401', async () => {
+    const app = createTestApp(createTestDb())
+    const res = await app.request('/api/roles')
+    expect(res.status).toBe(401)
+  })
+
+  it('帶裝置憑證即可讀取權限群組清單', async () => {
     const db = createTestDb()
     await seedRole(db, {
       id: 'role-1',
@@ -13,8 +19,12 @@ describe('GET /api/roles', () => {
       capabilities: ['canCheckOrder'],
       isSystem: true
     })
-    const app = createTestApp(db)
-    const res = await app.request('/api/roles')
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false
+    })
+    const res = await app.request('/api/roles', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([
       { id: 'role-1', name: '值班經理', capabilities: ['canCheckOrder'], isSystem: true }

@@ -143,9 +143,17 @@ describe('POST /api/shifts', () => {
 })
 
 describe('GET /api/shifts/current', () => {
-  it('沒有開帳中的班別時回傳 404', async () => {
+  it('沒有裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/shifts/current')
+    expect(res.status).toBe(401)
+  })
+
+  it('沒有開帳中的班別時回傳 404', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/shifts/current', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     expect(res.status).toBe(404)
   })
 
@@ -164,7 +172,9 @@ describe('GET /api/shifts/current', () => {
         openingFloat: 3000
       })
     })
-    const res = await app.request('/api/shifts/current')
+    const res = await app.request('/api/shifts/current', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     expect(res.status).toBe(200)
     const body = await readJson(res)
     expect(body.status).toBe('open')

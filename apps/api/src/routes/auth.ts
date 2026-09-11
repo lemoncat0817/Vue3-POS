@@ -5,6 +5,8 @@ import { verifySecret } from '../auth/hash'
 import { issueOperatorSession, revokeOperatorSession } from '../auth/operator-session'
 import { roles, staff } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
+import { and } from 'drizzle-orm'
 import type { AppEnv } from '../types'
 
 /** 連續錯誤達此上限後鎖定帳號，防範暴力破解短 PIN。 */
@@ -54,11 +56,16 @@ export const authRoutes = new OpenAPIHono<AppEnv>()
   .openapi(operatorLoginRoute, async (c) => {
     const { account, pin } = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
     // 帳號不存在跟 PIN 錯誤回傳同一句話，不洩漏「這個帳號存不存在」。
     const invalidCredentials = () => c.json({ error: '帳號或 PIN 錯誤' }, 401)
 
-    const row = await db.select().from(staff).where(eq(staff.account, account)).get()
+    const row = await db
+      .select()
+      .from(staff)
+      .where(and(eq(staff.account, account), tenantFilter(staff.tenantId, tenantId)))
+      .get()
     if (!row) {
       return invalidCredentials()
     }
@@ -75,10 +82,12 @@ export const authRoutes = new OpenAPIHono<AppEnv>()
         attempts >= MAX_FAILED_ATTEMPTS
           ? new Date(now.getTime() + LOCKOUT_DURATION_MS).toISOString()
           : null
+      // 用 row.id 鎖定，不是 account 字串——account 唯一性改成按租戶後，
+      // 不同租戶可能有同名帳號，用字串比對會誤更新到別的租戶那筆。
       await db
         .update(staff)
         .set({ failedPinAttempts: attempts, lockedUntil })
-        .where(eq(staff.account, account))
+        .where(eq(staff.id, row.id))
       return invalidCredentials()
     }
 
@@ -86,7 +95,7 @@ export const authRoutes = new OpenAPIHono<AppEnv>()
     await db
       .update(staff)
       .set({ failedPinAttempts: 0, lockedUntil: null })
-      .where(eq(staff.account, account))
+      .where(eq(staff.id, row.id))
 
     // 權限只存在角色身上，登入回應的 capabilities／roleName 是依 roleId 解析出的結果（見 db/schema.ts）。
     const role = await db.select().from(roles).where(eq(roles.id, row.roleId)).get()
@@ -96,7 +105,7 @@ export const authRoutes = new OpenAPIHono<AppEnv>()
     // 請求要帶著它當 X-Operator-Session，伺服端才知道操作的人是誰、有沒有
     // 對應權限（見 middleware/require-capability.ts）——不能再直接信任
     // 用戶端回報的 staffId，那是 GET /api/staff 就查得到的公開資訊。
-    const sessionToken = await issueOperatorSession(db, row.id)
+    const sessionToken = await issueOperatorSession(db, tenantId, row.id)
 
     return c.json(
       operatorLoginResponseSchema.parse({

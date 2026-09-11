@@ -5,6 +5,8 @@ import { generateSecureToken, hashSecret } from '../auth/hash'
 import { devices } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import { requireProvisioningSecret } from '../middleware/require-provisioning-secret'
+import { tenantFilter } from '../db/tenant-scope'
+import { and } from 'drizzle-orm'
 import type { AppEnv } from '../types'
 
 const createDeviceRoute = createRoute({
@@ -77,7 +79,9 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
     const { hash, salt } = await hashSecret(token)
     const newDevice: DeviceRow = {
       id: crypto.randomUUID(),
-      // TODO(多租戶 Phase 5)：從 context 解出實際 tenantId，目前先佔 null。
+      // 這個端點靠 PROVISIONING_SECRET 保護，還沒有裝置身分可以解出 tenantId
+      // ——核發出來的裝置先落在「未分配租戶」的過渡池，Phase 4 的 onboarding
+      // 會改用內部函式直接指定 tenantId，不會經過這支公開端點。
       tenantId: null,
       name: input.name,
       tokenHash: hash,
@@ -91,7 +95,12 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
   })
   .openapi(listDevicesRoute, async (c) => {
     const db = c.get('db')
-    const rows = await db.select().from(devices).all()
+    const tenantId = c.get('tenantId')
+    const rows = await db
+      .select()
+      .from(devices)
+      .where(tenantFilter(devices.tenantId, tenantId))
+      .all()
     return c.json(
       rows.map((row) => toDeviceResponse(row)),
       200
@@ -100,8 +109,13 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
   .openapi(revokeDeviceRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
-    const existing = await db.select().from(devices).where(eq(devices.id, id)).get()
+    const existing = await db
+      .select()
+      .from(devices)
+      .where(and(eq(devices.id, id), tenantFilter(devices.tenantId, tenantId)))
+      .get()
     if (!existing) {
       return c.json({ error: '找不到這個裝置' }, 404)
     }

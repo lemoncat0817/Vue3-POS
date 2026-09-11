@@ -4,12 +4,22 @@ import { createTestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
 
 describe('GET /api/promotions', () => {
-  it('不需要裝置憑證，回傳訂單折價券與快速折扣清單', async () => {
+  it('沒有裝置憑證時拒絕，回傳 401', async () => {
+    const app = createTestApp(createTestDb())
+    const res = await app.request('/api/promotions')
+    expect(res.status).toBe(401)
+  })
+
+  it('帶裝置憑證，回傳訂單折價券與快速折扣清單', async () => {
     const db = createTestDb()
     await seedPromotions(db)
-    const app = createTestApp(db)
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false
+    })
 
-    const res = await app.request('/api/promotions')
+    const res = await app.request('/api/promotions', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     expect(res.status).toBe(200)
     const body = (await res.json()) as {
       orderCoupons: unknown[]
@@ -20,8 +30,12 @@ describe('GET /api/promotions', () => {
   })
 
   it('沒有資料時回傳空陣列（清單可自由增刪，沒有固定筆數限制）', async () => {
-    const app = createTestApp(createTestDb())
-    const res = await app.request('/api/promotions')
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb(), 'test-device', {
+      seedStaff: false
+    })
+    const res = await app.request('/api/promotions', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ orderCoupons: [], quickDiscounts: [] })
   })
@@ -68,7 +82,7 @@ describe('DELETE /api/promotions/order-coupons/:id', () => {
     })
     expect(del.status).toBe(204)
 
-    const list = (await (await app.request('/api/promotions')).json()) as {
+    const list = (await (await app.request('/api/promotions', { headers: { 'X-Device-Token': deviceToken } })).json()) as {
       orderCoupons: Array<{ id: string }>
     }
     expect(list.orderCoupons.find((c) => c.id === 'money-1')).toBeUndefined()
@@ -176,7 +190,7 @@ describe('PUT /api/promotions/quick-discounts/:id', () => {
     const body = (await res.json()) as { id: string; name: string; value: number }
     expect(body).toMatchObject({ id: 'quick-1', name: '常客優惠（調整後）', value: 8 })
 
-    const list = (await (await app.request('/api/promotions')).json()) as {
+    const list = (await (await app.request('/api/promotions', { headers: { 'X-Device-Token': deviceToken } })).json()) as {
       quickDiscounts: Array<{ id: string; name: string }>
     }
     expect(list.quickDiscounts.find((d) => d.id === 'quick-1')).toMatchObject({
@@ -214,7 +228,7 @@ describe('DELETE /api/promotions/quick-discounts/:id', () => {
     })
     expect(res.status).toBe(204)
 
-    const list = (await (await app.request('/api/promotions')).json()) as {
+    const list = (await (await app.request('/api/promotions', { headers: { 'X-Device-Token': deviceToken } })).json()) as {
       quickDiscounts: Array<{ id: string }>
     }
     expect(list.quickDiscounts.find((d) => d.id === 'quick-1')).toBeUndefined()

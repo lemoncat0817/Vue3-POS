@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import {
   createInvoiceTrackRequestSchema,
   invoiceTrackSchema,
@@ -8,6 +8,7 @@ import {
 import { invoiceTracks, orders } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
 /** 電子發票字軌與批次上傳模擬 API。 */
@@ -67,16 +68,26 @@ const submitInvoicesRoute = createRoute({
 export const invoiceRoutes = new OpenAPIHono<AppEnv>()
   .openapi(listTracksRoute, async (c) => {
     const db = c.get('db')
-    const rows = await db.select().from(invoiceTracks).all()
+    const tenantId = c.get('tenantId')
+    const rows = await db
+      .select()
+      .from(invoiceTracks)
+      .where(tenantFilter(invoiceTracks.tenantId, tenantId))
+      .all()
     return c.json(rows, 200)
   })
   .openapi(createTrackRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
-    // 建立新字軌時停用既有字軌，確保同一時間僅單一字軌處於啟用狀態。
-    await db.update(invoiceTracks).set({ isActive: false })
+    const tenantId = c.get('tenantId')
+    // 建立新字軌時停用既有字軌，確保同一租戶同一時間僅單一字軌處於啟用狀態。
+    await db
+      .update(invoiceTracks)
+      .set({ isActive: false })
+      .where(tenantFilter(invoiceTracks.tenantId, tenantId))
     const newTrack = {
       id: crypto.randomUUID(),
+      tenantId,
       ...input,
       currentNumber: input.rangeStart - 1,
       isActive: true
@@ -86,9 +97,14 @@ export const invoiceRoutes = new OpenAPIHono<AppEnv>()
   })
   .openapi(submitInvoicesRoute, async (c) => {
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
     // 模擬批次上傳：目前尚未介接財政部真實憑證，先以更新狀態為 submitted 模擬。
     const submittedAt = new Date().toISOString()
-    const pending = await db.select().from(orders).where(eq(orders.invoiceStatus, 'issued')).all()
+    const pending = await db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.invoiceStatus, 'issued'), tenantFilter(orders.tenantId, tenantId)))
+      .all()
     for (const order of pending) {
       await db
         .update(orders)

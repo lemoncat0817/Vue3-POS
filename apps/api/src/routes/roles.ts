@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import {
   createRoleRequestSchema,
   roleSchema,
@@ -10,6 +10,7 @@ import { roles, staff } from '../db/schema'
 import type { AnyDb } from '../db/types'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
@@ -27,11 +28,16 @@ const errorSchema = z.object({ error: z.string() })
  */
 async function wouldLeaveNoRoleAdmin(
   db: AnyDb,
+  tenantId: string | null,
   roleIdBeingChanged: string,
   nextCapabilities: AuthorityKey[]
 ): Promise<boolean> {
-  const allRoles = await db.select().from(roles).all()
-  const allStaff = await db.select({ roleId: staff.roleId }).from(staff).all()
+  const allRoles = await db.select().from(roles).where(tenantFilter(roles.tenantId, tenantId)).all()
+  const allStaff = await db
+    .select({ roleId: staff.roleId })
+    .from(staff)
+    .where(tenantFilter(staff.tenantId, tenantId))
+    .all()
   const capabilitiesById = new Map(allRoles.map((role) => [role.id, role.capabilities]))
   const currentlyHasAdmin = allStaff.some((row) =>
     capabilitiesById.get(row.roleId)?.includes('canManageRoles')
@@ -47,6 +53,7 @@ async function wouldLeaveNoRoleAdmin(
 const listRolesRoute = createRoute({
   method: 'get',
   path: '/',
+  middleware: [requireDeviceToken] as const,
   responses: {
     200: {
       description: '權限群組清單',
@@ -126,7 +133,8 @@ const deleteRoleRoute = createRoute({
 export const roleRoutes = new OpenAPIHono<AppEnv>()
   .openapi(listRolesRoute, async (c) => {
     const db = c.get('db')
-    const rows = await db.select().from(roles).all()
+    const tenantId = c.get('tenantId')
+    const rows = await db.select().from(roles).where(tenantFilter(roles.tenantId, tenantId)).all()
     return c.json(
       rows.map((row) => roleSchema.parse(row)),
       200
@@ -135,11 +143,16 @@ export const roleRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createRoleRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
-    const nameTaken = await db.select().from(roles).where(eq(roles.name, input.name)).get()
+    const nameTaken = await db
+      .select()
+      .from(roles)
+      .where(and(eq(roles.name, input.name), tenantFilter(roles.tenantId, tenantId)))
+      .get()
     if (nameTaken) return c.json({ error: '此名稱已被使用，請重新輸入' }, 409)
 
-    const newRole = { id: crypto.randomUUID(), ...input, isSystem: false }
+    const newRole = { id: crypto.randomUUID(), tenantId, ...input, isSystem: false }
     await db.insert(roles).values(newRole)
     return c.json(roleSchema.parse(newRole), 201)
   })
@@ -147,18 +160,27 @@ export const roleRoutes = new OpenAPIHono<AppEnv>()
     const { id } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
-    const existing = await db.select().from(roles).where(eq(roles.id, id)).get()
+    const existing = await db
+      .select()
+      .from(roles)
+      .where(and(eq(roles.id, id), tenantFilter(roles.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個權限群組' }, 404)
 
     if (existing.isSystem && input.name !== existing.name) {
       return c.json({ error: '系統內建角色不可改名' }, 409)
     }
-    const nameTaken = await db.select().from(roles).where(eq(roles.name, input.name)).get()
+    const nameTaken = await db
+      .select()
+      .from(roles)
+      .where(and(eq(roles.name, input.name), tenantFilter(roles.tenantId, tenantId)))
+      .get()
     if (nameTaken && nameTaken.id !== id) {
       return c.json({ error: '此名稱已被使用，請重新輸入' }, 409)
     }
-    if (await wouldLeaveNoRoleAdmin(db, id, input.capabilities)) {
+    if (await wouldLeaveNoRoleAdmin(db, tenantId, id, input.capabilities)) {
       return c.json({ error: '此變更會讓沒有人擁有「設定權限群組」的權限，操作已取消' }, 409)
     }
 
@@ -168,8 +190,13 @@ export const roleRoutes = new OpenAPIHono<AppEnv>()
   .openapi(deleteRoleRoute, async (c) => {
     const { id } = c.req.valid('param')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
-    const existing = await db.select().from(roles).where(eq(roles.id, id)).get()
+    const existing = await db
+      .select()
+      .from(roles)
+      .where(and(eq(roles.id, id), tenantFilter(roles.tenantId, tenantId)))
+      .get()
     if (!existing) return c.json({ error: '找不到這個權限群組' }, 404)
     if (existing.isSystem) return c.json({ error: '系統內建角色不可刪除' }, 409)
 

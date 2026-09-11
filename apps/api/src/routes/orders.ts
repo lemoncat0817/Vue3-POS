@@ -29,6 +29,7 @@ import {
 } from '../db/schema'
 import { checkCapability, requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
 
@@ -70,6 +71,7 @@ const createOrderRoute = createRoute({
 const listOrdersRoute = createRoute({
   method: 'get',
   path: '/',
+  middleware: [requireDeviceToken] as const,
   request: { query: listOrdersQuerySchema },
   responses: {
     200: {
@@ -84,6 +86,7 @@ const listOrdersRoute = createRoute({
 const orderSummaryRoute = createRoute({
   method: 'get',
   path: '/summary',
+  middleware: [requireDeviceToken] as const,
   responses: {
     200: {
       description: '訂單 KPI 摘要與服務人員名單',
@@ -254,8 +257,12 @@ function toOrderResponse(
 // 快速折扣由 quick_discounts 表提供，永遠讀當下的值，不會有「後台改了、
 // 送單卻還用舊值」的不一致。清單筆數不固定，找不到某個 quickDiscountId
 // 時 priceLine() 視為未套用（可能是後台送單當下剛好刪掉那一筆）。
-async function loadQuickDiscounts(db: AnyDb): Promise<QuickDiscount[]> {
-  const rows = await db.select().from(quickDiscountsTable).all()
+async function loadQuickDiscounts(db: AnyDb, tenantId: string | null): Promise<QuickDiscount[]> {
+  const rows = await db
+    .select()
+    .from(quickDiscountsTable)
+    .where(tenantFilter(quickDiscountsTable.tenantId, tenantId))
+    .all()
   return rows.map((row) => ({ id: row.id, name: row.name, kind: row.kind, value: row.value }))
 }
 
@@ -291,11 +298,13 @@ async function nextOrderSequence(db: AnyDb, businessDate: string): Promise<numbe
 // 原子核發下一個發票號碼，寫法同 nextOrderSequence()（UPDATE ...
 // RETURNING，單一陳述式保證原子性）。找不到啟用中的字軌、或號碼區間
 // 用完，直接丟錯讓送單失敗——字軌用完卻繼續開發票是違法的。
-async function nextInvoiceNumber(db: AnyDb): Promise<string> {
+async function nextInvoiceNumber(db: AnyDb, tenantId: string | null): Promise<string> {
+  // `IS` 而不是 `=`：tenantId 是 null 時要比對「tenant_id 也是 null」，
+  // SQLite 的 IS 對 NULL 是安全的相等比較，= 遇到 NULL 永遠不成立。
   const row = await db.get<{ trackCode: string; currentNumber: number }>(sql`
     update invoice_tracks
     set current_number = current_number + 1
-    where is_active = 1 and current_number < range_end
+    where is_active = 1 and current_number < range_end and tenant_id is ${tenantId}
     returning track_code as trackCode, current_number as currentNumber
   `)
   if (!row) {
@@ -318,10 +327,18 @@ function toInvoiceCarrier(type: InvoiceCarrier['type'], value: string | null): I
 // 擋下訂單：目前只做「扣減與示警」，真正的超賣防護留待之後需要再做。
 async function deductStock(
   db: AnyDb,
+  tenantId: string | null,
   lines: Pick<OrderLineInput, 'name' | 'count' | 'addList'>[]
 ): Promise<void> {
   for (const line of lines) {
-    const item = await db.select().from(products).where(eq(products.name, line.name)).get()
+    // 用名稱比對回菜單品項（見函式說明），一定要加租戶過濾——不同租戶的
+    // 品項名稱很可能重複（例如 onboarding 種子資料是同一份菜單樣板），
+    // 沒過濾會扣到別的租戶的庫存。
+    const item = await db
+      .select()
+      .from(products)
+      .where(and(eq(products.name, line.name), tenantFilter(products.tenantId, tenantId)))
+      .get()
     if (item && item.stock !== null) {
       await db
         .update(products)
@@ -333,7 +350,7 @@ async function deductStock(
         const addOn = await db
           .select()
           .from(addOnOptions)
-          .where(eq(addOnOptions.name, addOnName))
+          .where(and(eq(addOnOptions.name, addOnName), tenantFilter(addOnOptions.tenantId, tenantId)))
           .get()
         if (addOn && addOn.stock !== null) {
           await db
@@ -352,20 +369,33 @@ const POINTS_PER_CURRENCY_UNIT = 10
 // 確認用戶端送來的 memberId 真的對應存在的會員。orders.memberId 有
 // 外鍵約束，存入無效參照會讓整筆訂單 insert 失敗，因此送單當下先確認，
 // 找不到就當成沒有掛會員（回傳 null）而不是讓整筆訂單失敗。
-async function resolveMemberId(db: AnyDb, memberId: string | undefined): Promise<string | null> {
+async function resolveMemberId(
+  db: AnyDb,
+  tenantId: string | null,
+  memberId: string | undefined
+): Promise<string | null> {
   if (!memberId) return null
-  const member = await db.select().from(members).where(eq(members.id, memberId)).get()
+  const member = await db
+    .select()
+    .from(members)
+    .where(and(eq(members.id, memberId), tenantFilter(members.tenantId, tenantId)))
+    .get()
   return member ? member.id : null
 }
 
 /** 送單成功後，如果這筆訂單掛了會員，依實付金額累加點數。memberId 這裡已經是 resolveMemberId() 確認過存在的。 */
 async function accrueMemberPoints(
   db: AnyDb,
+  tenantId: string | null,
   memberId: string | null,
   orderPaymentPrice: number
 ): Promise<void> {
   if (!memberId) return
-  const member = await db.select().from(members).where(eq(members.id, memberId)).get()
+  const member = await db
+    .select()
+    .from(members)
+    .where(and(eq(members.id, memberId), tenantFilter(members.tenantId, tenantId)))
+    .get()
   if (!member) return
   const earned = Math.floor(orderPaymentPrice / POINTS_PER_CURRENCY_UNIT)
   if (earned <= 0) return
@@ -379,6 +409,7 @@ async function accrueMemberPoints(
 // 信任用戶端算好的數字。折抵後金額不會是負的。
 async function resolveOrderPayment(
   db: AnyDb,
+  tenantId: string | null,
   appliedCoupon: AppliedCoupon,
   orderTotalPrice: number
 ): Promise<{ orderPaymentPrice: number; discountName: string } | { error: string }> {
@@ -388,7 +419,7 @@ async function resolveOrderPayment(
   const coupon = await db
     .select()
     .from(orderCoupons)
-    .where(eq(orderCoupons.id, appliedCoupon.couponId))
+    .where(and(eq(orderCoupons.id, appliedCoupon.couponId), tenantFilter(orderCoupons.tenantId, tenantId)))
     .get()
   if (!coupon) return { error: '找不到這張折價券' }
   const orderPaymentPrice =
@@ -437,11 +468,14 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createOrderRoute, async (c) => {
     const input = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
     const existing = await db
       .select()
       .from(orders)
-      .where(eq(orders.idempotencyKey, input.idempotencyKey))
+      .where(
+        and(eq(orders.idempotencyKey, input.idempotencyKey), tenantFilter(orders.tenantId, tenantId))
+      )
       .get()
     if (existing) {
       const lines = await db
@@ -468,7 +502,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const sequence = await nextOrderSequence(db, input.businessDate)
     const orderId = `${input.businessDate}${sequence}`
 
-    const quickDiscountsNow = await loadQuickDiscounts(db)
+    const quickDiscountsNow = await loadQuickDiscounts(db, tenantId)
     const pricedLines = input.lines.map((line) => {
       const priced = priceLine(
         { price: line.price, count: line.count, addListPrice: line.addListPrice },
@@ -480,7 +514,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
 
     const orderTotalPrice =
       pricedLines.reduce((sum, line) => sum + line.totalPrice, 0) + input.bagCount
-    const payment = await resolveOrderPayment(db, input.appliedCoupon, orderTotalPrice)
+    const payment = await resolveOrderPayment(db, tenantId, input.appliedCoupon, orderTotalPrice)
     if ('error' in payment) {
       return c.json({ error: payment.error }, 400)
     }
@@ -502,16 +536,15 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     // 預期的商業狀況，回 400 顯示清楚錯誤，不是沒說明原因的 500。
     let invoiceNumber: string
     try {
-      invoiceNumber = await nextInvoiceNumber(db)
+      invoiceNumber = await nextInvoiceNumber(db, tenantId)
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : '核發發票號碼失敗' }, 400)
     }
-    const memberId = await resolveMemberId(db, input.memberId)
+    const memberId = await resolveMemberId(db, tenantId, input.memberId)
 
     const newOrder: OrderRow = {
       orderId,
-      // TODO(多租戶 Phase 5)：從 context 解出實際 tenantId，目前先佔 null。
-      tenantId: null,
+      tenantId,
       orderTime,
       orderStatus: '已完成',
       orderChannel: input.orderChannel,
@@ -542,8 +575,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     }
     const newTenders: Omit<OrderTenderRow, 'id'>[] = input.tenders.map((tender, seq) => ({
       orderId,
-      // TODO(多租戶 Phase 5)：從 context 解出實際 tenantId，目前先佔 null。
-      tenantId: null,
+      tenantId,
       seq,
       method: tender.method,
       amount: tender.amount,
@@ -559,8 +591,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     await db.insert(orderTenders).values(newTenders)
     // 只在真的新建立訂單時扣庫存、累加點數；idempotencyKey 命中走上面
     // 提早 return 的路徑，不會重複執行。
-    await deductStock(db, input.lines)
-    await accrueMemberPoints(db, memberId, orderPaymentPrice)
+    await deductStock(db, tenantId, input.lines)
+    await accrueMemberPoints(db, tenantId, memberId, orderPaymentPrice)
 
     const insertedLines = await db
       .select()
@@ -576,8 +608,12 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
   })
   .openapi(listOrdersRoute, async (c) => {
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
     const query = c.req.valid('query')
-    const where = buildOrderFilters(query)
+    const filters = buildOrderFilters(query)
+    const where = filters
+      ? and(filters, tenantFilter(orders.tenantId, tenantId))
+      : tenantFilter(orders.tenantId, tenantId)
 
     // count 跟分頁資料用同一個 where，兩條查詢平行送出；count(*) 是資料庫
     // 端聚合，不會把全表資料拉進 Worker 記憶體。
@@ -651,6 +687,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
   })
   .openapi(orderSummaryRoute, async (c) => {
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
+    const tenantCond = tenantFilter(orders.tenantId, tenantId)
 
     // 全部是資料庫端算總和／計數的聚合查詢，即使訂單量成長到數十萬筆，
     // 傳回 Worker 的也只有幾個數字——完全不把逐筆訂單／退款資料拉進記憶體
@@ -665,6 +703,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
           completedPaymentTotal: sql<number>`sum(case when ${orders.orderStatus} = '已完成' then ${orders.orderPaymentPrice} else 0 end)`
         })
         .from(orders)
+        .where(tenantCond)
         .get(),
       // 只有已完成訂單的退款金額才從營收淨額扣掉，跟前端原本的本機統計
       // 定義一致（已取消訂單本身就沒算進上面的 completedPaymentTotal）。
@@ -672,18 +711,20 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
         .select({ total: sql<number>`coalesce(sum(${orderRefunds.amount}), 0)` })
         .from(orderRefunds)
         .innerJoin(orders, eq(orders.orderId, orderRefunds.orderId))
-        .where(eq(orders.orderStatus, '已完成'))
+        .where(and(eq(orders.orderStatus, '已完成'), tenantCond))
         .get(),
       // 退款筆數統計不分訂單狀態（跟前端原本定義一致），用 having 在資料庫
-      // 端先篩掉退款淨額為 0 的訂單，避免把逐筆退款資料拉回來數。
+      // 端先篩掉退款淨額為 0 的訂單，避免把逐筆退款資料拉回來數。IS 而不是
+      // =：tenantId 可能是 null，語意見 nextInvoiceNumber() 的說明。
       db.get<{ count: number }>(sql`
         select count(*) as count from (
           select ${orderRefunds.orderId} from ${orderRefunds}
+          where ${orderRefunds.tenantId} is ${tenantId}
           group by ${orderRefunds.orderId}
           having sum(${orderRefunds.amount}) > 0
         )
       `),
-      db.select({ staff: orders.staff }).from(orders).groupBy(orders.staff).all()
+      db.select({ staff: orders.staff }).from(orders).where(tenantCond).groupBy(orders.staff).all()
     ])
 
     return c.json(
@@ -702,6 +743,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const { orderId } = c.req.valid('param')
     const { orderStatus, operator, reason } = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
     // 改成「已取消」是作廢，需要 canRefundOrVoid（比照前端的主管二次授權流程，
     // 見 apps/pos/src/views/order/index.vue 的 requestRefundOrVoidApproval）；
@@ -714,7 +756,13 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     if (!capabilityCheck.ok)
       return c.json({ error: capabilityCheck.message }, capabilityCheck.status)
 
-    const existing = await db.select().from(orders).where(eq(orders.orderId, orderId)).get()
+    // orderId 是「營業日＋序號」組成，可預期、可枚舉——一定要靠 tenantId
+    // 過濾，不然任何租戶都能用猜的 orderId 改到別的租戶的訂單狀態。
+    const existing = await db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.orderId, orderId), tenantFilter(orders.tenantId, tenantId)))
+      .get()
     if (!existing) {
       return c.json({ error: '找不到這筆訂單' }, 404)
     }
@@ -759,8 +807,14 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const { orderId } = c.req.valid('param')
     const input = c.req.valid('json')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
-    const existing = await db.select().from(orders).where(eq(orders.orderId, orderId)).get()
+    // orderId 可預期、可枚舉，理由同 updateOrderStatusRoute。
+    const existing = await db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.orderId, orderId), tenantFilter(orders.tenantId, tenantId)))
+      .get()
     if (!existing) {
       return c.json({ error: '找不到這筆訂單' }, 404)
     }
@@ -796,8 +850,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
 
     const newRefund: OrderRefundRow = {
       id: input.refundId,
-      // TODO(多租戶 Phase 5)：從 context 解出實際 tenantId，目前先佔 null。
-      tenantId: null,
+      tenantId,
       orderId,
       amount: input.amount,
       reason: input.reason,
@@ -817,8 +870,14 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
   .openapi(deleteOrderRoute, async (c) => {
     const { orderId } = c.req.valid('param')
     const db = c.get('db')
+    const tenantId = c.get('tenantId')
 
-    const existing = await db.select().from(orders).where(eq(orders.orderId, orderId)).get()
+    // orderId 可預期、可枚舉，理由同 updateOrderStatusRoute。
+    const existing = await db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.orderId, orderId), tenantFilter(orders.tenantId, tenantId)))
+      .get()
     if (!existing) {
       return c.json({ error: '找不到這筆訂單' }, 404)
     }

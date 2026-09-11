@@ -93,7 +93,7 @@ describe('POST /api/orders', () => {
     const body = await readJson(res)
     expect(body.orderChannel).toBe('內用')
 
-    const list = await readJson(await app.request('/api/orders'))
+    const list = await readJson(await app.request('/api/orders', { headers: { 'X-Device-Token': deviceToken } }))
     expect(
       list.items.find((o: { orderId: string }) => o.orderId === body.orderId).orderChannel
     ).toBe('內用')
@@ -372,7 +372,7 @@ describe('POST /api/orders', () => {
     expect(second.status).toBe(200)
     expect(secondBody.orderId).toBe(firstBody.orderId)
 
-    const list = await readJson(await app.request('/api/orders'))
+    const list = await readJson(await app.request('/api/orders', { headers: { 'X-Device-Token': deviceToken } }))
     expect(list.items).toHaveLength(1)
   })
 
@@ -588,9 +588,17 @@ describe('POST /api/orders（訂單層級折價券，伺服端重算折抵金額
 })
 
 describe('GET /api/orders', () => {
-  it('沒有訂單時回傳空清單，分頁統計也是 0', async () => {
+  it('沒有裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/orders')
+    expect(res.status).toBe(401)
+  })
+
+  it('沒有訂單時回傳空清單，分頁統計也是 0', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb(), 'test-device', {
+      seedStaff: false
+    })
+    const res = await app.request('/api/orders', { headers: { 'X-Device-Token': deviceToken } })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       items: [],
@@ -622,7 +630,7 @@ describe('GET /api/orders', () => {
     }
 
     const firstPage = await readJson(
-      await app.request('/api/orders?page=1&pageSize=2')
+      await app.request('/api/orders?page=1&pageSize=2', { headers: { 'X-Device-Token': deviceToken } })
     )
     expect(firstPage.pagination).toEqual({
       page: 1,
@@ -635,7 +643,7 @@ describe('GET /api/orders', () => {
     )
 
     const secondPage = await readJson(
-      await app.request('/api/orders?page=2&pageSize=2')
+      await app.request('/api/orders?page=2&pageSize=2', { headers: { 'X-Device-Token': deviceToken } })
     )
     expect(secondPage.items.map((o: { orderId: string }) => o.orderId)).toEqual([orderIds[0]])
   })
@@ -677,13 +685,17 @@ describe('GET /api/orders', () => {
       )
     })
 
-    const byChannel = await readJson(await app.request('/api/orders?channel=內用'))
+    const byChannel = await readJson(await app.request('/api/orders?channel=內用', { headers: { 'X-Device-Token': deviceToken } }))
     expect(byChannel.items.map((o: { orderId: string }) => o.orderId)).toEqual([dineInId])
 
-    const byPayMethod = await readJson(await app.request('/api/orders?payMethod=信用卡'))
+    const byPayMethod = await readJson(await app.request('/api/orders?payMethod=信用卡', { headers: { 'X-Device-Token': deviceToken } }))
     expect(byPayMethod.items.map((o: { orderId: string }) => o.orderId)).toEqual([dineInId])
 
-    const byKeyword = await readJson(await app.request(`/api/orders?keyword=${dineInId}`))
+    const byKeyword = await readJson(
+      await app.request(`/api/orders?keyword=${dineInId}`, {
+        headers: { 'X-Device-Token': deviceToken }
+      })
+    )
     expect(byKeyword.items.map((o: { orderId: string }) => o.orderId)).toEqual([dineInId])
 
     await app.request(`/api/orders/${dineInId}/status`, {
@@ -695,15 +707,25 @@ describe('GET /api/orders', () => {
       },
       body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '測試' })
     })
-    const byStatus = await readJson(await app.request('/api/orders?status=已取消'))
+    const byStatus = await readJson(await app.request('/api/orders?status=已取消', { headers: { 'X-Device-Token': deviceToken } }))
     expect(byStatus.items.map((o: { orderId: string }) => o.orderId)).toEqual([dineInId])
   })
 })
 
 describe('GET /api/orders/summary', () => {
-  it('沒有訂單時全部是 0，服務人員名單是空陣列', async () => {
+  it('沒有裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/orders/summary')
+    expect(res.status).toBe(401)
+  })
+
+  it('沒有訂單時全部是 0，服務人員名單是空陣列', async () => {
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb(), 'test-device', {
+      seedStaff: false
+    })
+    const res = await app.request('/api/orders/summary', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       totalCount: 0,
@@ -765,7 +787,7 @@ describe('GET /api/orders/summary', () => {
       body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '測試' })
     })
 
-    const summary = await readJson(await app.request('/api/orders/summary'))
+    const summary = await readJson(await app.request('/api/orders/summary', { headers: { 'X-Device-Token': deviceToken } }))
     expect(summary.totalCount).toBe(2)
     expect(summary.completedCount).toBe(1)
     expect(summary.voidCount).toBe(1)
@@ -956,7 +978,7 @@ describe('PATCH /api/orders/:orderId/status', () => {
     expect(body.voidedBy).toBe('店長 - Lemon')
     expect(body.voidedAt).toEqual(expect.any(String))
 
-    const list = await readJson(await app.request('/api/orders'))
+    const list = await readJson(await app.request('/api/orders', { headers: { 'X-Device-Token': deviceToken } }))
     expect(list.items.find((o: { orderId: string }) => o.orderId === orderId).orderStatus).toBe('已取消')
   })
 
@@ -1227,7 +1249,7 @@ describe('DELETE /api/orders/:orderId', () => {
     })
     expect(res.status).toBe(204)
 
-    const list = await readJson(await app.request('/api/orders'))
+    const list = await readJson(await app.request('/api/orders', { headers: { 'X-Device-Token': deviceToken } }))
     expect(list.items.find((o: { orderId: string }) => o.orderId === orderId)).toBeUndefined()
   })
 

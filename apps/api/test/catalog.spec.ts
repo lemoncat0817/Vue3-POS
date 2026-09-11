@@ -33,8 +33,10 @@ describe('GET /api/catalog', () => {
     await db.insert(productModifierGroups).values([{ productId: 'i1', groupId: 'mg1' }])
     await db.insert(addOnOptions).values([{ id: 'a1', name: '加起司', price: 20 }])
 
-    const app = createTestApp(db)
-    const res = await app.request('/api/catalog')
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false
+    })
+    const res = await app.request('/api/catalog', { headers: { 'X-Device-Token': deviceToken } })
     expect(res.status).toBe(200)
 
     const body = await res.json()
@@ -75,8 +77,10 @@ describe('GET /api/catalog', () => {
   })
 
   it('沒有資料時回傳空陣列，不是錯誤', async () => {
-    const app = createTestApp(createTestDb())
-    const res = await app.request('/api/catalog')
+    const { app, deviceToken } = await createTestAppWithDevice(createTestDb(), 'test-device', {
+      seedStaff: false
+    })
+    const res = await app.request('/api/catalog', { headers: { 'X-Device-Token': deviceToken } })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       categories: [],
@@ -84,6 +88,12 @@ describe('GET /api/catalog', () => {
       modifierGroups: [],
       addOns: []
     })
+  })
+
+  it('沒有裝置憑證時拒絕，回傳 401', async () => {
+    const app = createTestApp(createTestDb())
+    const res = await app.request('/api/catalog')
+    expect(res.status).toBe(401)
   })
 })
 
@@ -254,7 +264,7 @@ describe('菜單管理寫入 API', () => {
     })
     expect(updateRes.status).toBe(200)
 
-    const afterUpdate = await readJson(await app.request('/api/catalog'))
+    const afterUpdate = await readJson(await app.request('/api/catalog', { headers: { 'X-Device-Token': deviceToken } }))
     expect(afterUpdate.products[0]).toEqual({
       id: item.id,
       categoryId: category.id,
@@ -270,7 +280,7 @@ describe('菜單管理寫入 API', () => {
     })
     expect(deleteRes.status).toBe(204)
 
-    const afterDelete = await readJson(await app.request('/api/catalog'))
+    const afterDelete = await readJson(await app.request('/api/catalog', { headers: { 'X-Device-Token': deviceToken } }))
     expect(afterDelete.products).toEqual([])
   })
 
@@ -322,7 +332,7 @@ describe('菜單管理寫入 API', () => {
     })
     expect(deleteRes.status).toBe(204)
 
-    const after = await readJson(await app.request('/api/catalog'))
+    const after = await readJson(await app.request('/api/catalog', { headers: { 'X-Device-Token': deviceToken } }))
     expect(after.modifierGroups).toEqual([])
   })
 
@@ -358,7 +368,7 @@ describe('菜單管理寫入 API', () => {
     })
     expect(deleteRes.status).toBe(204)
 
-    const after = await readJson(await app.request('/api/catalog'))
+    const after = await readJson(await app.request('/api/catalog', { headers: { 'X-Device-Token': deviceToken } }))
     expect(after.addOns).toEqual([])
   })
 })
