@@ -24,17 +24,54 @@ import type {
 // D1（SQLite）資料表定義。型別刻意用乾淨的 number／boolean／JSON，不照搬
 // apps/pos 現行因表單輸入而混用的型別（FormNumeric、'none' 字面值）。
 
+// ---------- 帳號與租戶 ----------
+
+// OAuth 登入身分（Google／GitHub）。一筆 users 即一個租戶邊界，下方所有業務表的
+// tenantId 都指向這裡的 id——不另外設 tenants 表，1 帳號＝1 租戶。同一個 email
+// 分別用 Google、GitHub 登入目前視為兩個不同帳號，不做跨 provider 合併。
+export const users = sqliteTable(
+  'users',
+  {
+    id: text('id').primaryKey(),
+    provider: text('provider').$type<'google' | 'github'>().notNull(),
+    providerAccountId: text('provider_account_id').notNull(),
+    email: text('email').notNull(),
+    displayName: text('display_name').notNull(),
+    avatarUrl: text('avatar_url'),
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(current_timestamp)`)
+  },
+  (table) => [uniqueIndex('users_provider_account_idx').on(table.provider, table.providerAccountId)]
+)
+
+// OAuth 登入後核發的瀏覽器 session，做法比照 operatorSessions／devices：明碼
+// 只在核發當下回傳一次（存進 httpOnly cookie），之後只存雜湊值＋鹽。
+export const webSessions = sqliteTable('web_sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id),
+  tokenHash: text('token_hash').notNull(),
+  tokenSalt: text('token_salt').notNull(),
+  createdAt: text('created_at').notNull(),
+  expiresAt: text('expires_at').notNull(),
+  revokedAt: text('revoked_at')
+})
+
 // ---------- 菜單 ----------
 // 不綁定單一餐飲品類：品項只有一個底價，客製化選項（尺寸、甜度、熟度……）
 // 一律透過可重複掛用的規格群組（modifierGroups）表達，見 @pos/contract 的說明。
 
 export const categories = sqliteTable('categories', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   name: text('name').notNull()
 })
 
 export const products = sqliteTable('products', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   categoryId: text('category_id')
     .notNull()
     .references(() => categories.id),
@@ -46,6 +83,7 @@ export const products = sqliteTable('products', {
 
 export const modifierGroups = sqliteTable('modifier_groups', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   name: text('name').notNull(),
   selectionType: text('selection_type').$type<ModifierSelectionType>().notNull(),
   required: integer('required', { mode: 'boolean' }).notNull()
@@ -53,6 +91,7 @@ export const modifierGroups = sqliteTable('modifier_groups', {
 
 export const modifierOptions = sqliteTable('modifier_options', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   groupId: text('group_id')
     .notNull()
     .references(() => modifierGroups.id),
@@ -64,6 +103,7 @@ export const modifierOptions = sqliteTable('modifier_options', {
 export const productModifierGroups = sqliteTable(
   'product_modifier_groups',
   {
+    tenantId: text('tenant_id').references(() => users.id),
     productId: text('product_id')
       .notNull()
       .references(() => products.id),
@@ -76,6 +116,7 @@ export const productModifierGroups = sqliteTable(
 
 export const addOnOptions = sqliteTable('add_on_options', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   name: text('name').notNull(),
   price: integer('price').notNull(),
   stock: integer('stock')
@@ -88,6 +129,7 @@ export const addOnOptions = sqliteTable('add_on_options', {
 // 拆成 money_coupons／percent_coupons 兩張表的設計。
 export const orderCoupons = sqliteTable('order_coupons', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   name: text('name').notNull(),
   kind: text('kind').$type<QuickDiscountKind>().notNull(),
   value: real('value').notNull()
@@ -97,6 +139,7 @@ export const orderCoupons = sqliteTable('order_coupons', {
 // 刪除任意筆數（見 @pos/domain 的 QuickDiscount），不再是固定 slot 的表。
 export const quickDiscounts = sqliteTable('quick_discounts', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   name: text('name').notNull(),
   kind: text('kind').$type<QuickDiscountKind>().notNull(),
   value: real('value').notNull()
@@ -109,6 +152,7 @@ export const quickDiscounts = sqliteTable('quick_discounts', {
 // 不刪除紀錄以保留稽核軌跡。
 export const devices = sqliteTable('devices', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   name: text('name').notNull(),
   tokenHash: text('token_hash').notNull(),
   tokenSalt: text('token_salt').notNull(),
@@ -128,10 +172,14 @@ export const roles = sqliteTable(
   'roles',
   {
     id: text('id').primaryKey(),
+    tenantId: text('tenant_id').references(() => users.id),
     name: text('name').notNull(),
     capabilities: text('capabilities', { mode: 'json' }).$type<AuthorityKey[]>().notNull(),
     isSystem: integer('is_system', { mode: 'boolean' }).notNull().default(false)
   },
+  // 暫時維持單欄唯一索引：改成 (tenantId, name) 複合鍵要等 Phase 5 把既有
+  // 資料回填成真正的租戶 id 才能做——tenantId 目前全是 NULL，SQLite 的
+  // UNIQUE 索引視 NULL 互不相等，複合鍵在這個階段等於沒有保護作用。
   (table) => [uniqueIndex('roles_name_idx').on(table.name)]
 )
 
@@ -139,6 +187,7 @@ export const staff = sqliteTable(
   'staff',
   {
     id: text('id').primaryKey(),
+    tenantId: text('tenant_id').references(() => users.id),
     name: text('name').notNull(),
     jobTitle: text('job_title').notNull(),
     account: text('account').notNull(),
@@ -154,6 +203,8 @@ export const staff = sqliteTable(
     failedPinAttempts: integer('failed_pin_attempts').notNull().default(0),
     lockedUntil: text('locked_until')
   },
+  // 暫時維持單欄唯一索引，理由同 roles_name_idx——複合鍵留到 Phase 5 回填
+  // 真正的租戶 id 之後再引入。
   (table) => [uniqueIndex('staff_account_idx').on(table.account)]
 )
 
@@ -164,6 +215,7 @@ export const staff = sqliteTable(
 // 已被撤銷，過期則看 expiresAt，兩者都不刪除紀錄以保留稽核軌跡。
 export const operatorSessions = sqliteTable('operator_sessions', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   staffId: text('staff_id')
     .notNull()
     .references(() => staff.id),
@@ -178,6 +230,7 @@ export const operatorSessions = sqliteTable('operator_sessions', {
 // （自由字串）是不同的東西，這張表只影響付款面板要顯示哪些選項。
 export const paymentMethods = sqliteTable('payment_methods', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   name: text('name').notNull(),
   disabled: integer('disabled', { mode: 'boolean' }).notNull(),
   useMethod: text('use_method').$type<PaymentUseMethod>().notNull()
@@ -189,6 +242,7 @@ export const orders = sqliteTable(
   'orders',
   {
     orderId: text('order_id').primaryKey(),
+    tenantId: text('tenant_id').references(() => users.id),
     orderTime: text('order_time').notNull(),
     orderStatus: text('order_status').$type<OrderStatus>().notNull(),
     // 預設 '外帶' 只用於補齊此欄位上線前的歷史訂單，新訂單一律由前端明確帶入。
@@ -235,10 +289,9 @@ export const orders = sqliteTable(
     note: text('note')
   },
   (table) => [
+    // 暫時維持單欄唯一索引與單欄索引，理由同 roles_name_idx——複合鍵／
+    // 複合索引留到 Phase 5 回填真正的租戶 id 之後再引入。
     uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey),
-    // 訂單列表頁預設依時間排序分頁，狀態是最常用的快捷篩選（見
-    // views/order/index.vue 的狀態快捷鍵），兩者都用全表掃描的話分頁
-    // 毫無意義，因此各建一個索引。
     index('orders_order_time_idx').on(table.orderTime),
     index('orders_order_status_idx').on(table.orderStatus)
   ]
@@ -251,6 +304,7 @@ export const members = sqliteTable(
   'members',
   {
     id: text('id').primaryKey(),
+    tenantId: text('tenant_id').references(() => users.id),
     name: text('name').notNull(),
     phone: text('phone').notNull(),
     // 訂單完成時依應付金額累加，只存目前累積值，不記逐筆異動明細。
@@ -259,6 +313,8 @@ export const members = sqliteTable(
       .notNull()
       .default(sql`(current_timestamp)`)
   },
+  // 暫時維持單欄唯一索引，理由同 roles_name_idx——複合鍵留到 Phase 5 回填
+  // 真正的租戶 id 之後再引入。
   (table) => [uniqueIndex('members_phone_idx').on(table.phone)]
 )
 
@@ -266,7 +322,10 @@ export const members = sqliteTable(
 // ... RETURNING` 在單一陳述式內完成「讀當前值、加一、寫回」，避免兩台
 // 終端幾乎同時送單時算出相同序號、後 insert 者因主鍵衝突失敗（見
 // routes/orders.ts 的 nextOrderSequence()）。
+// tenantId 先當一般欄位加，主鍵暫時維持 businessDate 單欄，理由同 roles_name_idx
+// ——改成 (tenantId, businessDate) 複合主鍵要等 Phase 5 回填真正的租戶 id。
 export const orderSequences = sqliteTable('order_sequences', {
+  tenantId: text('tenant_id').references(() => users.id),
   businessDate: text('business_date').primaryKey(),
   counter: integer('counter').notNull()
 })
@@ -275,13 +334,15 @@ export const orderSequences = sqliteTable('order_sequences', {
 // 已被下方 invoiceTracks 取代，表留著不刪但新的 nextInvoiceNumber() 不再讀寫它。
 export const invoiceSequences = sqliteTable('invoice_sequences', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   counter: integer('counter').notNull()
 })
 
 // 電子發票字軌。真正的字軌由財政部核發、商家申請取得，這裡設計成後台
-// 手動輸入的設定資料。同時間只會有一個字軌 isActive。
+// 手動輸入的設定資料。同時間每個租戶各自只會有一個字軌 isActive。
 export const invoiceTracks = sqliteTable('invoice_tracks', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   trackCode: text('track_code').notNull(),
   periodLabel: text('period_label').notNull(),
   rangeStart: integer('range_start').notNull(),
@@ -294,6 +355,7 @@ export const orderLines = sqliteTable(
   'order_lines',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => users.id),
     orderId: text('order_id')
       .notNull()
       .references(() => orders.orderId),
@@ -322,6 +384,7 @@ export const orderTenders = sqliteTable(
   'order_tenders',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => users.id),
     orderId: text('order_id')
       .notNull()
       .references(() => orders.orderId),
@@ -342,6 +405,7 @@ export const orderRefunds = sqliteTable(
   'order_refunds',
   {
     id: text('id').primaryKey(),
+    tenantId: text('tenant_id').references(() => users.id),
     orderId: text('order_id')
       .notNull()
       .references(() => orders.orderId),
@@ -358,6 +422,7 @@ export const orderRefunds = sqliteTable(
 // 用戶端開帳當下用 ULID 產生並送入，同一個 id 重送會拿回同一筆班別。
 export const shifts = sqliteTable('shifts', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   status: text('status').$type<'open' | 'closed'>().notNull(),
   openedBy: text('opened_by').notNull(),
   openedAt: text('opened_at').notNull(),
@@ -375,6 +440,7 @@ export const shifts = sqliteTable('shifts', {
 /** 班別期間的現金異動（中途提現／存入），見 @pos/domain 的 summarizeShiftCash()。 */
 export const cashMovements = sqliteTable('cash_movements', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  tenantId: text('tenant_id').references(() => users.id),
   shiftId: text('shift_id')
     .notNull()
     .references(() => shifts.id),
@@ -399,6 +465,7 @@ export const rateLimitCounters = sqliteTable('rate_limit_counters', {
 // 稽核紀錄，取代原本只印在瀏覽器主控台的做法（分頁關閉紀錄就消失）。
 export const auditLogs = sqliteTable('audit_logs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  tenantId: text('tenant_id').references(() => users.id),
   action: text('action').$type<AuditLogAction>().notNull(),
   operator: text('operator').notNull(),
   detail: text('detail').notNull(),
@@ -411,6 +478,7 @@ export const auditLogs = sqliteTable('audit_logs', {
 // tableNumber 不設唯一索引：允許重複命名比用資料庫限制擋住更適合後台自訂命名習慣。
 export const diningTables = sqliteTable('dining_tables', {
   id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
   tableNumber: text('table_number').notNull(),
   seats: integer('seats').notNull(),
   status: text('status').$type<TableStatus>().notNull().default('empty'),
@@ -418,6 +486,8 @@ export const diningTables = sqliteTable('dining_tables', {
 })
 
 export const schema = {
+  users,
+  webSessions,
   categories,
   products,
   modifierGroups,

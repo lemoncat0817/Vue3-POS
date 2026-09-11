@@ -202,6 +202,8 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
 
     const newShift: ShiftRow = {
       id: input.shiftId,
+      // TODO(多租戶 Phase 5)：從 context 解出實際 tenantId，目前先佔 null。
+      tenantId: null,
       status: 'open',
       openedBy: input.operator,
       openedAt: new Date().toISOString(),

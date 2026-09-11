@@ -510,6 +510,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
 
     const newOrder: OrderRow = {
       orderId,
+      // TODO(多租戶 Phase 5)：從 context 解出實際 tenantId，目前先佔 null。
+      tenantId: null,
       orderTime,
       orderStatus: '已完成',
       orderChannel: input.orderChannel,
@@ -540,6 +542,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     }
     const newTenders: Omit<OrderTenderRow, 'id'>[] = input.tenders.map((tender, seq) => ({
       orderId,
+      // TODO(多租戶 Phase 5)：從 context 解出實際 tenantId，目前先佔 null。
+      tenantId: null,
       seq,
       method: tender.method,
       amount: tender.amount,
@@ -792,6 +796,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
 
     const newRefund: OrderRefundRow = {
       id: input.refundId,
+      // TODO(多租戶 Phase 5)：從 context 解出實際 tenantId，目前先佔 null。
+      tenantId: null,
       orderId,
       amount: input.amount,
       reason: input.reason,

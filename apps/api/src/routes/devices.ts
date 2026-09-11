@@ -77,6 +77,8 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
     const { hash, salt } = await hashSecret(token)
     const newDevice: DeviceRow = {
       id: crypto.randomUUID(),
+      // TODO(多租戶 Phase 5)：從 context 解出實際 tenantId，目前先佔 null。
+      tenantId: null,
       name: input.name,
       tokenHash: hash,
       tokenSalt: salt,
