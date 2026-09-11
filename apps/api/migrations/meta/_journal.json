@@ -183,6 +183,13 @@
       "when": 1789060465036,
       "tag": "0025_add_operator_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1789097383002,
+      "tag": "0026_sweet_frightful_four",
+      "breakpoints": true
     }
   ]
 }

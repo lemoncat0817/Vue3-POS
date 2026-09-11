@@ -224,7 +224,9 @@ describe('GET /api/members/:id、PUT、DELETE', () => {
         headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
       })
     )
-    const persistedOrder = list.find((item: { orderId: string }) => item.orderId === order.orderId)
+    const persistedOrder = list.items.find(
+      (item: { orderId: string }) => item.orderId === order.orderId
+    )
     expect(persistedOrder).toBeDefined()
     expect(persistedOrder.memberId).toBeNull()
   })

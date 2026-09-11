@@ -1,5 +1,13 @@
 import { sql } from 'drizzle-orm'
-import { integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import {
+  index,
+  integer,
+  primaryKey,
+  real,
+  sqliteTable,
+  text,
+  uniqueIndex
+} from 'drizzle-orm/sqlite-core'
 import type {
   AuditLogAction,
   AuthorityKey,
@@ -226,7 +234,14 @@ export const orders = sqliteTable(
     // 訂單備註（外送地址、取件時間、客製化需求等），純文字紀錄用途，伺服端不解析內容。
     note: text('note')
   },
-  (table) => [uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey)]
+  (table) => [
+    uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey),
+    // 訂單列表頁預設依時間排序分頁，狀態是最常用的快捷篩選（見
+    // views/order/index.vue 的狀態快捷鍵），兩者都用全表掃描的話分頁
+    // 毫無意義，因此各建一個索引。
+    index('orders_order_time_idx').on(table.orderTime),
+    index('orders_order_status_idx').on(table.orderStatus)
+  ]
 )
 
 // ---------- 會員與顧客經營 ----------
@@ -275,54 +290,68 @@ export const invoiceTracks = sqliteTable('invoice_tracks', {
   isActive: integer('is_active', { mode: 'boolean' }).notNull()
 })
 
-export const orderLines = sqliteTable('order_lines', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  orderId: text('order_id')
-    .notNull()
-    .references(() => orders.orderId),
-  name: text('name').notNull(),
-  price: integer('price').notNull(),
-  count: integer('count').notNull(),
-  discount: integer('discount').notNull(),
-  addList: text('add_list', { mode: 'json' }).$type<string | string[]>().notNull(),
-  addListPrice: integer('add_list_price').notNull(),
-  totalPrice: integer('total_price').notNull(),
-  freeDiscount: integer('free_discount', { mode: 'boolean' }).notNull(),
-  // 套用哪一筆快速折扣，沒套用是 null；name 是下單當下的名稱快照，避免
-  // 後台之後改名或刪除該筆快速折扣時，歷史訂單的顯示跟著跑掉。
-  quickDiscountId: text('quick_discount_id'),
-  quickDiscountName: text('quick_discount_name').notNull().default('')
-})
+export const orderLines = sqliteTable(
+  'order_lines',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    orderId: text('order_id')
+      .notNull()
+      .references(() => orders.orderId),
+    name: text('name').notNull(),
+    price: integer('price').notNull(),
+    count: integer('count').notNull(),
+    discount: integer('discount').notNull(),
+    addList: text('add_list', { mode: 'json' }).$type<string | string[]>().notNull(),
+    addListPrice: integer('add_list_price').notNull(),
+    totalPrice: integer('total_price').notNull(),
+    freeDiscount: integer('free_discount', { mode: 'boolean' }).notNull(),
+    // 套用哪一筆快速折扣，沒套用是 null；name 是下單當下的名稱快照，避免
+    // 後台之後改名或刪除該筆快速折扣時，歷史訂單的顯示跟著跑掉。
+    quickDiscountId: text('quick_discount_id'),
+    quickDiscountName: text('quick_discount_name').notNull().default('')
+  },
+  // 訂單列表頁分頁後，每頁只用 orderId IN (...) 撈這頁的明細，不再是
+  // 整表撈出來在記憶體 join，FK 欄位沒有索引的話這個查詢一樣是全表掃描。
+  (table) => [index('order_lines_order_id_idx').on(table.orderId)]
+)
 
 // 一筆訂單實際收到的每一筆支付，取代舊的 orders.orderPayment 單一字串
 // （無法表達「現金 300 + 行動支付找零」這種混合收款）。receivedAmount
 // 只在需要找零時才有值，為 null 代表這筆 tender 剛好付清、沒有找零。
-export const orderTenders = sqliteTable('order_tenders', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  orderId: text('order_id')
-    .notNull()
-    .references(() => orders.orderId),
-  // 顯示順序（對應使用者在付款面板加入 tender 的順序），不是主鍵。
-  seq: integer('seq').notNull(),
-  method: text('method').notNull(),
-  amount: integer('amount').notNull(),
-  receivedAmount: integer('received_amount')
-})
+export const orderTenders = sqliteTable(
+  'order_tenders',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    orderId: text('order_id')
+      .notNull()
+      .references(() => orders.orderId),
+    // 顯示順序（對應使用者在付款面板加入 tender 的順序），不是主鍵。
+    seq: integer('seq').notNull(),
+    method: text('method').notNull(),
+    amount: integer('amount').notNull(),
+    receivedAmount: integer('received_amount')
+  },
+  (table) => [index('order_tenders_order_id_idx').on(table.orderId)]
+)
 
 // 訂單的退款紀錄，跟作廢（orders.voidReason 那組欄位）是不同概念：作廢
 // 代表整筆訂單不算數，退款代表訂單仍「已完成」、只是退了部分或全部的錢
 // ——同一筆訂單可以有多筆退款。id 用 ULID，理由同 orders.idempotencyKey：
 // 同一個 id 重送不會建立第二筆。
-export const orderRefunds = sqliteTable('order_refunds', {
-  id: text('id').primaryKey(),
-  orderId: text('order_id')
-    .notNull()
-    .references(() => orders.orderId),
-  amount: integer('amount').notNull(),
-  reason: text('reason').notNull(),
-  operator: text('operator').notNull(),
-  at: text('at').notNull()
-})
+export const orderRefunds = sqliteTable(
+  'order_refunds',
+  {
+    id: text('id').primaryKey(),
+    orderId: text('order_id')
+      .notNull()
+      .references(() => orders.orderId),
+    amount: integer('amount').notNull(),
+    reason: text('reason').notNull(),
+    operator: text('operator').notNull(),
+    at: text('at').notNull()
+  },
+  (table) => [index('order_refunds_order_id_idx').on(table.orderId)]
+)
 
 // 班別。單店單機情境下同一時間全店只允許一筆 status='open' 的班別，這條
 // 規則在 routes/shifts.ts 用查詢檢查，不是資料庫層 constraint。id 由

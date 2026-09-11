@@ -94,9 +94,9 @@ describe('POST /api/orders', () => {
     expect(body.orderChannel).toBe('內用')
 
     const list = await readJson(await app.request('/api/orders'))
-    expect(list.find((o: { orderId: string }) => o.orderId === body.orderId).orderChannel).toBe(
-      '內用'
-    )
+    expect(
+      list.items.find((o: { orderId: string }) => o.orderId === body.orderId).orderChannel
+    ).toBe('內用')
   })
 
   it('內用桌號原封不動存回並回傳，純紀錄用途', async () => {
@@ -373,7 +373,7 @@ describe('POST /api/orders', () => {
     expect(secondBody.orderId).toBe(firstBody.orderId)
 
     const list = await readJson(await app.request('/api/orders'))
-    expect(list).toHaveLength(1)
+    expect(list.items).toHaveLength(1)
   })
 
   it('lines 是空陣列時回傳 400', async () => {
@@ -588,11 +588,191 @@ describe('POST /api/orders（訂單層級折價券，伺服端重算折抵金額
 })
 
 describe('GET /api/orders', () => {
-  it('沒有訂單時回傳空陣列', async () => {
+  it('沒有訂單時回傳空清單，分頁統計也是 0', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/orders')
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual([])
+    expect(await res.json()).toEqual({
+      items: [],
+      pagination: { page: 1, pageSize: 20, totalCount: 0, totalPages: 1 }
+    })
+  })
+
+  it('預設依訂單時間新到舊排序，page/pageSize 正確分頁', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const idempotencyKeys = [
+      '01ARZ3NDEKTSV4RRFFQ69G5FA1',
+      '01ARZ3NDEKTSV4RRFFQ69G5FA2',
+      '01ARZ3NDEKTSV4RRFFQ69G5FA3'
+    ]
+    const orderIds: string[] = []
+    for (const idempotencyKey of idempotencyKeys) {
+      const res = await app.request('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Token': deviceToken,
+          'X-Operator-Session': sessionToken
+        },
+        body: JSON.stringify(buildRequest({ idempotencyKey }))
+      })
+      orderIds.push((await readJson(res)).orderId)
+    }
+
+    const firstPage = await readJson(
+      await app.request('/api/orders?page=1&pageSize=2')
+    )
+    expect(firstPage.pagination).toEqual({
+      page: 1,
+      pageSize: 2,
+      totalCount: 3,
+      totalPages: 2
+    })
+    expect(firstPage.items.map((o: { orderId: string }) => o.orderId)).toEqual(
+      [orderIds[2], orderIds[1]]
+    )
+
+    const secondPage = await readJson(
+      await app.request('/api/orders?page=2&pageSize=2')
+    )
+    expect(secondPage.items.map((o: { orderId: string }) => o.orderId)).toEqual([orderIds[0]])
+  })
+
+  it('依訂單狀態、通路、服務人員、付款方式、關鍵字篩選', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+
+    const dineIn = await app.request('/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify(
+        buildRequest({
+          idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB1',
+          orderChannel: '內用',
+          tenders: [{ method: '信用卡', amount: 160 }]
+        })
+      )
+    })
+    const dineInId = (await readJson(dineIn)).orderId
+    await app.request('/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify(
+        buildRequest({
+          idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB2',
+          orderChannel: '外帶',
+          tenders: [{ method: '現金', amount: 160 }]
+        })
+      )
+    })
+
+    const byChannel = await readJson(await app.request('/api/orders?channel=內用'))
+    expect(byChannel.items.map((o: { orderId: string }) => o.orderId)).toEqual([dineInId])
+
+    const byPayMethod = await readJson(await app.request('/api/orders?payMethod=信用卡'))
+    expect(byPayMethod.items.map((o: { orderId: string }) => o.orderId)).toEqual([dineInId])
+
+    const byKeyword = await readJson(await app.request(`/api/orders?keyword=${dineInId}`))
+    expect(byKeyword.items.map((o: { orderId: string }) => o.orderId)).toEqual([dineInId])
+
+    await app.request(`/api/orders/${dineInId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '測試' })
+    })
+    const byStatus = await readJson(await app.request('/api/orders?status=已取消'))
+    expect(byStatus.items.map((o: { orderId: string }) => o.orderId)).toEqual([dineInId])
+  })
+})
+
+describe('GET /api/orders/summary', () => {
+  it('沒有訂單時全部是 0，服務人員名單是空陣列', async () => {
+    const app = createTestApp(createTestDb())
+    const res = await app.request('/api/orders/summary')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      totalCount: 0,
+      totalRevenue: 0,
+      completedCount: 0,
+      voidCount: 0,
+      refundCount: 0,
+      staffNames: []
+    })
+  })
+
+  it('營收淨額只計入已完成訂單，並扣除已完成訂單的退款；作廢訂單不影響營收', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+
+    const completed = await app.request('/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FC1' }))
+    })
+    const completedId = (await readJson(completed)).orderId
+    await app.request(`/api/orders/${completedId}/refunds`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({
+        refundId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+        amount: 60,
+        reason: '少一杯',
+        operator: '店長 - Lemon'
+      })
+    })
+
+    const voided = await app.request('/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify(buildRequest({ idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FC2' }))
+    })
+    const voidedId = (await readJson(voided)).orderId
+    await app.request(`/api/orders/${voidedId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '測試' })
+    })
+
+    const summary = await readJson(await app.request('/api/orders/summary'))
+    expect(summary.totalCount).toBe(2)
+    expect(summary.completedCount).toBe(1)
+    expect(summary.voidCount).toBe(1)
+    expect(summary.refundCount).toBe(1)
+    // 已完成訂單應付 160，退款 60 → 淨營收 100；作廢訂單的 160 不計入。
+    expect(summary.totalRevenue).toBe(100)
+    expect(summary.staffNames).toEqual(['店長 - Lemon'])
   })
 })
 
@@ -777,7 +957,7 @@ describe('PATCH /api/orders/:orderId/status', () => {
     expect(body.voidedAt).toEqual(expect.any(String))
 
     const list = await readJson(await app.request('/api/orders'))
-    expect(list.find((o: { orderId: string }) => o.orderId === orderId).orderStatus).toBe('已取消')
+    expect(list.items.find((o: { orderId: string }) => o.orderId === orderId).orderStatus).toBe('已取消')
   })
 
   it('作廢一筆訂單後又改回已完成，撤銷作廢，voidReason 等欄位清空', async () => {
@@ -875,7 +1055,7 @@ describe('POST /api/orders/:orderId/refunds（退款／作廢）', () => {
         headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
       })
     )
-    const order = created.find((o: { orderId: string }) => o.orderId === orderId)
+    const order = created.items.find((o: { orderId: string }) => o.orderId === orderId)
 
     const res = await app.request(`/api/orders/${orderId}/refunds`, {
       method: 'POST',
@@ -952,7 +1132,7 @@ describe('POST /api/orders/:orderId/refunds（退款／作廢）', () => {
         headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
       })
     )
-    const order = created.find((o: { orderId: string }) => o.orderId === orderId)
+    const order = created.items.find((o: { orderId: string }) => o.orderId === orderId)
 
     const res = await app.request(`/api/orders/${orderId}/refunds`, {
       method: 'POST',
@@ -1048,7 +1228,7 @@ describe('DELETE /api/orders/:orderId', () => {
     expect(res.status).toBe(204)
 
     const list = await readJson(await app.request('/api/orders'))
-    expect(list.find((o: { orderId: string }) => o.orderId === orderId)).toBeUndefined()
+    expect(list.items.find((o: { orderId: string }) => o.orderId === orderId)).toBeUndefined()
   })
 
   it('訂單不存在時回傳 404', async () => {

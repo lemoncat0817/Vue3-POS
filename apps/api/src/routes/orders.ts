@@ -1,13 +1,17 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { eq, sql } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, like, lte, sql } from 'drizzle-orm'
 import {
   createOrderRequestSchema,
+  listOrdersQuerySchema,
+  orderListResponseSchema,
   orderSchema,
   orderStatusSchema,
+  orderSummarySchema,
   refundInputSchema,
   type AppliedCoupon,
   type InvoiceCarrier,
   type InvoiceStatus,
+  type ListOrdersQuery,
   type OrderLineInput,
   type TenderInput
 } from '@pos/contract'
@@ -61,13 +65,29 @@ const createOrderRoute = createRoute({
   }
 })
 
+// 訂單資料無上限成長，列表頁一律後端分頁（見 packages/pos-contract 的
+// listOrdersQuerySchema）——不再像過去一樣整表撈出來在 Worker 記憶體 join。
 const listOrdersRoute = createRoute({
   method: 'get',
   path: '/',
+  request: { query: listOrdersQuerySchema },
   responses: {
     200: {
-      description: '訂單清單',
-      content: { 'application/json': { schema: z.array(orderSchema) } }
+      description: '訂單清單（分頁）',
+      content: { 'application/json': { schema: orderListResponseSchema } }
+    }
+  }
+})
+
+// 訂單列表頁的 KPI 摘要，獨立於分頁清單之外：數字是對全部訂單算的聚合值，
+// 不受目前分頁／篩選影響（見 @pos/contract 的 orderSummarySchema 說明）。
+const orderSummaryRoute = createRoute({
+  method: 'get',
+  path: '/summary',
+  responses: {
+    200: {
+      description: '訂單 KPI 摘要與服務人員名單',
+      content: { 'application/json': { schema: orderSummarySchema } }
     }
   }
 })
@@ -394,6 +414,25 @@ function validateTenders(
   return { changeDue }
 }
 
+// 訂單列表頁的進階篩選（見 views/order/index.vue）全部搬到這裡組成 SQL
+// where 條件，分頁清單與筆數統計（count）必須用同一份條件，否則兩者算出
+// 來的 totalPages 會對不上實際回傳的 items。
+function buildOrderFilters(query: Pick<ListOrdersQuery, keyof ListOrdersQuery>) {
+  const conditions = []
+  if (query.keyword) conditions.push(like(orders.orderId, `%${query.keyword}%`))
+  if (query.dateFrom) conditions.push(gte(orders.orderTime, query.dateFrom))
+  // orderTime 是含時間的 ISO 字串，dateTo 只有日期，補到當天最後一毫秒
+  // 才不會把 dateTo 當天的訂單排除在篩選範圍外。
+  if (query.dateTo) conditions.push(lte(orders.orderTime, `${query.dateTo}T23:59:59.999Z`))
+  if (query.channel) conditions.push(eq(orders.orderChannel, query.channel))
+  if (query.staff) conditions.push(eq(orders.staff, query.staff))
+  if (query.status) conditions.push(eq(orders.orderStatus, query.status))
+  // 付款方式是顯示用摘要字串（見 orders.orderPayment 的欄位說明），混合
+  // 支付時以頓號連接，比對邏輯對齊前端原本的 includes() 子字串比對。
+  if (query.payMethod) conditions.push(like(orders.orderPayment, `%${query.payMethod}%`))
+  return conditions.length > 0 ? and(...conditions) : undefined
+}
+
 export const orderRoutes = new OpenAPIHono<AppEnv>()
   .openapi(createOrderRoute, async (c) => {
     const input = c.req.valid('json')
@@ -533,39 +572,125 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
   })
   .openapi(listOrdersRoute, async (c) => {
     const db = c.get('db')
-    const allOrders = await db.select().from(orders).all()
-    const allLines = await db.select().from(orderLines).all()
-    const allTenders = await db.select().from(orderTenders).all()
-    const allRefunds = await db.select().from(orderRefunds).all()
+    const query = c.req.valid('query')
+    const where = buildOrderFilters(query)
+
+    // count 跟分頁資料用同一個 where，兩條查詢平行送出；count(*) 是資料庫
+    // 端聚合，不會把全表資料拉進 Worker 記憶體。
+    const [totalRow, pageOrders] = await Promise.all([
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(orders)
+        .where(where)
+        .get(),
+      db
+        .select()
+        .from(orders)
+        .where(where)
+        .orderBy(desc(orders.orderTime))
+        .limit(query.pageSize)
+        .offset((query.page - 1) * query.pageSize)
+        .all()
+    ])
+    const totalCount = totalRow?.count ?? 0
+
+    // 明細／支付／退款只抓「這一頁」訂單的 orderId，不再整表撈出來 join
+    // ——這正是原本全量載入最大的效能問題（見 listOrdersRoute 的說明）。
+    const pageOrderIds = pageOrders.map((order) => order.orderId)
+    const [pageLines, pageTenders, pageRefunds] =
+      pageOrderIds.length > 0
+        ? await Promise.all([
+            db.select().from(orderLines).where(inArray(orderLines.orderId, pageOrderIds)).all(),
+            db.select().from(orderTenders).where(inArray(orderTenders.orderId, pageOrderIds)).all(),
+            db.select().from(orderRefunds).where(inArray(orderRefunds.orderId, pageOrderIds)).all()
+          ])
+        : [[], [], []]
 
     const linesByOrder = new Map<string, OrderLineRow[]>()
-    for (const line of allLines) {
+    for (const line of pageLines) {
       const list = linesByOrder.get(line.orderId) ?? []
       list.push(line)
       linesByOrder.set(line.orderId, list)
     }
     const tendersByOrder = new Map<string, OrderTenderRow[]>()
-    for (const tender of allTenders) {
+    for (const tender of pageTenders) {
       const list = tendersByOrder.get(tender.orderId) ?? []
       list.push(tender)
       tendersByOrder.set(tender.orderId, list)
     }
     const refundsByOrder = new Map<string, OrderRefundRow[]>()
-    for (const refund of allRefunds) {
+    for (const refund of pageRefunds) {
       const list = refundsByOrder.get(refund.orderId) ?? []
       list.push(refund)
       refundsByOrder.set(refund.orderId, list)
     }
 
     return c.json(
-      allOrders.map((order) =>
-        toOrderResponse(
-          order,
-          linesByOrder.get(order.orderId) ?? [],
-          tendersByOrder.get(order.orderId) ?? [],
-          refundsByOrder.get(order.orderId) ?? []
+      {
+        items: pageOrders.map((order) =>
+          toOrderResponse(
+            order,
+            linesByOrder.get(order.orderId) ?? [],
+            tendersByOrder.get(order.orderId) ?? [],
+            refundsByOrder.get(order.orderId) ?? []
+          )
+        ),
+        pagination: {
+          page: query.page,
+          pageSize: query.pageSize,
+          totalCount,
+          totalPages: Math.max(1, Math.ceil(totalCount / query.pageSize))
+        }
+      },
+      200
+    )
+  })
+  .openapi(orderSummaryRoute, async (c) => {
+    const db = c.get('db')
+
+    // 全部是資料庫端算總和／計數的聚合查詢，即使訂單量成長到數十萬筆，
+    // 傳回 Worker 的也只有幾個數字——完全不把逐筆訂單／退款資料拉進記憶體
+    // （之前的寫法曾經先抓出全部已完成訂單的 orderId 清單，一樣犯了整表
+    // 載入的問題，改成下面這兩條 join 聚合）。
+    const [totals, completedRefundRow, refundCountRow, staffRows] = await Promise.all([
+      db
+        .select({
+          totalCount: sql<number>`count(*)`,
+          completedCount: sql<number>`sum(case when ${orders.orderStatus} = '已完成' then 1 else 0 end)`,
+          voidCount: sql<number>`sum(case when ${orders.orderStatus} = '已取消' then 1 else 0 end)`,
+          completedPaymentTotal: sql<number>`sum(case when ${orders.orderStatus} = '已完成' then ${orders.orderPaymentPrice} else 0 end)`
+        })
+        .from(orders)
+        .get(),
+      // 只有已完成訂單的退款金額才從營收淨額扣掉，跟前端原本的本機統計
+      // 定義一致（已取消訂單本身就沒算進上面的 completedPaymentTotal）。
+      db
+        .select({ total: sql<number>`coalesce(sum(${orderRefunds.amount}), 0)` })
+        .from(orderRefunds)
+        .innerJoin(orders, eq(orders.orderId, orderRefunds.orderId))
+        .where(eq(orders.orderStatus, '已完成'))
+        .get(),
+      // 退款筆數統計不分訂單狀態（跟前端原本定義一致），用 having 在資料庫
+      // 端先篩掉退款淨額為 0 的訂單，避免把逐筆退款資料拉回來數。
+      db.get<{ count: number }>(sql`
+        select count(*) as count from (
+          select ${orderRefunds.orderId} from ${orderRefunds}
+          group by ${orderRefunds.orderId}
+          having sum(${orderRefunds.amount}) > 0
         )
-      ),
+      `),
+      db.select({ staff: orders.staff }).from(orders).groupBy(orders.staff).all()
+    ])
+
+    return c.json(
+      {
+        totalCount: totals?.totalCount ?? 0,
+        totalRevenue: (totals?.completedPaymentTotal ?? 0) - (completedRefundRow?.total ?? 0),
+        completedCount: totals?.completedCount ?? 0,
+        voidCount: totals?.voidCount ?? 0,
+        refundCount: refundCountRow?.count ?? 0,
+        staffNames: staffRows.map((row) => row.staff).sort()
+      },
       200
     )
   })

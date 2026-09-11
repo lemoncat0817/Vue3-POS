@@ -163,8 +163,8 @@ describe('POST /api/invoices/submit（模擬批次上傳）', () => {
         headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
       })
     )
-    const updated1 = list.find((o: { orderId: string }) => o.orderId === order1.orderId)
-    const updated2 = list.find((o: { orderId: string }) => o.orderId === order2.orderId)
+    const updated1 = list.items.find((o: { orderId: string }) => o.orderId === order1.orderId)
+    const updated2 = list.items.find((o: { orderId: string }) => o.orderId === order2.orderId)
     expect(updated1.invoiceStatus).toBe('submitted')
     expect(updated2.invoiceStatus).toBe('submitted')
     expect(updated1.invoiceSubmittedAt).toBe(submitBody.submittedAt)
