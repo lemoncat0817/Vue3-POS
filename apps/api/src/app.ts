@@ -9,6 +9,7 @@ import { catalogRoutes } from './routes/catalog'
 import { deviceRoutes } from './routes/devices'
 import { invoiceRoutes } from './routes/invoices'
 import { memberRoutes } from './routes/members'
+import { createOAuthRoutes, type OAuthConfig } from './routes/oauth'
 import { orderRoutes } from './routes/orders'
 import { paymentMethodRoutes } from './routes/payment-methods'
 import { promotionRoutes } from './routes/promotions'
@@ -38,7 +39,7 @@ const healthRoute = createRoute({
 /** 建立 Hono 應用程式。由呼叫端傳入 Drizzle db 實例以相容 D1 與測試環境。 */
 export function createApp(
   db: AnyDb,
-  config: { provisioningSecret: string; allowedOrigins: string[] }
+  config: { provisioningSecret: string; allowedOrigins: string[] } & OAuthConfig
 ) {
   const app = new OpenAPIHono<AppEnv>()
 
@@ -68,6 +69,7 @@ export function createApp(
   app.openapi(healthRoute, (c) => c.json({ ok: true as const }))
 
   app.route('/api/auth', authRoutes)
+  app.route('/api/auth', createOAuthRoutes(config))
   app.route('/api/audit-logs', auditLogRoutes)
   app.route('/api/catalog', catalogRoutes)
   app.route('/api/devices', deviceRoutes)

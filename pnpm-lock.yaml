@@ -65,6 +65,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@hono/oauth-providers':
+        specifier: ^0.9.0
+        version: 0.9.0(hono@4.13.7)
       '@hono/zod-openapi':
         specifier: ^1.6.3
         version: 1.6.3(hono@4.13.7)(zod@4.5.4)
@@ -1461,6 +1464,12 @@ packages:
 
   '@floating-ui/vue@1.1.11':
     resolution: {integrity: sha512-HzHKCNVxnGS35r9fCHBc3+uCnjw9IWIlCPL683cGgM9Kgj2BiAl8x1mS7vtvP6F9S/e/q4O6MApwSHj8hNLGfw==}
+
+  '@hono/oauth-providers@0.9.0':
+    resolution: {integrity: sha512-OgDPB+AM6OgA5ys1y+7G24bkb8V4OINr+6JFDSuSYni80Mmd7BGpJ0e02StQDMPL9ebuWI8ABhxx1bk+9VBcBA==}
+    engines: {node: '>=18.4.0'}
+    peerDependencies:
+      hono: '>=3.0.0'
 
   '@hono/zod-openapi@1.6.3':
     resolution: {integrity: sha512-VYR82Y60plu8g3pN60OUXMVKpmxh3R04Qs++3DY9vtwZ9/sA/BRY0PcRIR+Z37/3itWtM7pYwT9bKiH9JhqV6Q==}
@@ -5735,6 +5744,10 @@ snapshots:
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
+
+  '@hono/oauth-providers@0.9.0(hono@4.13.7)':
+    dependencies:
+      hono: 4.13.7
 
   '@hono/zod-openapi@1.6.3(hono@4.13.7)(zod@4.5.4)':
     dependencies:

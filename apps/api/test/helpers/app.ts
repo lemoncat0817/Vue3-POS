@@ -12,7 +12,14 @@ export const TEST_PROVISIONING_SECRET = 'test-provisioning-secret'
 export function createTestApp(db: AnyDb) {
   return createApp(db, {
     provisioningSecret: TEST_PROVISIONING_SECRET,
-    allowedOrigins: ['http://localhost:4173']
+    allowedOrigins: ['http://localhost:4173'],
+    // OAuth 登入流程本身有自己的測試（test/oauth.spec.ts），這裡的值不會被用到，
+    // 純粹是滿足 createApp() 的型別要求。
+    frontendUrl: 'http://localhost:5173',
+    googleClientId: 'test-google-client-id',
+    googleClientSecret: 'test-google-client-secret',
+    githubClientId: 'test-github-client-id',
+    githubClientSecret: 'test-github-client-secret'
   })
 }
 
