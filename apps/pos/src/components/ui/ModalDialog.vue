@@ -23,7 +23,7 @@
             >✕</DialogClose
           >
         </div>
-        <div class="mt-4 min-h-0 overflow-y-auto px-6 pb-6">
+        <div class="mt-4 min-h-0 overflow-y-auto px-6 pt-1.5 pb-6">
           <slot />
         </div>
       </DialogContent>

@@ -132,8 +132,8 @@
       </ModalDialog>
 
       <ModalDialog v-model:open="statusDialog" :title="`${currentTable?.tableNumber ?? ''} 桌況`">
-        <div class="flex flex-col gap-3">
-          <div class="flex gap-2">
+        <div class="flex flex-col gap-3 pt-1">
+          <div class="flex gap-2 pt-0.5">
             <button
               v-for="option in statusOptions"
               :key="option.value"
@@ -191,7 +191,7 @@
 
 <script setup lang="ts">
 import { Plus } from 'lucide-vue-next'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form } from 'vee-validate'
@@ -206,7 +206,7 @@ import { createTable, deleteTable, fetchTables, updateTableStatus } from '@/api/
 import type { DiningTable, TableStatus } from '@pos/contract'
 
 const loginStore = useLoginStore()
-const canManage = () => hasCapability(loginStore.userInfo, 'canManageTables')
+const canManage = computed(() => hasCapability(loginStore.userInfo, 'canManageTables'))
 
 function apiErrorMessage(err: unknown): string {
   if (err instanceof ApiError) return `操作失敗：${err.message}`
@@ -241,7 +241,9 @@ function statusCardClass(status: TableStatus): string {
 function statusButtonClass(status: TableStatus): string {
   const active = status === pendingStatus.value
   const base = statusCardClass(status)
-  return active ? `${base} ring-2 ring-offset-1 ring-primary-500` : `${base} opacity-50`
+  return active
+    ? `${base} ring-2 ring-offset-1 ring-offset-white dark:ring-offset-surface-900 ring-primary-500`
+    : `${base} opacity-50`
 }
 
 const addTableSchema = z.object({
@@ -251,7 +253,7 @@ const addTableSchema = z.object({
 
 const addDialog = ref(false)
 function openAddDialog() {
-  if (!canManage()) return
+  if (!canManage.value) return
   addDialog.value = true
 }
 async function onSubmitAdd(values: Record<string, unknown>) {
@@ -277,7 +279,7 @@ function openStatusDialog(table: DiningTable) {
   statusDialog.value = true
 }
 async function saveStatus() {
-  if (!canManage() || !currentTable.value) return
+  if (!canManage.value || !currentTable.value) return
   try {
     const updated = await updateTableStatus(currentTable.value.id, {
       status: pendingStatus.value,
@@ -295,16 +297,17 @@ async function saveStatus() {
   }
 }
 async function deleteCurrentTable() {
-  if (!canManage() || !currentTable.value) return
+  if (!canManage.value || !currentTable.value) return
+  const table = currentTable.value
   const result = await confirm({
     title: '警告',
-    description: `是否刪除桌位 ${currentTable.value.tableNumber}？`,
+    description: `是否刪除桌位 ${table.tableNumber}？`,
     variant: 'danger'
   })
   if (result !== 'confirm') return
   try {
-    await deleteTable(currentTable.value.id)
-    tables.value = tables.value.filter((item) => item.id !== currentTable.value?.id)
+    await deleteTable(table.id)
+    tables.value = tables.value.filter((item) => item.id !== table.id)
     statusDialog.value = false
     showToast('刪除成功', 'success')
   } catch (err) {

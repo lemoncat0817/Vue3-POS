@@ -1,9 +1,9 @@
 <template>
   <AlertDialogRoot :open="state.open" @update:open="onOpenChange">
     <AlertDialogPortal>
-      <AlertDialogOverlay class="fixed inset-0 z-40 bg-surface-900/60" />
+      <AlertDialogOverlay class="fixed inset-0 z-[60] bg-surface-900/60" />
       <AlertDialogContent
-        class="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-overlay focus:outline-none dark:bg-surface-900"
+        class="fixed left-1/2 top-1/2 z-[70] w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-overlay focus:outline-none dark:bg-surface-900"
         @click.capture="onContentClick"
       >
         <AlertDialogTitle class="text-lg font-bold text-surface-900 dark:text-surface-100">{{
