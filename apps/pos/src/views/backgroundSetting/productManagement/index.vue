@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full flex flex-col p-4">
+  <div class="w-full flex flex-col">
     <div
       class="flex items-center gap-1.5 rounded-xl bg-surface-100 dark:bg-surface-800 p-1 mb-4 self-start"
     >
@@ -22,22 +22,22 @@
     <!-- 分類 -->
     <div v-if="activeTab === 'categories'" class="flex flex-col">
       <div
-        class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800"
-      >
-        <span class="text-sm font-black text-surface-900 dark:text-surface-100">分類</span>
-        <button
-          type="button"
-          class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
-          :class="{ 'opacity-50 pointer-events-none': !canSetCategory }"
-          @click="openAddCategoryDialog"
-        >
-          ＋ 新增分類
-        </button>
-      </div>
-
-      <div
         class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[540px] flex flex-col justify-between"
       >
+        <div
+          class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
+        >
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">分類</span>
+          <button
+            type="button"
+            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+            :class="{ 'opacity-50 pointer-events-none': !canSetCategory }"
+            @click="openAddCategoryDialog"
+          >
+            ＋ 新增分類
+          </button>
+        </div>
+
         <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead
@@ -117,22 +117,22 @@
     <!-- 品項 -->
     <div v-if="activeTab === 'products'" class="flex flex-col">
       <div
-        class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800"
-      >
-        <span class="text-sm font-black text-surface-900 dark:text-surface-100">品項</span>
-        <button
-          type="button"
-          class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
-          :class="{ 'opacity-50 pointer-events-none': !canSetProduct }"
-          @click="openAddProductDialog"
-        >
-          ＋ 新增品項
-        </button>
-      </div>
-
-      <div
         class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[540px] flex flex-col justify-between"
       >
+        <div
+          class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
+        >
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">品項</span>
+          <button
+            type="button"
+            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+            :class="{ 'opacity-50 pointer-events-none': !canSetProduct }"
+            @click="openAddProductDialog"
+          >
+            ＋ 新增品項
+          </button>
+        </div>
+
         <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead
@@ -231,22 +231,22 @@
     <!-- 規格群組 -->
     <div v-if="activeTab === 'modifierGroups'" class="flex flex-col">
       <div
-        class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800"
-      >
-        <span class="text-sm font-black text-surface-900 dark:text-surface-100">規格群組</span>
-        <button
-          type="button"
-          class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
-          :class="{ 'opacity-50 pointer-events-none': !canSetProduct }"
-          @click="openAddModifierGroupDialog"
-        >
-          ＋ 新增規格群組
-        </button>
-      </div>
-
-      <div
         class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[540px] flex flex-col justify-between"
       >
+        <div
+          class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
+        >
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">規格群組</span>
+          <button
+            type="button"
+            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+            :class="{ 'opacity-50 pointer-events-none': !canSetProduct }"
+            @click="openAddModifierGroupDialog"
+          >
+            ＋ 新增規格群組
+          </button>
+        </div>
+
         <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead
@@ -348,22 +348,22 @@
     <!-- 加購選項 -->
     <div v-if="activeTab === 'addOns'" class="flex flex-col">
       <div
-        class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800"
-      >
-        <span class="text-sm font-black text-surface-900 dark:text-surface-100">加購選項</span>
-        <button
-          type="button"
-          class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
-          :class="{ 'opacity-50 pointer-events-none': !canSetAddOns }"
-          @click="openAddAddOnDialog"
-        >
-          ＋ 新增加購選項
-        </button>
-      </div>
-
-      <div
         class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[540px] flex flex-col justify-between"
       >
+        <div
+          class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
+        >
+          <span class="text-sm font-black text-surface-900 dark:text-surface-100">加購選項</span>
+          <button
+            type="button"
+            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+            :class="{ 'opacity-50 pointer-events-none': !canSetAddOns }"
+            @click="openAddAddOnDialog"
+          >
+            ＋ 新增加購選項
+          </button>
+        </div>
+
         <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead

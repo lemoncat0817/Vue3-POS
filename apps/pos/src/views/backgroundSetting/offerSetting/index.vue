@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full flex flex-col p-4">
+  <div class="w-full flex flex-col">
     <div
       class="flex items-center gap-1.5 rounded-xl bg-surface-100 dark:bg-surface-800 p-1 mb-4 self-start"
     >
@@ -22,29 +22,29 @@
     <!-- 訂單折價券 -->
     <div v-if="activeTab === 'orderCoupons'" class="flex flex-col">
       <div
-        class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800"
-      >
-        <div>
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">
-            訂單折價券
-          </span>
-          <p class="mt-0.5 text-[11px] text-surface-400">
-            結帳時整張訂單套用一張，例如「$50折價券」「整單95折」
-          </p>
-        </div>
-        <button
-          type="button"
-          class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
-          :class="{ 'opacity-50 pointer-events-none': !canSetOrderCoupon }"
-          @click="openAddOrderCouponDialog"
-        >
-          ＋ 新增折價券
-        </button>
-      </div>
-
-      <div
         class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm flex flex-col justify-between min-h-[540px]"
       >
+        <div
+          class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
+        >
+          <div>
+            <span class="text-sm font-black text-surface-900 dark:text-surface-100">
+              訂單折價券
+            </span>
+            <p class="mt-0.5 text-[11px] text-surface-400">
+              結帳時整張訂單套用一張，例如「$50折價券」「整單95折」
+            </p>
+          </div>
+          <button
+            type="button"
+            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+            :class="{ 'opacity-50 pointer-events-none': !canSetOrderCoupon }"
+            @click="openAddOrderCouponDialog"
+          >
+            ＋ 新增折價券
+          </button>
+        </div>
+
         <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead
@@ -144,27 +144,29 @@
     <!-- 快速折扣 -->
     <div v-if="activeTab === 'quickDiscounts'" class="flex flex-col">
       <div
-        class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800"
-      >
-        <div>
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100"> 快速折扣 </span>
-          <p class="mt-0.5 text-[11px] text-surface-400">
-            點餐頁購物車勾選品項後可直接套用的快捷折扣按鈕
-          </p>
-        </div>
-        <button
-          type="button"
-          class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
-          :class="{ 'opacity-50 pointer-events-none': !canSetQuickDiscount }"
-          @click="openAddQuickDiscountDialog"
-        >
-          ＋ 新增快速折扣
-        </button>
-      </div>
-
-      <div
         class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm flex flex-col justify-between min-h-[540px]"
       >
+        <div
+          class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
+        >
+          <div>
+            <span class="text-sm font-black text-surface-900 dark:text-surface-100">
+              快速折扣
+            </span>
+            <p class="mt-0.5 text-[11px] text-surface-400">
+              點餐頁購物車勾選品項後可直接套用的快捷折扣按鈕
+            </p>
+          </div>
+          <button
+            type="button"
+            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+            :class="{ 'opacity-50 pointer-events-none': !canSetQuickDiscount }"
+            @click="openAddQuickDiscountDialog"
+          >
+            ＋ 新增快速折扣
+          </button>
+        </div>
+
         <div class="overflow-x-auto flex-1">
           <table class="w-full text-left text-sm">
             <thead

@@ -1,22 +1,22 @@
 <template>
-  <div class="w-full flex flex-col p-4">
-    <div
-      class="flex items-center justify-between pb-3 mb-3 border-b border-surface-100 dark:border-surface-800"
-    >
-      <span class="text-sm font-black text-surface-900 dark:text-surface-100">權限群組</span>
-      <button
-        type="button"
-        class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
-        :class="{ 'opacity-50 pointer-events-none': !canManage }"
-        @click="openAddDialog"
-      >
-        ＋ 新增權限群組
-      </button>
-    </div>
-
+  <div class="w-full flex flex-col">
     <div
       class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm flex flex-col justify-between min-h-[540px]"
     >
+      <div
+        class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
+      >
+        <span class="text-sm font-black text-surface-900 dark:text-surface-100">權限群組</span>
+        <button
+          type="button"
+          class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
+          :class="{ 'opacity-50 pointer-events-none': !canManage }"
+          @click="openAddDialog"
+        >
+          ＋ 新增權限群組
+        </button>
+      </div>
+
       <div class="overflow-x-auto flex-1">
         <table class="w-full text-left text-sm">
           <thead

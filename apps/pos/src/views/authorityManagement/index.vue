@@ -46,9 +46,7 @@
         </div>
       </div>
 
-      <div
-        class="w-full rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[640px] flex overflow-hidden"
-      >
+      <div class="w-full flex flex-col">
         <StaffManagement v-if="authorityManagementStore.currentTab === 'staff'" class="w-full" />
         <RoleGroupManagement v-else class="w-full" />
       </div>

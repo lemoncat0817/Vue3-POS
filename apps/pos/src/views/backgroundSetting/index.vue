@@ -73,9 +73,7 @@
         </div>
       </div>
 
-      <div
-        class="w-full rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[640px] flex overflow-hidden"
-      >
+      <div class="w-full flex flex-col">
         <ProductManagement v-if="settingStore.currentSettingPage === 0" class="w-full" />
         <OfferSetting v-if="settingStore.currentSettingPage === 1" class="w-full" />
         <InvoiceTrackSetting v-if="settingStore.currentSettingPage === 2" class="w-full" />
