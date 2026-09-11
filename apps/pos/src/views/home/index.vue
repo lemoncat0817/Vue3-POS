@@ -156,7 +156,7 @@
           <div class="flex items-center gap-1.5">
             <button
               type="button"
-              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 select-none shadow-sm transition-colors"
+              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 select-none shadow-sm transition-colors"
               @click="clearSelectNotPay"
             >
               刪除已勾選品項
@@ -354,14 +354,14 @@
         <div class="grid grid-cols-2 gap-1.5">
           <button
             type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
             @click="openBagDialog"
           >
             加購包材
           </button>
           <button
             type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
             :class="{
               'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canCompItem')
             }"
@@ -376,7 +376,7 @@
           <MemberPanel v-model="currentOrderMember" />
           <button
             type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
             @click="openDiscountMenu"
           >
             優惠券
@@ -389,7 +389,7 @@
             v-for="quickDiscount in discountStore.quickDiscounts"
             :key="String(quickDiscount.id)"
             type="button"
-            class="flex-1 min-w-[88px] rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            class="flex-1 min-w-[88px] rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
             @click="applyQuickDiscount(quickDiscount.id)"
           >
             {{ quickDiscount.name }}
@@ -469,11 +469,11 @@
                 }
               "
             >
-              <SliderTrack class="relative h-1.5 w-full rounded-full bg-surface-200">
+              <SliderTrack class="relative h-1.5 w-full rounded-full bg-surface-200 dark:bg-surface-700">
                 <SliderRange class="absolute h-full rounded-full bg-primary-500" />
               </SliderTrack>
               <SliderThumb
-                class="block h-4 w-4 rounded-full border-2 border-primary-500 bg-white shadow focus:outline-none"
+                class="block h-4 w-4 rounded-full border-2 border-primary-500 bg-white dark:bg-surface-100 shadow focus:outline-none"
               />
             </SliderRoot>
             <input
@@ -481,20 +481,20 @@
               type="number"
               min="0"
               max="100"
-              class="w-16 rounded-lg border border-surface-300 px-2 py-1 text-center text-sm"
+              class="w-16 rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-center text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             />
           </div>
           <div class="mt-6 flex justify-end gap-2">
             <button
               type="button"
-              class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100"
+              class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800"
               @click="closeBagCount"
             >
               取消
             </button>
             <button
               type="button"
-              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700"
+              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700"
               @click="changeBagCount"
             >
               確定
@@ -535,7 +535,7 @@
               </div>
             </div>
             <div
-              class="flex h-10 w-full items-center justify-between rounded-lg bg-surface-100 px-3 text-sm text-surface-600"
+              class="flex h-10 w-full items-center justify-between rounded-lg bg-surface-100 dark:bg-surface-800/80 px-3 text-sm text-surface-600 dark:text-surface-300"
             >
               <p>{{ `共 ${discountStore.orderCoupons.length} 樣` }}</p>
               <AppPagination
@@ -549,14 +549,14 @@
           <div class="mt-4 flex justify-end gap-2">
             <button
               type="button"
-              class="rounded-lg border border-surface-300 px-4 py-2 text-sm font-bold text-surface-700 hover:bg-surface-100"
+              class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-200 transition-colors hover:bg-surface-100 dark:hover:bg-surface-800"
               @click="closeDiscount"
             >
               取消
             </button>
             <button
               type="button"
-              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700"
+              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700"
               @click="useDiscount"
             >
               確定

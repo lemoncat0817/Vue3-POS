@@ -397,7 +397,7 @@
         >
           <button
             type="button"
-            class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-xs font-bold"
+            class="pos-btn pos-btn-secondary px-4 py-2 text-xs font-bold"
             @click="dialogSettlement = false"
           >
             關閉

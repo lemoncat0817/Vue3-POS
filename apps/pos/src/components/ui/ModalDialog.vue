@@ -18,7 +18,7 @@
             <DialogDescription v-else class="sr-only">{{ title }}</DialogDescription>
           </div>
           <DialogClose
-            class="text-surface-400 dark:text-surface-500 transition-colors hover:text-surface-700 dark:hover:text-surface-200"
+            class="rounded-lg p-1 text-surface-400 hover:text-surface-700 hover:bg-surface-100 dark:text-surface-500 dark:hover:text-surface-200 dark:hover:bg-surface-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 cursor-pointer"
             aria-label="關閉"
             >✕</DialogClose
           >

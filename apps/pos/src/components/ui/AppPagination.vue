@@ -3,7 +3,7 @@
     <button
       type="button"
       aria-label="上一頁"
-      class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-30 shadow-sm transition-colors"
+      class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-30 shadow-sm transition-colors cursor-pointer disabled:cursor-not-allowed"
       :disabled="page <= 1"
       @click="emit('update:page', page - 1)"
     >
@@ -15,7 +15,7 @@
     <button
       type="button"
       aria-label="下一頁"
-      class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-30 shadow-sm transition-colors"
+      class="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-30 shadow-sm transition-colors cursor-pointer disabled:cursor-not-allowed"
       :disabled="page >= pageCount"
       @click="emit('update:page', page + 1)"
     >

@@ -30,7 +30,7 @@
             :class="
               catalogStore.productPanel === 0
                 ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm'
-                : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'
+                : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'
             "
             @click="catalogStore.productPanel = 0"
           >
@@ -42,7 +42,7 @@
             :class="
               catalogStore.productPanel === 1
                 ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm'
-                : 'text-surface-600 dark:text-surface-400 hover:text-surface-900'
+                : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'
             "
             @click="catalogStore.productPanel = 1"
           >
@@ -57,7 +57,7 @@
 
         <button
           type="button"
-          class="rounded-lg border border-surface-200 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 hover:bg-danger-50 hover:text-danger-600 hover:border-danger-200 dark:hover:bg-danger-950/40 transition-colors select-none"
+          class="rounded-lg border border-surface-200 dark:border-surface-700 px-2 py-1 text-xs font-bold text-surface-600 dark:text-surface-400 hover:bg-danger-50 hover:text-danger-600 hover:border-danger-200 dark:hover:bg-danger-950/40 dark:hover:border-danger-800 dark:hover:text-danger-400 transition-colors select-none"
           @click="resetAll"
         >
           重置
@@ -89,7 +89,7 @@
               :class="
                 isOptionSelected(group.id, option.id)
                   ? 'border-primary-500 bg-primary-600 text-white shadow-sm scale-[1.03]'
-                  : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100'
+                  : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700'
               "
               @click="toggleOption(group, option.id)"
             >
@@ -146,16 +146,16 @@
         <div class="flex items-center gap-1">
           <button
             type="button"
-            class="h-6 w-6 rounded border border-surface-200 dark:border-surface-700 disabled:opacity-30"
+            class="h-6 w-6 rounded border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center justify-center"
             :disabled="currentPage <= 1"
             @click="handleCurrentChange(currentPage - 1)"
           >
             ‹
           </button>
-          <span>{{ currentPage }}/{{ pageCount }}</span>
+          <span class="px-1 font-mono text-surface-600 dark:text-surface-300">{{ currentPage }}/{{ pageCount }}</span>
           <button
             type="button"
-            class="h-6 w-6 rounded border border-surface-200 dark:border-surface-700 disabled:opacity-30"
+            class="h-6 w-6 rounded border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center justify-center"
             :disabled="currentPage >= pageCount"
             @click="handleCurrentChange(currentPage + 1)"
           >
@@ -172,7 +172,7 @@
         <span class="text-xs font-bold text-surface-500 dark:text-surface-400 mr-1">數量</span>
         <button
           type="button"
-          class="h-7 w-7 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 font-bold hover:bg-surface-100 text-sm flex items-center justify-center active:scale-95 select-none transition-colors cursor-pointer"
+          class="h-7 w-7 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 font-bold hover:bg-surface-100 dark:hover:bg-surface-700 text-sm flex items-center justify-center active:scale-95 select-none transition-colors cursor-pointer"
           @click="decreaseCount"
         >
           -
@@ -202,7 +202,7 @@
 
         <button
           type="button"
-          class="h-7 w-7 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 font-bold hover:bg-surface-100 text-sm flex items-center justify-center active:scale-95 select-none transition-colors cursor-pointer"
+          class="h-7 w-7 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 font-bold hover:bg-surface-100 dark:hover:bg-surface-700 text-sm flex items-center justify-center active:scale-95 select-none transition-colors cursor-pointer"
           @click="increaseCount"
         >
           +
@@ -217,7 +217,7 @@
             :class="
               productCountDisplay === preset
                 ? 'border-primary-500 bg-primary-600 text-white shadow-sm'
-                : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100'
+                : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700'
             "
             @click="setCount(String(preset))"
           >
@@ -229,7 +229,7 @@
             :class="
               ![1, 2, 3, 5].includes(productCountDisplay)
                 ? 'border-primary-500 bg-primary-600 text-white shadow-sm'
-                : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100'
+                : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700'
             "
             title="開啟數字鍵盤自訂數量"
             @click="isKeypadOpen = true"
