@@ -21,6 +21,7 @@ export const AUTHORITY_FIELDS: AuthorityField[] = [
   { label: '設定訂單折價券', value: 'canSetOrderCoupon', dependsOn: 'canCheckBackgroundSetting' },
   { label: '設定快速折扣', value: 'canSetQuickDiscount', dependsOn: 'canCheckBackgroundSetting' },
   { label: '設定付款方式', value: 'canSetPayMethod', dependsOn: 'canCheckBackgroundSetting' },
+  { label: '設定營業日換日時間', value: 'canSetBusinessHours', dependsOn: 'canCheckBackgroundSetting' },
   { label: '查看數據分析', value: 'canCheckDataAnalysis' },
   { label: '查看權限管理', value: 'canCheckAuthority' },
   { label: '設定人員名單', value: 'canManageStaff', dependsOn: 'canCheckAuthority' },

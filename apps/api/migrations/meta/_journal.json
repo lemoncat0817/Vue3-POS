@@ -225,6 +225,13 @@
       "when": 1789239601928,
       "tag": "0031_same_gauntlet",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1789239686073,
+      "tag": "0032_backfill_business_hours_capability",
+      "breakpoints": true
     }
   ]
 }

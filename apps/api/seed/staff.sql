@@ -13,7 +13,7 @@
 
 INSERT INTO roles (id, name, capabilities, is_system) VALUES (
   'role-owner', '店長',
-  '["canCompItem","canOpenCashier","canManageShift","canCheckOrder","canEditOrderStatus","canDeleteOrder","canRefundOrVoid","canCheckBackgroundSetting","canSetCategory","canSetProduct","canSetOrderCoupon","canSetQuickDiscount","canCheckDataAnalysis","canCheckAuthority","canManageStaff","canManageRoles","canSetPayMethod","canCheckMembers","canManageTables"]',
+  '["canCompItem","canOpenCashier","canManageShift","canCheckOrder","canEditOrderStatus","canDeleteOrder","canRefundOrVoid","canCheckBackgroundSetting","canSetCategory","canSetProduct","canSetOrderCoupon","canSetQuickDiscount","canCheckDataAnalysis","canCheckAuthority","canManageStaff","canManageRoles","canSetPayMethod","canCheckMembers","canManageTables","canSetBusinessHours"]',
   1
 );
 
