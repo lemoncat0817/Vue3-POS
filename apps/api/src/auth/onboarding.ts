@@ -2,7 +2,6 @@ import { eq } from 'drizzle-orm'
 import { authorityKeySchema } from '@pos/contract'
 import { generateSecureToken, hashSecret } from './hash'
 import {
-  addOnOptions,
   categories,
   devices,
   diningTables,
@@ -145,18 +144,25 @@ export async function ensureTenantOnboarded(
     { id: catDrink, tenantId, name: '飲品' }
   ])
 
+  // 「加購」不是獨立概念，只是 selectionType='multiple'、required=false 的
+  // 規格群組（見 db/schema.ts 的說明）：mgTopping 只掛在 prodTea 上，示範
+  // 漢堡排底下天生不會出現「加珍珠」這種不合理組合，不是靠畫面另外擋。
   const mgSweetness = crypto.randomUUID()
   const mgIce = crypto.randomUUID()
+  const mgTopping = crypto.randomUUID()
   await db.insert(modifierGroups).values([
     { id: mgSweetness, tenantId, name: '甜度', selectionType: 'single' as const, required: true },
-    { id: mgIce, tenantId, name: '冰塊', selectionType: 'single' as const, required: true }
+    { id: mgIce, tenantId, name: '冰塊', selectionType: 'single' as const, required: true },
+    { id: mgTopping, tenantId, name: '加料', selectionType: 'multiple' as const, required: false }
   ])
   await db.insert(modifierOptions).values([
-    { id: crypto.randomUUID(), tenantId, groupId: mgSweetness, name: '無糖', priceDelta: 0 },
-    { id: crypto.randomUUID(), tenantId, groupId: mgSweetness, name: '半糖', priceDelta: 0 },
-    { id: crypto.randomUUID(), tenantId, groupId: mgSweetness, name: '正常糖', priceDelta: 0 },
-    { id: crypto.randomUUID(), tenantId, groupId: mgIce, name: '去冰', priceDelta: 0 },
-    { id: crypto.randomUUID(), tenantId, groupId: mgIce, name: '正常冰', priceDelta: 0 }
+    { id: crypto.randomUUID(), tenantId, groupId: mgSweetness, name: '無糖', priceDelta: 0, stock: null },
+    { id: crypto.randomUUID(), tenantId, groupId: mgSweetness, name: '半糖', priceDelta: 0, stock: null },
+    { id: crypto.randomUUID(), tenantId, groupId: mgSweetness, name: '正常糖', priceDelta: 0, stock: null },
+    { id: crypto.randomUUID(), tenantId, groupId: mgIce, name: '去冰', priceDelta: 0, stock: null },
+    { id: crypto.randomUUID(), tenantId, groupId: mgIce, name: '正常冰', priceDelta: 0, stock: null },
+    { id: crypto.randomUUID(), tenantId, groupId: mgTopping, name: '加起司', priceDelta: 20, stock: null },
+    { id: crypto.randomUUID(), tenantId, groupId: mgTopping, name: '珍珠', priceDelta: 10, stock: null }
   ])
 
   const prodBurger = crypto.randomUUID()
@@ -167,15 +173,9 @@ export async function ensureTenantOnboarded(
   ])
   await db.insert(productModifierGroups).values([
     { tenantId, productId: prodTea, groupId: mgSweetness },
-    { tenantId, productId: prodTea, groupId: mgIce }
+    { tenantId, productId: prodTea, groupId: mgIce },
+    { tenantId, productId: prodTea, groupId: mgTopping }
   ])
-
-  await db.insert(addOnOptions).values(
-    [
-      { name: '加起司', price: 20 },
-      { name: '珍珠', price: 10 }
-    ].map((a) => ({ id: crypto.randomUUID(), tenantId, stock: null, ...a }))
-  )
 
   return { ownerAccount, ownerPin }
 }
