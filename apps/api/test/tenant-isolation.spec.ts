@@ -326,6 +326,24 @@ describe('跨租戶隔離', () => {
     expect(listB).toEqual([])
   })
 
+  it('營業設定：A 調整換日時間不影響 B，B 仍是預設值', async () => {
+    const { tenantA, tenantB } = await twoTenants()
+
+    const updateRes = await tenantA.app.request('/api/tenant-settings', {
+      method: 'PUT',
+      headers: authHeaders(tenantA),
+      body: JSON.stringify({ businessDayStartHour: 18 })
+    })
+    expect(updateRes.status).toBe(200)
+
+    const settingsB = await readJson((
+      await tenantB.app.request('/api/tenant-settings', {
+        headers: { 'X-Device-Token': tenantB.deviceToken }
+      })
+    ))
+    expect(settingsB).toEqual({ businessDayStartHour: 4 })
+  })
+
   it('裝置：B 的裝置清單看不到 A 的裝置', async () => {
     const { tenantB } = await twoTenants()
 

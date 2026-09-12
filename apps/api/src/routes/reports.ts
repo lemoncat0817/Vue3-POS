@@ -2,7 +2,9 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { sql } from 'drizzle-orm'
 import { salesReportQuerySchema, salesReportSchema } from '@pos/contract'
 import { DEFAULT_BUSINESS_DAY_START_HOUR } from '@pos/domain'
+import { users } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
@@ -64,6 +66,9 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
   const { from, to } = c.req.valid('query')
   const db = c.get('db')
   const tenantId = c.get('tenantId')
+
+  const tenant = await db.select().from(users).where(tenantFilter(users.id, tenantId)).get()
+  const businessDayStartHour = tenant?.businessDayStartHour ?? DEFAULT_BUSINESS_DAY_START_HOUR
 
   const [
     dailyRows,
@@ -188,7 +193,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
   }))
 
   const revenueByHour = new Map(hourlyRows.map((row) => [row.hour, row.revenue]))
-  const hourlyRevenue = businessHourSequence(DEFAULT_BUSINESS_DAY_START_HOUR).map((hour) => ({
+  const hourlyRevenue = businessHourSequence(businessDayStartHour).map((hour) => ({
     hour,
     revenue: revenueByHour.get(hour) ?? 0
   }))

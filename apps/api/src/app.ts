@@ -18,6 +18,7 @@ import { roleRoutes } from './routes/roles'
 import { shiftRoutes } from './routes/shifts'
 import { staffRoutes } from './routes/staff'
 import { tableRoutes } from './routes/tables'
+import { tenantSettingsRoutes } from './routes/tenant-settings'
 
 export type { AppEnv }
 
@@ -83,6 +84,7 @@ export function createApp(
   app.route('/api/shifts', shiftRoutes)
   app.route('/api/staff', staffRoutes)
   app.route('/api/tables', tableRoutes)
+  app.route('/api/tenant-settings', tenantSettingsRoutes)
 
   app.doc('/openapi.json', {
     openapi: '3.1.0',
