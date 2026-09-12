@@ -255,7 +255,7 @@ import { Users } from 'lucide-vue-next'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import TablePagination from '@/components/ui/TablePagination.vue'
 import RoleSelect from '@/components/ui/RoleSelect.vue'
-import { alert, confirm } from '@/composables/useConfirm'
+import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 const authorityManagementStore = useAuthorityManagementStore()
@@ -377,7 +377,7 @@ const isEditingSelf = computed(() =>
 // 姓名／帳號／PIN 允許編輯自己；角色群組不行（下面 isEditingSelf 會鎖住該欄位，後端也有對應檢查）。
 function openEditStaffDialog(row: StaffMember) {
   if (!canManage.value) {
-    void alert({ title: '通知', description: '沒有編輯人員的權限', confirmText: '我知道了' })
+    showToast('沒有編輯人員的權限', 'error')
     return
   }
   currentEditStaff.value = row

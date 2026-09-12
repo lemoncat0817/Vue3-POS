@@ -350,10 +350,10 @@ export const useCatalogStore = defineStore(
     // pinia-plugin-persistedstate 還原持久化狀態時，cartLines 被重新賦值
     // 觸發這個 watch，搶在 discountStore 也還原完成前就把它重置成 0。
     const cartClearedNotice = ref(0)
-    // 掛單也會清空 cartLines（購物車搬進 Dexie 之後清掉），跟結帳後清空
-    // 是同一個 watch 觸發點，但掛單當下已經另外彈過「已掛單」的 toast（見
-    // components/checkout/ParkedOrdersPanel.vue），不需要再疊加一次語意
-    // 不符的提示——這個旗標只抑制「彈提示」，清空額外費用／重置優惠券兩件
+    // 掛單、結帳送單、清空／批次清除待付款品項都會讓 cartLines 變空，
+    // 觸發同一個 watch，但這些操作當下都已經另外彈過各自的成功 toast
+    // （見 ParkedOrdersPanel.vue、home/index.vue），不需要再疊加一次語意
+    // 重複的提示——這個旗標只抑制「彈提示」，清空額外費用／重置優惠券兩件
     // 事仍照做。
     const suppressClearedNotice = ref(false)
     watch(

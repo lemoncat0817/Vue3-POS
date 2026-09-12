@@ -56,7 +56,6 @@ test('後台設定品項庫存為 0 後，點餐頁把這個品項標成缺貨�
   await page.getByRole('button', { name: '加入', exact: true }).click()
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
-  await page.getByRole('button', { name: '繼續選取品項' }).click()
 
   await page.getByText(categoryName, { exact: true }).click()
   const soldOutTile = page

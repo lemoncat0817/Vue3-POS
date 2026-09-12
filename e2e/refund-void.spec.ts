@@ -20,7 +20,6 @@ test('作廢訂單需要填寫原因，畫面與伺服端都記錄下這個原�
   await page.getByRole('button', { name: '加入', exact: true }).click()
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
-  await page.getByRole('button', { name: '繼續選取品項' }).click()
   const createBody = (await (await createResponse).json()) as { orderId: string }
 
   await page.getByText('查看訂單', { exact: true }).click()
@@ -80,7 +79,6 @@ test('部分退款：訂單維持已完成，畫面顯示已退款金額，超�
   await page.getByRole('button', { name: '加入', exact: true }).click()
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
-  await page.getByRole('button', { name: '繼續選取品項' }).click()
   const createBody = (await (await createResponse).json()) as {
     orderId: string
     orderPaymentPrice: number
@@ -147,7 +145,6 @@ test('作廢主管授權帳號或 PIN 錯誤時，整個作廢操作取消，不
   await page.getByRole('button', { name: '加入', exact: true }).click()
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
-  await page.getByRole('button', { name: '繼續選取品項' }).click()
   const createBody = (await (await createResponse).json()) as { orderId: string }
 
   await page.getByText('查看訂單', { exact: true }).click()

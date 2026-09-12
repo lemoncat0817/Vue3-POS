@@ -17,7 +17,6 @@ test('訂單編號關鍵字篩選輸入正規表示式特殊字元不會讓頁�
   await page.getByRole('button', { name: '加入', exact: true }).click()
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
-  await page.getByRole('button', { name: '繼續選取品項' }).click()
 
   await page.getByText('查看訂單', { exact: true }).click()
   await expect(page).toHaveURL(/\/order$/)
@@ -52,7 +51,6 @@ test('訂單期間篩選能排除黃金資料集裡的舊訂單，只留下今�
   await page.getByRole('button', { name: '加入', exact: true }).click()
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
-  await page.getByRole('button', { name: '繼續選取品項' }).click()
 
   await page.getByText('查看訂單', { exact: true }).click()
   await expect(page).toHaveURL(/\/order$/)

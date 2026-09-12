@@ -33,7 +33,6 @@ test('現金找零：實收金額大於應付金額時，面板與伺服端回�
   expect(body.tenders).toEqual([{ method: '現金', amount: 60, receivedAmount: 500 }])
 
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
-  await page.getByRole('button', { name: '繼續選取品項' }).click()
 })
 
 test('混合支付：現金＋信用卡各分擔一部分，伺服端摘要用頓號連接付款方式', async ({ page }) => {
@@ -66,5 +65,4 @@ test('混合支付：現金＋信用卡各分擔一部分，伺服端摘要用�
   expect(body.changeDue).toBe(0)
 
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
-  await page.getByRole('button', { name: '繼續選取品項' }).click()
 })

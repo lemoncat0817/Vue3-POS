@@ -206,7 +206,7 @@ import {
 } from 'reka-ui'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import TablePagination from '@/components/ui/TablePagination.vue'
-import { alert, confirm } from '@/composables/useConfirm'
+import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useOrderStore } from '@/stores/order'
 const orderStore = useOrderStore()
@@ -300,7 +300,7 @@ async function submit() {
 }
 async function removePayMethod(row: PaymentMethod) {
   if (row.name === '現金') {
-    void alert({ title: '通知', description: '不可刪除現金支付', confirmText: '我知道了' })
+    showToast('不可刪除現金支付', 'error')
     return
   }
   const result = await confirm({

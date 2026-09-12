@@ -570,7 +570,7 @@
 
 <script setup lang="ts">
 import { getDate, getTime } from '@/utils/time'
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import CategoryTabs from './categoryTabs/index.vue'
 import ProductMenu from './productMenu/index.vue'
 import ProductModifiers from './productModifiers/index.vue'
@@ -582,7 +582,7 @@ import ShiftPanel from '@/components/checkout/ShiftPanel.vue'
 import ParkedOrdersPanel from '@/components/checkout/ParkedOrdersPanel.vue'
 import InvoiceCarrierPanel from '@/components/checkout/InvoiceCarrierPanel.vue'
 import MemberPanel from '@/components/checkout/MemberPanel.vue'
-import { alert, confirm } from '@/composables/useConfirm'
+import { confirm } from '@/composables/useConfirm'
 import { prompt } from '@/composables/usePrompt'
 import { showToast } from '@/composables/useToast'
 import { useCatalogStore } from '@/stores/catalog'
@@ -638,15 +638,15 @@ watch(
 const addNewProduct = () => {
   const selectedProduct = fromSelection(catalogStore.selectedProduct)
   if (selectedProduct === undefined) {
-    void alert({ title: '通知', description: '品項未選擇', confirmText: '繼續選取' })
+    showToast('品項未選擇', 'error')
     return
   }
   if (!catalogStore.requiredModifiersSatisfied) {
-    void alert({ title: '通知', description: '規格尚未選擇完整', confirmText: '繼續選取' })
+    showToast('規格尚未選擇完整', 'error')
     return
   }
   if (Number(catalogStore.productCount) < 1) {
-    void alert({ title: '通知', description: '數量不能小於一份', confirmText: '繼續設定' })
+    showToast('數量不能小於一份', 'error')
     return
   }
   const modifierNames = catalogStore.selectedModifierNames
@@ -678,17 +678,18 @@ const addNewProduct = () => {
 
 const clearNotPay = async () => {
   if (catalogStore.cartLines.length === 0) {
-    void alert({
-      title: '通知',
-      description: '待付款清單為空，無法清空項目',
-      confirmText: '繼續選取品項'
-    })
+    showToast('待付款清單為空，無法清空項目', 'error')
     return
   }
   const result = await confirm({ title: '警告', description: '確定要清除所有待付款的品項嗎?' })
   if (result !== 'confirm') return
   catalogStore.cancelEditLine()
+  // 這裡已經有自己的成功 toast，suppressClearedNotice 期間清空購物車，
+  // 避免緊接著又疊一次語意重複的 cartClearedNotice 提示（見 catalog.ts 說明）。
+  catalogStore.suppressClearedNotice = true
   catalogStore.cartLines = []
+  await nextTick()
+  catalogStore.suppressClearedNotice = false
   showToast('清除成功', 'success')
 }
 const selectedLines = ref<CartLineItem[]>([])
@@ -709,14 +710,18 @@ const toggleSelect = (item: CartLineItem, checked: boolean) => {
 }
 const clearSelectNotPay = async () => {
   if (selectedLines.value.length === 0) {
-    void alert({ title: '通知', description: '尚未選取品項', confirmText: '繼續選取品項' })
+    showToast('尚未選取品項', 'error')
     return
   }
   const result = await confirm({ title: '警告', description: '確定要清除所有已選的待付款品項嗎?' })
   if (result !== 'confirm') return
+  // 全選後清除可能讓購物車變空，同樣要抑制重複的 cartClearedNotice 提示。
+  catalogStore.suppressClearedNotice = true
   catalogStore.cartLines = catalogStore.cartLines.filter(
     (item) => !selectedLines.value.includes(item)
   )
+  await nextTick()
+  catalogStore.suppressClearedNotice = false
   showToast('清除成功', 'success')
 }
 
@@ -802,16 +807,16 @@ const saveEditProduct = () => {
 
   const selectedProduct = fromSelection(catalogStore.selectedProduct)
   if (selectedProduct === undefined) {
-    void alert({ title: '通知', description: '品項未選擇', confirmText: '繼續選取' })
+    showToast('品項未選擇', 'error')
     return
   }
   if (!catalogStore.requiredModifiersSatisfied) {
-    void alert({ title: '通知', description: '規格尚未選擇完整', confirmText: '繼續選取' })
+    showToast('規格尚未選擇完整', 'error')
     return
   }
   const count = parseInt(catalogStore.productCount)
   if (isNaN(count) || count < 1) {
-    void alert({ title: '通知', description: '數量不能小於一份', confirmText: '繼續設定' })
+    showToast('數量不能小於一份', 'error')
     return
   }
 
@@ -908,14 +913,10 @@ const applyDiscountToggle = (toggle: (flags: LineDiscountFlags) => LineDiscountF
 }
 
 const noSelectionAlert = () => {
-  void alert({ title: '通知', description: '尚未選取品項', confirmText: '繼續選取品項' })
+  showToast('尚未選取品項', 'error')
 }
 const stillFreeAlert = () => {
-  void alert({
-    title: '通知',
-    description: '選取的品項中有品項尚未取消招待無法再套用折扣',
-    confirmText: '重新選取'
-  })
+  showToast('選取的品項中有品項尚未取消招待無法再套用折扣', 'error')
 }
 
 // 招待
@@ -942,11 +943,7 @@ const applyQuickDiscount = (id: FormNumeric) => {
 const dialogDiscount = ref(false)
 const openDiscountMenu = () => {
   if (catalogStore.cartLines.length <= 0) {
-    void alert({
-      title: '通知',
-      description: '待付款清單是空的無法使用優惠券',
-      confirmText: '繼續選取'
-    })
+    showToast('待付款清單是空的無法使用優惠券', 'error')
   } else {
     discountStore.selectingOrderCouponId = discountStore.orderCouponId
     dialogDiscount.value = true
@@ -993,11 +990,7 @@ const useDiscount = () => {
 const dialogPayment = ref(false)
 const openPaymentPanel = () => {
   if (catalogStore.cartLines.length <= 0 && catalogStore.currentBagCount <= 0) {
-    void alert({
-      title: '通知',
-      description: '訂單內沒有品項無法送單',
-      confirmText: '繼續添加品項'
-    })
+    showToast('訂單內沒有品項無法送單', 'error')
     return
   }
   dialogPayment.value = true
@@ -1098,7 +1091,12 @@ const submitPayment = async (tenders: TenderDraft[]) => {
   tableNumberInput.value = ''
   orderNote.value = ''
 
+  // 上面已經彈過「訂單送出成功」，抑制期間清空購物車，避免緊接著又疊一次
+  // cartClearedNotice 的提示把剛顯示的成功訊息立刻蓋掉（見 catalog.ts 說明）。
+  catalogStore.suppressClearedNotice = true
   catalogStore.cartLines = []
+  await nextTick()
+  catalogStore.suppressClearedNotice = false
 }
 </script>
 

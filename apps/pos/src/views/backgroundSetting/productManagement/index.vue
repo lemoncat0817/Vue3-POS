@@ -610,7 +610,7 @@ import { computed, reactive, ref } from 'vue'
 import { FolderTree, Package, Sliders } from 'lucide-vue-next'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import TablePagination from '@/components/ui/TablePagination.vue'
-import { alert, confirm } from '@/composables/useConfirm'
+import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useCatalogStore } from '@/stores/catalog'
 const catalogStore = useCatalogStore()
@@ -763,7 +763,7 @@ const productDialog = reactive<{
 })
 function openAddProductDialog() {
   if (catalogStore.categories.length === 0) {
-    void alert({ title: '通知', description: '請先新增至少一個分類', confirmText: '我知道了' })
+    showToast('請先新增至少一個分類', 'error')
     return
   }
   productDialog.editingId = null

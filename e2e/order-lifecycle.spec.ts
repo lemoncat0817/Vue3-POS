@@ -20,7 +20,6 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
   await page.getByRole('button', { name: '加入', exact: true }).click()
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
-  await page.getByRole('button', { name: '繼續選取品項' }).click()
   const createBody = (await (await createResponse).json()) as { orderId: string }
 
   await page.getByText('查看訂單', { exact: true }).click()

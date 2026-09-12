@@ -29,7 +29,6 @@ test('斷網時送出的 3 張訂單先落地本機佇列，重新連線後自�
     await page.getByRole('button', { name: '加入', exact: true }).click()
     await page.getByRole('button', { name: '確認送出', exact: true }).click()
     await expect(page.getByTestId('toast-message').last()).toHaveText('訂單送出成功')
-    await page.getByRole('button', { name: '繼續選取品項' }).click()
   }
 
   await submitOneOrder()

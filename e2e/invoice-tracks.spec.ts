@@ -48,7 +48,6 @@ test('新增電子發票字軌後自動啟用，送單用新字軌配號；模�
   await page.getByRole('button', { name: '加入', exact: true }).click()
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
-  await page.getByRole('button', { name: '繼續選取品項' }).click()
   const orderBody = (await (await createOrderResponse).json()) as {
     invoiceNumber: string
     invoiceStatus: string

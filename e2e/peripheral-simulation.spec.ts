@@ -45,7 +45,6 @@ test('訂單列表可以看到收據預覽，內容包含品項、金額與發�
   await page.getByRole('button', { name: '加入', exact: true }).click()
   await page.getByRole('button', { name: '確認送出', exact: true }).click()
   await expect(page.getByTestId('toast-message')).toHaveText('訂單送出成功')
-  await page.getByRole('button', { name: '繼續選取品項' }).click()
   const createBody = (await (await createResponse).json()) as {
     orderId: string
     invoiceNumber: string
