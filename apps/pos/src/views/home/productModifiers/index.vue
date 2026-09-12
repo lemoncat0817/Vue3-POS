@@ -48,9 +48,9 @@
           >
             加購
             <span
-              v-if="catalogStore.selectedAddOnList.length > 0"
+              v-if="catalogStore.selectedAddOnOptions.length > 0"
               class="text-primary-600 font-bold"
-              >({{ catalogStore.selectedAddOnList.length }})</span
+              >({{ catalogStore.selectedAddOnOptions.length }})</span
             >
           </button>
         </div>
@@ -69,9 +69,9 @@
       v-if="catalogStore.productPanel === 0"
       class="flex flex-col gap-2.5 min-h-[140px] justify-center"
     >
-      <div v-if="modifierGroups.length > 0" class="flex flex-col gap-2.5">
+      <div v-if="specGroups.length > 0" class="flex flex-col gap-2.5">
         <div
-          v-for="group in modifierGroups"
+          v-for="group in specGroups"
           :key="String(group.id)"
           class="flex items-center gap-2"
         >
@@ -110,58 +110,46 @@
       </div>
     </div>
 
-    <div v-if="catalogStore.productPanel === 1" class="flex flex-col gap-2 min-h-[140px]">
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-        <button
-          v-for="item in sliceAddMenu"
-          :key="item.id"
-          type="button"
-          class="relative flex flex-col items-center justify-between p-2 rounded-xl border text-center transition-all select-none cursor-pointer"
-          :class="{
-            'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 ring-2 ring-primary-500/20':
-              catalogStore.selectedAddOnList.some((addItem) => addItem.name === item.name),
-            'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:bg-white dark:hover:bg-surface-700':
-              !catalogStore.selectedAddOnList.some((addItem) => addItem.name === item.name),
-            'cursor-not-allowed opacity-40 pointer-events-none': isAddOnSoldOut(item)
-          }"
-          @click="changeAdd(item)"
-        >
-          <span class="text-xs font-bold">{{ item.name }}</span>
-          <span class="text-[10px] font-bold text-primary-600 dark:text-primary-400 mt-1">
-            +${{ item.price }}
+    <div v-if="catalogStore.productPanel === 1" class="flex flex-col gap-3 min-h-[140px]">
+      <div v-if="addOnGroups.length > 0" class="flex flex-col gap-3">
+        <div v-for="group in addOnGroups" :key="String(group.id)" class="flex flex-col gap-1.5">
+          <span class="text-xs font-bold text-surface-500 dark:text-surface-400">
+            {{ group.name }}<span v-if="group.required" class="text-danger-500">*</span>
           </span>
-          <span
-            v-if="isAddOnSoldOut(item)"
-            class="absolute top-0.5 right-0.5 rounded-full bg-danger-600 px-1.5 py-0.5 text-[8px] font-bold text-white shadow-sm"
-            >缺貨</span
-          >
-        </button>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+            <button
+              v-for="option in group.options"
+              :key="String(option.id)"
+              type="button"
+              class="relative flex flex-col items-center justify-between p-2 rounded-xl border text-center transition-all select-none cursor-pointer"
+              :class="{
+                'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-900 dark:text-primary-100 ring-2 ring-primary-500/20':
+                  isOptionSelected(group.id, option.id),
+                'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:bg-white dark:hover:bg-surface-700':
+                  !isOptionSelected(group.id, option.id),
+                'cursor-not-allowed opacity-40 pointer-events-none': isOptionSoldOut(option)
+              }"
+              @click="toggleOption(group, option.id)"
+            >
+              <span class="text-xs font-bold">{{ option.name }}</span>
+              <span class="text-[10px] font-bold text-primary-600 dark:text-primary-400 mt-1">
+                +${{ option.priceDelta }}
+              </span>
+              <span
+                v-if="isOptionSoldOut(option)"
+                class="absolute top-0.5 right-0.5 rounded-full bg-danger-600 px-1.5 py-0.5 text-[8px] font-bold text-white shadow-sm"
+                >缺貨</span
+              >
+            </button>
+          </div>
+        </div>
       </div>
 
       <div
-        v-if="pageCount > 1"
-        class="flex items-center justify-between pt-2 border-t border-surface-100 dark:border-surface-800 text-xs text-surface-500"
+        v-else
+        class="flex flex-col items-center justify-center py-6 text-surface-400 dark:text-surface-500"
       >
-        <span>共 {{ catalogStore.addOns.length }} 樣加購選項</span>
-        <div class="flex items-center gap-1">
-          <button
-            type="button"
-            class="h-6 w-6 rounded border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center justify-center"
-            :disabled="currentPage <= 1"
-            @click="handleCurrentChange(currentPage - 1)"
-          >
-            ‹
-          </button>
-          <span class="px-1 font-mono text-surface-600 dark:text-surface-300">{{ currentPage }}/{{ pageCount }}</span>
-          <button
-            type="button"
-            class="h-6 w-6 rounded border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center justify-center"
-            :disabled="currentPage >= pageCount"
-            @click="handleCurrentChange(currentPage + 1)"
-          >
-            ›
-          </button>
-        </div>
+        <span class="text-sm font-bold">此品項沒有可加購的選項</span>
       </div>
     </div>
 
@@ -290,7 +278,7 @@ const catalogStore = useCatalogStore()
 import { computed, ref } from 'vue'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
-import type { AddOnOption, FormNumeric, ModifierGroup } from '@/types'
+import type { FormNumeric, ModifierGroup, ModifierOption } from '@/types'
 import { fromSelection } from '@/utils/selection'
 import QuantityKeypadPopover from '@/components/ui/QuantityKeypadPopover.vue'
 import { Keyboard, Pencil, Check } from 'lucide-vue-next'
@@ -303,8 +291,9 @@ const emit = defineEmits<{
   (e: 'cancelEdit'): void
 }>()
 
-const modifierGroups = computed(() =>
-  catalogStore.modifierGroupsOf(fromSelection(catalogStore.selectedProduct))
+const specGroups = computed(() => catalogStore.specGroupsOf(fromSelection(catalogStore.selectedProduct)))
+const addOnGroups = computed(() =>
+  catalogStore.addOnGroupsOf(fromSelection(catalogStore.selectedProduct))
 )
 
 const isOptionSelected = (groupId: FormNumeric, optionId: FormNumeric) =>
@@ -348,27 +337,8 @@ const increaseCount = () => {
   catalogStore.productCount = String(current + 1)
 }
 
-// 加購選項庫存歸零視為缺貨不可加選
-const isAddOnSoldOut = (item: AddOnOption) => item.stock === 0
-const changeAdd = (addItem: AddOnOption) => {
-  if (catalogStore.selectedAddOnList.includes(addItem)) {
-    catalogStore.selectedAddOnList = catalogStore.selectedAddOnList.filter(
-      (item) => item != addItem
-    )
-  } else {
-    if (isAddOnSoldOut(addItem)) return
-    catalogStore.selectedAddOnList.push(addItem)
-  }
-}
-
-const handleCurrentChange = (page: number) => {
-  currentPage.value = page
-}
-const currentPage = ref(1)
-const sliceAddMenu = computed(() => {
-  return catalogStore.addOns.slice((currentPage.value - 1) * 10, currentPage.value * 10)
-})
-const pageCount = computed(() => Math.max(Math.ceil(catalogStore.addOns.length / 10), 1))
+// 選項庫存歸零視為缺貨不可加選（規格與加購共用同一個判斷，只是規格通常不設庫存）。
+const isOptionSoldOut = (option: ModifierOption) => option.stock === 0
 
 const resetAll = async () => {
   const result = await confirm({
@@ -379,7 +349,6 @@ const resetAll = async () => {
   catalogStore.selectedCategoryId = ''
   catalogStore.selectedProduct = []
   catalogStore.selectedModifiers = {}
-  catalogStore.selectedAddOnList = []
   if (catalogStore.editingLine) {
     catalogStore.cancelEditLine()
   }

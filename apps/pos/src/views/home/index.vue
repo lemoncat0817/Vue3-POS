@@ -652,6 +652,7 @@ const addNewProduct = () => {
     return
   }
   const modifierNames = catalogStore.selectedModifierNames
+  const addOnNames = catalogStore.selectedAddOnOptions.map((option) => option.name)
   const newLine: CartLineItem = {
     id: catalogStore.cartLines.length + 1,
     name:
@@ -661,24 +662,19 @@ const addNewProduct = () => {
     price: Number(selectedProduct.basePrice) + catalogStore.selectedModifierPriceDelta,
     count: parseInt(catalogStore.productCount),
     discount: 0,
-    addList:
-      catalogStore.selectedAddOnList.map((item) => item.name).length === 0
-        ? '無添加配料'
-        : catalogStore.selectedAddOnList.map((item) => item.name),
-    addListPrice: catalogStore.selectedAddOnList.reduce((acc, cur) => acc + Number(cur.price), 0),
+    addList: addOnNames.length === 0 ? '無添加配料' : addOnNames,
+    addListPrice: catalogStore.selectedAddOnPriceDelta,
     totalPrice: catalogStore.productCurrentTotal,
     freeDiscount: false,
     quickDiscountId: null,
     quickDiscountName: '',
     productId: String(selectedProduct.id),
-    selectedModifiers: JSON.parse(JSON.stringify(catalogStore.selectedModifiers)),
-    selectedAddOnIds: catalogStore.selectedAddOnList.map((item) => String(item.id))
+    selectedModifiers: JSON.parse(JSON.stringify(catalogStore.selectedModifiers))
   }
   catalogStore.cartLines.push(newLine)
   catalogStore.selectedCategoryId = ''
   catalogStore.selectedProduct = []
   catalogStore.selectedModifiers = {}
-  catalogStore.selectedAddOnList = []
   catalogStore.productCount = '0'
 }
 
@@ -823,11 +819,8 @@ const saveEditProduct = () => {
 
   const modifierNames = catalogStore.selectedModifierNames
   const unitPrice = Number(selectedProduct.basePrice) + catalogStore.selectedModifierPriceDelta
-  const addList = catalogStore.selectedAddOnList.map((item) => item.name)
-  const addListPrice = catalogStore.selectedAddOnList.reduce(
-    (acc, cur) => acc + Number(cur.price),
-    0
-  )
+  const addList = catalogStore.selectedAddOnOptions.map((option) => option.name)
+  const addListPrice = catalogStore.selectedAddOnPriceDelta
 
   // 保留原有折扣旗標重新以 priceLine 計算折扣後小計
   const flags: LineDiscountFlags = {
@@ -859,7 +852,6 @@ const saveEditProduct = () => {
   line.quickDiscountName = priced.quickDiscountName
   line.productId = String(selectedProduct.id)
   line.selectedModifiers = JSON.parse(JSON.stringify(catalogStore.selectedModifiers))
-  line.selectedAddOnIds = catalogStore.selectedAddOnList.map((item) => String(item.id))
 
   catalogStore.cancelEditLine()
   showToast(`已更新「${line.name.split(',')[0] ?? line.name}」規格`, 'success')
@@ -1088,9 +1080,14 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     }
     const addOnNames = Array.isArray(line.addList) ? line.addList : []
     for (const addOnName of addOnNames) {
-      const addOn = catalogStore.addOns.find((option) => option.name === addOnName)
-      if (addOn && typeof addOn.stock === 'number') {
-        addOn.stock = Math.max(0, addOn.stock - line.count)
+      // 加購選項現在是 modifierGroups 底下的選項，比對方式比照後端
+      // deductStock()：用名稱回查，第一個符合的就當作那筆加購。
+      for (const group of catalogStore.modifierGroups) {
+        const option = group.options.find((opt) => opt.name === addOnName)
+        if (option && typeof option.stock === 'number') {
+          option.stock = Math.max(0, option.stock - line.count)
+          break
+        }
       }
     }
   }
