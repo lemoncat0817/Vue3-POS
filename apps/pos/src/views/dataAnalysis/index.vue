@@ -104,10 +104,10 @@
           <button
             type="button"
             class="flex items-center gap-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-50 shadow-sm transition-colors"
-            @click="exportCsv"
+            @click="exportReport"
           >
             <Download class="h-3.5 w-3.5" />
-            <span>匯出 CSV</span>
+            <span>匯出 Excel</span>
           </button>
           <button
             type="button"
@@ -426,6 +426,7 @@ import {
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue'
+import ExcelJS from 'exceljs'
 import { Calendar, Download, Printer, Flame } from 'lucide-vue-next'
 
 echarts.use([
@@ -601,56 +602,124 @@ const isPresetActive = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
   return selectTime.value[0] === start && selectTime.value[1] === end
 }
 
-const exportCsv = () => {
+// 全形字元（中日韓）在 Excel 欄寬單位裡約佔半形字元的 2 倍視覺寬度，抓寬度時要分開算，
+// 否則中文標籤欄一律會被誤判成夠窄、開啟就截字。
+const columnTextWidth = (text: string) => {
+  let width = 0
+  for (const ch of text) {
+    width += /[　-鿿＀-￯]/.test(ch) ? 2 : 1
+  }
+  return width
+}
+
+const SECTION_HEADER_FILL: ExcelJS.Fill = {
+  type: 'pattern',
+  pattern: 'solid',
+  fgColor: { argb: 'FFF1F5F9' }
+}
+
+const exportReport = async () => {
   if (!salesReport.value) return
-  let csv = 'data:text/csv;charset=utf-8,\uFEFF'
-  csv += `POS 營運數據分析報表,期間: ${selectTime.value[0]} ~ ${selectTime.value[1]}\n\n`
-  csv += `總營業額,${totalRevenue.value}\n`
-  csv += `總訂單數,${totalOrders.value}\n`
-  csv += `平均客單價,${averageOrderValue.value}\n`
-  csv += `熱銷品項總量,${totalUnits.value}\n`
-  csv += `折扣金額,${discountAmount.value}\n`
-  csv += `折扣率,${discountRate.value}%\n`
-  csv += `作廢訂單數,${voidedOrderCount.value}\n`
-  csv += `作廢率,${voidRate.value}%\n`
-  csv += `退款金額,${refundAmount.value}\n`
-  csv += `退款訂單數,${refundedOrderCount.value}\n\n`
 
-  csv += '--- 內用／外帶佔比 ---\n通路,訂單數,營業額\n'
+  const workbook = new ExcelJS.Workbook()
+  const sheet = workbook.addWorksheet('營運數據分析')
+  const columnCount = 3
+  const colWidths = [0, 0, 0]
+  const trackWidth = (colIndex: number, value: string | number) => {
+    colWidths[colIndex] = Math.max(colWidths[colIndex] ?? 0, columnTextWidth(String(value)))
+  }
+
+  const addMergedRow = (text: string, bold = true) => {
+    const row = sheet.addRow([text])
+    sheet.mergeCells(row.number, 1, row.number, columnCount)
+    row.font = { bold }
+    trackWidth(0, text)
+  }
+
+  const addSectionHeader = (title: string) => {
+    sheet.addRow([])
+    addMergedRow(title)
+    sheet.lastRow!.fill = SECTION_HEADER_FILL
+  }
+
+  const addTableRow = (values: (string | number)[], bold = false) => {
+    const row = sheet.addRow(values)
+    row.font = { bold }
+    values.forEach((v, i) => trackWidth(i, v))
+  }
+
+  addMergedRow('POS 營運數據分析報表')
+  sheet.lastRow!.font = { bold: true, size: 14 }
+  addMergedRow(`統計期間：${selectTime.value[0]} ~ ${selectTime.value[1]}`, false)
+
+  sheet.addRow([])
+  const stats: [string, string | number][] = [
+    ['總營業額', totalRevenue.value],
+    ['總訂單數', totalOrders.value],
+    ['平均客單價', averageOrderValue.value],
+    ['熱銷品項總量', totalUnits.value],
+    ['折扣金額', discountAmount.value],
+    ['折扣率', `${discountRate.value}%`],
+    ['作廢訂單數', voidedOrderCount.value],
+    ['作廢率', `${voidRate.value}%`],
+    ['退款金額', refundAmount.value],
+    ['退款訂單數', refundedOrderCount.value]
+  ]
+  stats.forEach(([label, value]) => {
+    const row = sheet.addRow([label, value])
+    row.getCell(1).font = { bold: true }
+    trackWidth(0, label)
+    trackWidth(1, value)
+  })
+
+  addSectionHeader('內用／外帶佔比')
+  addTableRow(['通路', '訂單數', '營業額'], true)
   salesReport.value.channelBreakdown.forEach((c) => {
-    csv += `${c.channel},${c.count},${c.revenue}\n`
+    addTableRow([c.channel, c.count, c.revenue])
   })
 
-  csv += '\n--- 熱銷品項前五名 ---\n排名,品項名稱,銷售件數\n'
+  addSectionHeader('熱銷品項前五名')
+  addTableRow(['排名', '品項名稱', '銷售件數'], true)
   salesReport.value.topProducts.forEach((d, i) => {
-    csv += `${i + 1},${d.name},${d.count}\n`
+    addTableRow([i + 1, d.name, d.count])
   })
 
-  csv += '\n--- 分類別銷售佔比 ---\n排名,分類名稱,銷售件數\n'
+  addSectionHeader('分類別銷售佔比')
+  addTableRow(['排名', '分類名稱', '銷售件數'], true)
   salesReport.value.topCategories.forEach((c, i) => {
-    csv += `${i + 1},${c.name},${c.count}\n`
+    addTableRow([i + 1, c.name, c.count])
   })
 
-  csv += '\n--- 熱門加購選項前五名 ---\n排名,加購選項名稱,份數\n'
+  addSectionHeader('熱門加購選項前五名')
+  addTableRow(['排名', '加購選項名稱', '份數'], true)
   salesReport.value.topAddOns.forEach((a, i) => {
-    csv += `${i + 1},${a.name},${a.count}\n`
+    addTableRow([i + 1, a.name, a.count])
   })
 
-  csv += '\n--- 常用付款方式 ---\n付款方式,交易次數\n'
+  addSectionHeader('常用付款方式')
+  addTableRow(['付款方式', '交易次數'], true)
   salesReport.value.topPaymentMethods.forEach((p) => {
-    csv += `${p.name},${p.count}\n`
+    addTableRow([p.name, p.count])
   })
 
+  sheet.columns.forEach((col, i) => {
+    if (!col) return
+    col.width = Math.max((colWidths[i] ?? 0) + 2, 10)
+  })
+
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  })
+  const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
-  link.setAttribute('href', encodeURI(csv))
-  link.setAttribute(
-    'download',
-    `POS_Report_${toBusinessDate(selectTime.value[0])}_${toBusinessDate(selectTime.value[1])}.csv`
-  )
+  link.href = url
+  link.download = `POS_Report_${toBusinessDate(selectTime.value[0])}_${toBusinessDate(selectTime.value[1])}.xlsx`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-  showToast('報表已成功匯出為 CSV', 'success')
+  URL.revokeObjectURL(url)
+  showToast('報表已成功匯出為 Excel', 'success')
 }
 
 const handlePrintSettlement = () => {
