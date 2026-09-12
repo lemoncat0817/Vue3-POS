@@ -31,8 +31,7 @@ describe('GET /api/catalog', () => {
       { id: 'i1', categoryId: 'c1', name: '招牌牛肉漢堡', basePrice: 180, stock: 20 },
       { id: 'i2', categoryId: 'c1', name: '烤雞三明治', basePrice: 150, stock: null }
     ])
-    // mg2（加料／加起司）只掛在 i2 上——驗證加購選項跟規格選項受同一套
-    // productModifierGroups 約束，不會出現在沒掛用它的品項上。
+    // mg2 只掛在 i2 上，驗證加購跟規格一樣受 productModifierGroups 約束。
     await db
       .insert(productModifierGroups)
       .values([

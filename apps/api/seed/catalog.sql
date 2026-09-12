@@ -1,9 +1,7 @@
 -- 展示用菜單：跨品類的餐飲示範資料（主餐、輕食、飲品、甜點），示範這套
 -- 目錄模型不綁定單一產業——熟度、甜度/冰塊/容器大小、加購配料等客製化
 -- 選項一律透過可重複掛用的規格群組（modifier_groups）表達，不是寫死在
--- 品項欄位裡。「加購」不是獨立概念，只是 selection_type='multiple'、
--- required=0 的規格群組，一樣透過 product_modifier_groups 掛用，所以
--- 漢堡的加料（起司/蛋/培根）不會出現在飲料底下，反之亦然。
+-- 品項欄位裡。加購只是 selection_type='multiple' 的規格群組，一樣透過 product_modifier_groups 掛用，漢堡的加料不會出現在飲料底下。
 
 INSERT INTO categories (id, name) VALUES ('cat-1', '主餐');
 INSERT INTO categories (id, name) VALUES ('cat-2', '輕食');

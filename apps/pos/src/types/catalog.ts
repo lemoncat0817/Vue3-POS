@@ -12,11 +12,7 @@ export interface ModifierOption {
   stock?: number | null
 }
 
-/**
- * 規格群組（例如「甜度」「熟度」「容器大小」，或加購用途的「加料」），全域
- * 定義後可掛在任意數量的品項上。「加購」不是獨立概念，只是
- * selectionType='multiple'、required=false 的規格群組。
- */
+/** 規格群組（例如「甜度」，或加購用途的「加料」），全域定義後可掛在任意數量的品項上；加購只是 selectionType='multiple' 的規格群組。 */
 export interface ModifierGroup {
   id: FormNumeric
   name: string
@@ -67,11 +63,7 @@ export interface CartLineItem {
   /** 套用哪一筆快速折扣，沒套用是 null。 */
   quickDiscountId: string | null
   quickDiscountName: string
-  /**
-   * 供購物車就地規格再編輯用的快照（選填，避免影響伺服端契約）。加購跟規格
-   * 現在是同一套 selectedModifiers（groupId -> optionId[]），不再另外存
-   * selectedAddOnIds。
-   */
+  /** 供購物車就地規格再編輯用的快照（選填，避免影響伺服端契約），加購跟規格共用同一份。 */
   productId?: string
   selectedModifiers?: Record<string, string[]>
 }

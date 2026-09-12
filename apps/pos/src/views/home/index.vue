@@ -1080,8 +1080,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     }
     const addOnNames = Array.isArray(line.addList) ? line.addList : []
     for (const addOnName of addOnNames) {
-      // 加購選項現在是 modifierGroups 底下的選項，比對方式比照後端
-      // deductStock()：用名稱回查，第一個符合的就當作那筆加購。
+      // 比對方式比照後端 deductStock()：用名稱回查，第一個符合的就當作那筆加購。
       for (const group of catalogStore.modifierGroups) {
         const option = group.options.find((opt) => opt.name === addOnName)
         if (option && typeof option.stock === 'number') {

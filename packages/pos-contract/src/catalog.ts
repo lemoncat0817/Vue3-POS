@@ -20,12 +20,7 @@ export const modifierOptionSchema = z.object({
 })
 export type ModifierOption = z.infer<typeof modifierOptionSchema>
 
-/**
- * 規格群組（例如「甜度」「熟度」「尺寸」，或加購用途的「加料」），全域定義後
- * 可掛在任意數量的品項上。「加購」不是獨立概念，只是 selectionType='multiple'、
- * required=false 的規格群組——同一份關聯規則保證加購選項不會出現在沒掛用
- * 它的品項上（例如漢堡排底下不會出現「加珍珠」）。
- */
+/** 規格群組（例如「甜度」，或加購用途的「加料」），全域定義後可掛在任意數量的品項上；加購只是 selectionType='multiple' 的規格群組。 */
 export const modifierGroupSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),

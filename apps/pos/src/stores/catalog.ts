@@ -69,9 +69,7 @@ export const useCatalogStore = defineStore(
           { id: 'mo-size-2', name: '大杯', priceDelta: 10 }
         ]
       },
-      // 「加購」不是獨立概念，只是 selectionType='multiple'、required=false 的
-      // 規格群組，一樣只掛在有掛用它的品項上（見下方 products 的 modifierGroupIds）
-      // ——漢堡加料不會出現在飲料底下，反之亦然。
+      // 加購只是 selectionType='multiple' 的規格群組，一樣只掛在下方 products.modifierGroupIds 有列的品項上。
       {
         id: 'mg-burger-topping',
         name: '漢堡加料',
@@ -197,10 +195,7 @@ export const useCatalogStore = defineStore(
     const productPanel = ref(0)
     const selectedCategoryId = ref('')
     const selectedProduct = ref<Product | []>([])
-    // 已選規格／加購：groupId -> 選中的 optionId 清單（單選群組最多 1 筆，
-    // 多選群組可多筆）。加購不再另外用 selectedAddOnList 存一份完整物件，
-    // 跟規格共用同一份選擇狀態——加購本來就只是 selectionType='multiple'
-    // 的規格群組。
+    // 已選規格／加購：groupId -> 選中的 optionId 清單，兩者共用同一份狀態。
     const selectedModifiers = ref<Record<string, string[]>>({})
     const productCount = ref('0')
     const cartLines = ref<CartLineItem[]>([])
@@ -212,9 +207,7 @@ export const useCatalogStore = defineStore(
         )
         .filter((group): group is ModifierGroup => group !== undefined)
 
-    // 規格（單選，通常必選，如熟度／甜度）併入品名字串顯示；加購（多選，
-    // 通常非必選，如加起司／珍珠）另外列成 addList 徽章清單——用
-    // selectionType 分流，不是另外開一張表。
+    // 用 selectionType 分流：單選（規格）併入品名字串，多選（加購）另外列成 addList 徽章。
     const specGroupsOf = (product: Product | undefined) =>
       modifierGroupsOf(product).filter((group) => group.selectionType === 'single')
     const addOnGroupsOf = (product: Product | undefined) =>
@@ -290,9 +283,7 @@ export const useCatalogStore = defineStore(
         // 新格式快照已經同時含規格與加購（見 addNewProduct／saveEdit），整份沿用。
         selectedModifiers.value = JSON.parse(JSON.stringify(line.selectedModifiers))
       } else {
-        // 舊格式購物車（合併加購選項模型之前存的）沒有 selectedModifiers 快照，
-        // 只能從展示字串回查：規格是品名逗號後的「選項1/選項2」，加購是
-        // addList 名稱陣列——分別對回 specGroupsOf／addOnGroupsOf 的選項名稱。
+        // 舊格式沒有 selectedModifiers 快照，只能從展示字串（品名逗號後段、addList）回查名稱。
         const mods: Record<string, string[]> = {}
         const modPart = line.name.split(",")[1]
         if (modPart) {

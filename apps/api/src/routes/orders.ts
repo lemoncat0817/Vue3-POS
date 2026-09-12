@@ -361,8 +361,7 @@ async function deductStock(
     }
     if (Array.isArray(line.addList)) {
       for (const addOnName of line.addList) {
-        // 加購選項併入 modifierOptions 後比對方式不變，一樣是名稱比對（見函式
-        // 說明），只是查詢的表從獨立的 add_on_options 改成 modifier_options。
+        // 比對方式不變（見函式說明），只是查詢的表從 add_on_options 改成 modifier_options。
         const option = await db
           .select()
           .from(modifierOptions)
@@ -381,13 +380,7 @@ async function deductStock(
   }
 }
 
-// 送單契約（orderLineInputSchema）只有展示用的 name／addList 字串，沒有
-// productId 或選項 id（見 @pos/contract 的 order.ts 說明），因此合法性檢查
-// 只能比照 deductStock() 既有的名稱回查慣例：line.name 帶規格時是
-// 「品名,選項1/選項2」的組合字串（見 apps/pos 的 CartLineItem 組裝邏輯），
-// 取逗號前半段回查品項。查無此品項就放行、不擋單——這是既有慣例的延伸，
-// 不是新引入的限制；要完全杜絕，需要重新設計送單契約直接帶 productId，
-// 屬於更大範圍的改動，先不做。
+// 契約沒有 productId（見 @pos/contract 的 order.ts），比照 deductStock() 用 line.name 逗號前半段回查品項，查無此品項就放行、不擋單。
 async function findIllegalAddOns(
   db: AnyDb,
   tenantId: string | null,
@@ -553,8 +546,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json(toOrderResponse(existing, lines, existingTenders, existingRefunds), 200)
     }
 
-    // 品項與加購的合法性檢查（見 findIllegalAddOns 說明），故意排在核發序號
-    // 之前——不合法的訂單不該浪費掉一個序號。
+    // 排在核發序號之前：不合法的訂單不該浪費掉一個序號。
     for (const line of input.lines) {
       const illegal = await findIllegalAddOns(db, tenantId, line)
       if (illegal && illegal.length > 0) {

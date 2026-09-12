@@ -143,9 +143,7 @@ export async function ensureTenantOnboarded(
     { id: catDrink, tenantId, name: '飲品' }
   ])
 
-  // 「加購」不是獨立概念，只是 selectionType='multiple'、required=false 的
-  // 規格群組（見 db/schema.ts 的說明）：mgTopping 只掛在 prodTea 上，示範
-  // 漢堡排底下天生不會出現「加珍珠」這種不合理組合，不是靠畫面另外擋。
+  // mgTopping 只掛在 prodTea 上：示範加購（selectionType='multiple' 的規格群組）不會出現在漢堡排底下。
   const mgSweetness = crypto.randomUUID()
   const mgIce = crypto.randomUUID()
   const mgTopping = crypto.randomUUID()

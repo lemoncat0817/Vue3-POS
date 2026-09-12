@@ -62,9 +62,7 @@ export const webSessions = sqliteTable('web_sessions', {
 // ---------- 菜單 ----------
 // 不綁定單一餐飲品類：品項只有一個底價，客製化選項（尺寸、甜度、熟度、加購……）
 // 一律透過可重複掛用的規格群組（modifierGroups）表達，見 @pos/contract 的說明。
-// 「加購」不是獨立概念，只是 selectionType='multiple'、required=false 的規格
-// 群組——沒有另外一張表，才能保證加購選項一樣受 productModifierGroups 約束，
-// 不會出現在沒掛用它的品項上（例如漢堡不會冒出「加珍珠」）。
+// 「加購」只是 selectionType='multiple'、required=false 的規格群組，不另外開表，才能一樣受 productModifierGroups 約束。
 
 export const categories = sqliteTable('categories', {
   id: text('id').primaryKey(),
@@ -100,8 +98,7 @@ export const modifierOptions = sqliteTable('modifier_options', {
     .references(() => modifierGroups.id),
   name: text('name').notNull(),
   priceDelta: integer('price_delta').notNull(),
-  // null 代表不追蹤此選項庫存，語意同 products.stock——加購選項（例如「珍珠」）
-  // 併入規格群組後，缺貨語意改由這裡承接，不再需要獨立的 add_on_options 表。
+  // null 代表不追蹤此選項庫存，語意同 products.stock，承接原本 add_on_options.stock。
   stock: integer('stock')
 })
 
