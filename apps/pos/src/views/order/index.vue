@@ -671,7 +671,7 @@ import { requestRefund } from '@/composables/useRefund'
 import { showReceipt } from '@/composables/useReceiptPreview'
 import { showToast } from '@/composables/useToast'
 import { ulid } from '@pos/domain'
-import type { OrderSummary } from '@pos/contract'
+import type { Order, OrderSummary } from '@pos/contract'
 import type { OrderRecord } from '@/types'
 
 // P6：訂單還在離線佇列裡等待第一次同步時，伺服端根本沒有這筆訂單，
@@ -899,7 +899,14 @@ function resetPageAndReload() {
   }
 }
 watch(
-  [filterDateFrom, filterDateTo, filterChannel, filterStaff, filterOrderStatus, filterOrderPayMethod],
+  [
+    filterDateFrom,
+    filterDateTo,
+    filterChannel,
+    filterStaff,
+    filterOrderStatus,
+    filterOrderPayMethod
+  ],
   resetPageAndReload
 )
 watch(filterKeyword, () => {
@@ -1058,12 +1065,18 @@ const columns = [
     header: '操作',
     cell: (info) => {
       const order = info.row.original
-      const canEditStatus = hasCapability(loginStore.userInfo, 'canEditOrderStatus')
       const canDelete = hasCapability(loginStore.userInfo, 'canDeleteOrder')
       const canRefund =
         hasCapability(loginStore.userInfo, 'canRefundOrVoid') &&
         order.orderStatus === '已完成' &&
         remainingRefundableOf(order) > 0
+      // 作廢／恢復是方向相反、輕重也不同的兩個動作（作廢要主管授權＋原因，
+      // 恢復不用），依目前狀態各自顯示對應的單一按鈕，不要用一顆「編輯狀態」
+      // 按鈕接一個要使用者從通用對話框裡「猜」語意的選單。
+      const canVoid =
+        hasCapability(loginStore.userInfo, 'canRefundOrVoid') && order.orderStatus === '已完成'
+      const canRestore =
+        hasCapability(loginStore.userInfo, 'canEditOrderStatus') && order.orderStatus === '已取消'
       return h('div', { class: 'flex flex-wrap justify-end gap-1.5' }, [
         h(
           'button',
@@ -1074,18 +1087,31 @@ const columns = [
           },
           '收據'
         ),
-        h(
-          'button',
-          {
-            type: 'button',
-            class: [
-              'pos-btn pos-btn-primary-tint px-2.5 py-1 text-xs',
-              canEditStatus ? '' : 'pointer-events-none opacity-40'
-            ],
-            onClick: () => editOrderStatus(order.orderId)
-          },
-          '編輯訂單狀態'
-        ),
+        order.orderStatus === '已完成'
+          ? h(
+              'button',
+              {
+                type: 'button',
+                class: [
+                  'pos-btn pos-btn-danger px-2.5 py-1 text-xs',
+                  canVoid ? '' : 'pointer-events-none opacity-40'
+                ],
+                onClick: () => voidOrder(order)
+              },
+              '作廢訂單'
+            )
+          : h(
+              'button',
+              {
+                type: 'button',
+                class: [
+                  'pos-btn pos-btn-primary-tint px-2.5 py-1 text-xs',
+                  canRestore ? '' : 'pointer-events-none opacity-40'
+                ],
+                onClick: () => restoreOrder(order)
+              },
+              '恢復訂單'
+            ),
         h(
           'button',
           {
@@ -1162,62 +1188,78 @@ async function requestRefundOrVoidApproval(
   }
 }
 
-const editOrderStatus = async (id: string) => {
-  const result = await confirm({
-    title: '修改訂單狀態',
-    description: '請選擇當前的訂單狀態',
-    confirmText: '已完成',
-    cancelText: '已取消'
+// 本機快取若也有這筆（離線時的 fallback 來源），同步更新，否則離線時看到
+// 的會是狀態變更前的舊資料。畫面本身一律重新向伺服端要這一頁＋KPI 摘要，
+// 這裡只是避免離線 fallback 顯示過期狀態。
+function applyLocalStatusUpdate(orderId: string, updated: Order) {
+  const local = orderStore.order.find((item) => item.orderId === orderId)
+  if (local) {
+    local.orderStatus = updated.orderStatus
+    local.voidReason = updated.voidReason
+    local.voidedBy = updated.voidedBy
+    local.voidedAt = updated.voidedAt
+    orderStore.order = [...orderStore.order]
+  }
+}
+
+const voidOrder = async (order: OrderRecord) => {
+  if (order.orderStatus !== '已完成') return
+  const approver = await requestRefundOrVoidApproval(
+    '作廢需要主管授權',
+    '這筆訂單即將被標記為作廢，請輸入有權限核可的帳號與 PIN'
+  )
+  if (approver === null) return
+
+  const voidReason = await prompt({
+    title: '作廢原因',
+    description: '這筆訂單將被標記為作廢，班別結算不會再計入這筆訂單的現金收入',
+    label: '原因',
+    placeholder: '例如：客人臨時取消、重複建單',
+    confirmText: '確認作廢'
   })
-  if (result === 'dismiss') return
-  const nextStatus = result === 'confirm' ? '已完成' : '已取消'
-
-  let reason: string | undefined
-  let voidApprover: RefundOrVoidApprover | null = null
-  if (nextStatus === '已取消') {
-    voidApprover = await requestRefundOrVoidApproval(
-      '作廢需要主管授權',
-      '這筆訂單即將被標記為作廢，請輸入有權限核可的帳號與 PIN'
-    )
-    if (voidApprover === null) return
-
-    const voidReason = await prompt({
-      title: '作廢原因',
-      description: '這筆訂單將被標記為作廢，班別結算不會再計入這筆訂單的現金收入',
-      label: '原因',
-      placeholder: '例如：客人臨時取消、重複建單',
-      confirmText: '確認作廢'
-    })
-    if (voidReason === null) return
-    reason = voidReason
+  if (voidReason === null) {
+    await revokeSession(approver.sessionToken).catch(() => undefined)
+    return
   }
 
   try {
     const updated = await updateOrderStatus(
-      id,
-      nextStatus,
-      voidApprover?.label ?? currentOperator(),
-      reason,
-      voidApprover?.sessionToken
+      order.orderId,
+      '已取消',
+      approver.label,
+      voidReason,
+      approver.sessionToken
     )
-    // 本機快取若也有這筆（離線時的 fallback 來源），同步更新，否則離線
-    // 時看到的會是作廢前的舊狀態。畫面本身一律重新向伺服端要這一頁＋
-    // KPI 摘要，不用本機補丁拼出下一次要顯示的資料。
-    const local = orderStore.order.find((item) => item.orderId === id)
-    if (local) {
-      local.orderStatus = updated.orderStatus
-      local.voidReason = updated.voidReason
-      local.voidedBy = updated.voidedBy
-      local.voidedAt = updated.voidedAt
-      orderStore.order = [...orderStore.order]
-    }
+    applyLocalStatusUpdate(order.orderId, updated)
     await Promise.all([loadOrders(), loadSummary()])
-    showToast(`訂單狀態已設定為${nextStatus}`, 'success')
+    showToast('訂單已作廢', 'success')
   } catch (err) {
     showToast(orderApiErrorMessage(err), 'error')
   } finally {
     // 主管的授權 session 只為了這一次作廢核可存在，用完就撤銷，不留在終端機的有效清單裡。
-    if (voidApprover) await revokeSession(voidApprover.sessionToken).catch(() => undefined)
+    await revokeSession(approver.sessionToken).catch(() => undefined)
+  }
+}
+
+// 恢復不是作廢的逆操作重跑一次審核，後端本來就只要求「改回已完成」
+// 清空作廢欄位、不需要理由或主管授權（見 apps/api/src/routes/orders.ts）。
+const restoreOrder = async (order: OrderRecord) => {
+  if (order.orderStatus !== '已取消') return
+  const result = await confirm({
+    title: '恢復訂單',
+    description: '確定要將這筆訂單恢復為已完成嗎？恢復後這筆訂單會重新計入班別結算的現金收入。',
+    confirmText: '恢復訂單',
+    cancelText: '取消'
+  })
+  if (result !== 'confirm') return
+
+  try {
+    const updated = await updateOrderStatus(order.orderId, '已完成', currentOperator())
+    applyLocalStatusUpdate(order.orderId, updated)
+    await Promise.all([loadOrders(), loadSummary()])
+    showToast('訂單已恢復為已完成', 'success')
+  } catch (err) {
+    showToast(orderApiErrorMessage(err), 'error')
   }
 }
 

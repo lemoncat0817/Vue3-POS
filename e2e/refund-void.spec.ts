@@ -27,8 +27,7 @@ test('作廢訂單需要填寫原因，畫面與伺服端都記錄下這個原�
   const row = page.getByTestId('order-row').filter({ hasText: createBody.orderId })
   await expect(row).toBeVisible()
 
-  await row.getByRole('button', { name: '編輯訂單狀態' }).click()
-  await page.getByRole('button', { name: '已取消', exact: true }).click()
+  await row.getByRole('button', { name: '作廢訂單' }).click()
   const voidAuthDialog = page.getByRole('dialog', { name: '作廢需要主管授權' })
   await voidAuthDialog.getByLabel('帳號').fill('lemon')
   await voidAuthDialog.getByLabel('PIN').fill('1234')
@@ -53,7 +52,7 @@ test('作廢訂單需要填寫原因，畫面與伺服端都記錄下這個原�
   expect(statusBody.voidReason).toBe('客人臨時取消訂單')
   expect(statusBody.voidedBy).toContain('Lemon')
 
-  await expect(page.getByTestId('toast-message')).toHaveText('訂單狀態已設定為已取消')
+  await expect(page.getByTestId('toast-message')).toHaveText('訂單已作廢')
   await expect(row).toContainText('已取消')
 
   await row.locator('button[aria-label="展開明細"]').click()
@@ -158,8 +157,7 @@ test('作廢主管授權帳號或 PIN 錯誤時，整個作廢操作取消，不
       statusRequests.push(req.method())
   })
 
-  await row.getByRole('button', { name: '編輯訂單狀態' }).click()
-  await page.getByRole('button', { name: '已取消', exact: true }).click()
+  await row.getByRole('button', { name: '作廢訂單' }).click()
   const voidAuthDialog = page.getByRole('dialog', { name: '作廢需要主管授權' })
   await voidAuthDialog.getByLabel('帳號').fill('lemon')
   await voidAuthDialog.getByLabel('PIN').fill('0000')

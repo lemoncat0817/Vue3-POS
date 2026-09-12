@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
-// 驗證訂單狀態變更（取消／作廢）與刪除操作向伺服端發送請求及畫面更新。
-test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page }) => {
+// 驗證訂單作廢、恢復與刪除操作向伺服端發送請求及畫面更新。
+test('作廢、恢復與刪除訂單會真的呼叫伺服端', async ({ page }) => {
   await page.goto('login')
   await page.getByPlaceholder('請輸入帳號').fill('lemon')
   await page.getByPlaceholder('請輸入 PIN').fill('1234')
@@ -33,8 +33,7 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
       res.request().method() === 'PATCH' &&
       res.ok()
   )
-  await row.getByRole('button', { name: '編輯訂單狀態' }).click()
-  await page.getByRole('button', { name: '已取消', exact: true }).click()
+  await row.getByRole('button', { name: '作廢訂單' }).click()
   const voidAuthDialog = page.getByRole('dialog', { name: '作廢需要主管授權' })
   await voidAuthDialog.getByLabel('帳號').fill('lemon')
   await voidAuthDialog.getByLabel('PIN').fill('1234')
@@ -47,8 +46,25 @@ test('編輯訂單狀態與刪除訂單會真的呼叫伺服端', async ({ page 
   }
   expect(statusBody.orderStatus).toBe('已取消')
   expect(statusBody.voidReason).toBe('客人臨時取消')
-  await expect(page.getByTestId('toast-message')).toHaveText('訂單狀態已設定為已取消')
+  await expect(page.getByTestId('toast-message')).toHaveText('訂單已作廢')
   await expect(row).toContainText('已取消')
+
+  // 作廢後動作欄應該換成「恢復訂單」，恢復不需要主管授權，直接確認即可。
+  const restoreResponse = page.waitForResponse(
+    (res) =>
+      res.url().includes(`/api/orders/${createBody.orderId}/status`) &&
+      res.request().method() === 'PATCH' &&
+      res.ok()
+  )
+  await row.getByRole('button', { name: '恢復訂單' }).click()
+  await page
+    .getByRole('alertdialog', { name: '恢復訂單' })
+    .getByRole('button', { name: '恢復訂單', exact: true })
+    .click()
+  const restoreBody = (await (await restoreResponse).json()) as { orderStatus: string }
+  expect(restoreBody.orderStatus).toBe('已完成')
+  await expect(page.getByTestId('toast-message')).toHaveText('訂單已恢復為已完成')
+  await expect(row).toContainText('已完成')
 
   const deleteResponse = page.waitForResponse(
     (res) =>
