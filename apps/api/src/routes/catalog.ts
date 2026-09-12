@@ -1,22 +1,18 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import {
-  addOnOptionSchema,
   categorySchema,
   catalogResponseSchema,
-  createAddOnOptionRequestSchema,
   createCategoryRequestSchema,
   createModifierGroupRequestSchema,
   createProductRequestSchema,
   modifierGroupSchema,
   productSchema,
-  updateAddOnOptionRequestSchema,
   updateCategoryRequestSchema,
   updateModifierGroupRequestSchema,
   updateProductRequestSchema
 } from '@pos/contract'
 import {
-  addOnOptions,
   categories,
   modifierGroups,
   modifierOptions,
@@ -37,13 +33,13 @@ const getCatalogRoute = createRoute({
   middleware: [requireDeviceToken] as const,
   responses: {
     200: {
-      description: '目前的菜單（分類、品項、規格群組、加購選項）',
+      description: '目前的菜單（分類、品項、規格群組——加購選項併在規格群組內表達）',
       content: { 'application/json': { schema: catalogResponseSchema } }
     }
   }
 })
 
-/** 菜單管理寫入 API：支援分類、品項、規格群組與加購選項之後台維護。 */
+/** 菜單管理寫入 API：支援分類、品項、規格群組（含加購用途）之後台維護。 */
 const createCategoryRoute = createRoute({
   method: 'post',
   path: '/categories',
@@ -225,73 +221,12 @@ const deleteModifierGroupRoute = createRoute({
   }
 })
 
-const createAddOnRoute = createRoute({
-  method: 'post',
-  path: '/add-ons',
-  middleware: [requireDeviceToken, requireCapability('canSetAddOns')] as const,
-  request: {
-    body: { content: { 'application/json': { schema: createAddOnOptionRequestSchema } } }
-  },
-  responses: {
-    201: {
-      description: '加購選項建立成功',
-      content: { 'application/json': { schema: addOnOptionSchema } }
-    },
-    401: {
-      description: '裝置憑證無效或缺漏',
-      content: { 'application/json': { schema: errorSchema } }
-    }
-  }
-})
-
-const updateAddOnRoute = createRoute({
-  method: 'put',
-  path: '/add-ons/{id}',
-  middleware: [requireDeviceToken, requireCapability('canSetAddOns')] as const,
-  request: {
-    params: z.object({ id: z.string().min(1) }),
-    body: { content: { 'application/json': { schema: updateAddOnOptionRequestSchema } } }
-  },
-  responses: {
-    200: {
-      description: '加購選項更新成功',
-      content: { 'application/json': { schema: addOnOptionSchema } }
-    },
-    401: {
-      description: '裝置憑證無效或缺漏',
-      content: { 'application/json': { schema: errorSchema } }
-    },
-    404: {
-      description: '找不到這個加購選項',
-      content: { 'application/json': { schema: errorSchema } }
-    }
-  }
-})
-
-const deleteAddOnRoute = createRoute({
-  method: 'delete',
-  path: '/add-ons/{id}',
-  middleware: [requireDeviceToken, requireCapability('canSetAddOns')] as const,
-  request: { params: z.object({ id: z.string().min(1) }) },
-  responses: {
-    204: { description: '加購選項已刪除' },
-    401: {
-      description: '裝置憑證無效或缺漏',
-      content: { 'application/json': { schema: errorSchema } }
-    },
-    404: {
-      description: '找不到這個加購選項',
-      content: { 'application/json': { schema: errorSchema } }
-    }
-  }
-})
-
 /** 一次寫入規格群組的所有選項：先刪光現有選項再整批重建，避免逐筆 diff 的複雜度。 */
 async function replaceModifierOptions(
   db: AnyDb,
   groupId: string,
   tenantId: string | null,
-  options: { name: string; priceDelta: number }[]
+  options: { name: string; priceDelta: number; stock: number | null }[]
 ) {
   await db.delete(modifierOptions).where(eq(modifierOptions.groupId, groupId))
   if (options.length === 0) return
@@ -320,7 +255,8 @@ async function loadModifierGroup(db: AnyDb, id: string, tenantId: string | null)
     options: options.map((option) => ({
       id: option.id,
       name: option.name,
-      priceDelta: option.priceDelta
+      priceDelta: option.priceDelta,
+      stock: option.stock
     }))
   })
 }
@@ -344,7 +280,7 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     const db = c.get('db')
     const tenantId = c.get('tenantId')
 
-    const [categoryRows, productRows, groupRows, optionRows, productGroupRows, addOns] =
+    const [categoryRows, productRows, groupRows, optionRows, productGroupRows] =
       await Promise.all([
         db
           .select()
@@ -370,11 +306,6 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
           .select()
           .from(productModifierGroups)
           .where(tenantFilter(productModifierGroups.tenantId, tenantId))
-          .all(),
-        db
-          .select()
-          .from(addOnOptions)
-          .where(tenantFilter(addOnOptions.tenantId, tenantId))
           .all()
       ])
 
@@ -410,14 +341,9 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
           options: (optionsByGroup.get(group.id) ?? []).map((option) => ({
             id: option.id,
             name: option.name,
-            priceDelta: option.priceDelta
+            priceDelta: option.priceDelta,
+            stock: option.stock
           }))
-        })),
-        addOns: addOns.map((addOn) => ({
-          id: addOn.id,
-          name: addOn.name,
-          price: addOn.price,
-          stock: addOn.stock
         }))
       })
     )
@@ -594,40 +520,5 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     await db.delete(modifierOptions).where(eq(modifierOptions.groupId, id))
     await db.delete(productModifierGroups).where(eq(productModifierGroups.groupId, id))
     await db.delete(modifierGroups).where(eq(modifierGroups.id, id))
-    return c.body(null, 204)
-  })
-  .openapi(createAddOnRoute, async (c) => {
-    const input = c.req.valid('json')
-    const db = c.get('db')
-    const tenantId = c.get('tenantId')
-    const newAddOn = { id: crypto.randomUUID(), tenantId, ...input }
-    await db.insert(addOnOptions).values(newAddOn)
-    return c.json(newAddOn, 201)
-  })
-  .openapi(updateAddOnRoute, async (c) => {
-    const { id } = c.req.valid('param')
-    const input = c.req.valid('json')
-    const db = c.get('db')
-    const tenantId = c.get('tenantId')
-    const existing = await db
-      .select()
-      .from(addOnOptions)
-      .where(and(eq(addOnOptions.id, id), tenantFilter(addOnOptions.tenantId, tenantId)))
-      .get()
-    if (!existing) return c.json({ error: '找不到這個加購選項' }, 404)
-    await db.update(addOnOptions).set(input).where(eq(addOnOptions.id, id))
-    return c.json({ id, ...input }, 200)
-  })
-  .openapi(deleteAddOnRoute, async (c) => {
-    const { id } = c.req.valid('param')
-    const db = c.get('db')
-    const tenantId = c.get('tenantId')
-    const existing = await db
-      .select()
-      .from(addOnOptions)
-      .where(and(eq(addOnOptions.id, id), tenantFilter(addOnOptions.tenantId, tenantId)))
-      .get()
-    if (!existing) return c.json({ error: '找不到這個加購選項' }, 404)
-    await db.delete(addOnOptions).where(eq(addOnOptions.id, id))
     return c.body(null, 204)
   })

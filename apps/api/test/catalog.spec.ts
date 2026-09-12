@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
 import {
-  addOnOptions,
   categories,
   modifierGroups,
   modifierOptions,
@@ -16,22 +15,30 @@ async function readJson(res: Response): Promise<any> {
 }
 
 describe('GET /api/catalog', () => {
-  it('回傳分類、品項（含掛用的規格群組）與加購選項', async () => {
+  it('回傳分類、品項（含掛用的規格群組），加購選項只出現在有掛用的品項上', async () => {
     const db = createTestDb()
     await db.insert(categories).values([{ id: 'c1', name: '主餐' }])
-    await db
-      .insert(modifierGroups)
-      .values([{ id: 'mg1', name: '熟度', selectionType: 'single', required: true }])
+    await db.insert(modifierGroups).values([
+      { id: 'mg1', name: '熟度', selectionType: 'single', required: true },
+      { id: 'mg2', name: '加料', selectionType: 'multiple', required: false }
+    ])
     await db.insert(modifierOptions).values([
-      { id: 'mo1', groupId: 'mg1', name: '五分熟', priceDelta: 0 },
-      { id: 'mo2', groupId: 'mg1', name: '全熟', priceDelta: 0 }
+      { id: 'mo1', groupId: 'mg1', name: '五分熟', priceDelta: 0, stock: null },
+      { id: 'mo2', groupId: 'mg1', name: '全熟', priceDelta: 0, stock: null },
+      { id: 'mo3', groupId: 'mg2', name: '加起司', priceDelta: 20, stock: null }
     ])
     await db.insert(products).values([
       { id: 'i1', categoryId: 'c1', name: '招牌牛肉漢堡', basePrice: 180, stock: 20 },
       { id: 'i2', categoryId: 'c1', name: '烤雞三明治', basePrice: 150, stock: null }
     ])
-    await db.insert(productModifierGroups).values([{ productId: 'i1', groupId: 'mg1' }])
-    await db.insert(addOnOptions).values([{ id: 'a1', name: '加起司', price: 20 }])
+    // mg2（加料／加起司）只掛在 i2 上——驗證加購選項跟規格選項受同一套
+    // productModifierGroups 約束，不會出現在沒掛用它的品項上。
+    await db
+      .insert(productModifierGroups)
+      .values([
+        { productId: 'i1', groupId: 'mg1' },
+        { productId: 'i2', groupId: 'mg2' }
+      ])
 
     const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
       seedStaff: false
@@ -57,7 +64,7 @@ describe('GET /api/catalog', () => {
           name: '烤雞三明治',
           basePrice: 150,
           stock: null,
-          modifierGroupIds: []
+          modifierGroupIds: ['mg2']
         }
       ],
       modifierGroups: [
@@ -67,12 +74,18 @@ describe('GET /api/catalog', () => {
           selectionType: 'single',
           required: true,
           options: [
-            { id: 'mo1', name: '五分熟', priceDelta: 0 },
-            { id: 'mo2', name: '全熟', priceDelta: 0 }
+            { id: 'mo1', name: '五分熟', priceDelta: 0, stock: null },
+            { id: 'mo2', name: '全熟', priceDelta: 0, stock: null }
           ]
+        },
+        {
+          id: 'mg2',
+          name: '加料',
+          selectionType: 'multiple',
+          required: false,
+          options: [{ id: 'mo3', name: '加起司', priceDelta: 20, stock: null }]
         }
-      ],
-      addOns: [{ id: 'a1', name: '加起司', price: 20, stock: null }]
+      ]
     })
   })
 
@@ -85,8 +98,7 @@ describe('GET /api/catalog', () => {
     expect(await res.json()).toEqual({
       categories: [],
       products: [],
-      modifierGroups: [],
-      addOns: []
+      modifierGroups: []
     })
   })
 
@@ -298,7 +310,7 @@ describe('菜單管理寫入 API', () => {
           name: '甜度',
           selectionType: 'single',
           required: true,
-          options: [{ name: '正常糖', priceDelta: 0 }]
+          options: [{ name: '正常糖', priceDelta: 0, stock: null }]
         })
       })
     )
@@ -317,8 +329,8 @@ describe('菜單管理寫入 API', () => {
         selectionType: 'single',
         required: true,
         options: [
-          { name: '正常糖', priceDelta: 0 },
-          { name: '半糖', priceDelta: 0 }
+          { name: '正常糖', priceDelta: 0, stock: null },
+          { name: '半糖', priceDelta: 0, stock: null }
         ]
       })
     })
@@ -336,39 +348,54 @@ describe('菜單管理寫入 API', () => {
     expect(after.modifierGroups).toEqual([])
   })
 
-  it('新增、編輯、刪除加購選項，異動反映在 GET /api/catalog', async () => {
+  it('新增、編輯、刪除加購用途（多選、非必選）的規格群組，選項的庫存欄位正確往返', async () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
-    const addOn = await readJson(
-      await app.request('/api/catalog/add-ons', {
+    const group = await readJson(
+      await app.request('/api/catalog/modifier-groups', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Device-Token': deviceToken,
           'X-Operator-Session': sessionToken
         },
-        body: JSON.stringify({ name: '加起司', price: 20, stock: null })
+        body: JSON.stringify({
+          name: '加料',
+          selectionType: 'multiple',
+          required: false,
+          options: [{ name: '珍珠', priceDelta: 10, stock: 5 }]
+        })
       })
     )
-    expect(addOn).toMatchObject({ name: '加起司', price: 20, stock: null })
+    expect(group).toMatchObject({ name: '加料', selectionType: 'multiple', required: false })
+    expect(group.options).toEqual([
+      { id: expect.any(String), name: '珍珠', priceDelta: 10, stock: 5 }
+    ])
 
-    const updateRes = await app.request(`/api/catalog/add-ons/${addOn.id}`, {
+    const updateRes = await app.request(`/api/catalog/modifier-groups/${group.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'X-Device-Token': deviceToken,
         'X-Operator-Session': sessionToken
       },
-      body: JSON.stringify({ name: '加起司', price: 25, stock: null })
+      body: JSON.stringify({
+        name: '加料',
+        selectionType: 'multiple',
+        required: false,
+        options: [{ name: '珍珠', priceDelta: 10, stock: 0 }]
+      })
     })
     expect(updateRes.status).toBe(200)
+    const updated = await readJson(updateRes)
+    expect(updated.options[0]).toMatchObject({ name: '珍珠', stock: 0 })
 
-    const deleteRes = await app.request(`/api/catalog/add-ons/${addOn.id}`, {
+    const deleteRes = await app.request(`/api/catalog/modifier-groups/${group.id}`, {
       method: 'DELETE',
       headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     expect(deleteRes.status).toBe(204)
 
     const after = await readJson(await app.request('/api/catalog', { headers: { 'X-Device-Token': deviceToken } }))
-    expect(after.addOns).toEqual([])
+    expect(after.modifierGroups).toEqual([])
   })
 })
