@@ -1,7 +1,7 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import { defineStore } from 'pinia'
 import { useDiscountStore } from '@/stores/discount'
-import type { AddOnOption, CartLineItem, Category, ModifierGroup, Product } from '@/types'
+import type { CartLineItem, Category, ModifierGroup, ModifierOption, Product } from '@/types'
 import { fromSelection } from '@/utils/selection'
 
 export const useCatalogStore = defineStore(
@@ -68,6 +68,29 @@ export const useCatalogStore = defineStore(
           { id: 'mo-size-1', name: '中杯', priceDelta: 0 },
           { id: 'mo-size-2', name: '大杯', priceDelta: 10 }
         ]
+      },
+      // 「加購」不是獨立概念，只是 selectionType='multiple'、required=false 的
+      // 規格群組，一樣只掛在有掛用它的品項上（見下方 products 的 modifierGroupIds）
+      // ——漢堡加料不會出現在飲料底下，反之亦然。
+      {
+        id: 'mg-burger-topping',
+        name: '漢堡加料',
+        selectionType: 'multiple',
+        required: false,
+        options: [
+          { id: 'mo-burger-topping-1', name: '加起司', priceDelta: 20 },
+          { id: 'mo-burger-topping-2', name: '加蛋', priceDelta: 15 }
+        ]
+      },
+      {
+        id: 'mg-drink-topping',
+        name: '飲料加料',
+        selectionType: 'multiple',
+        required: false,
+        options: [
+          { id: 'mo-drink-topping-1', name: '珍珠', priceDelta: 10, stock: 30 },
+          { id: 'mo-drink-topping-2', name: '椰果', priceDelta: 10, stock: 30 }
+        ]
       }
     ])
 
@@ -78,7 +101,7 @@ export const useCatalogStore = defineStore(
         name: '招牌牛肉漢堡',
         basePrice: 180,
         stock: 30,
-        modifierGroupIds: ['mg-doneness']
+        modifierGroupIds: ['mg-doneness', 'mg-burger-topping']
       },
       {
         id: 'prod-2',
@@ -126,7 +149,7 @@ export const useCatalogStore = defineStore(
         name: '翡翠綠茶',
         basePrice: 30,
         stock: 100,
-        modifierGroupIds: ['mg-sweetness', 'mg-ice', 'mg-size']
+        modifierGroupIds: ['mg-sweetness', 'mg-ice', 'mg-size', 'mg-drink-topping']
       },
       {
         id: 'prod-8',
@@ -134,7 +157,7 @@ export const useCatalogStore = defineStore(
         name: '鮮奶紅茶拿鐵',
         basePrice: 60,
         stock: 100,
-        modifierGroupIds: ['mg-sweetness', 'mg-ice', 'mg-size']
+        modifierGroupIds: ['mg-sweetness', 'mg-ice', 'mg-size', 'mg-drink-topping']
       },
       {
         id: 'prod-9',
@@ -170,22 +193,15 @@ export const useCatalogStore = defineStore(
       }
     ])
 
-    const addOns = ref<AddOnOption[]>([
-      { id: 'addon-1', name: '加起司', price: 20 },
-      { id: 'addon-2', name: '加蛋', price: 15 },
-      { id: 'addon-3', name: '加培根', price: 25 },
-      { id: 'addon-4', name: '珍珠', price: 10 },
-      { id: 'addon-5', name: '布丁', price: 15 },
-      { id: 'addon-6', name: '椰果', price: 10 }
-    ])
-
     // 0：規格客製；非 0：加購選項。
     const productPanel = ref(0)
     const selectedCategoryId = ref('')
     const selectedProduct = ref<Product | []>([])
-    // 已選規格：groupId -> 選中的 optionId 清單（單選群組最多 1 筆，多選群組可多筆）。
+    // 已選規格／加購：groupId -> 選中的 optionId 清單（單選群組最多 1 筆，
+    // 多選群組可多筆）。加購不再另外用 selectedAddOnList 存一份完整物件，
+    // 跟規格共用同一份選擇狀態——加購本來就只是 selectionType='multiple'
+    // 的規格群組。
     const selectedModifiers = ref<Record<string, string[]>>({})
-    const selectedAddOnList = ref<AddOnOption[]>([])
     const productCount = ref('0')
     const cartLines = ref<CartLineItem[]>([])
 
@@ -196,25 +212,36 @@ export const useCatalogStore = defineStore(
         )
         .filter((group): group is ModifierGroup => group !== undefined)
 
+    // 規格（單選，通常必選，如熟度／甜度）併入品名字串顯示；加購（多選，
+    // 通常非必選，如加起司／珍珠）另外列成 addList 徽章清單——用
+    // selectionType 分流，不是另外開一張表。
+    const specGroupsOf = (product: Product | undefined) =>
+      modifierGroupsOf(product).filter((group) => group.selectionType === 'single')
+    const addOnGroupsOf = (product: Product | undefined) =>
+      modifierGroupsOf(product).filter((group) => group.selectionType === 'multiple')
+
+    const selectedOptionsOf = (groups: ModifierGroup[]): ModifierOption[] =>
+      groups.flatMap((group) => {
+        const optionIds = selectedModifiers.value[String(group.id)] ?? []
+        return group.options.filter((option) => optionIds.includes(String(option.id)))
+      })
+
     const selectedModifierNames = computed(() => {
       const product = fromSelection(selectedProduct.value)
-      return modifierGroupsOf(product).flatMap((group) => {
-        const optionIds = selectedModifiers.value[String(group.id)] ?? []
-        return group.options
-          .filter((option) => optionIds.includes(String(option.id)))
-          .map((option) => option.name)
-      })
+      return selectedOptionsOf(specGroupsOf(product)).map((option) => option.name)
     })
-    const selectedModifierPriceDelta = computed(() => {
-      const product = fromSelection(selectedProduct.value)
-      return modifierGroupsOf(product).reduce((sum, group) => {
-        const optionIds = selectedModifiers.value[String(group.id)] ?? []
-        const delta = group.options
-          .filter((option) => optionIds.includes(String(option.id)))
-          .reduce((acc, option) => acc + Number(option.priceDelta), 0)
-        return sum + delta
-      }, 0)
-    })
+    const selectedModifierPriceDelta = computed(() =>
+      selectedOptionsOf(specGroupsOf(fromSelection(selectedProduct.value))).reduce(
+        (sum, option) => sum + Number(option.priceDelta),
+        0
+      )
+    )
+    const selectedAddOnOptions = computed(() =>
+      selectedOptionsOf(addOnGroupsOf(fromSelection(selectedProduct.value)))
+    )
+    const selectedAddOnPriceDelta = computed(() =>
+      selectedAddOnOptions.value.reduce((sum, option) => sum + Number(option.priceDelta), 0)
+    )
     const requiredModifiersSatisfied = computed(() => {
       const product = fromSelection(selectedProduct.value)
       return modifierGroupsOf(product).every(
@@ -225,8 +252,8 @@ export const useCatalogStore = defineStore(
     const productCurrentTotal = computed(() => {
       const product = fromSelection(selectedProduct.value)
       if (!product) return 0
-      const addOnTotal = selectedAddOnList.value.reduce((acc, cur) => acc + Number(cur.price), 0)
-      const unitPrice = Number(product.basePrice) + selectedModifierPriceDelta.value + addOnTotal
+      const unitPrice =
+        Number(product.basePrice) + selectedModifierPriceDelta.value + selectedAddOnPriceDelta.value
       return unitPrice * Number(productCount.value)
     })
 
@@ -260,37 +287,33 @@ export const useCatalogStore = defineStore(
       productCount.value = String(line.count)
 
       if (line.selectedModifiers) {
+        // 新格式快照已經同時含規格與加購（見 addNewProduct／saveEdit），整份沿用。
         selectedModifiers.value = JSON.parse(JSON.stringify(line.selectedModifiers))
       } else {
-        const parts = line.name.split(",")
-        const modPart = parts[1]
+        // 舊格式購物車（合併加購選項模型之前存的）沒有 selectedModifiers 快照，
+        // 只能從展示字串回查：規格是品名逗號後的「選項1/選項2」，加購是
+        // addList 名稱陣列——分別對回 specGroupsOf／addOnGroupsOf 的選項名稱。
+        const mods: Record<string, string[]> = {}
+        const modPart = line.name.split(",")[1]
         if (modPart) {
           const optNames = modPart.split("/")
-          const groups = modifierGroupsOf(targetProduct)
-          const mods: Record<string, string[]> = {}
-          for (const g of groups) {
+          for (const g of specGroupsOf(targetProduct)) {
             const matched = g.options.filter((opt) => optNames.includes(opt.name))
             if (matched.length > 0) mods[String(g.id)] = matched.map((m) => String(m.id))
           }
-          selectedModifiers.value = mods
-        } else {
-          selectedModifiers.value = {}
         }
-      }
-
-      if (line.selectedAddOnIds && line.selectedAddOnIds.length > 0) {
-        selectedAddOnList.value = addOns.value.filter((a) =>
-          line.selectedAddOnIds?.includes(String(a.id))
-        )
-      } else if (line.addList) {
         const addNames = Array.isArray(line.addList)
           ? line.addList
-          : line.addList === "無添加配料"
-            ? []
-            : [line.addList]
-        selectedAddOnList.value = addOns.value.filter((a) => addNames.includes(a.name))
-      } else {
-        selectedAddOnList.value = []
+          : line.addList && line.addList !== "無添加配料"
+            ? [line.addList]
+            : []
+        if (addNames.length > 0) {
+          for (const g of addOnGroupsOf(targetProduct)) {
+            const matched = g.options.filter((opt) => addNames.includes(opt.name))
+            if (matched.length > 0) mods[String(g.id)] = matched.map((m) => String(m.id))
+          }
+        }
+        selectedModifiers.value = mods
       }
 
       productPanel.value = 0
@@ -307,7 +330,6 @@ export const useCatalogStore = defineStore(
       selectedCategoryId.value = ""
       selectedProduct.value = []
       selectedModifiers.value = {}
-      selectedAddOnList.value = []
       productCount.value = "0"
     }
 
@@ -317,7 +339,6 @@ export const useCatalogStore = defineStore(
         if (isSuppressingProductReset.value) return
         selectedProduct.value = []
         selectedModifiers.value = {}
-        selectedAddOnList.value = []
       }
     )
     watch(
@@ -325,7 +346,6 @@ export const useCatalogStore = defineStore(
       () => {
         if (isSuppressingProductReset.value) return
         selectedModifiers.value = {}
-        selectedAddOnList.value = []
       }
     )
 
@@ -391,12 +411,10 @@ export const useCatalogStore = defineStore(
       categories: Category[]
       products: Product[]
       modifierGroups: ModifierGroup[]
-      addOns: AddOnOption[]
     }) => {
       categories.value = catalog.categories
       products.value = catalog.products
       modifierGroups.value = catalog.modifierGroups
-      addOns.value = catalog.addOns
     }
 
     return {
@@ -404,17 +422,19 @@ export const useCatalogStore = defineStore(
       categories,
       products,
       modifierGroups,
-      addOns,
       productPanel,
       selectedCategoryId,
       selectedProduct,
       selectedModifiers,
-      selectedAddOnList,
       productCount,
       cartLines,
       modifierGroupsOf,
+      specGroupsOf,
+      addOnGroupsOf,
       selectedModifierNames,
       selectedModifierPriceDelta,
+      selectedAddOnOptions,
+      selectedAddOnPriceDelta,
       requiredModifiersSatisfied,
       productCurrentTotal,
       cartPayPrice,
