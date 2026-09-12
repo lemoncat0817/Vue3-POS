@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { sql } from 'drizzle-orm'
 import { salesReportQuerySchema, salesReportSchema } from '@pos/contract'
+import { DEFAULT_BUSINESS_DAY_START_HOUR } from '@pos/domain'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import type { AppEnv } from '../types'
 
@@ -30,9 +31,17 @@ const getSalesReportRoute = createRoute({
   }
 })
 
-const HOURLY_REPORT_START_HOUR = 8
-const HOURLY_REPORT_END_HOUR = 22
 const TOP_RANKING_LIMIT = 5
+
+/**
+ * 產生從營業日換日時間開始、連續 24 小時的時鐘小時序列（例如換日時間 4 點時為
+ * 4,5,...,23,0,1,2,3）。不能固定寫死日間時段（例如 8~22 點），否則深夜營業
+ * （例如營業到凌晨兩點）的營收會被整段捨棄；也不能單純從 0 點排到 23 點，
+ * 那樣深夜時段會被攔腰切成兩截分別出現在圖表頭尾，尖峰時段會誤判。
+ */
+function businessHourSequence(startHour: number): number[] {
+  return Array.from({ length: 24 }, (_, i) => (startHour + i) % 24)
+}
 
 /** 依 YYYYMMDD 格式的營業日逐日列出 [from, to] 之間（含頭尾）的每一天。 */
 function businessDatesInRange(from: string, to: string): string[] {
@@ -179,11 +188,7 @@ export const reportRoutes = new OpenAPIHono<AppEnv>().openapi(getSalesReportRout
   }))
 
   const revenueByHour = new Map(hourlyRows.map((row) => [row.hour, row.revenue]))
-  const hourCount = HOURLY_REPORT_END_HOUR - HOURLY_REPORT_START_HOUR + 1
-  const hourlyRevenue = Array.from(
-    { length: hourCount },
-    (_, i) => HOURLY_REPORT_START_HOUR + i
-  ).map((hour) => ({
+  const hourlyRevenue = businessHourSequence(DEFAULT_BUSINESS_DAY_START_HOUR).map((hour) => ({
     hour,
     revenue: revenueByHour.get(hour) ?? 0
   }))

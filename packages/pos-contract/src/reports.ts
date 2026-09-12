@@ -15,7 +15,11 @@ export const salesReportQuerySchema = z
   })
 export type SalesReportQuery = z.infer<typeof salesReportQuerySchema>
 
-/** 單一天內、每個營業時段（8～22 時，對應現行畫面固定的營業時間）的營業額。 */
+/**
+ * 單一天內每個時鐘小時的營業額，涵蓋完整 24 小時。陣列順序從營業日換日時間
+ * 開始排（見 DEFAULT_BUSINESS_DAY_START_HOUR），讓跨午夜營業的深夜時段在
+ * 圖表上連續呈現，不會被攔腰切成頭尾兩截。
+ */
 export const hourlyRevenuePointSchema = z.object({
   hour: z.number().int().min(0).max(23),
   revenue: z.number().int()
