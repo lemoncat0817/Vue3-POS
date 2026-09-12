@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
-import { addOnOptions, categories, products } from '../src/db/schema'
+import {
+  categories,
+  modifierGroups,
+  modifierOptions,
+  productModifierGroups,
+  products
+} from '../src/db/schema'
 import { createTestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
 
@@ -394,7 +400,7 @@ describe('POST /api/orders', () => {
 })
 
 describe('POST /api/orders（送單成功後扣庫存）', () => {
-  it('品項與配料的庫存不是 null 時，送單成功後依數量扣減，扣到 0 就不再往下扣', async () => {
+  it('品項與加購選項的庫存不是 null 時，送單成功後依數量扣減，扣到 0 就不再往下扣', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
@@ -403,7 +409,14 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
     await db
       .insert(products)
       .values([{ id: 'i1', categoryId: 'c1', name: '楊枝甘露2.0', basePrice: 80, stock: 3 }])
-    await db.insert(addOnOptions).values([{ id: 'a1', name: '珍珠', price: 10, stock: 1 }])
+    await db
+      .insert(modifierGroups)
+      .values([{ id: 'mg1', name: '加料', selectionType: 'multiple', required: false }])
+    await db
+      .insert(modifierOptions)
+      .values([{ id: 'a1', groupId: 'mg1', name: '珍珠', priceDelta: 10, stock: 1 }])
+    // 珍珠掛在 i1 上，加購名稱才會通過合法性檢查（見 findIllegalAddOns）。
+    await db.insert(productModifierGroups).values([{ productId: 'i1', groupId: 'mg1' }])
 
     // 扣庫存至 0 為下限，不為負數。
     const res = await app.request('/api/orders', {
@@ -423,9 +436,56 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
     expect(res.status).toBe(201)
 
     const item = await db.select().from(products).where(eq(products.id, 'i1')).get()
-    const addOn = await db.select().from(addOnOptions).where(eq(addOnOptions.id, 'a1')).get()
+    const addOn = await db.select().from(modifierOptions).where(eq(modifierOptions.id, 'a1')).get()
     expect(item?.stock).toBe(1)
     expect(addOn?.stock).toBe(0)
+  })
+
+  it('加購選項沒有掛在這個品項上時，送單拒絕，回傳 400', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+
+    await db.insert(categories).values([{ id: 'c1', name: '主餐' }, { id: 'c2', name: '飲品' }])
+    await db.insert(products).values([
+      { id: 'i1', categoryId: 'c1', name: '招牌牛肉漢堡', basePrice: 180, stock: null },
+      { id: 'i2', categoryId: 'c2', name: '翡翠綠茶', basePrice: 30, stock: null }
+    ])
+    await db
+      .insert(modifierGroups)
+      .values([{ id: 'mg1', name: '加料', selectionType: 'multiple', required: false }])
+    await db
+      .insert(modifierOptions)
+      .values([{ id: 'mo1', groupId: 'mg1', name: '珍珠', priceDelta: 10, stock: null }])
+    // 珍珠只掛在飲品（i2）上，不掛漢堡（i1）——對應本次要修的問題情境。
+    await db.insert(productModifierGroups).values([{ productId: 'i2', groupId: 'mg1' }])
+
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify(
+        buildRequest({
+          lines: [
+            {
+              ...validLine,
+              name: '招牌牛肉漢堡',
+              price: 180,
+              count: 1,
+              addList: ['珍珠'],
+              addListPrice: 10
+            }
+          ],
+          tenders: [{ method: '現金', amount: 190 }]
+        })
+      )
+    })
+    expect(res.status).toBe(400)
+    const body = await readJson(res)
+    expect(body.error).toContain('珍珠')
   })
 
   it('庫存是 null（不追蹤）或找不到對應品項時，送單成功但不影響庫存', async () => {

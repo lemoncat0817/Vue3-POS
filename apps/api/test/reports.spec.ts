@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
-import { categories, products } from '../src/db/schema'
+import { categories, modifierGroups, modifierOptions, productModifierGroups, products } from '../src/db/schema'
 import { createTestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
 
@@ -91,6 +91,14 @@ describe('GET /api/reports/sales', () => {
       { id: 'prod-1', categoryId: 'cat-1', name: '楊枝甘露2.0', basePrice: 80, stock: null },
       { id: 'prod-2', categoryId: 'cat-1', name: '珍珠奶茶', basePrice: 80, stock: null }
     ])
+    await db
+      .insert(modifierGroups)
+      .values([{ id: 'mg1', name: '加料', selectionType: 'multiple', required: false }])
+    await db.insert(modifierOptions).values([
+      { id: 'mo1', groupId: 'mg1', name: '珍珠', priceDelta: 10, stock: null },
+      { id: 'mo2', groupId: 'mg1', name: '椰果', priceDelta: 10, stock: null }
+    ])
+    await db.insert(productModifierGroups).values([{ productId: 'prod-2', groupId: 'mg1' }])
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
 
     // 兩杯楊枝甘露（無配料）+ 一杯有加珍珠、椰果的飲料，同一張訂單。

@@ -17,13 +17,14 @@ import {
 } from '@pos/contract'
 import { priceLine, summarizeOrderRefunds, type QuickDiscount } from '@pos/domain'
 import {
-  addOnOptions,
   members,
+  modifierOptions,
   orderCoupons,
   orderLines,
   orderRefunds,
   orders,
   orderTenders,
+  productModifierGroups,
   products,
   quickDiscounts as quickDiscountsTable
 } from '../db/schema'
@@ -56,7 +57,7 @@ const createOrderRoute = createRoute({
     },
     400: {
       description:
-        '套用的折價券不存在、tenders 金額總和跟應付金額不符，或沒有可用的發票字軌（P23）',
+        '套用的折價券不存在、tenders 金額總和跟應付金額不符、沒有可用的發票字軌，或品項帶了該品項不支援的加購選項',
       content: { 'application/json': { schema: z.object({ error: z.string() }) } }
     },
     401: {
@@ -360,20 +361,63 @@ async function deductStock(
     }
     if (Array.isArray(line.addList)) {
       for (const addOnName of line.addList) {
-        const addOn = await db
+        // 加購選項併入 modifierOptions 後比對方式不變，一樣是名稱比對（見函式
+        // 說明），只是查詢的表從獨立的 add_on_options 改成 modifier_options。
+        const option = await db
           .select()
-          .from(addOnOptions)
-          .where(and(eq(addOnOptions.name, addOnName), tenantFilter(addOnOptions.tenantId, tenantId)))
+          .from(modifierOptions)
+          .where(
+            and(eq(modifierOptions.name, addOnName), tenantFilter(modifierOptions.tenantId, tenantId))
+          )
           .get()
-        if (addOn && addOn.stock !== null) {
+        if (option && option.stock !== null) {
           await db
-            .update(addOnOptions)
-            .set({ stock: Math.max(0, addOn.stock - line.count) })
-            .where(eq(addOnOptions.id, addOn.id))
+            .update(modifierOptions)
+            .set({ stock: Math.max(0, option.stock - line.count) })
+            .where(eq(modifierOptions.id, option.id))
         }
       }
     }
   }
+}
+
+// 送單契約（orderLineInputSchema）只有展示用的 name／addList 字串，沒有
+// productId 或選項 id（見 @pos/contract 的 order.ts 說明），因此合法性檢查
+// 只能比照 deductStock() 既有的名稱回查慣例：line.name 帶規格時是
+// 「品名,選項1/選項2」的組合字串（見 apps/pos 的 CartLineItem 組裝邏輯），
+// 取逗號前半段回查品項。查無此品項就放行、不擋單——這是既有慣例的延伸，
+// 不是新引入的限制；要完全杜絕，需要重新設計送單契約直接帶 productId，
+// 屬於更大範圍的改動，先不做。
+async function findIllegalAddOns(
+  db: AnyDb,
+  tenantId: string | null,
+  line: Pick<OrderLineInput, 'name' | 'addList'>
+): Promise<string[] | null> {
+  if (!Array.isArray(line.addList) || line.addList.length === 0) return null
+
+  const productName = line.name.split(',')[0]?.trim() ?? line.name
+  const product = await db
+    .select()
+    .from(products)
+    .where(and(eq(products.name, productName), tenantFilter(products.tenantId, tenantId)))
+    .get()
+  if (!product) return null
+
+  const groupRows = await db
+    .select({ groupId: productModifierGroups.groupId })
+    .from(productModifierGroups)
+    .where(eq(productModifierGroups.productId, product.id))
+    .all()
+  const legalNames = new Set<string>()
+  if (groupRows.length > 0) {
+    const optionRows = await db
+      .select({ name: modifierOptions.name })
+      .from(modifierOptions)
+      .where(inArray(modifierOptions.groupId, groupRows.map((row) => row.groupId)))
+      .all()
+    for (const option of optionRows) legalNames.add(option.name)
+  }
+  return line.addList.filter((name) => !legalNames.has(name))
 }
 
 /** 每消費這麼多元累加 1 點——最基礎的固定比例規則，見 @pos/contract 的 memberSchema 說明。 */
@@ -507,6 +551,18 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
         .where(eq(orderRefunds.orderId, existing.orderId))
         .all()
       return c.json(toOrderResponse(existing, lines, existingTenders, existingRefunds), 200)
+    }
+
+    // 品項與加購的合法性檢查（見 findIllegalAddOns 說明），故意排在核發序號
+    // 之前——不合法的訂單不該浪費掉一個序號。
+    for (const line of input.lines) {
+      const illegal = await findIllegalAddOns(db, tenantId, line)
+      if (illegal && illegal.length > 0) {
+        return c.json(
+          { error: `品項「${line.name.split(',')[0]?.trim() ?? line.name}」不支援這些加購選項：${illegal.join('、')}` },
+          400
+        )
+      }
     }
 
     // 序號核發之後，如果下面的 insert 因為其他原因失敗，這個序號就浪費
