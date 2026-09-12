@@ -14,7 +14,7 @@
       </div>
     </div>
 
-    <nav class="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
+    <nav class="flex items-center gap-1 overflow-x-auto no-scrollbar px-1 py-1">
       <button
         v-for="item in navItems"
         :key="item.path"

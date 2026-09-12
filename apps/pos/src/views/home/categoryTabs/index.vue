@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full flex items-center gap-2 overflow-x-auto no-scrollbar py-1 shrink-0">
+  <div class="w-full flex items-center gap-2 overflow-x-auto no-scrollbar px-1 py-1 shrink-0">
     <button
       v-for="item in catalogStore.categories"
       :key="item.id"
