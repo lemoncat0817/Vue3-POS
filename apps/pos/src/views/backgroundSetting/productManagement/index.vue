@@ -125,8 +125,9 @@
           <span class="text-sm font-black text-surface-900 dark:text-surface-100">品項</span>
           <button
             type="button"
-            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
-            :class="{ 'opacity-50 pointer-events-none': !canSetProduct }"
+            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="!canAddProduct"
+            :title="canAddProduct ? undefined : addProductDisabledReason"
             @click="openAddProductDialog"
           >
             ＋ 新增品項
@@ -653,6 +654,12 @@ function stockClass(stock: number | null | undefined): string {
 
 const canSetCategory = computed(() => hasCapability(loginStore.userInfo, 'canSetCategory'))
 const canSetProduct = computed(() => hasCapability(loginStore.userInfo, 'canSetProduct'))
+const canAddProduct = computed(() => canSetProduct.value && catalogStore.categories.length > 0)
+const addProductDisabledReason = computed(() => {
+  if (!canSetProduct.value) return '沒有設定商品的權限'
+  if (catalogStore.categories.length === 0) return '請先新增至少一個分類'
+  return ''
+})
 
 const tabs = [
   { key: 'categories', label: '分類' },

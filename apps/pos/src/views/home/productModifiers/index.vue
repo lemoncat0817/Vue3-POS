@@ -252,7 +252,9 @@
           </button>
           <button
             type="button"
-            class="rounded-xl bg-primary-600 px-4 py-2 text-xs font-black text-white hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 transition-all select-none cursor-pointer flex items-center gap-1"
+            class="rounded-xl bg-primary-600 px-4 py-2 text-xs font-black text-white hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 transition-all select-none cursor-pointer flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-primary-600"
+            :disabled="!canSubmitProduct"
+            :title="submitProductDisabledReason || undefined"
             @click="emit('saveEdit')"
           >
             <Check class="w-3.5 h-3.5" />
@@ -262,7 +264,9 @@
         <button
           v-else
           type="button"
-          class="rounded-xl bg-primary-600 px-5 py-2 text-xs font-black text-white hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 transition-all select-none cursor-pointer"
+          class="rounded-xl bg-primary-600 px-5 py-2 text-xs font-black text-white hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 transition-all select-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-primary-600"
+          :disabled="!canSubmitProduct"
+          :title="submitProductDisabledReason || undefined"
           @click="emit('addProduct')"
         >
           新增
@@ -295,6 +299,25 @@ const specGroups = computed(() => catalogStore.specGroupsOf(fromSelection(catalo
 const addOnGroups = computed(() =>
   catalogStore.addOnGroupsOf(fromSelection(catalogStore.selectedProduct))
 )
+
+// 新增／更新品項按下去一定會失敗的三個條件都能在畫面渲染當下算出來，
+// 直接禁用按鈕比讓使用者按了才跳提示更好（見 addNewProduct／saveEditProduct
+// 在 home/index.vue 裡的同一組檢查——那邊的 toast 保留當防呆，正常情況下按鈕
+// 一禁用就摸不到了）。
+const hasSelectedProduct = computed(() => fromSelection(catalogStore.selectedProduct) !== undefined)
+const hasValidCount = computed(() => {
+  const count = parseInt(catalogStore.productCount)
+  return !isNaN(count) && count >= 1
+})
+const canSubmitProduct = computed(
+  () => hasSelectedProduct.value && catalogStore.requiredModifiersSatisfied && hasValidCount.value
+)
+const submitProductDisabledReason = computed(() => {
+  if (!hasSelectedProduct.value) return '請先選擇品項'
+  if (!catalogStore.requiredModifiersSatisfied) return '規格尚未選擇完整'
+  if (!hasValidCount.value) return '數量不能小於一份'
+  return ''
+})
 
 const isOptionSelected = (groupId: FormNumeric, optionId: FormNumeric) =>
   (catalogStore.selectedModifiers[String(groupId)] ?? []).includes(String(optionId))

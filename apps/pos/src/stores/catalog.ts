@@ -197,7 +197,7 @@ export const useCatalogStore = defineStore(
     const selectedProduct = ref<Product | []>([])
     // 已選規格／加購：groupId -> 選中的 optionId 清單，兩者共用同一份狀態。
     const selectedModifiers = ref<Record<string, string[]>>({})
-    const productCount = ref('0')
+    const productCount = ref('1')
     const cartLines = ref<CartLineItem[]>([])
 
     const modifierGroupsOf = (product: Product | undefined) =>
@@ -321,7 +321,10 @@ export const useCatalogStore = defineStore(
       selectedCategoryId.value = ""
       selectedProduct.value = []
       selectedModifiers.value = {}
-      productCount.value = "0"
+      // 重置成 1 而不是 0：畫面上的數量徽章本來就把 0／NaN 顯示成「1份」
+      // 佔位，重置成 0 會讓使用者選好品項後直接按新增就撲空跳「數量不能
+      // 小於一份」，明明畫面看起來一切正常。
+      productCount.value = "1"
     }
 
     watch(

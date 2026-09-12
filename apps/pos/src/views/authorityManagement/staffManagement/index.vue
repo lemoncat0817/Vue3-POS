@@ -71,8 +71,9 @@
                 <div class="flex items-center justify-center gap-1.5">
                   <button
                     type="button"
-                    class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
-                    :class="{ 'opacity-50 pointer-events-none': !canManage }"
+                    class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                    :disabled="!canManage"
+                    :title="canManage ? undefined : '沒有編輯人員的權限'"
                     @click="openEditStaffDialog(row)"
                   >
                     編輯

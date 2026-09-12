@@ -156,14 +156,18 @@
           <div class="flex items-center gap-1.5">
             <button
               type="button"
-              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 select-none shadow-sm transition-colors"
+              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 select-none shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-surface-800"
+              :disabled="!canClearSelected"
+              :title="canClearSelected ? undefined : '請先勾選待付款品項'"
               @click="clearSelectNotPay"
             >
               刪除已勾選品項
             </button>
             <button
               type="button"
-              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-danger-50 hover:text-danger-600 hover:border-danger-200 select-none shadow-sm transition-colors"
+              class="rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-danger-50 hover:text-danger-600 hover:border-danger-200 select-none shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-surface-700 disabled:hover:border-surface-200 dark:disabled:hover:bg-surface-800 dark:disabled:hover:text-surface-200"
+              :disabled="!canClearAll"
+              :title="canClearAll ? undefined : '待付款清單已經是空的'"
               @click="clearNotPay"
             >
               清空全部品項
@@ -361,10 +365,9 @@
           </button>
           <button
             type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
-            :class="{
-              'opacity-40 pointer-events-none': !hasCapability(loginStore.userInfo, 'canCompItem')
-            }"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-white dark:disabled:hover:bg-surface-800"
+            :disabled="!canApplyFreeDiscount"
+            :title="freeDiscountDisabledReason || undefined"
             @click="applyFreeDiscount"
           >
             招待
@@ -376,7 +379,9 @@
           <MemberPanel v-model="currentOrderMember" />
           <button
             type="button"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-white dark:disabled:hover:bg-surface-800"
+            :disabled="!canUseCoupon"
+            :title="canUseCoupon ? undefined : '待付款清單是空的，無法使用優惠券'"
             @click="openDiscountMenu"
           >
             優惠券
@@ -389,7 +394,9 @@
             v-for="quickDiscount in discountStore.quickDiscounts"
             :key="String(quickDiscount.id)"
             type="button"
-            class="flex-1 min-w-[88px] rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none"
+            class="flex-1 min-w-[88px] rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-white dark:disabled:hover:bg-surface-800"
+            :disabled="!canApplyQuickDiscount"
+            :title="quickDiscountDisabledReason || undefined"
             @click="applyQuickDiscount(quickDiscount.id)"
           >
             {{ quickDiscount.name }}
@@ -440,7 +447,9 @@
           <button
             type="button"
             data-testid="checkout-button"
-            class="h-12 px-8 rounded-xl bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-black text-base lg:text-lg shadow-lg shadow-primary-600/30 transition-all select-none flex items-center justify-center gap-2"
+            class="h-12 px-8 rounded-xl bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-black text-base lg:text-lg shadow-lg shadow-primary-600/30 transition-all select-none flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-primary-600"
+            :disabled="!canCheckout"
+            :title="canCheckout ? undefined : '訂單內沒有品項，無法送單'"
             @click="openPaymentPanel"
           >
             結帳
@@ -673,9 +682,12 @@ const addNewProduct = () => {
   catalogStore.selectedCategoryId = ''
   catalogStore.selectedProduct = []
   catalogStore.selectedModifiers = {}
-  catalogStore.productCount = '0'
+  catalogStore.productCount = '1'
 }
 
+// 按下去一定會失敗的操作，直接在畫面上禁用按鈕比讓使用者按了才跳提示更好——
+// 這幾個條件都能在畫面渲染當下就從現有狀態算出來，不是要等送出才知道結果的驗證。
+const canClearAll = computed(() => catalogStore.cartLines.length > 0)
 const clearNotPay = async () => {
   if (catalogStore.cartLines.length === 0) {
     showToast('待付款清單為空，無法清空項目', 'error')
@@ -708,6 +720,7 @@ const toggleSelect = (item: CartLineItem, checked: boolean) => {
     selectedLines.value = selectedLines.value.filter((selected) => selected !== item)
   }
 }
+const canClearSelected = computed(() => selectedLines.value.length > 0)
 const clearSelectNotPay = async () => {
   if (selectedLines.value.length === 0) {
     showToast('尚未選取品項', 'error')
@@ -919,6 +932,15 @@ const stillFreeAlert = () => {
   showToast('選取的品項中有品項尚未取消招待無法再套用折扣', 'error')
 }
 
+// 招待：另外還要有 canCompItem 權限，兩個條件都能直接從現有狀態算出來。
+const canApplyFreeDiscount = computed(
+  () => selectedLines.value.length > 0 && hasCapability(loginStore.userInfo, 'canCompItem')
+)
+const freeDiscountDisabledReason = computed(() => {
+  if (!hasCapability(loginStore.userInfo, 'canCompItem')) return '沒有招待品項的權限'
+  if (selectedLines.value.length === 0) return '請先勾選待付款品項'
+  return ''
+})
 // 招待
 const applyFreeDiscount = () => {
   if (selectedLines.value.length <= 0) {
@@ -927,6 +949,15 @@ const applyFreeDiscount = () => {
   }
   applyDiscountToggle(toggleFree)
 }
+// 快速折扣按鈕共用同一組條件，跟點的是清單裡哪一筆折扣無關。
+const canApplyQuickDiscount = computed(
+  () => selectedLines.value.length > 0 && !selectedLines.value.every((item) => item.freeDiscount)
+)
+const quickDiscountDisabledReason = computed(() => {
+  if (selectedLines.value.length === 0) return '請先勾選待付款品項'
+  if (selectedLines.value.every((item) => item.freeDiscount)) return '選取的品項皆已招待，無法再套用折扣'
+  return ''
+})
 // 快速折扣：依後台設定的清單動態套用，同一時間每個品項只能套用一筆。
 const applyQuickDiscount = (id: FormNumeric) => {
   if (selectedLines.value.length <= 0) {
@@ -941,6 +972,7 @@ const applyQuickDiscount = (id: FormNumeric) => {
 }
 
 const dialogDiscount = ref(false)
+const canUseCoupon = computed(() => catalogStore.cartLines.length > 0)
 const openDiscountMenu = () => {
   if (catalogStore.cartLines.length <= 0) {
     showToast('待付款清單是空的無法使用優惠券', 'error')
@@ -988,6 +1020,9 @@ const useDiscount = () => {
 // PaymentPanel 要求「湊到剩餘應付為 0 才能按確認送出」，本身就是不可能
 // 誤觸的確認動作，取代原本兩層各自獨立的通用確認框。
 const dialogPayment = ref(false)
+const canCheckout = computed(
+  () => catalogStore.cartLines.length > 0 || catalogStore.currentBagCount > 0
+)
 const openPaymentPanel = () => {
   if (catalogStore.cartLines.length <= 0 && catalogStore.currentBagCount <= 0) {
     showToast('訂單內沒有品項無法送單', 'error')
