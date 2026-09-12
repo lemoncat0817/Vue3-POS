@@ -441,6 +441,43 @@ describe('POST /api/orders（送單成功後扣庫存）', () => {
     expect(addOn?.stock).toBe(0)
   })
 
+  it('品名帶規格後綴（品名,選項）時，品項庫存仍依名稱前半段正確比對扣減', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+
+    await db.insert(categories).values([{ id: 'c1', name: '主餐' }])
+    await db
+      .insert(products)
+      .values([{ id: 'i1', categoryId: 'c1', name: '招牌牛肉漢堡', basePrice: 180, stock: 5 }])
+    await db
+      .insert(modifierGroups)
+      .values([{ id: 'mg1', name: '熟度', selectionType: 'single', required: true }])
+    await db
+      .insert(modifierOptions)
+      .values([{ id: 'mo1', groupId: 'mg1', name: '五分熟', priceDelta: 0, stock: null }])
+    await db.insert(productModifierGroups).values([{ productId: 'i1', groupId: 'mg1' }])
+
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify(
+        buildRequest({
+          lines: [{ ...validLine, name: '招牌牛肉漢堡,五分熟', price: 180, count: 1 }],
+          tenders: [{ method: '現金', amount: 180 }]
+        })
+      )
+    })
+    expect(res.status).toBe(201)
+
+    const item = await db.select().from(products).where(eq(products.id, 'i1')).get()
+    expect(item?.stock).toBe(4)
+  })
+
   it('加購選項沒有掛在這個品項上時，送單拒絕，回傳 400', async () => {
     const db = createTestDb()
     await seedPromotions(db)

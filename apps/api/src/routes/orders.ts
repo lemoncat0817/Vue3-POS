@@ -335,6 +335,11 @@ function toInvoiceCarrier(type: InvoiceCarrier['type'], value: string | null): I
   return { type, value: value ?? '' }
 }
 
+// line.name 帶規格時是「品名,選項1/選項2」的組合字串，回查菜單品項前要先取逗號前半段。
+function baseProductName(name: string): string {
+  return name.split(',')[0]?.trim() ?? name
+}
+
 // 送單成功後扣庫存。訂單品項只存名稱，這裡用名稱比對回菜單品項／配料
 // ——改過名字的品項，舊訂單不會再扣到它的庫存，屬已知限制。庫存為 null
 // 或找不到對應品項時直接略過，扣到 0 就不再往下扣，也不會因庫存不夠
@@ -345,13 +350,11 @@ async function deductStock(
   lines: Pick<OrderLineInput, 'name' | 'count' | 'addList'>[]
 ): Promise<void> {
   for (const line of lines) {
-    // 用名稱比對回菜單品項（見函式說明），一定要加租戶過濾——不同租戶的
-    // 品項名稱很可能重複（例如 onboarding 種子資料是同一份菜單樣板），
-    // 沒過濾會扣到別的租戶的庫存。
+    const productName = baseProductName(line.name)
     const item = await db
       .select()
       .from(products)
-      .where(and(eq(products.name, line.name), tenantFilter(products.tenantId, tenantId)))
+      .where(and(eq(products.name, productName), tenantFilter(products.tenantId, tenantId)))
       .get()
     if (item && item.stock !== null) {
       await db
@@ -388,7 +391,7 @@ async function findIllegalAddOns(
 ): Promise<string[] | null> {
   if (!Array.isArray(line.addList) || line.addList.length === 0) return null
 
-  const productName = line.name.split(',')[0]?.trim() ?? line.name
+  const productName = baseProductName(line.name)
   const product = await db
     .select()
     .from(products)
