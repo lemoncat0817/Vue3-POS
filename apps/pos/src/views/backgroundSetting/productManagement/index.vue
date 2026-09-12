@@ -142,7 +142,7 @@
                 <th class="px-4 py-3.5 text-left">名稱</th>
                 <th class="px-4 py-3.5 text-left">分類</th>
                 <th class="px-4 py-3.5 text-right">底價</th>
-                <th class="px-4 py-3.5 text-left">規格群組</th>
+                <th class="px-4 py-3.5 text-left">規格／加購</th>
                 <th class="px-4 py-3.5 text-center">庫存</th>
                 <th class="px-4 py-3.5 text-center">操作</th>
               </tr>
@@ -250,7 +250,7 @@
             :class="{ 'opacity-50 pointer-events-none': !canSetProduct }"
             @click="openAddModifierGroupDialog"
           >
-            ＋ 新增規格群組
+            ＋ 新增群組
           </button>
         </div>
 
@@ -261,6 +261,7 @@
             >
               <tr>
                 <th class="px-4 py-3.5 text-left">名稱</th>
+                <th class="px-4 py-3.5 text-center">用途</th>
                 <th class="px-4 py-3.5 text-center">選擇方式</th>
                 <th class="px-4 py-3.5 text-center">必選</th>
                 <th class="px-4 py-3.5 text-left">選項</th>
@@ -270,16 +271,16 @@
             <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
               <tr v-if="sliceModifierGroups.length === 0">
                 <td
-                  colspan="5"
+                  colspan="6"
                   class="px-4 py-16 text-center text-surface-400 dark:text-surface-500"
                 >
                   <div class="flex flex-col items-center justify-center gap-2">
                     <Sliders class="h-10 w-10 text-surface-300 dark:text-surface-700" />
                     <span class="text-base font-semibold text-surface-700 dark:text-surface-300"
-                      >無規格群組</span
+                      >無群組</span
                     >
                     <span class="text-xs text-surface-400 dark:text-surface-500"
-                      >尚未建立規格群組，可點選上方「＋ 新增規格群組」</span
+                      >尚未建立規格／加購群組，可點選上方「＋ 新增群組」</span
                     >
                   </div>
                 </td>
@@ -293,6 +294,18 @@
                   class="px-4 py-3.5 align-middle text-left font-bold text-surface-900 dark:text-surface-100"
                 >
                   {{ row.name }}
+                </td>
+                <td class="px-4 py-3.5 align-middle text-center">
+                  <span
+                    class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold"
+                    :class="
+                      groupKind(row) === '加購'
+                        ? 'bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400'
+                        : 'bg-surface-100 text-surface-500 dark:bg-surface-800'
+                    "
+                  >
+                    {{ groupKind(row) }}
+                  </span>
                 </td>
                 <td
                   class="px-4 py-3.5 align-middle text-center text-surface-600 dark:text-surface-300"
@@ -346,7 +359,7 @@
           :page-count="modifierGroupPageCount"
           :total="catalogStore.modifierGroups.length"
           :current-count="sliceModifierGroups.length"
-          unit="組規格群組"
+          unit="個群組"
           @update:page="(v) => (modifierGroupPage = v)"
         />
       </div>
@@ -441,7 +454,7 @@
           />
         </label>
         <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-          規格群組（可複選）
+          規格／加購群組（可複選）
           <div class="flex flex-wrap gap-1.5 mt-1">
             <label
               v-for="group in catalogStore.modifierGroups"
@@ -459,10 +472,10 @@
                 :checked="productDialog.modifierGroupIds.includes(String(group.id))"
                 @change="toggleProductModifierGroup(group.id)"
               />
-              {{ group.name }}
+              {{ group.name }}（{{ groupKind(group) }}）
             </label>
             <span v-if="catalogStore.modifierGroups.length === 0" class="text-surface-400 text-xs"
-              >尚未建立規格群組</span
+              >尚未建立群組</span
             >
           </div>
         </div>
@@ -485,12 +498,8 @@
       </div>
     </ModalDialog>
 
-    <!-- 規格群組新增/編輯 -->
-    <ModalDialog
-      v-model:open="modifierGroupDialog.open"
-      :title="modifierGroupDialog.editingId ? '編輯規格群組' : '新增規格群組'"
-      size="lg"
-    >
+    <!-- 規格／加購群組新增/編輯 -->
+    <ModalDialog v-model:open="modifierGroupDialog.open" :title="modifierGroupDialogTitle" size="lg">
       <div class="flex flex-col gap-3.5 py-2">
         <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
           群組名稱
@@ -851,6 +860,11 @@ const sliceModifierGroups = computed(() =>
   )
 )
 
+// 加購只是 selectionType='multiple' 的規格群組，這裡統一換算成使用者看得懂的用途標籤。
+function groupKind(group: { selectionType: ModifierSelectionType }): '規格' | '加購' {
+  return group.selectionType === 'multiple' ? '加購' : '規格'
+}
+
 function optionSummary(group: ModifierGroup) {
   return group.options
     .map((o) => {
@@ -874,6 +888,9 @@ const modifierGroupDialog = reactive<{
   required: boolean
   options: { name: string; priceDelta: string; stock: string }[]
 }>({ open: false, editingId: null, name: '', selectionType: 'single', required: true, options: [] })
+const modifierGroupDialogTitle = computed(
+  () => `${modifierGroupDialog.editingId ? '編輯' : '新增'}${groupKind(modifierGroupDialog)}群組`
+)
 function addModifierOptionRow() {
   modifierGroupDialog.options.push({ name: '', priceDelta: '0', stock: '' })
 }
@@ -937,7 +954,7 @@ async function submitModifierGroup() {
 async function removeModifierGroup(row: ModifierGroup) {
   const result = await confirm({
     title: '警告',
-    description: `是否刪除規格群組 ${row.name}？掛用這個群組的品項會一併移除該規格。`,
+    description: `是否刪除${groupKind(row)}群組 ${row.name}？掛用這個群組的品項會一併移除這項${groupKind(row)}。`,
     variant: 'danger'
   })
   if (result !== 'confirm') return
