@@ -176,13 +176,8 @@ import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { AuthorityKey } from '@/types'
 import { hasCapability } from '@/utils/selection'
-import { ApiError } from '@/api/http'
+import { apiErrorMessage } from '@/api/http'
 import { createRole, deleteRole, updateRole } from '@/api/roles'
-
-function apiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) return `操作失敗：${err.message}`
-  return '連不上伺服端，請確認網路連線'
-}
 
 const canManage = computed(() => hasCapability(loginStore.userInfo, 'canManageRoles'))
 

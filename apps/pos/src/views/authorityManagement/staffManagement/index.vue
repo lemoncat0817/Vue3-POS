@@ -263,7 +263,7 @@ import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { StaffMember } from '@/types'
 import { fromSelection, hasCapability } from '@/utils/selection'
-import { ApiError } from '@/api/http'
+import { apiErrorMessage } from '@/api/http'
 import { toStaffMember } from '@/api/auth'
 import {
   createStaff as createStaffApi,
@@ -271,10 +271,6 @@ import {
   updateStaff as updateStaffApi
 } from '@/api/staff'
 
-function apiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) return `操作失敗：${err.message}`
-  return '連不上伺服端，請確認網路連線'
-}
 const PIN_PATTERN = /^\d{4,6}$/
 
 // 人員與權限群組由 App.vue 啟動時同步，CRUD 直接以 API 回應更新本機陣列，避免重複 fetch 覆蓋。

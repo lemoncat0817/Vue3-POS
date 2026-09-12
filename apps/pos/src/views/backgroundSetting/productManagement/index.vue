@@ -749,7 +749,7 @@ import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { AddOnOption, Category, ModifierGroup, ModifierSelectionType, Product } from '@/types'
 import { hasCapability } from '@/utils/selection'
-import { ApiError } from '@/api/http'
+import { ApiError, apiErrorMessage as sharedApiErrorMessage } from '@/api/http'
 import {
   createAddOnOption,
   createCategory,
@@ -766,11 +766,8 @@ import {
 } from '@/api/catalog'
 
 function apiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) {
-    if (err.status === 409) return '這個分類底下還有品項，請先清空品項再刪除'
-    return `操作失敗：${err.message}`
-  }
-  return '連不上伺服端，請確認網路連線'
+  if (err instanceof ApiError && err.status === 409) return '這個分類底下還有品項，請先清空品項再刪除'
+  return sharedApiErrorMessage(err)
 }
 const LOW_STOCK_THRESHOLD = 5
 function toApiStock(value: string | number): number | null {

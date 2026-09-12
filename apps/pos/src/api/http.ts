@@ -56,6 +56,28 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * 用 `.name` 而非 `instanceof ZodError` 判斷——這個 monorepo 裡
+ * @pos/contract 用 zod v4、apps/pos 自己用 zod v3（pnpm 因此各自裝了一份，
+ * 是兩個不同的模組實例），跨套件 `instanceof` 對不上；兩個版本的 ZodError
+ * 都固定把 `name` 設成 "ZodError"，用這個字串比對才不會誤判。
+ */
+function isZodError(err: unknown): boolean {
+  return err instanceof Error && err.name === 'ZodError'
+}
+
+/**
+ * 各畫面 catch 區塊共用的錯誤轉訊息：ApiError 是伺服端明確拒絕，帶著具體
+ * 原因；ZodError 是送出前／解析回應時資料不符合約（例如呼叫端漏做欄位檢查
+ * 就直接送出空值），代表的是資料問題而不是斷線，不該跟著顯示「連不上
+ * 伺服端」誤導使用者去檢查網路。其餘才歸類為真正的連線／未知錯誤。
+ */
+export function apiErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) return `操作失敗：${err.message}`
+  if (isZodError(err)) return '資料格式有誤，請確認欄位內容後再試一次'
+  return '連不上伺服端，請確認網路連線'
+}
+
 /** 發送 HTTP 請求並解析 JSON；錯誤交由呼叫端或離線快取處理。 */
 export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const deviceTokenSentThisRequest = currentDeviceToken

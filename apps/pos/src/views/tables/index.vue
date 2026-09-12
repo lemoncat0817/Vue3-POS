@@ -199,7 +199,7 @@ import ModalDialog from '@/components/ui/ModalDialog.vue'
 import FormField from '@/components/ui/FormField.vue'
 import { useLoginStore } from '@/stores/login'
 import { hasCapability } from '@/utils/selection'
-import { ApiError } from '@/api/http'
+import { apiErrorMessage } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { createTable, deleteTable, fetchTables, updateTableStatus } from '@/api/tables'
@@ -207,11 +207,6 @@ import type { DiningTable, TableStatus } from '@pos/contract'
 
 const loginStore = useLoginStore()
 const canManage = computed(() => hasCapability(loginStore.userInfo, 'canManageTables'))
-
-function apiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) return `操作失敗：${err.message}`
-  return '連不上伺服端，請確認網路連線'
-}
 
 // 桌況為後台管理專用資料，無需離線可用，掛載時直接向伺服端獲取最新清單。
 const tables = ref<DiningTable[]>([])

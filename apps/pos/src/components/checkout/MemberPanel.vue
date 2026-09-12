@@ -100,7 +100,7 @@
 import { computed, ref } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { showToast } from '@/composables/useToast'
-import { ApiError } from '@/api/http'
+import { apiErrorMessage } from '@/api/http'
 import { createMember, findMemberByPhone } from '@/api/members'
 import type { Member } from '@pos/contract'
 
@@ -114,11 +114,6 @@ const isSearching = ref(false)
 const searchResult = ref<'idle' | 'not-found'>('idle')
 
 const triggerLabel = computed(() => (props.modelValue ? `會員：${props.modelValue.name}` : '會員'))
-
-function apiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) return `操作失敗：${err.message}`
-  return '連不上伺服端，請確認網路連線'
-}
 
 function openDialog() {
   phoneInput.value = ''

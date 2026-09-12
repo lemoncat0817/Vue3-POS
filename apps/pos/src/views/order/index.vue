@@ -663,7 +663,7 @@ import {
   updateOrderStatus
 } from '@/api/orders'
 import { operatorLogin, revokeSession } from '@/api/auth'
-import { ApiError } from '@/api/http'
+import { ApiError, apiErrorMessage } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { prompt } from '@/composables/usePrompt'
 import { requestManagerAuth } from '@/composables/useManagerAuth'
@@ -681,10 +681,7 @@ function orderApiErrorMessage(err: unknown): string {
   if (err instanceof ApiError && err.status === 404) {
     return '這筆訂單可能還在等待同步到伺服端，請稍後再試一次'
   }
-  if (err instanceof ApiError) {
-    return `操作失敗：${err.message}`
-  }
-  return '連不上伺服端，請確認網路連線'
+  return apiErrorMessage(err)
 }
 
 // 訂單 KPI 摘要現在來自 GET /api/orders/summary（見 @pos/contract 的
@@ -1159,7 +1156,7 @@ async function requestRefundOrVoidApproval(
     if (err instanceof ApiError && err.status === 401) {
       showToast('帳號或 PIN 錯誤，操作已取消', 'error')
     } else {
-      showToast('連不上伺服端，操作已取消', 'error')
+      showToast(`${apiErrorMessage(err)}，操作已取消`, 'error')
     }
     return null
   }

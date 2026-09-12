@@ -606,7 +606,7 @@ import {
 import type { AppliedCoupon, InvoiceCarrier, Member } from '@pos/contract'
 import { buildCreateOrderRequest } from '@/api/orders'
 import { createAuditLog } from '@/api/audit-logs'
-import { ApiError } from '@/api/http'
+import { apiErrorMessage } from '@/api/http'
 import { enqueueOrder } from '@/offline/outbox'
 import { useOrderSync } from '@/offline/useOrderSync'
 import QuantityKeypadPopover from '@/components/ui/QuantityKeypadPopover.vue'
@@ -779,10 +779,7 @@ const openCashier = async () => {
     })
     showToast('收銀機已開啟', 'success')
   } catch (err) {
-    showToast(
-      err instanceof ApiError ? `操作失敗：${err.message}` : '連不上伺服端，請確認網路連線',
-      'error'
-    )
+    showToast(apiErrorMessage(err), 'error')
   }
 }
 
@@ -1048,6 +1045,37 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     tableNumber: orderChannel.value === '內用' ? tableNumberInput.value.trim() || null : null,
     note: orderNote.value.trim() || null
   }
+
+  // 訂單層級折價券只送「套用了哪張」，折抵金額由伺服端重算。要在清空
+  // 待付款清單（連帶重置 discountStore 選取狀態）之前先讀出目前套用的是哪一張。
+  const appliedCoupon: AppliedCoupon =
+    discountStore.orderCouponId !== 0
+      ? { type: 'coupon', couponId: String(discountStore.orderCouponId) }
+      : { type: 'none' }
+
+  // 先組出並驗證要送給伺服端的請求——驗證失敗就整個中止，不要讓「訂單送出
+  // 成功」的提示、本機樂觀扣庫存、清空購物車這些動作在驗證失敗後半路發生
+  // （buildCreateOrderRequest 內部會 parse，理論上不該失敗，但錯就該整單擋下）。
+  let request: ReturnType<typeof buildCreateOrderRequest>
+  try {
+    request = buildCreateOrderRequest({
+      businessDate: getBusinessDate(new Date()),
+      staff: toPayOrder.staff,
+      lines: toPayOrder.orderData,
+      bagCount: toPayOrder.orderBagCount,
+      tenders,
+      appliedCoupon,
+      orderChannel: toPayOrder.orderChannel,
+      invoiceCarrier: toPayOrder.invoiceCarrier,
+      memberId: toPayOrder.memberId ?? null,
+      tableNumber: toPayOrder.tableNumber ?? null,
+      note: toPayOrder.note ?? null
+    })
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+    return
+  }
+
   orderStore.order.push(toPayOrder)
   showToast('訂單送出成功', 'success')
 
@@ -1067,29 +1095,9 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     }
   }
 
-  // 訂單層級折價券只送「套用了哪張」，折抵金額由伺服端重算。要在清空
-  // 待付款清單（連帶重置 discountStore 選取狀態）之前先讀出目前套用的是哪一張。
-  const appliedCoupon: AppliedCoupon =
-    discountStore.orderCouponId !== 0
-      ? { type: 'coupon', couponId: String(discountStore.orderCouponId) }
-      : { type: 'none' }
-
   // 訂單先入本機離線佇列，不管有沒有網路都會成功；SyncWorker 背景送到
   // 伺服端。這裡額外呼叫 syncNow() 只是「有網路時不用乾等下一次輪詢」，
   // 不是同步成敗的必要步驟。用 toPayOrder.orderData 而非稍後會被清空的 catalogStore.cartLines。
-  const request = buildCreateOrderRequest({
-    businessDate: getBusinessDate(new Date()),
-    staff: toPayOrder.staff,
-    lines: toPayOrder.orderData,
-    bagCount: toPayOrder.orderBagCount,
-    tenders,
-    appliedCoupon,
-    orderChannel: toPayOrder.orderChannel,
-    invoiceCarrier: toPayOrder.invoiceCarrier,
-    memberId: toPayOrder.memberId ?? null,
-    tableNumber: toPayOrder.tableNumber ?? null,
-    note: toPayOrder.note ?? null
-  })
   void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
   invoiceCarrier.value = { type: '無載具' }
   currentOrderMember.value = null

@@ -121,7 +121,7 @@ const deviceStore = useDeviceStore()
 import { showToast } from '@/composables/useToast'
 import { operatorLogin, toStaffMember } from '@/api/auth'
 import { googleLoginUrl, githubLoginUrl } from '@/api/oauth'
-import { ApiError } from '@/api/http'
+import { ApiError, apiErrorMessage } from '@/api/http'
 
 // 帳號欄位可能還殘留上次登入（甚至上一個租戶）記住的舊帳號；新租戶第一次
 // 登入核發 owner 帳號時，一律覆蓋成這組新帳號，不要讓使用者對著錯的帳號送出登入。
@@ -159,7 +159,7 @@ const login = async () => {
     if (err instanceof ApiError && err.status === 401) {
       showToast('帳號或是 PIN 有誤,請重新輸入', 'error')
     } else {
-      showToast('連不上伺服端，請確認網路連線', 'error')
+      showToast(apiErrorMessage(err), 'error')
     }
   }
 }

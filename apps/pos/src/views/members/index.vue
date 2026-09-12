@@ -277,7 +277,7 @@ import FormField from '@/components/ui/FormField.vue'
 import TablePagination from '@/components/ui/TablePagination.vue'
 import { useLoginStore } from '@/stores/login'
 import { hasCapability } from '@/utils/selection'
-import { ApiError } from '@/api/http'
+import { ApiError, apiErrorMessage as sharedApiErrorMessage } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import {
@@ -293,11 +293,8 @@ const loginStore = useLoginStore()
 const canManage = () => hasCapability(loginStore.userInfo, 'canCheckMembers')
 
 function apiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) {
-    if (err.status === 409) return '這個手機號碼已經是會員'
-    return `操作失敗：${err.message}`
-  }
-  return '連不上伺服端，請確認網路連線'
+  if (err instanceof ApiError && err.status === 409) return '這個手機號碼已經是會員'
+  return sharedApiErrorMessage(err)
 }
 
 // 會員名單為後台管理專用資料，無需離線可用，掛載時直接向伺服端獲取最新清單。

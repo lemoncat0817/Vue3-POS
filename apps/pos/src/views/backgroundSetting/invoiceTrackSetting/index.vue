@@ -175,15 +175,10 @@ import { Form } from 'vee-validate'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import TablePagination from '@/components/ui/TablePagination.vue'
 import FormField from '@/components/ui/FormField.vue'
-import { ApiError } from '@/api/http'
+import { apiErrorMessage } from '@/api/http'
 import { showToast } from '@/composables/useToast'
 import { createInvoiceTrack, fetchInvoiceTracks, submitInvoices } from '@/api/invoices'
 import type { InvoiceTrack } from '@pos/contract'
-
-function apiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) return `操作失敗：${err.message}`
-  return '連不上伺服端，請確認網路連線'
-}
 
 const tracks = ref<InvoiceTrack[]>([])
 const trackPage = ref(1)

@@ -507,7 +507,7 @@ import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { OrderCoupon, QuickDiscount } from '@/types'
 import { hasCapability } from '@/utils/selection'
-import { ApiError } from '@/api/http'
+import { apiErrorMessage } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import {
@@ -521,11 +521,6 @@ import {
 
 // 單頁多表單需使用 <Form> 元件避免 useForm() provide context 相互覆蓋；
 // 欄位綁定 isSubmitting 避免非同步驗證完成前輸入造成中繼狀態提交
-function apiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) return `操作失敗：${err.message}`
-  return '連不上伺服端，請確認網路連線'
-}
-
 const canSetOrderCoupon = computed(() => hasCapability(loginStore.userInfo, 'canSetOrderCoupon'))
 const canSetQuickDiscount = computed(() =>
   hasCapability(loginStore.userInfo, 'canSetQuickDiscount')

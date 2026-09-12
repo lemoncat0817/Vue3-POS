@@ -214,17 +214,13 @@ import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { PaymentMethod, PaymentUseMethod } from '@/types'
 import { hasCapability } from '@/utils/selection'
-import { ApiError } from '@/api/http'
+import { apiErrorMessage } from '@/api/http'
 import {
   createPaymentMethod,
   deletePaymentMethod,
   updatePaymentMethod
 } from '@/api/payment-methods'
 
-function apiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) return `操作失敗：${err.message}`
-  return '連不上伺服端，請確認網路連線'
-}
 const canSetPayMethod = computed(() => hasCapability(loginStore.userInfo, 'canSetPayMethod'))
 
 const payMethodOptions = [

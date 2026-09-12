@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
+import { operatorLoginRequestSchema } from '@pos/contract'
 import {
   ApiError,
+  apiErrorMessage,
   fetchJson,
   setDeviceToken,
   setDeviceTokenInvalidHandler,
@@ -128,5 +131,37 @@ describe('fetchJson', () => {
       )
     )
     await expect(fetchJson('/health')).resolves.toEqual({ ok: true })
+  })
+})
+
+describe('apiErrorMessage', () => {
+  it('ApiError 顯示伺服端回傳的訊息', () => {
+    expect(apiErrorMessage(new ApiError('帳號已存在', 409))).toBe('操作失敗：帳號已存在')
+  })
+
+  it('本地端 zod（apps/pos 用的 v3）驗證失敗要顯示資料格式錯誤，不能誤判成斷線', () => {
+    let err: unknown
+    try {
+      z.string().min(1).parse('')
+    } catch (e) {
+      err = e
+    }
+    expect(apiErrorMessage(err)).toBe('資料格式有誤，請確認欄位內容後再試一次')
+  })
+
+  // @pos/contract 用的是 zod v4，跟 apps/pos 自己的 zod v3 是不同模組實例；
+  // apiErrorMessage() 得認得出兩邊丟出來的 ZodError，見 isZodError() 的說明。
+  it('@pos/contract（zod v4）丟出的 ZodError 一樣要能辨識出來，不能誤判成斷線', () => {
+    let err: unknown
+    try {
+      operatorLoginRequestSchema.parse({ account: 'emily', pin: '' })
+    } catch (e) {
+      err = e
+    }
+    expect(apiErrorMessage(err)).toBe('資料格式有誤，請確認欄位內容後再試一次')
+  })
+
+  it('其餘未知錯誤（例如真的斷線）才顯示連不上伺服端', () => {
+    expect(apiErrorMessage(new TypeError('Failed to fetch'))).toBe('連不上伺服端，請確認網路連線')
   })
 })
