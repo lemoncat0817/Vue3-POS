@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `business_day_start_hour` integer DEFAULT 4 NOT NULL;

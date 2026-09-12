@@ -38,6 +38,10 @@ export const users = sqliteTable(
     email: text('email').notNull(),
     displayName: text('display_name').notNull(),
     avatarUrl: text('avatar_url'),
+    // 營業日換日時間（0~23 時鐘小時）：凌晨營業到這個時間之前的訂單仍歸屬前一
+    // 個營業日。預設 4 點，深夜營業的租戶可以自行調整，見 @pos/domain 的
+    // getBusinessDate() 與 reports.ts 的每小時營收報表。
+    businessDayStartHour: integer('business_day_start_hour').notNull().default(4),
     createdAt: text('created_at')
       .notNull()
       .default(sql`(current_timestamp)`)

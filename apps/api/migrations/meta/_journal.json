@@ -218,6 +218,13 @@
       "when": 1789238114171,
       "tag": "0030_backfill_remove_addons_capability",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1789239601928,
+      "tag": "0031_same_gauntlet",
+      "breakpoints": true
     }
   ]
 }
