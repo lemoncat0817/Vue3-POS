@@ -14,11 +14,18 @@ export const modifierOptionSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   /** 相對於品項底價的加減金額，可為 0、正數（加價）或負數。 */
-  priceDelta: z.number().int()
+  priceDelta: z.number().int(),
+  /** 庫存數量，語意同 catalogStockSchema。多選群組（加購用途）常見會設定，單選規格通常留 null。 */
+  stock: catalogStockSchema
 })
 export type ModifierOption = z.infer<typeof modifierOptionSchema>
 
-/** 規格群組（例如「甜度」「熟度」「尺寸」），全域定義後可掛在任意數量的品項上。 */
+/**
+ * 規格群組（例如「甜度」「熟度」「尺寸」，或加購用途的「加料」），全域定義後
+ * 可掛在任意數量的品項上。「加購」不是獨立概念，只是 selectionType='multiple'、
+ * required=false 的規格群組——同一份關聯規則保證加購選項不會出現在沒掛用
+ * 它的品項上（例如漢堡排底下不會出現「加珍珠」）。
+ */
 export const modifierGroupSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -44,20 +51,11 @@ export const productSchema = z.object({
 })
 export type Product = z.infer<typeof productSchema>
 
-export const addOnOptionSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  price: z.number().int().nonnegative(),
-  stock: catalogStockSchema
-})
-export type AddOnOption = z.infer<typeof addOnOptionSchema>
-
 /** GET /api/catalog 回應：點餐頁一次要用到的完整目錄。 */
 export const catalogResponseSchema = z.object({
   categories: z.array(categorySchema),
   products: z.array(productSchema),
-  modifierGroups: z.array(modifierGroupSchema),
-  addOns: z.array(addOnOptionSchema)
+  modifierGroups: z.array(modifierGroupSchema)
 })
 export type CatalogResponse = z.infer<typeof catalogResponseSchema>
 
@@ -81,7 +79,8 @@ export type UpdateProductRequest = z.infer<typeof updateProductRequestSchema>
 
 export const createModifierOptionRequestSchema = z.object({
   name: z.string().min(1),
-  priceDelta: z.number().int()
+  priceDelta: z.number().int(),
+  stock: catalogStockSchema
 })
 export type CreateModifierOptionRequest = z.infer<typeof createModifierOptionRequestSchema>
 
@@ -94,12 +93,3 @@ export const createModifierGroupRequestSchema = z.object({
 export type CreateModifierGroupRequest = z.infer<typeof createModifierGroupRequestSchema>
 export const updateModifierGroupRequestSchema = createModifierGroupRequestSchema
 export type UpdateModifierGroupRequest = z.infer<typeof updateModifierGroupRequestSchema>
-
-export const createAddOnOptionRequestSchema = z.object({
-  name: z.string().min(1),
-  price: z.number().int().nonnegative(),
-  stock: catalogStockSchema
-})
-export type CreateAddOnOptionRequest = z.infer<typeof createAddOnOptionRequestSchema>
-export const updateAddOnOptionRequestSchema = createAddOnOptionRequestSchema
-export type UpdateAddOnOptionRequest = z.infer<typeof updateAddOnOptionRequestSchema>
