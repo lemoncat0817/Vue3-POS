@@ -236,7 +236,14 @@
         <div
           class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
         >
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">規格群組</span>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-sm font-black text-surface-900 dark:text-surface-100"
+              >規格／加購群組</span
+            >
+            <span class="text-[11px] text-surface-400 dark:text-surface-500"
+              >單選＋必選＝規格（例如熟度）；多選＋選填＝加購（例如加料）——都用同一種群組，掛在哪個品項上就只出現在那個品項</span
+            >
+          </div>
           <button
             type="button"
             class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
@@ -341,107 +348,6 @@
           :current-count="sliceModifierGroups.length"
           unit="組規格群組"
           @update:page="(v) => (modifierGroupPage = v)"
-        />
-      </div>
-    </div>
-
-    <!-- 加購選項 -->
-    <div v-if="activeTab === 'addOns'" class="flex flex-col">
-      <div
-        class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm min-h-[540px] flex flex-col justify-between"
-      >
-        <div
-          class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
-        >
-          <span class="text-sm font-black text-surface-900 dark:text-surface-100">加購選項</span>
-          <button
-            type="button"
-            class="pos-btn pos-btn-primary px-3 py-1.5 text-xs"
-            :class="{ 'opacity-50 pointer-events-none': !canSetAddOns }"
-            @click="openAddAddOnDialog"
-          >
-            ＋ 新增加購選項
-          </button>
-        </div>
-
-        <div class="overflow-x-auto flex-1">
-          <table class="w-full text-left text-sm">
-            <thead
-              class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
-            >
-              <tr>
-                <th class="px-4 py-3.5 text-left">名稱</th>
-                <th class="px-4 py-3.5 text-right">價錢</th>
-                <th class="px-4 py-3.5 text-center">庫存</th>
-                <th class="px-4 py-3.5 text-center">操作</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-              <tr v-if="sliceAddOns.length === 0">
-                <td
-                  colspan="4"
-                  class="px-4 py-16 text-center text-surface-400 dark:text-surface-500"
-                >
-                  <div class="flex flex-col items-center justify-center gap-2">
-                    <PlusCircle class="h-10 w-10 text-surface-300 dark:text-surface-700" />
-                    <span class="text-base font-semibold text-surface-700 dark:text-surface-300"
-                      >無加購選項</span
-                    >
-                    <span class="text-xs text-surface-400 dark:text-surface-500"
-                      >尚未建立加購選項，可點選上方「＋ 新增加購選項」</span
-                    >
-                  </div>
-                </td>
-              </tr>
-              <tr
-                v-for="row in sliceAddOns"
-                :key="row.id"
-                class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
-              >
-                <td
-                  class="px-4 py-3.5 align-middle text-left font-bold text-surface-900 dark:text-surface-100"
-                >
-                  {{ row.name }}
-                </td>
-                <td
-                  class="px-4 py-3.5 align-middle text-right font-mono font-bold text-primary-600 dark:text-primary-400"
-                >
-                  ${{ row.price }}
-                </td>
-                <td class="px-4 py-3.5 align-middle text-center" :class="stockClass(row.stock)">
-                  {{ stockLabel(row.stock) }}
-                </td>
-                <td class="px-4 py-3.5 align-middle text-center">
-                  <div class="flex items-center justify-center gap-1.5">
-                    <button
-                      type="button"
-                      class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
-                      :class="{ 'opacity-50 pointer-events-none': !canSetAddOns }"
-                      @click="openEditAddOnDialog(row)"
-                    >
-                      編輯
-                    </button>
-                    <button
-                      type="button"
-                      class="pos-btn pos-btn-danger px-2.5 py-1 text-xs"
-                      :class="{ 'opacity-50 pointer-events-none': !canSetAddOns }"
-                      @click="removeAddOn(row)"
-                    >
-                      刪除
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <TablePagination
-          :page="addOnPage"
-          :page-count="addOnPageCount"
-          :total="catalogStore.addOns.length"
-          :current-count="sliceAddOns.length"
-          unit="個加購選項"
-          @update:page="(v) => (addOnPage = v)"
         />
       </div>
     </div>
@@ -645,8 +551,16 @@
               v-model="option.priceDelta"
               type="number"
               step="1"
-              class="w-28 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono"
+              class="w-24 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono"
               placeholder="加減價"
+            />
+            <input
+              v-model="option.stock"
+              type="number"
+              min="0"
+              step="1"
+              class="w-24 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono"
+              placeholder="庫存"
             />
             <button
               type="button"
@@ -679,66 +593,12 @@
       </div>
     </ModalDialog>
 
-    <!-- 加購選項新增/編輯 -->
-    <ModalDialog
-      v-model:open="addOnDialog.open"
-      :title="addOnDialog.editingId ? '編輯加購選項' : '新增加購選項'"
-    >
-      <div class="flex flex-col gap-3.5 py-2">
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-          名稱
-          <input
-            v-model="addOnDialog.name"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500"
-            placeholder="例如: 加起司、珍珠..."
-          />
-        </label>
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-          價錢
-          <input
-            v-model="addOnDialog.price"
-            type="number"
-            min="0"
-            step="1"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono"
-            placeholder="純數字"
-          />
-        </label>
-        <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
-          庫存
-          <input
-            v-model="addOnDialog.stock"
-            type="number"
-            min="0"
-            step="1"
-            class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono"
-            placeholder="留空代表不追蹤庫存"
-          />
-        </label>
-      </div>
-      <div class="mt-4 flex justify-end gap-2">
-        <button
-          type="button"
-          class="rounded-lg border border-surface-300 dark:border-surface-700 px-4 py-2 text-sm font-bold text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800"
-          @click="addOnDialog.open = false"
-        >
-          取消
-        </button>
-        <button
-          type="button"
-          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700"
-          @click="submitAddOn"
-        >
-          {{ addOnDialog.editingId ? '保存' : '新增' }}
-        </button>
-      </div>
-    </ModalDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { FolderTree, Package, PlusCircle, Sliders } from 'lucide-vue-next'
+import { FolderTree, Package, Sliders } from 'lucide-vue-next'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import TablePagination from '@/components/ui/TablePagination.vue'
 import { alert, confirm } from '@/composables/useConfirm'
@@ -747,19 +607,16 @@ import { useCatalogStore } from '@/stores/catalog'
 const catalogStore = useCatalogStore()
 import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
-import type { AddOnOption, Category, ModifierGroup, ModifierSelectionType, Product } from '@/types'
+import type { Category, ModifierGroup, ModifierSelectionType, Product } from '@/types'
 import { hasCapability } from '@/utils/selection'
 import { ApiError, apiErrorMessage as sharedApiErrorMessage } from '@/api/http'
 import {
-  createAddOnOption,
   createCategory,
   createModifierGroup,
   createProduct,
-  deleteAddOnOption,
   deleteCategory,
   deleteModifierGroup,
   deleteProduct,
-  updateAddOnOption,
   updateCategory,
   updateModifierGroup,
   updateProduct
@@ -787,13 +644,11 @@ function stockClass(stock: number | null | undefined): string {
 
 const canSetCategory = computed(() => hasCapability(loginStore.userInfo, 'canSetCategory'))
 const canSetProduct = computed(() => hasCapability(loginStore.userInfo, 'canSetProduct'))
-const canSetAddOns = computed(() => hasCapability(loginStore.userInfo, 'canSetAddOns'))
 
 const tabs = [
   { key: 'categories', label: '分類' },
   { key: 'products', label: '品項' },
-  { key: 'modifierGroups', label: '規格群組' },
-  { key: 'addOns', label: '加購選項' }
+  { key: 'modifierGroups', label: '規格／加購群組' }
 ] as const
 const activeTab = ref<(typeof tabs)[number]['key']>('categories')
 
@@ -998,11 +853,16 @@ const sliceModifierGroups = computed(() =>
 
 function optionSummary(group: ModifierGroup) {
   return group.options
-    .map((o) =>
-      Number(o.priceDelta) !== 0
-        ? `${o.name}(${Number(o.priceDelta) > 0 ? '+' : ''}${o.priceDelta})`
-        : o.name
-    )
+    .map((o) => {
+      const bits: string[] = []
+      if (Number(o.priceDelta) !== 0) {
+        bits.push(`${Number(o.priceDelta) > 0 ? '+' : ''}${o.priceDelta}`)
+      }
+      if (o.stock !== null && o.stock !== undefined) {
+        bits.push(o.stock === 0 ? '缺貨' : `庫存${o.stock}`)
+      }
+      return bits.length > 0 ? `${o.name}(${bits.join('，')})` : o.name
+    })
     .join('、')
 }
 
@@ -1012,17 +872,17 @@ const modifierGroupDialog = reactive<{
   name: string
   selectionType: ModifierSelectionType
   required: boolean
-  options: { name: string; priceDelta: string }[]
+  options: { name: string; priceDelta: string; stock: string }[]
 }>({ open: false, editingId: null, name: '', selectionType: 'single', required: true, options: [] })
 function addModifierOptionRow() {
-  modifierGroupDialog.options.push({ name: '', priceDelta: '0' })
+  modifierGroupDialog.options.push({ name: '', priceDelta: '0', stock: '' })
 }
 function openAddModifierGroupDialog() {
   modifierGroupDialog.editingId = null
   modifierGroupDialog.name = ''
   modifierGroupDialog.selectionType = 'single'
   modifierGroupDialog.required = true
-  modifierGroupDialog.options = [{ name: '', priceDelta: '0' }]
+  modifierGroupDialog.options = [{ name: '', priceDelta: '0', stock: '' }]
   modifierGroupDialog.open = true
 }
 function openEditModifierGroupDialog(row: ModifierGroup) {
@@ -1032,7 +892,8 @@ function openEditModifierGroupDialog(row: ModifierGroup) {
   modifierGroupDialog.required = row.required
   modifierGroupDialog.options = row.options.map((o) => ({
     name: o.name,
-    priceDelta: String(o.priceDelta)
+    priceDelta: String(o.priceDelta),
+    stock: o.stock == null ? '' : String(o.stock)
   }))
   modifierGroupDialog.open = true
 }
@@ -1050,7 +911,11 @@ async function submitModifierGroup() {
     name: modifierGroupDialog.name,
     selectionType: modifierGroupDialog.selectionType,
     required: modifierGroupDialog.required,
-    options: options.map((o) => ({ name: o.name, priceDelta: Number(o.priceDelta) || 0 }))
+    options: options.map((o) => ({
+      name: o.name,
+      priceDelta: Number(o.priceDelta) || 0,
+      stock: toApiStock(o.stock)
+    }))
   }
   try {
     if (modifierGroupDialog.editingId === null) {
@@ -1096,92 +961,6 @@ async function removeModifierGroup(row: ModifierGroup) {
   }
 }
 
-// ---------- 加購選項 ----------
-const addOnPage = ref(1)
-const addOnPageCount = computed(() => Math.max(Math.ceil(catalogStore.addOns.length / 10), 1))
-const sliceAddOns = computed(() =>
-  catalogStore.addOns.slice((addOnPage.value - 1) * 10, addOnPage.value * 10)
-)
-
-const addOnDialog = reactive<{
-  open: boolean
-  editingId: AddOnOption['id'] | null
-  name: string
-  price: string
-  stock: string
-}>({
-  open: false,
-  editingId: null,
-  name: '',
-  price: '',
-  stock: ''
-})
-function openAddAddOnDialog() {
-  addOnDialog.editingId = null
-  addOnDialog.name = ''
-  addOnDialog.price = ''
-  addOnDialog.stock = ''
-  addOnDialog.open = true
-}
-function openEditAddOnDialog(row: AddOnOption) {
-  addOnDialog.editingId = row.id
-  addOnDialog.name = row.name
-  addOnDialog.price = String(row.price)
-  addOnDialog.stock = row.stock == null ? '' : String(row.stock)
-  addOnDialog.open = true
-}
-async function submitAddOn() {
-  if (addOnDialog.name.trim() === '' || addOnDialog.price === '') {
-    showToast('請輸入完整資訊', 'error')
-    return
-  }
-  if (Number(addOnDialog.price) < 0) {
-    showToast('價錢不可為負數,請重新輸入', 'error')
-    return
-  }
-  if (
-    catalogStore.addOns.some(
-      (item) => item.name === addOnDialog.name && item.id !== addOnDialog.editingId
-    )
-  ) {
-    showToast('此名稱已存在,請重新輸入', 'error')
-    return
-  }
-  const payload = {
-    name: addOnDialog.name,
-    price: Number(addOnDialog.price),
-    stock: toApiStock(addOnDialog.stock)
-  }
-  try {
-    if (addOnDialog.editingId === null) {
-      const created = await createAddOnOption(payload)
-      catalogStore.addOns.push(created)
-    } else {
-      const updated = await updateAddOnOption(String(addOnDialog.editingId), payload)
-      const index = catalogStore.addOns.findIndex((item) => item.id === addOnDialog.editingId)
-      if (index !== -1) catalogStore.addOns[index] = updated
-    }
-    addOnDialog.open = false
-    showToast(addOnDialog.editingId === null ? '新增成功' : '保存成功', 'success')
-  } catch (err) {
-    showToast(apiErrorMessage(err), 'error')
-  }
-}
-async function removeAddOn(row: AddOnOption) {
-  const result = await confirm({
-    title: '警告',
-    description: `是否刪除加購選項 ${row.name}？`,
-    variant: 'danger'
-  })
-  if (result !== 'confirm') return
-  try {
-    await deleteAddOnOption(String(row.id))
-    catalogStore.addOns = catalogStore.addOns.filter((item) => item.id !== row.id)
-    showToast('刪除成功', 'success')
-  } catch (err) {
-    showToast(apiErrorMessage(err), 'error')
-  }
-}
 </script>
 
 <style lang="scss" scoped></style>
