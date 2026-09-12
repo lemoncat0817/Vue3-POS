@@ -138,6 +138,13 @@ function acknowledgeOwnerCredentials() {
 }
 
 const login = async () => {
+  // 帳號／PIN 沒填就送出的話，operatorLogin() 內部的 zod 驗證會直接丟出
+  // ZodError（不是 ApiError），落到下面 catch 的 else 分支，顯示「連不上
+  // 伺服端」這種文不對題的錯誤——這裡先擋掉，給出對得上狀況的提示。
+  if (!loginStore.account.trim() || !loginStore.pin.trim()) {
+    showToast('請輸入帳號與 PIN', 'error')
+    return
+  }
   try {
     const staff = await operatorLogin(loginStore.account, loginStore.pin)
     loginStore.userInfo = toStaffMember(staff)
