@@ -648,7 +648,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { FlexRender, createColumnHelper, getCoreRowModel, useVueTable } from '@tanstack/vue-table'
 import { Receipt, CheckCircle2, AlertTriangle, RotateCcw, ChevronRight, X } from 'lucide-vue-next'
 import TablePagination from '@/components/ui/TablePagination.vue'
-import { getDate } from '@/utils/time'
+import { formatDateTime, getDate } from '@/utils/time'
 import { useOrderStore } from '@/stores/order'
 const orderStore = useOrderStore()
 import { useLoginStore } from '@/stores/login'
@@ -952,7 +952,7 @@ function exportSelectedCsv() {
   let csv = 'data:text/csv;charset=utf-8,﻿'
   csv += '訂單編號,訂單時間,服務人員,內用/外帶,訂單狀態,訂單金額,付款方式\n'
   for (const o of selected) {
-    csv += `${o.orderId},${o.orderTime},${o.staff},${o.orderChannel ?? '外帶'},${o.orderStatus},${o.orderPaymentPrice},${o.orderPayment}\n`
+    csv += `${o.orderId},${formatDateTime(o.orderTime)},${o.staff},${o.orderChannel ?? '外帶'},${o.orderStatus},${o.orderPaymentPrice},${o.orderPayment}\n`
   }
   const link = document.createElement('a')
   link.setAttribute('href', encodeURI(csv))
@@ -990,7 +990,7 @@ const columns = [
       h(
         'span',
         { class: 'text-surface-600 dark:text-surface-400 font-mono text-xs' },
-        info.getValue()
+        formatDateTime(info.getValue())
       )
   }),
   columnHelper.accessor('staff', {

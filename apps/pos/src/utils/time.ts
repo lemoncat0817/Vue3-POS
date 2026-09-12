@@ -28,3 +28,30 @@ export const toNativeDate = (slashDate: string): string => slashDate.replaceAll(
 
 /** <input type="date"> 的 'YYYY-MM-DD' 轉回畫面內部用的 'YYYY/MM/DD'。 */
 export const fromNativeDate = (nativeDate: string): string => nativeDate.replaceAll('-', '/')
+
+/**
+ * 訂單時間可能是伺服端回傳的 ISO UTC 字串，也可能是本機尚未同步、用
+ * getDate()+getTime() 組出的 'YYYY/MM/DD HH:mm:ss'；統一格式化成後者這種
+ * 使用者易讀的樣式，並把 ISO 的 UTC 時間換算成瀏覽器所在時區顯示。
+ */
+export const formatDateTime = (value: string): string => {
+  if (!value.includes('T')) return value
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  const format = (num: number) => (num < 10 ? `0${num}` : num)
+  return (
+    `${date.getFullYear()}/${format(date.getMonth() + 1)}/${format(date.getDate())} ` +
+    `${format(date.getHours())}:${format(date.getMinutes())}:${format(date.getSeconds())}`
+  )
+}
+
+/**
+ * 只需要顯示日期時使用，例如會員建立日期；避免直接 slice ISO 字串前 10
+ * 碼——那是 UTC 日期，在 UTC+8 這類時區可能跟本地日期差一天。
+ */
+export const formatDateOnly = (value: string): string => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10)
+  const format = (num: number) => (num < 10 ? `0${num}` : num)
+  return `${date.getFullYear()}/${format(date.getMonth() + 1)}/${format(date.getDate())}`
+}

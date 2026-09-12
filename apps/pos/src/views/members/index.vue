@@ -88,7 +88,7 @@
                   {{ member.points }}
                 </td>
                 <td class="px-4 py-3.5 text-left text-surface-500 dark:text-surface-400">
-                  {{ member.createdAt.slice(0, 10) }}
+                  {{ formatDateOnly(member.createdAt) }}
                 </td>
                 <td class="px-4 py-3.5 text-center">
                   <div class="flex items-center justify-center gap-1.5">
@@ -243,7 +243,7 @@
                   {{ order.orderId }}
                 </td>
                 <td class="px-3 py-2.5 text-xs text-surface-500 dark:text-surface-400">
-                  {{ order.orderTime }}
+                  {{ formatDateTime(order.orderTime) }}
                 </td>
                 <td class="px-3 py-2.5 text-center">
                   <span
@@ -277,6 +277,7 @@ import FormField from '@/components/ui/FormField.vue'
 import TablePagination from '@/components/ui/TablePagination.vue'
 import { useLoginStore } from '@/stores/login'
 import { hasCapability } from '@/utils/selection'
+import { formatDateOnly, formatDateTime } from '@/utils/time'
 import { ApiError, apiErrorMessage as sharedApiErrorMessage } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'

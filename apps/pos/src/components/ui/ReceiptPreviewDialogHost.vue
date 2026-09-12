@@ -14,7 +14,7 @@
             <span>訂單編號</span><span>{{ state.order.orderId }}</span>
           </div>
           <div class="flex justify-between">
-            <span>訂單時間</span><span>{{ state.order.orderTime }}</span>
+            <span>訂單時間</span><span>{{ formatDateTime(state.order.orderTime) }}</span>
           </div>
           <div class="flex justify-between">
             <span>服務人員</span><span>{{ state.order.staff }}</span>
@@ -115,6 +115,7 @@
 // 全域收據預覽與列印視窗（掛載於 App.vue）
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { closeReceipt, useReceiptPreviewState } from '@/composables/useReceiptPreview'
+import { formatDateTime } from '@/utils/time'
 
 const state = useReceiptPreviewState()
 
