@@ -111,6 +111,7 @@
 </template>
 
 <script setup lang="ts">
+import { watch } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 import { useLoginStore } from '@/stores/login'
@@ -122,8 +123,17 @@ import { operatorLogin, toStaffMember } from '@/api/auth'
 import { googleLoginUrl, githubLoginUrl } from '@/api/oauth'
 import { ApiError } from '@/api/http'
 
+// 帳號欄位可能還殘留上次登入（甚至上一個租戶）記住的舊帳號；新租戶第一次
+// 登入核發 owner 帳號時，一律覆蓋成這組新帳號，不要讓使用者對著錯的帳號送出登入。
+watch(
+  () => deviceStore.pendingOwnerAccount,
+  (value) => {
+    if (value) loginStore.account = value
+  },
+  { immediate: true }
+)
+
 function acknowledgeOwnerCredentials() {
-  loginStore.account = deviceStore.pendingOwnerAccount ?? ''
   deviceStore.clearPendingOwnerCredentials()
 }
 

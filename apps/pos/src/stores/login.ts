@@ -34,7 +34,15 @@ export const useLoginStore = defineStore(
   {
     persist: {
       // PIN 為敏感憑證，不持久化至 localStorage。
-      omit: ['pin']
+      omit: ['pin'],
+      // rememberAccount 沒勾選時，account 不落地——否則「記住帳號」這個
+      // checkbox 形同虛設，帳號會不管有沒有勾都留在 localStorage 裡
+      // （曾經因此在換租戶／換裝置後，登入頁還殘留上一組舊帳號）。
+      serializer: {
+        serialize: (data) =>
+          JSON.stringify(data.rememberAccount ? data : { ...data, account: '' }),
+        deserialize: JSON.parse
+      }
     }
   }
 )
