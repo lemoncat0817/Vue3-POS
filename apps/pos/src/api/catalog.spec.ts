@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CatalogResponse } from '@pos/contract'
-import { toLocalAddOns, toLocalCategories, toLocalModifierGroups, toLocalProducts } from './catalog'
+import { toLocalCategories, toLocalModifierGroups, toLocalProducts } from './catalog'
 
 const sampleCatalog: CatalogResponse = {
   categories: [{ id: 'cat-1', name: '主餐' }],
@@ -28,10 +28,16 @@ const sampleCatalog: CatalogResponse = {
       name: '熟度',
       selectionType: 'single',
       required: true,
-      options: [{ id: 'mo-1', name: '五分熟', priceDelta: 0 }]
+      options: [{ id: 'mo-1', name: '五分熟', priceDelta: 0, stock: null }]
+    },
+    {
+      id: 'mg-2',
+      name: '加料',
+      selectionType: 'multiple',
+      required: false,
+      options: [{ id: 'mo-2', name: '加起司', priceDelta: 20, stock: null }]
     }
-  ],
-  addOns: [{ id: 'addon-1', name: '加起司', price: 20, stock: null }]
+  ]
 }
 
 describe('toLocalCategories / toLocalProducts', () => {
@@ -59,23 +65,22 @@ describe('toLocalCategories / toLocalProducts', () => {
 })
 
 describe('toLocalModifierGroups', () => {
-  it('保留規格群組與選項的完整欄位', () => {
+  it('保留規格群組與選項的完整欄位，含加購用途（多選）的群組與選項庫存', () => {
     expect(toLocalModifierGroups(sampleCatalog)).toEqual([
       {
         id: 'mg-1',
         name: '熟度',
         selectionType: 'single',
         required: true,
-        options: [{ id: 'mo-1', name: '五分熟', priceDelta: 0 }]
+        options: [{ id: 'mo-1', name: '五分熟', priceDelta: 0, stock: null }]
+      },
+      {
+        id: 'mg-2',
+        name: '加料',
+        selectionType: 'multiple',
+        required: false,
+        options: [{ id: 'mo-2', name: '加起司', priceDelta: 20, stock: null }]
       }
-    ])
-  })
-})
-
-describe('toLocalAddOns', () => {
-  it('轉成前端加購選項形狀', () => {
-    expect(toLocalAddOns(sampleCatalog)).toEqual([
-      { id: 'addon-1', name: '加起司', price: 20, stock: null }
     ])
   })
 })

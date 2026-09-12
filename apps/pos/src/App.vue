@@ -22,13 +22,7 @@ import { useDiscountStore } from '@/stores/discount'
 import { useOrderStore } from '@/stores/order'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 import { useRolesStore } from '@/stores/roles'
-import {
-  fetchCatalog,
-  toLocalAddOns,
-  toLocalCategories,
-  toLocalModifierGroups,
-  toLocalProducts
-} from '@/api/catalog'
+import { fetchCatalog, toLocalCategories, toLocalModifierGroups, toLocalProducts } from '@/api/catalog'
 import { fetchPromotions, toOrderCoupons, toQuickDiscounts } from '@/api/promotions'
 import { fetchPaymentMethods } from '@/api/payment-methods'
 import { fetchStaffList } from '@/api/staff'
@@ -52,8 +46,7 @@ watch(catalog, (value) => {
   catalogStore.hydrateCatalogFromServer({
     categories: toLocalCategories(value),
     products: toLocalProducts(value),
-    modifierGroups: toLocalModifierGroups(value),
-    addOns: toLocalAddOns(value)
+    modifierGroups: toLocalModifierGroups(value)
   })
 })
 

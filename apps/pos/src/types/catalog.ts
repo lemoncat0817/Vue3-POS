@@ -8,9 +8,15 @@ export interface ModifierOption {
   id: FormNumeric
   name: string
   priceDelta: FormNumeric
+  /** 庫存數量，見 Product.stock 的說明。加購用途（多選群組）常見會設定，規格用途通常留 null。 */
+  stock?: number | null
 }
 
-/** 規格群組（例如「甜度」「熟度」「容器大小」），全域定義後可掛在任意數量的品項上。 */
+/**
+ * 規格群組（例如「甜度」「熟度」「容器大小」，或加購用途的「加料」），全域
+ * 定義後可掛在任意數量的品項上。「加購」不是獨立概念，只是
+ * selectionType='multiple'、required=false 的規格群組。
+ */
 export interface ModifierGroup {
   id: FormNumeric
   name: string
@@ -34,15 +40,6 @@ export interface Product {
 export interface Category {
   id: FormNumeric
   name: string
-}
-
-/** 加購選項——後台可新增／編輯，因此 id 與 price 需容納表單輸入的字串。 */
-export interface AddOnOption {
-  id: FormNumeric
-  name: string
-  price: FormNumeric
-  /** 庫存數量，見 Product.stock 的說明。 */
-  stock?: number | null
 }
 
 /** 點餐畫面選好某個規格群組後記錄的選擇，供組裝購物車品名字串與計算加價。 */
@@ -70,8 +67,11 @@ export interface CartLineItem {
   /** 套用哪一筆快速折扣，沒套用是 null。 */
   quickDiscountId: string | null
   quickDiscountName: string
-  /** 供購物車就地規格再編輯用的快照（選填，避免影響伺服端契約） */
+  /**
+   * 供購物車就地規格再編輯用的快照（選填，避免影響伺服端契約）。加購跟規格
+   * 現在是同一套 selectedModifiers（groupId -> optionId[]），不再另外存
+   * selectedAddOnIds。
+   */
   productId?: string
   selectedModifiers?: Record<string, string[]>
-  selectedAddOnIds?: string[]
 }

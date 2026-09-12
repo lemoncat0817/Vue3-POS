@@ -1,13 +1,10 @@
 import {
-  addOnOptionSchema,
   categorySchema,
   catalogResponseSchema,
   modifierGroupSchema,
   productSchema,
-  type AddOnOption,
   type Category,
   type CatalogResponse,
-  type CreateAddOnOptionRequest,
   type CreateCategoryRequest,
   type CreateModifierGroupRequest,
   type CreateProductRequest,
@@ -16,7 +13,6 @@ import {
 } from '@pos/contract'
 import { fetchJson } from './http'
 import type {
-  AddOnOption as LocalAddOnOption,
   Category as LocalCategory,
   ModifierGroup as LocalModifierGroup,
   Product as LocalProduct
@@ -52,21 +48,13 @@ export function toLocalModifierGroups(catalog: CatalogResponse): LocalModifierGr
     options: group.options.map((option) => ({
       id: option.id,
       name: option.name,
-      priceDelta: option.priceDelta
+      priceDelta: option.priceDelta,
+      stock: option.stock
     }))
   }))
 }
 
-export function toLocalAddOns(catalog: CatalogResponse): LocalAddOnOption[] {
-  return catalog.addOns.map((addOn) => ({
-    id: addOn.id,
-    name: addOn.name,
-    price: addOn.price,
-    stock: addOn.stock
-  }))
-}
-
-// 後台商品管理 API（分類、品項、規格群組、加購選項之 CRUD）。
+// 後台商品管理 API（分類、品項、規格群組——加購用途併在規格群組內管理）。
 
 export async function createCategory(input: CreateCategoryRequest): Promise<Category> {
   const body = await fetchJson<unknown>('/api/catalog/categories', {
@@ -133,27 +121,4 @@ export async function deleteModifierGroup(id: string): Promise<void> {
   await fetchJson<null>(`/api/catalog/modifier-groups/${encodeURIComponent(id)}`, {
     method: 'DELETE'
   })
-}
-
-export async function createAddOnOption(input: CreateAddOnOptionRequest): Promise<AddOnOption> {
-  const body = await fetchJson<unknown>('/api/catalog/add-ons', {
-    method: 'POST',
-    body: JSON.stringify(input)
-  })
-  return addOnOptionSchema.parse(body)
-}
-
-export async function updateAddOnOption(
-  id: string,
-  input: CreateAddOnOptionRequest
-): Promise<AddOnOption> {
-  const body = await fetchJson<unknown>(`/api/catalog/add-ons/${encodeURIComponent(id)}`, {
-    method: 'PUT',
-    body: JSON.stringify(input)
-  })
-  return addOnOptionSchema.parse(body)
-}
-
-export async function deleteAddOnOption(id: string): Promise<void> {
-  await fetchJson<null>(`/api/catalog/add-ons/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
