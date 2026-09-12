@@ -25,6 +25,7 @@ import { useRolesStore } from '@/stores/roles'
 import { fetchCatalog, toLocalCategories, toLocalModifierGroups, toLocalProducts } from '@/api/catalog'
 import { fetchPromotions, toOrderCoupons, toQuickDiscounts } from '@/api/promotions'
 import { fetchPaymentMethods } from '@/api/payment-methods'
+import { fetchTenantSettings } from '@/api/tenant-settings'
 import { fetchStaffList } from '@/api/staff'
 import { fetchRoleList } from '@/api/roles'
 import { toStaffMember } from '@/api/auth'
@@ -77,6 +78,18 @@ const { data: paymentMethods } = useQuery({
 watch(paymentMethods, (value) => {
   if (!value) return
   orderStore.hydratePaymentMethodsFromServer(value)
+})
+
+// 應用啟動時一次性同步租戶營業設定（目前只有營業日換日時間）。
+const { data: tenantSettings } = useQuery({
+  queryKey: ['tenant-settings'],
+  queryFn: fetchTenantSettings,
+  staleTime: Infinity,
+  retry: 1
+})
+watch(tenantSettings, (value) => {
+  if (!value) return
+  orderStore.hydrateBusinessDayStartHourFromServer(value.businessDayStartHour)
 })
 
 // 應用啟動時一次性同步人員名單。

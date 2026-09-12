@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { getBusinessDate } from '@pos/domain'
+import { DEFAULT_BUSINESS_DAY_START_HOUR, getBusinessDate } from '@pos/domain'
 import type { OrderRecord, PaymentMethod } from '@/types'
 
 export const useOrderStore = defineStore(
@@ -69,17 +69,22 @@ export const useOrderStore = defineStore(
     // 正式環境的初始訂單歷史種進每個使用者的 localStorage。
     const order = ref<OrderRecord[]>([])
 
+    // 營業日換日時間：預設 4 點，開機時會用租戶實際設定覆蓋（見
+    // hydrateBusinessDayStartHourFromServer 與 App.vue），離線／連不上時
+    // persist 下來的上次設定值繼續當 fallback。
+    const businessDayStartHour = ref(DEFAULT_BUSINESS_DAY_START_HOUR)
+
     // 送單當下依 getBusinessDate() 計算營業日，記錄上次核發日以利跨日重置序號。
-    const lastBusinessDate = ref(getBusinessDate(new Date()))
+    const lastBusinessDate = ref(getBusinessDate(new Date(), businessDayStartHour.value))
     // 預覽即將送出的單號。
     const nextOrderId = computed(() => {
-      const today = getBusinessDate(new Date())
+      const today = getBusinessDate(new Date(), businessDayStartHour.value)
       const seq = today === lastBusinessDate.value ? currentOrderNumber.value : 1
       return `${today}${seq}`
     })
     // 正式核發訂單編號：跨營業日則重設序號。
     const issueOrderId = () => {
-      const today = getBusinessDate(new Date())
+      const today = getBusinessDate(new Date(), businessDayStartHour.value)
       if (today !== lastBusinessDate.value) {
         currentOrderNumber.value = 1
         lastBusinessDate.value = today
@@ -107,11 +112,18 @@ export const useOrderStore = defineStore(
       paymentList.value = methods
     }
 
+    // 開機拿到租戶實際設定的換日時間時覆蓋，同上只在離線／連不上時 fallback。
+    const hydrateBusinessDayStartHourFromServer = (hour: number) => {
+      businessDayStartHour.value = hour
+    }
+
     return {
       currentOrderNumber,
       order,
       paymentList,
+      businessDayStartHour,
       hydratePaymentMethodsFromServer,
+      hydrateBusinessDayStartHourFromServer,
       nextOrderId,
       issueOrderId,
       reconcileOrderId

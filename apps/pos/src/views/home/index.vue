@@ -1077,7 +1077,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
   let request: ReturnType<typeof buildCreateOrderRequest>
   try {
     request = buildCreateOrderRequest({
-      businessDate: getBusinessDate(new Date()),
+      businessDate: getBusinessDate(new Date(), orderStore.businessDayStartHour),
       staff: toPayOrder.staff,
       lines: toPayOrder.orderData,
       bagCount: toPayOrder.orderBagCount,
