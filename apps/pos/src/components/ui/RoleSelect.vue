@@ -2,10 +2,11 @@
   <div class="flex flex-col gap-1.5">
     <SelectRoot
       :model-value="modelValue"
+      :disabled="disabled === true"
       @update:model-value="(value: unknown) => emit('update:modelValue', String(value))"
     >
       <SelectTrigger
-        class="flex w-full items-center justify-between rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+        class="flex w-full items-center justify-between rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-xs font-bold text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <SelectValue placeholder="選擇權限群組" />
         <span aria-hidden="true" class="text-surface-400">▾</span>
@@ -34,7 +35,11 @@
       </SelectPortal>
     </SelectRoot>
     <p class="text-[11px] text-surface-400">
-      此人員的權限將完全跟隨所選的權限群組，如需個別調整請至「權限群組」頁面編輯。
+      {{
+        disabled
+          ? '不可變更自己的權限群組，請由其他權限管理者協助調整。'
+          : '此人員的權限將完全跟隨所選的權限群組，如需個別調整請至「權限群組」頁面編輯。'
+      }}
     </p>
   </div>
 </template>
@@ -55,6 +60,6 @@ import { useRolesStore } from '@/stores/roles'
 
 const rolesStore = useRolesStore()
 
-defineProps<{ modelValue: string }>()
+withDefaults(defineProps<{ modelValue: string; disabled?: boolean }>(), { disabled: false })
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 </script>

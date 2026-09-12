@@ -1,7 +1,9 @@
+import type { Context } from 'hono'
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { createStaffRequestSchema, staffSchema, updateStaffRequestSchema } from '@pos/contract'
 import { hashSecret } from '../auth/hash'
+import { findActiveOperatorSession } from '../auth/operator-session'
 import { roles, staff } from '../db/schema'
 import type { AnyDb } from '../db/types'
 import { requireCapability } from '../middleware/require-capability'
@@ -10,6 +12,14 @@ import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
+
+/** 解析目前操作者自己的 staffId，供「不可變更自己的權限群組」判斷用。 */
+async function resolveOperatorStaffId(c: Context<AppEnv>): Promise<string | null> {
+  const sessionToken = c.req.header('X-Operator-Session') ?? null
+  if (!sessionToken) return null
+  const session = await findActiveOperatorSession(c.get('db'), sessionToken)
+  return session?.staffId ?? null
+}
 
 /** 依 roleId 解析出 roleName／capabilities，組成回應用的 staffSchema 形狀。 */
 async function toStaffResponse(
@@ -120,6 +130,10 @@ const updateStaffRoute = createRoute({
       description: '裝置憑證無效或缺漏',
       content: { 'application/json': { schema: errorSchema } }
     },
+    403: {
+      description: '不可變更自己的權限群組',
+      content: { 'application/json': { schema: errorSchema } }
+    },
     404: {
       description: '找不到這個員工，或指定的權限群組不存在',
       content: { 'application/json': { schema: errorSchema } }
@@ -140,6 +154,10 @@ const deleteStaffRoute = createRoute({
     204: { description: '員工已刪除' },
     401: {
       description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    403: {
+      description: '不可刪除自己的帳號',
       content: { 'application/json': { schema: errorSchema } }
     },
     404: {
@@ -225,6 +243,13 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
     if (accountTaken && accountTaken.id !== id) {
       return c.json({ error: '這個帳號已經被其他員工使用' }, 409)
     }
+
+    // 姓名／帳號／PIN 允許改自己，但角色群組不行——避免自我提權，且比「最後一位
+    // 權限管理者」防呆更直接：那個防呆只擋「改完後沒人有 canManageRoles」，
+    // 擋不住「我本來不是唯一管理者，但我把自己降級」這種情境。
+    if (roleId !== existing.roleId && (await resolveOperatorStaffId(c)) === id) {
+      return c.json({ error: '不可變更自己的權限群組，請由其他權限管理者協助' }, 403)
+    }
     if (await wouldLeaveNoRoleAdmin(db, tenantId, id, roleId)) {
       return c.json({ error: '此變更會讓沒有人擁有「設定權限群組」的權限，操作已取消' }, 409)
     }
@@ -251,6 +276,9 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
       .where(and(eq(staff.id, id), tenantFilter(staff.tenantId, tenantId)))
       .get()
     if (!existing) return c.json({ error: '找不到這個員工' }, 404)
+    if ((await resolveOperatorStaffId(c)) === id) {
+      return c.json({ error: '不可刪除自己的帳號' }, 403)
+    }
     if (await wouldLeaveNoRoleAdmin(db, tenantId, id, null)) {
       return c.json({ error: '此操作會讓沒有人擁有「設定權限群組」的權限，操作已取消' }, 409)
     }

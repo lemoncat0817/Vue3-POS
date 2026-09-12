@@ -219,6 +219,37 @@ describe('PUT /api/staff/:id', () => {
     expect(login.status).toBe(200)
   })
 
+  it('可以編輯自己的姓名／帳號／PIN，只要角色群組不變', async () => {
+    const db = createTestDb()
+    const { app, deviceToken, staffId, sessionToken } = await createTestAppWithDevice(db)
+    const self = (await (
+      await app.request(`/api/staff`, { headers: { 'X-Device-Token': deviceToken } })
+    ).json()) as { id: string; roleId: string }[]
+    const ownRoleId = self.find((row) => row.id === staffId)?.roleId
+    expect(ownRoleId).toBeDefined()
+
+    const res = await app.request(`/api/staff/${staffId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({
+        name: '改過的名字',
+        jobTitle: '改過的職稱',
+        account: 'renamed-self',
+        roleId: ownRoleId,
+        pin: '9999'
+      })
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body).toEqual(
+      expect.objectContaining({ name: '改過的名字', jobTitle: '改過的職稱', account: 'renamed-self' })
+    )
+  })
+
   it('指定不存在的權限群組時拒絕，回傳 404', async () => {
     const db = createTestDb()
     const roleId = await seedRole(db, { capabilities: [] })
@@ -300,12 +331,8 @@ describe('PUT /api/staff/:id', () => {
     expect(res.status).toBe(404)
   })
 
-  it('此變更會讓沒有人擁有設定權限群組的權限時拒絕，回傳 409', async () => {
+  it('變更自己的權限群組時拒絕，回傳 403', async () => {
     const db = createTestDb()
-    // 這個角色要同時有 canManageStaff（才能呼叫這個 PUT 端點）與
-    // canManageRoles（受「不可歸零」保護的能力）。用 seedStaff: false
-    // 跳過自動附掛的全權限操作員——否則店裡永遠還有別人擁有
-    // canManageRoles，「歸零」這個條件永遠不會成立（見 helpers/app.ts）。
     const adminRoleId = await seedRole(db, {
       name: '店長',
       capabilities: ['canManageStaff', 'canManageRoles']
@@ -326,7 +353,7 @@ describe('PUT /api/staff/:id', () => {
     })
     const adminSessionToken = await issueTestSession(db, adminStaffId)
 
-    // 這是全店唯一一位擁有 canManageRoles 的員工，改成無此權限的角色應該被擋下。
+    // 操作者正在改自己的角色群組，不管改完之後全店還有沒有人擁有 canManageRoles 都要擋下。
     const res = await app.request(`/api/staff/${adminStaffId}`, {
       method: 'PUT',
       headers: {
@@ -335,6 +362,57 @@ describe('PUT /api/staff/:id', () => {
         'X-Operator-Session': adminSessionToken
       },
       body: JSON.stringify({ ...staffBaseFields, roleId: partTimerRoleId })
+    })
+    expect(res.status).toBe(403)
+  })
+
+  it('變更他人的角色群組後會讓沒有人擁有設定權限群組的權限時拒絕，回傳 409', async () => {
+    const db = createTestDb()
+    // 操作者只需要 canManageStaff 就能呼叫這支 API，本身不必是權限管理者。
+    // 用 seedStaff: false 跳過自動附掛的全權限操作員——否則店裡永遠還有別人
+    // 擁有 canManageRoles，「歸零」這個條件永遠不會成立（見 helpers/app.ts）。
+    const managerRoleId = await seedRole(db, {
+      name: '主管',
+      capabilities: ['canManageStaff']
+    })
+    const roleAdminRoleId = await seedRole(db, { name: '店長', capabilities: ['canManageRoles'] })
+    const partTimerRoleId = await seedRole(db, { name: '工讀生', capabilities: [] })
+    const managerStaffId = 'manager-1'
+    const roleAdminStaffId = 'admin-1'
+    await db.insert(staff).values([
+      {
+        id: managerStaffId,
+        name: 'Manager',
+        jobTitle: '主管',
+        account: 'manager',
+        roleId: managerRoleId,
+        pinHash: 'x',
+        pinSalt: 'x'
+      },
+      {
+        id: roleAdminStaffId,
+        name: 'Lemon',
+        jobTitle: '店長',
+        account: 'lemon',
+        roleId: roleAdminRoleId,
+        pinHash: 'x',
+        pinSalt: 'x'
+      }
+    ])
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false
+    })
+    const managerSessionToken = await issueTestSession(db, managerStaffId)
+
+    // roleAdminStaffId 是全店唯一一位擁有 canManageRoles 的員工，被別人改成無此權限的角色應該被擋下。
+    const res = await app.request(`/api/staff/${roleAdminStaffId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': managerSessionToken
+      },
+      body: JSON.stringify({ name: 'Lemon', jobTitle: '店長', account: 'lemon', roleId: partTimerRoleId })
     })
     expect(res.status).toBe(409)
   })
@@ -385,10 +463,8 @@ describe('DELETE /api/staff/:id（P18）', () => {
     expect(res.status).toBe(404)
   })
 
-  it('刪除最後一位擁有設定權限群組權限的員工時拒絕，回傳 409', async () => {
+  it('刪除自己時拒絕，回傳 403', async () => {
     const db = createTestDb()
-    // 同上一個測試：需要 canManageStaff 才能呼叫 DELETE，且用 seedStaff:
-    // false 避免自動附掛的操作員讓「歸零」條件永遠不成立。
     const adminRoleId = await seedRole(db, {
       name: '店長',
       capabilities: ['canManageStaff', 'canManageRoles']
@@ -411,6 +487,50 @@ describe('DELETE /api/staff/:id（P18）', () => {
     const res = await app.request(`/api/staff/${adminStaffId}`, {
       method: 'DELETE',
       headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': adminSessionToken }
+    })
+    expect(res.status).toBe(403)
+  })
+
+  it('刪除他人後會讓沒有人擁有設定權限群組的權限時拒絕，回傳 409', async () => {
+    const db = createTestDb()
+    // 操作者只需要 canManageStaff 就能呼叫這支 API，本身不必是權限管理者。
+    // 用 seedStaff: false 避免自動附掛的操作員讓「歸零」條件永遠不成立。
+    const managerRoleId = await seedRole(db, {
+      name: '主管',
+      capabilities: ['canManageStaff']
+    })
+    const roleAdminRoleId = await seedRole(db, { name: '店長', capabilities: ['canManageRoles'] })
+    const managerStaffId = 'manager-1'
+    const roleAdminStaffId = 'admin-1'
+    await db.insert(staff).values([
+      {
+        id: managerStaffId,
+        name: 'Manager',
+        jobTitle: '主管',
+        account: 'manager',
+        roleId: managerRoleId,
+        pinHash: 'x',
+        pinSalt: 'x'
+      },
+      {
+        id: roleAdminStaffId,
+        name: 'Lemon',
+        jobTitle: '店長',
+        account: 'lemon',
+        roleId: roleAdminRoleId,
+        pinHash: 'x',
+        pinSalt: 'x'
+      }
+    ])
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false
+    })
+    const managerSessionToken = await issueTestSession(db, managerStaffId)
+
+    // roleAdminStaffId 是全店唯一一位擁有 canManageRoles 的員工，被別人刪除應該被擋下。
+    const res = await app.request(`/api/staff/${roleAdminStaffId}`, {
+      method: 'DELETE',
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': managerSessionToken }
     })
     expect(res.status).toBe(409)
   })

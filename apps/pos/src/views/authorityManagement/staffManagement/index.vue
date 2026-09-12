@@ -72,7 +72,7 @@
                   <button
                     type="button"
                     class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
-                    :class="{ 'opacity-50 pointer-events-none': !canEdit(row) }"
+                    :class="{ 'opacity-50 pointer-events-none': !canManage }"
                     @click="openEditStaffDialog(row)"
                   >
                     編輯
@@ -80,7 +80,7 @@
                   <button
                     type="button"
                     class="pos-btn pos-btn-danger px-2.5 py-1 text-xs"
-                    :class="{ 'opacity-50 pointer-events-none': !canEdit(row) }"
+                    :class="{ 'opacity-50 pointer-events-none': !canDelete(row) }"
                     @click="deleteStaff(row)"
                   >
                     刪除
@@ -226,7 +226,7 @@
           <label class="mb-1.5 block text-xs font-bold text-surface-700 dark:text-surface-300"
             >權限群組</label
           >
-          <RoleSelect v-model="currentEditRoleId" />
+          <RoleSelect v-model="currentEditRoleId" :disabled="isEditingSelf" />
         </div>
       </div>
       <div class="mt-5 flex justify-end gap-2.5">
@@ -280,10 +280,13 @@ const PIN_PATTERN = /^\d{4,6}$/
 // 人員與權限群組由 App.vue 啟動時同步，CRUD 直接以 API 回應更新本機陣列，避免重複 fetch 覆蓋。
 
 const canManage = computed(() => hasCapability(loginStore.userInfo, 'canManageStaff'))
-// 不可編輯／刪除自己，避免操作中的帳號把自己鎖在門外；「最後一位權限管理者」則交由後端把關
-// （見 apps/api/src/routes/staff.ts 的 wouldLeaveNoAuthorityAdmin），不再用 jobTitle==='店長' 字串比對。
-function canEdit(row: StaffMember): boolean {
-  return canManage.value && row.account !== fromSelection(loginStore.userInfo)?.account
+function isSelf(row: StaffMember): boolean {
+  return row.account === fromSelection(loginStore.userInfo)?.account
+}
+// 不可刪除自己，避免操作中的帳號把自己刪掉；「最後一位權限管理者」則交由後端把關
+// （見 apps/api/src/routes/staff.ts 的 wouldLeaveNoRoleAdmin）。
+function canDelete(row: StaffMember): boolean {
+  return canManage.value && !isSelf(row)
 }
 
 const addStaffDialog = ref(false)
@@ -350,7 +353,7 @@ async function addStaff() {
 }
 
 async function deleteStaff(row: StaffMember) {
-  if (!canEdit(row)) return
+  if (!canDelete(row)) return
   const result = await confirm({ title: '警告', description: `是否刪除人員 ${row.name} ?` })
   if (result !== 'confirm') return
   try {
@@ -371,9 +374,14 @@ const currentEditInputStaffJobTitle = ref('')
 const currentEditInputStaffAccount = ref('')
 const currentEditInputStaffPin = ref('')
 const currentEditRoleId = ref('')
+// 正在編輯自己時鎖住角色群組欄位，避免自我提權／自我降級鎖死操作。
+const isEditingSelf = computed(() =>
+  currentEditStaff.value ? isSelf(currentEditStaff.value) : false
+)
+// 姓名／帳號／PIN 允許編輯自己；角色群組不行（下面 isEditingSelf 會鎖住該欄位，後端也有對應檢查）。
 function openEditStaffDialog(row: StaffMember) {
-  if (!canEdit(row)) {
-    void alert({ title: '通知', description: '不可編輯自己的帳號', confirmText: '我知道了' })
+  if (!canManage.value) {
+    void alert({ title: '通知', description: '沒有編輯人員的權限', confirmText: '我知道了' })
     return
   }
   currentEditStaff.value = row
@@ -425,7 +433,8 @@ async function editStaff() {
       name: currentEditInputStaffName.value,
       jobTitle: currentEditInputStaffJobTitle.value,
       account: currentEditInputStaffAccount.value,
-      roleId: currentEditRoleId.value,
+      // 編輯自己時角色群組欄位已被鎖住，這裡一律送原本的 roleId，不採用 UI 值，後端也會擋。
+      roleId: isEditingSelf.value ? target.roleId : currentEditRoleId.value,
       ...(currentEditInputStaffPin.value !== '' ? { pin: currentEditInputStaffPin.value } : {})
     })
     const mapped = toStaffMember(updated)
