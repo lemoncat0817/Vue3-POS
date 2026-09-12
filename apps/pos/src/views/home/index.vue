@@ -626,14 +626,12 @@ onUnmounted(() => {
 })
 
 // catalogStore 不直接彈窗，只在待付款清單清空時遞增 cartClearedNotice，這裡負責顯示提示。
+// 用會自動消失的 toast 取代原本需要多按一次確認鍵的彈窗——送單後這只是
+// 附帶說明，不是需要使用者決策的事，不該擋住繼續點餐的操作。
 watch(
   () => catalogStore.cartClearedNotice,
   () => {
-    void alert({
-      title: '通知',
-      description: '待付款清單已無品項，套用優惠券以及加購的包材份數已重置',
-      confirmText: '繼續選取品項'
-    })
+    showToast('待付款清單已無品項，套用優惠券以及加購的包材份數已重置')
   }
 )
 
