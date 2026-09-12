@@ -10,10 +10,6 @@
 
 [POS機系統 Demo](https://lemoncat0817.github.io/Vue3-POS/)
 
-## 功能介紹教學影片
-
-[觀看功能介紹教學影片](https://youtu.be/4ELxt64heEs?si=Vx-REYNuS8zd2Sxz)
-
 ## 開發功能
 
 1. **登入頁面**

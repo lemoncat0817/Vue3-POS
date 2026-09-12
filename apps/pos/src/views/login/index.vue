@@ -2,51 +2,11 @@
   <div
     class="flex min-h-screen w-screen items-center justify-center bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 p-4 dark:from-surface-950 dark:via-surface-900 dark:to-surface-950"
   >
-    <div
-      v-if="isWatchVideo"
-      class="flex flex-col items-center gap-6 rounded-2xl bg-white p-6 shadow-overlay dark:bg-surface-900"
-    >
-      <iframe
-        width="560"
-        height="315"
-        src="https://www.youtube.com/embed/4ELxt64heEs?si=V5_55DrBO2G1kN0L"
-        title="YouTube video player"
-        class="rounded-lg"
-        frameborder="0"
-        allow="
-          accelerometer;
-          autoplay;
-          clipboard-write;
-          encrypted-media;
-          gyroscope;
-          picture-in-picture;
-          web-share;
-        "
-        referrerpolicy="strict-origin-when-cross-origin"
-        allowfullscreen
-      >
-      </iframe>
-      <button
-        type="button"
-        class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700"
-        @click="isWatchVideo = !isWatchVideo"
-      >
-        回到登入頁面
-      </button>
-    </div>
-
-    <div v-else class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-overlay dark:bg-surface-900">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-overlay dark:bg-surface-900">
       <div class="mb-8 flex flex-col items-center gap-3">
         <h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-50">
           POS 系統
         </h1>
-        <button
-          type="button"
-          class="text-sm font-bold text-primary-600 hover:underline dark:text-primary-400"
-          @click="isWatchVideo = !isWatchVideo"
-        >
-          觀看教學影片
-        </button>
       </div>
 
       <!-- 新租戶第一次用 Google／GitHub 登入時，後端隨裝置一起核發一組 owner
@@ -151,7 +111,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 import { useLoginStore } from '@/stores/login'
@@ -162,8 +121,6 @@ import { showToast } from '@/composables/useToast'
 import { operatorLogin, toStaffMember } from '@/api/auth'
 import { googleLoginUrl, githubLoginUrl } from '@/api/oauth'
 import { ApiError } from '@/api/http'
-
-const isWatchVideo = ref(false)
 
 function acknowledgeOwnerCredentials() {
   loginStore.account = deviceStore.pendingOwnerAccount ?? ''
