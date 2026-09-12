@@ -63,7 +63,6 @@ export async function ensureTenantOnboarded(
         'canCheckBackgroundSetting',
         'canSetCategory',
         'canSetProduct',
-        'canSetAddOns',
         'canCheckDataAnalysis'
       ],
       isSystem: true

@@ -1,6 +1,9 @@
 -- 展示用菜單：跨品類的餐飲示範資料（主餐、輕食、飲品、甜點），示範這套
--- 目錄模型不綁定單一產業——熟度、甜度/冰塊/容器大小等客製化選項一律透過
--- 可重複掛用的規格群組（modifier_groups）表達，不是寫死在品項欄位裡。
+-- 目錄模型不綁定單一產業——熟度、甜度/冰塊/容器大小、加購配料等客製化
+-- 選項一律透過可重複掛用的規格群組（modifier_groups）表達，不是寫死在
+-- 品項欄位裡。「加購」不是獨立概念，只是 selection_type='multiple'、
+-- required=0 的規格群組，一樣透過 product_modifier_groups 掛用，所以
+-- 漢堡的加料（起司/蛋/培根）不會出現在飲料底下，反之亦然。
 
 INSERT INTO categories (id, name) VALUES ('cat-1', '主餐');
 INSERT INTO categories (id, name) VALUES ('cat-2', '輕食');
@@ -26,6 +29,16 @@ INSERT INTO modifier_groups (id, name, selection_type, required) VALUES ('mg-siz
 INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-size-1', 'mg-size', '中杯', 0);
 INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-size-2', 'mg-size', '大杯', 10);
 
+INSERT INTO modifier_groups (id, name, selection_type, required) VALUES ('mg-burger-topping', '漢堡加料', 'multiple', 0);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-burger-topping-1', 'mg-burger-topping', '加起司', 20);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-burger-topping-2', 'mg-burger-topping', '加蛋', 15);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-burger-topping-3', 'mg-burger-topping', '加培根', 25);
+
+INSERT INTO modifier_groups (id, name, selection_type, required) VALUES ('mg-drink-topping', '飲料加料', 'multiple', 0);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-drink-topping-1', 'mg-drink-topping', '珍珠', 10);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-drink-topping-2', 'mg-drink-topping', '布丁', 15);
+INSERT INTO modifier_options (id, group_id, name, price_delta) VALUES ('mo-drink-topping-3', 'mg-drink-topping', '椰果', 10);
+
 INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-1', 'cat-1', '招牌牛肉漢堡', 180, 30);
 INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-2', 'cat-1', '烤雞三明治', 150, 30);
 INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-3', 'cat-1', '奶油培根義大利麵', 190, NULL);
@@ -40,18 +53,16 @@ INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-11
 INSERT INTO products (id, category_id, name, base_price, stock) VALUES ('prod-12', 'cat-4', '布朗尼', 75, 15);
 
 INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-1', 'mg-doneness');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-1', 'mg-burger-topping');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-2', 'mg-burger-topping');
 INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-7', 'mg-sweetness');
 INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-7', 'mg-ice');
 INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-7', 'mg-size');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-7', 'mg-drink-topping');
 INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-8', 'mg-sweetness');
 INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-8', 'mg-ice');
 INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-8', 'mg-size');
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-8', 'mg-drink-topping');
 INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-10', 'mg-ice');
 INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-10', 'mg-size');
-
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-1', '加起司', 20);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-2', '加蛋', 15);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-3', '加培根', 25);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-4', '珍珠', 10);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-5', '布丁', 15);
-INSERT INTO add_on_options (id, name, price) VALUES ('addon-6', '椰果', 10);
+INSERT INTO product_modifier_groups (product_id, group_id) VALUES ('prod-10', 'mg-drink-topping');

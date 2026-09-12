@@ -12,7 +12,6 @@ export const authorityKeySchema = z.enum([
   'canCheckBackgroundSetting',
   'canSetCategory',
   'canSetProduct',
-  'canSetAddOns',
   'canSetOrderCoupon',
   'canSetQuickDiscount',
   'canCheckDataAnalysis',

@@ -13,13 +13,13 @@
 
 INSERT INTO roles (id, name, capabilities, is_system) VALUES (
   'role-owner', '店長',
-  '["canCompItem","canOpenCashier","canManageShift","canCheckOrder","canEditOrderStatus","canDeleteOrder","canRefundOrVoid","canCheckBackgroundSetting","canSetCategory","canSetProduct","canSetAddOns","canSetOrderCoupon","canSetQuickDiscount","canCheckDataAnalysis","canCheckAuthority","canManageStaff","canManageRoles","canSetPayMethod","canCheckMembers","canManageTables"]',
+  '["canCompItem","canOpenCashier","canManageShift","canCheckOrder","canEditOrderStatus","canDeleteOrder","canRefundOrVoid","canCheckBackgroundSetting","canSetCategory","canSetProduct","canSetOrderCoupon","canSetQuickDiscount","canCheckDataAnalysis","canCheckAuthority","canManageStaff","canManageRoles","canSetPayMethod","canCheckMembers","canManageTables"]',
   1
 );
 
 INSERT INTO roles (id, name, capabilities, is_system) VALUES (
   'role-duty-manager', '值班經理',
-  '["canCompItem","canOpenCashier","canManageShift","canCheckOrder","canEditOrderStatus","canRefundOrVoid","canCheckBackgroundSetting","canSetCategory","canSetProduct","canSetAddOns","canCheckDataAnalysis"]',
+  '["canCompItem","canOpenCashier","canManageShift","canCheckOrder","canEditOrderStatus","canRefundOrVoid","canCheckBackgroundSetting","canSetCategory","canSetProduct","canCheckDataAnalysis"]',
   1
 );
 

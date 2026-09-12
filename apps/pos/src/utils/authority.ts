@@ -18,7 +18,6 @@ export const AUTHORITY_FIELDS: AuthorityField[] = [
   { label: '查看後台設定', value: 'canCheckBackgroundSetting' },
   { label: '設定分類', value: 'canSetCategory', dependsOn: 'canCheckBackgroundSetting' },
   { label: '設定品項', value: 'canSetProduct', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定加購選項', value: 'canSetAddOns', dependsOn: 'canCheckBackgroundSetting' },
   { label: '設定訂單折價券', value: 'canSetOrderCoupon', dependsOn: 'canCheckBackgroundSetting' },
   { label: '設定快速折扣', value: 'canSetQuickDiscount', dependsOn: 'canCheckBackgroundSetting' },
   { label: '設定付款方式', value: 'canSetPayMethod', dependsOn: 'canCheckBackgroundSetting' },

@@ -12,7 +12,6 @@ export type AuthorityKey =
   | 'canCheckBackgroundSetting'
   | 'canSetCategory'
   | 'canSetProduct'
-  | 'canSetAddOns'
   | 'canSetOrderCoupon'
   | 'canSetQuickDiscount'
   | 'canCheckDataAnalysis'

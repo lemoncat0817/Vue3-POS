@@ -19,7 +19,6 @@ const ALL_CAPABILITIES: AuthorityKey[] = [
   'canCheckBackgroundSetting',
   'canSetCategory',
   'canSetProduct',
-  'canSetAddOns',
   'canSetOrderCoupon',
   'canSetQuickDiscount',
   'canCheckDataAnalysis',
