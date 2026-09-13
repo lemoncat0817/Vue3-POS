@@ -438,7 +438,7 @@
         >
           <div class="flex flex-col">
             <span class="text-[11px] font-bold uppercase tracking-wider text-surface-400"
-              >應付總額 DUE TOTAL</span
+              >應付總額</span
             >
             <span class="text-2xl font-black text-primary-600 dark:text-primary-400 font-mono">
               $ {{ finalPayablePrice }} 元
