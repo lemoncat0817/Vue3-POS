@@ -17,6 +17,10 @@ export type OAuthConfig = {
   githubClientSecret: string
 }
 
+/** OAuth 登入核發裝置時的預設顯示名稱，業主可在後台設定 → 裝置設定自行改名
+ *  （見 routes/devices.ts 的 PATCH /devices/:id）。 */
+const DEFAULT_DEVICE_NAME = '總店-機台A'
+
 /** 登入完成（或失敗）後導回前端的網址：session token／錯誤訊息放在 URL fragment（#）
  *  而不是 query string——fragment 不會被送到伺服器、也不會進 Referer，比較不容易外流；
  *  前端讀完就用 history.replaceState 清掉，見 Phase 6 的登入頁。 */
@@ -101,7 +105,7 @@ export function createOAuthRoutes(config: OAuthConfig) {
         config.frontendUrl,
         userId,
         'google',
-        'Google 登入的瀏覽器',
+        DEFAULT_DEVICE_NAME,
         profile.name ?? profile.email
       )
     }
@@ -135,7 +139,7 @@ export function createOAuthRoutes(config: OAuthConfig) {
         config.frontendUrl,
         userId,
         'github',
-        'GitHub 登入的瀏覽器',
+        DEFAULT_DEVICE_NAME,
         profile.name ?? profile.login ?? String(profile.id)
       )
     }
