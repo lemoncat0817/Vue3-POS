@@ -50,8 +50,11 @@ describe('POST /api/audit-logs', () => {
     expect(typeof body.id).toBe('number')
     expect(typeof body.createdAt).toBe('string')
 
+    // 篩 action=cashier_open：createTestAppWithDevice() 本身會先核發一台
+    // 裝置，現在也會寫一筆 device.issue 操作紀錄（見 routes/devices.ts），
+    // 這裡只在乎這個測試自己新增的 cashier_open 那筆。
     const list = await readJson(
-      await app.request('/api/audit-logs', {
+      await app.request('/api/audit-logs?action=cashier_open', {
         headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
       })
     )
@@ -74,7 +77,7 @@ describe('POST /api/audit-logs', () => {
       })
     }
     const list = await readJson(
-      await app.request('/api/audit-logs', {
+      await app.request('/api/audit-logs?action=cashier_open', {
         headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
       })
     )
@@ -141,7 +144,7 @@ describe('GET /api/audit-logs', () => {
     expect(filtered.items[0]).toMatchObject({ detail: '第二筆' })
 
     const paged = await readJson(
-      await app.request('/api/audit-logs?page=1&pageSize=2', {
+      await app.request('/api/audit-logs?action=cashier_open&page=1&pageSize=2', {
         headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
       })
     )

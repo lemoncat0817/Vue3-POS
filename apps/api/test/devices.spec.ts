@@ -43,6 +43,34 @@ describe('POST /api/devices（核發裝置憑證）', () => {
     expect(rows[0]!.tokenHash).not.toBe(body.token)
   })
 
+  it('核發成功寫入操作紀錄 device.issue——核發密鑰保護的端點沒有操作員身分，operator 記固定字串', async () => {
+    const db = createTestDb()
+    const app = createTestApp(db)
+    await app.request('/api/devices', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Provisioning-Secret': TEST_PROVISIONING_SECRET
+      },
+      body: JSON.stringify({ name: '前台收銀機' })
+    })
+
+    // 核發出來的裝置落在「未分配租戶」過渡池（tenantId: null），要用同一個
+    // 池子裡的裝置／session 才查得到這筆紀錄；createTestAppWithDevice() 自己
+    // 核發的那台裝置也會留一筆 device.issue，用 keyword 篩掉不相干的那筆。
+    const { app: appWithSession, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const list = (await (
+      await appWithSession.request('/api/audit-logs?action=device.issue&keyword=前台收銀機', {
+        headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+      })
+    ).json()) as { items: Array<{ operator: string; detail: string }> }
+    expect(list.items).toHaveLength(1)
+    expect(list.items[0]).toMatchObject({
+      operator: '系統（裝置核發密鑰）',
+      detail: '核發裝置憑證「前台收銀機」'
+    })
+  })
+
   it('用核發密鑰打不進其他需要裝置憑證的端點（兩把密鑰不能互相冒充）', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/devices', {

@@ -99,6 +99,9 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
       revokedAt: null
     }
     await db.insert(devices).values(newDevice)
+    // 這個端點靠核發密鑰保護，還沒有任何員工登入、沒有操作員身分可解析，
+    // operator 記固定字串「系統（裝置核發密鑰）」，理由同上面 tenantId 的說明。
+    await recordAuditLog(c, 'device.issue', `核發裝置憑證「${input.name}」`, '系統（裝置核發密鑰）')
 
     return c.json(createDeviceResponseSchema.parse({ ...toDeviceResponse(newDevice), token }), 201)
   })
