@@ -484,6 +484,31 @@
                           <span v-if="row.original.tableNumber"
                             >桌號 {{ row.original.tableNumber }}</span
                           >
+                          <template v-if="row.original.memberId">
+                            <span class="text-surface-300 dark:text-surface-700">·</span>
+                            <span>
+                              會員
+                              <b class="font-bold text-surface-900 dark:text-surface-100">{{
+                                row.original.memberName ?? row.original.memberId
+                              }}</b>
+                              <template v-if="row.original.memberPhone"
+                                >（{{ row.original.memberPhone }}）</template
+                              >
+                            </span>
+                            <span v-if="row.original.pointsEarned > 0"
+                              >．獲得 <b class="font-bold text-primary-600 dark:text-primary-400"
+                                >{{ row.original.pointsEarned }}</b
+                              >
+                              點</span
+                            >
+                            <span v-if="row.original.pointsRedeemed > 0"
+                              >．折抵
+                              <b class="font-bold text-danger-600 dark:text-danger-400"
+                                >{{ row.original.pointsRedeemed }}</b
+                              >
+                              點</span
+                            >
+                          </template>
                         </div>
 
                         <div

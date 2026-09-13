@@ -177,6 +177,13 @@ export const orderSchema = z.object({
   invoiceCarrier: invoiceCarrierSchema,
   /** 沒有掛會員是 null。 */
   memberId: z.string().nullable(),
+  /** 依 memberId 即時查出的會員姓名／手機號碼，供訂單列表／明細顯示用；沒有
+   * 掛會員（memberId 是 null）時是 null。會員本身被刪除是軟刪除（見 members.deletedAt
+   * 的說明），這裡查得到、依然會回傳——消費歷史本來就該留著正確的會員關聯。
+   * 是即時查詢結果，不是下單當下的快照：會員之後改名或改手機，這裡看到的
+   * 會是最新資料。 */
+  memberName: z.string().nullable(),
+  memberPhone: z.string().nullable(),
   /** 這筆訂單掛會員時累加的點數，沒有掛會員是 0；固定不變，退款/作廢的收回不會回頭改寫這裡。 */
   pointsEarned: z.number().int().nonnegative(),
   /** 這筆訂單折抵時花掉的點數，沒有折抵是 0；固定不變，作廢會全額退還但不會回頭改寫這裡。 */

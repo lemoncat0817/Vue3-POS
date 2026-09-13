@@ -102,6 +102,8 @@ export function orderToRecord(order: Order): OrderRecord {
     voidedBy: order.voidedBy,
     voidedAt: order.voidedAt,
     memberId: order.memberId,
+    memberName: order.memberName,
+    memberPhone: order.memberPhone,
     pointsEarned: order.pointsEarned,
     pointsRedeemed: order.pointsRedeemed,
     tableNumber: order.tableNumber,

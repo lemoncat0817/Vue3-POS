@@ -32,6 +32,9 @@ export interface OrderRecord {
   voidedAt: string | null
   /** 會員 ID，選填。 */
   memberId?: string | null
+  /** 依 memberId 即時查出的會員姓名／手機號碼，沒有掛會員或會員已被刪除是 null。 */
+  memberName?: string | null
+  memberPhone?: string | null
   /** 這筆訂單掛會員時累加的點數，沒有掛會員是 0。 */
   pointsEarned: number
   /** 這筆訂單結帳時花掉的點數，沒有折抵是 0。 */

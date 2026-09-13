@@ -353,8 +353,19 @@ describe('POST /api/orders 掛會員（P22）', () => {
     expect(orderRes.status).toBe(201)
     const orderBody = await readJson(orderRes)
     expect(orderBody.memberId).toBe(member.id)
+    expect(orderBody.memberName).toBe('王小明')
+    expect(orderBody.memberPhone).toBe('0912345678')
     // 應付金額 160 元，每 10 元 1 點 = 16 點。
     expect(orderBody.orderPaymentPrice).toBe(160)
+
+    // GET /api/orders 列表頁也要看得到同一份會員資訊，不是只有這次建立的回應才有。
+    const listRes = await readJson(await app.request('/api/orders', { headers }))
+    expect(listRes.items).toHaveLength(1)
+    expect(listRes.items[0]).toMatchObject({
+      memberId: member.id,
+      memberName: '王小明',
+      memberPhone: '0912345678'
+    })
 
     const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
     expect(detail.points).toBe(16)
@@ -380,7 +391,49 @@ describe('POST /api/orders 掛會員（P22）', () => {
       body: JSON.stringify(buildRequest())
     })
     expect(res.status).toBe(201)
-    expect((await readJson(res)).memberId).toBeNull()
+    const body = await readJson(res)
+    expect(body.memberId).toBeNull()
+    expect(body.memberName).toBeNull()
+    expect(body.memberPhone).toBeNull()
+  })
+
+  it('會員被刪除（軟刪除）後，訂單上的會員姓名／手機號碼依然查得到，不會變成 null', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0912345679' })
+      })
+    )
+    const orderRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(buildRequest({ memberId: member.id }))
+    })
+    expect(orderRes.status).toBe(201)
+
+    const deleteRes = await app.request(`/api/members/${member.id}`, {
+      method: 'DELETE',
+      headers
+    })
+    expect(deleteRes.status).toBe(204)
+
+    // 消費歷史本來就該留著正確的會員關聯（軟刪除不斷開 orders.memberId），
+    // 訂單列表看到的姓名／手機號碼不該因為會員被刪除就消失。
+    const listRes = await readJson(await app.request('/api/orders', { headers }))
+    expect(listRes.items[0]).toMatchObject({
+      memberId: member.id,
+      memberName: '王小明',
+      memberPhone: '0912345679'
+    })
   })
 
   it('memberId 對應不到任何會員時，訂單仍然成立（不因為找不到會員就整筆失敗）', async () => {

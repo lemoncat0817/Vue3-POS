@@ -210,7 +210,8 @@ function toOrderResponse(
   order: OrderRow,
   lines: OrderLineRow[],
   tenders: OrderTenderRow[],
-  refunds: OrderRefundRow[]
+  refunds: OrderRefundRow[],
+  member: { name: string; phone: string } | null
 ) {
   const sortedRefunds = [...refunds].sort((a, b) => a.at.localeCompare(b.at))
   const { refundedAmount } = summarizeOrderRefunds(order.orderPaymentPrice, sortedRefunds)
@@ -242,6 +243,8 @@ function toOrderResponse(
     invoiceNumber: order.invoiceNumber,
     invoiceCarrier: toInvoiceCarrier(order.invoiceCarrierType, order.invoiceCarrierValue),
     memberId: order.memberId,
+    memberName: member?.name ?? null,
+    memberPhone: member?.phone ?? null,
     pointsEarned: order.pointsEarned,
     pointsRedeemed: order.pointsRedeemed,
     invoiceStatus: order.invoiceStatus,
@@ -453,6 +456,24 @@ async function resolveMemberId(
   return member.id
 }
 
+/** 依 memberId 查會員姓名／手機號碼給訂單回應顯示用；沒有掛會員時回傳 null。
+ * 會員被刪除是軟刪除（deletedAt 有值但列還在），這裡不特別排除、依然查得到
+ * ——訂單消費歷史本來就該留著正確的會員關聯，見 toOrderResponse 的
+ * memberName／memberPhone。 */
+async function resolveMemberDisplay(
+  db: AnyDb,
+  tenantId: string | null,
+  memberId: string | null
+): Promise<{ name: string; phone: string } | null> {
+  if (!memberId) return null
+  const member = await db
+    .select({ name: members.name, phone: members.phone })
+    .from(members)
+    .where(and(eq(members.id, memberId), tenantFilter(members.tenantId, tenantId)))
+    .get()
+  return member ?? null
+}
+
 /** 租戶自訂的點數比例（消費多少元累加 1 點），業主可在會員管理頁調整，見 routes/tenant-settings.ts。 */
 async function resolvePointsPerCurrencyUnit(db: AnyDb, tenantId: string | null): Promise<number> {
   const tenant = await db.select().from(users).where(tenantFilter(users.id, tenantId)).get()
@@ -611,7 +632,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
         .from(orderRefunds)
         .where(eq(orderRefunds.orderId, existing.orderId))
         .all()
-      return c.json(toOrderResponse(existing, lines, existingTenders, existingRefunds), 200)
+      const member = await resolveMemberDisplay(db, tenantId, existing.memberId)
+      return c.json(toOrderResponse(existing, lines, existingTenders, existingRefunds, member), 200)
     }
 
     // 排在核發序號之前：不合法的訂單不該浪費掉一個序號。
@@ -776,7 +798,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       .from(orderTenders)
       .where(eq(orderTenders.orderId, orderId))
       .all()
-    return c.json(toOrderResponse(newOrder, insertedLines, insertedTenders, []), 201)
+    const member = await resolveMemberDisplay(db, tenantId, memberId)
+    return c.json(toOrderResponse(newOrder, insertedLines, insertedTenders, [], member), 201)
   })
   .openapi(listOrdersRoute, async (c) => {
     const db = c.get('db')
@@ -809,14 +832,28 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     // 明細／支付／退款只抓「這一頁」訂單的 orderId，不再整表撈出來 join
     // ——這正是原本全量載入最大的效能問題（見 listOrdersRoute 的說明）。
     const pageOrderIds = pageOrders.map((order) => order.orderId)
-    const [pageLines, pageTenders, pageRefunds] =
+    // 掛會員的訂單姓名／手機號碼同樣批次查，用 memberId 去重——理由同上，
+    // 避免「這一頁 N 筆訂單各自查一次會員」的 N+1。
+    const pageMemberIds = [...new Set(pageOrders.map((order) => order.memberId).filter((id) => id !== null))]
+    const [pageLines, pageTenders, pageRefunds, pageMembers] = await Promise.all([
       pageOrderIds.length > 0
-        ? await Promise.all([
-            db.select().from(orderLines).where(inArray(orderLines.orderId, pageOrderIds)).all(),
-            db.select().from(orderTenders).where(inArray(orderTenders.orderId, pageOrderIds)).all(),
-            db.select().from(orderRefunds).where(inArray(orderRefunds.orderId, pageOrderIds)).all()
-          ])
-        : [[], [], []]
+        ? db.select().from(orderLines).where(inArray(orderLines.orderId, pageOrderIds)).all()
+        : [],
+      pageOrderIds.length > 0
+        ? db.select().from(orderTenders).where(inArray(orderTenders.orderId, pageOrderIds)).all()
+        : [],
+      pageOrderIds.length > 0
+        ? db.select().from(orderRefunds).where(inArray(orderRefunds.orderId, pageOrderIds)).all()
+        : [],
+      pageMemberIds.length > 0
+        ? db
+            .select({ id: members.id, name: members.name, phone: members.phone })
+            .from(members)
+            .where(inArray(members.id, pageMemberIds))
+            .all()
+        : []
+    ])
+    const memberById = new Map(pageMembers.map((member) => [member.id, member]))
 
     const linesByOrder = new Map<string, OrderLineRow[]>()
     for (const line of pageLines) {
@@ -844,7 +881,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
             order,
             linesByOrder.get(order.orderId) ?? [],
             tendersByOrder.get(order.orderId) ?? [],
-            refundsByOrder.get(order.orderId) ?? []
+            refundsByOrder.get(order.orderId) ?? [],
+            (order.memberId && memberById.get(order.memberId)) || null
           )
         ),
         pagination: {
@@ -999,12 +1037,14 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       }
     }
 
+    const member = await resolveMemberDisplay(db, tenantId, existing.memberId)
     return c.json(
       toOrderResponse(
         { ...existing, orderStatus, ...voidFields, ...invoiceStatusField },
         lines,
         tenders,
-        refunds
+        refunds,
+        member
       ),
       200
     )
@@ -1039,7 +1079,8 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
         .from(orderTenders)
         .where(eq(orderTenders.orderId, orderId))
         .all()
-      return c.json(toOrderResponse(existing, lines, tenders, existingRefunds), 200)
+      const member = await resolveMemberDisplay(db, tenantId, existing.memberId)
+      return c.json(toOrderResponse(existing, lines, tenders, existingRefunds, member), 200)
     }
 
     if (existing.orderStatus === '已取消') {
@@ -1088,7 +1129,11 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       .from(orderTenders)
       .where(eq(orderTenders.orderId, orderId))
       .all()
-    return c.json(toOrderResponse(existing, lines, tenders, [...existingRefunds, newRefund]), 201)
+    const member = await resolveMemberDisplay(db, tenantId, existing.memberId)
+    return c.json(
+      toOrderResponse(existing, lines, tenders, [...existingRefunds, newRefund], member),
+      201
+    )
   })
   .openapi(deleteOrderRoute, async (c) => {
     const { orderId } = c.req.valid('param')
