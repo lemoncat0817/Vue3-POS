@@ -18,6 +18,15 @@
         <div class="flex items-center gap-3">
           <button
             type="button"
+            class="flex items-center gap-1.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-2 text-xs lg:text-sm font-bold text-surface-600 dark:text-surface-300 transition-all hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 select-none"
+            :class="{ 'pointer-events-none opacity-40': !canManage }"
+            @click="openPointsSettingDialog"
+          >
+            <Coins class="h-4 w-4" />
+            <span>點數設定</span>
+          </button>
+          <button
+            type="button"
             class="flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2 text-xs lg:text-sm font-bold text-white transition-all hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 select-none"
             :class="{ 'pointer-events-none opacity-40': !canManage }"
             @click="openAddDialog"
@@ -216,12 +225,13 @@
                 <th class="px-3 py-2.5 text-left">時間</th>
                 <th class="px-3 py-2.5 text-center">狀態</th>
                 <th class="px-3 py-2.5 text-right">金額</th>
+                <th class="px-3 py-2.5 text-right">獲得點數</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
               <tr v-if="!detail || detail.orders.length === 0">
                 <td
-                  colspan="4"
+                  colspan="5"
                   class="px-3 py-8 text-center text-surface-400 dark:text-surface-500"
                 >
                   <div class="flex flex-col items-center justify-center gap-1.5">
@@ -257,9 +267,55 @@
                 >
                   {{ order.orderPaymentPrice }} 元
                 </td>
+                <td
+                  class="px-3 py-2.5 text-right font-mono text-xs font-bold text-primary-600 dark:text-primary-400"
+                >
+                  {{ order.pointsEarned }} 點
+                </td>
               </tr>
             </tbody>
           </table>
+        </div>
+      </ModalDialog>
+
+      <ModalDialog v-model:open="pointsSettingDialog" title="點數設定">
+        <div class="flex flex-col gap-3">
+          <p class="text-xs text-surface-500 dark:text-surface-400">
+            設定顧客消費多少元累加 1 點，調整後只套用到「儲存之後」新產生的訂單，已入帳的點數不會被回頭改寫。
+          </p>
+          <label class="block text-sm font-bold text-surface-700 dark:text-surface-300">
+            消費多少元累加 1 點
+            <input
+              v-model.number="pointsPerCurrencyUnitInput"
+              type="number"
+              min="1"
+              step="1"
+              :disabled="pointsSettingSaving || pointsSettingLoading"
+              class="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-surface-100 disabled:text-surface-400 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:disabled:bg-surface-900 dark:disabled:text-surface-600"
+            />
+          </label>
+          <div class="mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              class="pos-btn pos-btn-secondary px-4 py-2 text-sm font-bold"
+              @click="pointsSettingDialog = false"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              :disabled="
+                pointsSettingSaving ||
+                pointsSettingLoading ||
+                !Number.isInteger(pointsPerCurrencyUnitInput) ||
+                pointsPerCurrencyUnitInput < 1
+              "
+              class="pos-btn pos-btn-primary px-4 py-2 text-sm font-bold"
+              @click="onSavePointsSetting"
+            >
+              儲存
+            </button>
+          </div>
         </div>
       </ModalDialog>
     </div>
@@ -267,7 +323,7 @@
 </template>
 
 <script setup lang="ts">
-import { Receipt, UserPlus, Users } from 'lucide-vue-next'
+import { Coins, Receipt, UserPlus, Users } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -288,10 +344,11 @@ import {
   fetchMembers,
   updateMember
 } from '@/api/members'
+import { fetchTenantSettings, updateTenantSettings } from '@/api/tenant-settings'
 import type { Member, MemberDetail } from '@pos/contract'
 
 const loginStore = useLoginStore()
-const canManage = () => hasCapability(loginStore.userInfo, 'canCheckMembers')
+const canManage = () => hasCapability(loginStore.userInfo, 'canManageMembers')
 
 function apiErrorMessage(err: unknown): string {
   if (err instanceof ApiError && err.status === 409) return '這個手機號碼已經是會員'
@@ -397,6 +454,41 @@ async function openDetail(member: Member) {
     detailDialog.value = true
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
+  }
+}
+
+// 消費多少元累加 1 點，業主可自訂——跟營業設定的換日時間一樣存在租戶層級，
+// 見 apps/api/src/routes/tenant-settings.ts。
+const pointsSettingDialog = ref(false)
+const pointsPerCurrencyUnitInput = ref(10)
+const pointsSettingLoading = ref(false)
+const pointsSettingSaving = ref(false)
+async function openPointsSettingDialog() {
+  if (!canManage()) return
+  pointsSettingDialog.value = true
+  pointsSettingLoading.value = true
+  try {
+    const settings = await fetchTenantSettings()
+    pointsPerCurrencyUnitInput.value = settings.pointsPerCurrencyUnit
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  } finally {
+    pointsSettingLoading.value = false
+  }
+}
+async function onSavePointsSetting() {
+  pointsSettingSaving.value = true
+  try {
+    const settings = await updateTenantSettings({
+      pointsPerCurrencyUnit: pointsPerCurrencyUnitInput.value
+    })
+    pointsPerCurrencyUnitInput.value = settings.pointsPerCurrencyUnit
+    pointsSettingDialog.value = false
+    showToast('已更新點數設定', 'success')
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  } finally {
+    pointsSettingSaving.value = false
   }
 }
 </script>

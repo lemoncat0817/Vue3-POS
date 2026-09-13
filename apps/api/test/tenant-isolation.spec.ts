@@ -274,13 +274,15 @@ describe('跨租戶隔離', () => {
       })
     ))
 
+    // 整批撈會員名單、查詳細資料都需要 canCheckMembers（見 routes/members.ts），
+    // 用 authHeaders 附上 tenantB 全權限操作員的 session。
     const listB = await readJson((
-      await tenantB.app.request('/api/members', { headers: { 'X-Device-Token': tenantB.deviceToken } })
+      await tenantB.app.request('/api/members', { headers: authHeaders(tenantB) })
     ))
     expect(listB).toEqual([])
 
     const getRes = await tenantB.app.request(`/api/members/${member.id}`, {
-      headers: { 'X-Device-Token': tenantB.deviceToken }
+      headers: authHeaders(tenantB)
     })
     expect(getRes.status).toBe(404)
   })
@@ -341,7 +343,7 @@ describe('跨租戶隔離', () => {
         headers: { 'X-Device-Token': tenantB.deviceToken }
       })
     ))
-    expect(settingsB).toEqual({ businessDayStartHour: 4 })
+    expect(settingsB).toEqual({ businessDayStartHour: 4, pointsPerCurrencyUnit: 10 })
   })
 
   it('裝置：B 的裝置清單看不到 A 的裝置', async () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { invoiceTracks } from '../src/db/schema'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
 import { createTestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
@@ -332,5 +333,203 @@ describe('POST /api/orders 掛會員（P22）', () => {
     // 見 resolveMemberId 的說明），回應上看到的是 null，不是那個
     // 傳進去但找不到的 id。
     expect((await readJson(res)).memberId).toBeNull()
+  })
+})
+
+/**
+ * 退款／作廢會回收先前累加的點數，不再是「退款後點數還留著」（見
+ * routes/orders.ts 的 remainingReversiblePoints／pointsWithheldForRefundedAmount）。
+ */
+describe('退款／作廢會收回會員點數', () => {
+  const validLine = {
+    name: '楊枝甘露2.0',
+    price: 80,
+    count: 2,
+    addList: '無添加配料' as const,
+    addListPrice: 0,
+    freeDiscount: false,
+    quickDiscountId: null
+  }
+
+  function buildRequest(overrides: Record<string, unknown> = {}) {
+    return {
+      idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+      businessDate: '20240610',
+      staff: '店長 - Lemon',
+      lines: [validLine],
+      bagCount: 0,
+      tenders: [{ method: '現金', amount: 160 }],
+      appliedCoupon: { type: 'none' },
+      orderChannel: '外帶',
+      invoiceCarrier: { type: '無載具' },
+      ...overrides
+    }
+  }
+
+  async function setupMemberOrder(db: ReturnType<typeof createTestDb>) {
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0912345678' })
+      })
+    )
+    const orderRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(buildRequest({ memberId: member.id }))
+    })
+    const order = await readJson(orderRes)
+    return { app, headers, member, order }
+  }
+
+  it('部分退款依「退款金額佔應付金額」的比例收回點數', async () => {
+    const db = createTestDb()
+    const { app, headers, member, order } = await setupMemberOrder(db)
+    // 應付金額 160 元累加 16 點；退一半金額（80 元）應收回一半點數（8 點）。
+    const refundRes = await app.request(`/api/orders/${order.orderId}/refunds`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        refundId: '01ARZ3NDEKTSV4RRFFQ69G5FB1',
+        amount: 80,
+        reason: '少一杯',
+        operator: '店長 - Lemon'
+      })
+    })
+    expect(refundRes.status).toBe(201)
+
+    const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(detail.points).toBe(8)
+  })
+
+  it('整單作廢收回全部點數；撤銷作廢（改回已完成）原數退還', async () => {
+    const db = createTestDb()
+    const { app, headers, member, order } = await setupMemberOrder(db)
+
+    const voidRes = await app.request(`/api/orders/${order.orderId}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '測試作廢' })
+    })
+    expect(voidRes.status).toBe(200)
+    const afterVoid = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(afterVoid.points).toBe(0)
+
+    const restoreRes = await app.request(`/api/orders/${order.orderId}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ orderStatus: '已完成', operator: '店長 - Lemon' })
+    })
+    expect(restoreRes.status).toBe(200)
+    const afterRestore = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(afterRestore.points).toBe(16)
+  })
+
+  it('先部分退款、再整單作廢，只收回「還沒被退款收回」的剩餘點數', async () => {
+    const db = createTestDb()
+    const { app, headers, member, order } = await setupMemberOrder(db)
+
+    // 先退 80 元（收回 8 點，剩 8 點），再整單作廢應該只再收回剩下的 8 點。
+    await app.request(`/api/orders/${order.orderId}/refunds`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        refundId: '01ARZ3NDEKTSV4RRFFQ69G5FB2',
+        amount: 80,
+        reason: '少一杯',
+        operator: '店長 - Lemon'
+      })
+    })
+    const voidRes = await app.request(`/api/orders/${order.orderId}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '測試作廢' })
+    })
+    expect(voidRes.status).toBe(200)
+
+    const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(detail.points).toBe(0)
+  })
+})
+
+/** 業主可自訂「消費多少元累加 1 點」，見 routes/tenant-settings.ts。 */
+describe('會員點數比例可由租戶自訂（PUT /api/tenant-settings）', () => {
+  it('調整 pointsPerCurrencyUnit 後，新訂單依新比例累加點數', async () => {
+    const db = createTestDb()
+    // PUT /api/tenant-settings 要更新的租戶列要先存在（見 routes/tenant-settings.ts
+    // 的「找不到這個租戶」404），沒指定 tenantId 時裝置停留在過渡池、沒有對應的
+    // users 列，這裡跟 tenant-isolation.spec.ts 的 twoTenants() 一樣自行指定
+    // tenantId 並各自種一組發票字軌（不能沿用 seedPromotions()，它種的字軌
+    // tenantId 是 null，跟自訂的 tenantId 對不上）。
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db, 'test-device', {
+      tenantId: 'tenant-1'
+    })
+    await db.insert(invoiceTracks).values({
+      id: 'track-tenant-1',
+      tenantId: 'tenant-1',
+      trackCode: 'AA',
+      periodLabel: '測試期別',
+      rangeStart: 1,
+      rangeEnd: 50000000,
+      currentNumber: 0,
+      isActive: true
+    })
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const settingsRes = await app.request('/api/tenant-settings', {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ pointsPerCurrencyUnit: 5 })
+    })
+    expect(settingsRes.status).toBe(200)
+
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0912345678' })
+      })
+    )
+    const orderRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB3',
+        businessDate: '20240610',
+        staff: '店長 - Lemon',
+        lines: [
+          {
+            name: '楊枝甘露2.0',
+            price: 80,
+            count: 2,
+            addList: '無添加配料',
+            addListPrice: 0,
+            freeDiscount: false,
+            quickDiscountId: null
+          }
+        ],
+        bagCount: 0,
+        tenders: [{ method: '現金', amount: 160 }],
+        appliedCoupon: { type: 'none' },
+        orderChannel: '外帶',
+        invoiceCarrier: { type: '無載具' },
+        memberId: member.id
+      })
+    })
+    expect(orderRes.status).toBe(201)
+    // 應付金額 160 元，每 5 元 1 點 = 32 點（原本每 10 元 1 點只會是 16 點）。
+    const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(detail.points).toBe(32)
   })
 })

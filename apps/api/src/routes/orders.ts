@@ -15,7 +15,14 @@ import {
   type OrderLineInput,
   type TenderInput
 } from '@pos/contract'
-import { priceLine, summarizeOrderRefunds, type QuickDiscount } from '@pos/domain'
+import {
+  DEFAULT_POINTS_PER_CURRENCY_UNIT,
+  earnedPointsForPayment,
+  pointsWithheldForRefundedAmount,
+  priceLine,
+  summarizeOrderRefunds,
+  type QuickDiscount
+} from '@pos/domain'
 import {
   members,
   modifierOptions,
@@ -26,7 +33,8 @@ import {
   orderTenders,
   productModifierGroups,
   products,
-  quickDiscounts as quickDiscountsTable
+  quickDiscounts as quickDiscountsTable,
+  users
 } from '../db/schema'
 import { checkCapability, requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -229,6 +237,7 @@ function toOrderResponse(
     invoiceNumber: order.invoiceNumber,
     invoiceCarrier: toInvoiceCarrier(order.invoiceCarrierType, order.invoiceCarrierValue),
     memberId: order.memberId,
+    pointsEarned: order.pointsEarned,
     invoiceStatus: order.invoiceStatus,
     invoiceSubmittedAt: order.invoiceSubmittedAt,
     tableNumber: order.tableNumber,
@@ -416,9 +425,6 @@ async function findIllegalAddOns(
   return line.addList.filter((name) => !legalNames.has(name))
 }
 
-/** 每消費這麼多元累加 1 點——最基礎的固定比例規則，見 @pos/contract 的 memberSchema 說明。 */
-const POINTS_PER_CURRENCY_UNIT = 10
-
 // 確認用戶端送來的 memberId 真的對應存在的會員。orders.memberId 有
 // 外鍵約束，存入無效參照會讓整筆訂單 insert 失敗，因此送單當下先確認，
 // 找不到就當成沒有掛會員（回傳 null）而不是讓整筆訂單失敗。
@@ -436,26 +442,52 @@ async function resolveMemberId(
   return member ? member.id : null
 }
 
-/** 送單成功後，如果這筆訂單掛了會員，依實付金額累加點數。memberId 這裡已經是 resolveMemberId() 確認過存在的。 */
-async function accrueMemberPoints(
+/** 租戶自訂的點數比例（消費多少元累加 1 點），業主可在會員管理頁調整，見 routes/tenant-settings.ts。 */
+async function resolvePointsPerCurrencyUnit(db: AnyDb, tenantId: string | null): Promise<number> {
+  const tenant = await db.select().from(users).where(tenantFilter(users.id, tenantId)).get()
+  return tenant?.pointsPerCurrencyUnit ?? DEFAULT_POINTS_PER_CURRENCY_UNIT
+}
+
+/**
+ * 直接用資料庫端算式做原子加減，不是「先 SELECT 現在的點數、應用層加完
+ * 再整包寫回去」——後者在同一個會員短時間內被多筆訂單／退款同時觸發時，
+ * 後寫入的那次會蓋掉前一次的中間結果，導致點數少算。delta 可正可負；
+ * 減少時用 MAX(0, ...) 防止扣出負值（目前還沒有點數兌換功能，理論上不會
+ * 發生，但退款/作廢的收回邏輯本來就該對這種情況防禦）。
+ */
+async function adjustMemberPoints(
   db: AnyDb,
   tenantId: string | null,
   memberId: string | null,
-  orderPaymentPrice: number
+  delta: number
 ): Promise<void> {
-  if (!memberId) return
-  const member = await db
-    .select()
-    .from(members)
-    .where(and(eq(members.id, memberId), tenantFilter(members.tenantId, tenantId)))
-    .get()
-  if (!member) return
-  const earned = Math.floor(orderPaymentPrice / POINTS_PER_CURRENCY_UNIT)
-  if (earned <= 0) return
+  if (!memberId || delta === 0) return
+  const nextPoints =
+    delta > 0 ? sql`${members.points} + ${delta}` : sql`MAX(0, ${members.points} + ${delta})`
   await db
     .update(members)
-    .set({ points: member.points + earned })
-    .where(eq(members.id, memberId))
+    .set({ points: nextPoints })
+    .where(and(eq(members.id, memberId), tenantFilter(members.tenantId, tenantId)))
+}
+
+/**
+ * 訂單目前已經因退款被收回多少點數——用「已退款金額佔應付金額的比例」反推，
+ * 不用退款當下最新的點數比例重算，避免租戶事後調整比例讓舊訂單的退點跟著
+ * 跑掉（見 @pos/domain 的 pointsWithheldForRefundedAmount）。作廢／恢復作廢
+ * 也靠這個算出「還沒被退款收回、應該一次處理掉的剩餘點數」。
+ */
+function remainingReversiblePoints(
+  pointsEarned: number,
+  orderPaymentPrice: number,
+  refunds: readonly { amount: number }[]
+): number {
+  const refundedAmount = refunds.reduce((sum, refund) => sum + refund.amount, 0)
+  const alreadyWithheld = pointsWithheldForRefundedAmount(
+    pointsEarned,
+    orderPaymentPrice,
+    refundedAmount
+  )
+  return pointsEarned - alreadyWithheld
 }
 
 // 用戶端只送「套用了哪張」，實際折抵金額查真正的折價券資料重算，不
@@ -605,6 +637,10 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: err instanceof Error ? err.message : '核發發票號碼失敗' }, 400)
     }
     const memberId = await resolveMemberId(db, tenantId, input.memberId)
+    // 沒有掛會員就是 0，不用另外查租戶的點數比例。
+    const pointsEarned = memberId
+      ? earnedPointsForPayment(orderPaymentPrice, await resolvePointsPerCurrencyUnit(db, tenantId))
+      : 0
 
     const newOrder: OrderRow = {
       orderId,
@@ -631,6 +667,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       invoiceCarrierValue:
         input.invoiceCarrier.type === '無載具' ? null : input.invoiceCarrier.value,
       memberId,
+      pointsEarned,
       invoiceStatus: 'issued',
       invoiceSubmittedAt: null,
       // 純紀錄用途，不像 memberId 需要驗證存在性（不是外鍵，只是字串）。
@@ -656,7 +693,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     // 只在真的新建立訂單時扣庫存、累加點數；idempotencyKey 命中走上面
     // 提早 return 的路徑，不會重複執行。
     await deductStock(db, tenantId, input.lines)
-    await accrueMemberPoints(db, tenantId, memberId, orderPaymentPrice)
+    await adjustMemberPoints(db, tenantId, memberId, pointsEarned)
 
     const insertedLines = await db
       .select()
@@ -857,6 +894,20 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       .from(orderRefunds)
       .where(eq(orderRefunds.orderId, orderId))
       .all()
+
+    // 作廢收回這筆訂單「還沒被退款收回」的剩餘點數；撤銷作廢（改回已完成）
+    // 則原數退還——兩邊用同一個算式反推同一個數字，只有方向相反，見
+    // remainingReversiblePoints()。狀態沒有實際變化（例如已經是已取消還
+    // 再設一次已取消）時不重複處理。
+    if (existing.memberId && orderStatus !== existing.orderStatus) {
+      const remaining = remainingReversiblePoints(existing.pointsEarned, existing.orderPaymentPrice, refunds)
+      if (orderStatus === '已取消') {
+        await adjustMemberPoints(db, tenantId, existing.memberId, -remaining)
+      } else if (existing.orderStatus === '已取消') {
+        await adjustMemberPoints(db, tenantId, existing.memberId, remaining)
+      }
+    }
+
     return c.json(
       toOrderResponse(
         { ...existing, orderStatus, ...voidFields, ...invoiceStatusField },
@@ -922,6 +973,23 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       at: new Date().toISOString()
     }
     await db.insert(orderRefunds).values(newRefund)
+
+    // 這筆退款讓「已退款收回的點數」往上多了多少，扣掉這個差額——不是整筆
+    // 訂單的點數，多次部分退款各自只收回自己那一段，見
+    // pointsWithheldForRefundedAmount()。
+    if (existing.memberId) {
+      const before = pointsWithheldForRefundedAmount(
+        existing.pointsEarned,
+        existing.orderPaymentPrice,
+        existingRefunds.reduce((sum, refund) => sum + refund.amount, 0)
+      )
+      const after = pointsWithheldForRefundedAmount(
+        existing.pointsEarned,
+        existing.orderPaymentPrice,
+        existingRefunds.reduce((sum, refund) => sum + refund.amount, 0) + input.amount
+      )
+      await adjustMemberPoints(db, tenantId, existing.memberId, before - after)
+    }
 
     const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
     const tenders = await db

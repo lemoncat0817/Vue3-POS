@@ -171,6 +171,8 @@ export const orderSchema = z.object({
   invoiceCarrier: invoiceCarrierSchema,
   /** 沒有掛會員是 null。 */
   memberId: z.string().nullable(),
+  /** 這筆訂單掛會員時累加的點數，沒有掛會員是 0；固定不變，退款/作廢的收回不會回頭改寫這裡。 */
+  pointsEarned: z.number().int().nonnegative(),
   /** 沒有指定是 null。 */
   tableNumber: z.string().nullable(),
   /** 沒有填寫是 null。 */
