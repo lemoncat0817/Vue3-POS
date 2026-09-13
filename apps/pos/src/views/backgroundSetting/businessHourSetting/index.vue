@@ -18,6 +18,8 @@
         class="bg-surface-50/70 dark:bg-surface-800/40 px-5 py-2.5 border-b border-surface-100 dark:border-surface-800 text-xs text-surface-500 dark:text-surface-400"
       >
         凌晨營業到這個時間之前的訂單，仍歸屬前一個營業日。深夜或跨夜營業（例如營業到凌晨兩點）請把換日時間往後調，避免深夜訂單被算到隔天、數據分析報表對不起來。
+        <br />
+        這個設定只套用到「儲存之後」新產生的訂單——已經送出的歷史訂單所屬的營業日不會被改寫，這是為了避免訂單序號、發票號碼跟報表對不起來。
       </div>
 
       <div
