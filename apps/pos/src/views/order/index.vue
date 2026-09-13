@@ -676,7 +676,7 @@ import { FlexRender, createColumnHelper, getCoreRowModel, useVueTable } from '@t
 import { Receipt, CheckCircle2, AlertTriangle, RotateCcw, ChevronRight, X } from 'lucide-vue-next'
 import TablePagination from '@/components/ui/TablePagination.vue'
 import { formatAddList } from '@/utils/catalog'
-import { formatDateTime, getDate } from '@/utils/time'
+import { formatDateOnly, formatDateTime, getDate, toNativeDate } from '@/utils/time'
 import { useOrderStore } from '@/stores/order'
 const orderStore = useOrderStore()
 import { useLoginStore } from '@/stores/login'
@@ -824,10 +824,8 @@ const loading = ref(false)
 const isOffline = ref(false)
 
 function normalizedDatePrefix(orderTime: string): string {
-  // 本機尚未同步的訂單用 'YYYY/MM/DD HH:mm:ss'，伺服端回傳的是 ISO 字串
-  // （'YYYY-MM-DDTHH:mm:ss.sssZ'）；兩者都取前 10 碼再統一成 '-' 分隔，
-  // 才能跟 <input type="date"> 的原生格式比較。
-  return orderTime.slice(0, 10).replaceAll('/', '-')
+  // 換算成本地日期再轉 '-' 分隔，避免直接 slice ISO 字串拿到 UTC 日期而跟本地日期差一天
+  return toNativeDate(formatDateOnly(orderTime))
 }
 
 // 本機快取沒有後端的篩選／分頁能力，用跟伺服端一致的邏輯在本機做一次
