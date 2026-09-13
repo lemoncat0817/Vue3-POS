@@ -423,13 +423,15 @@
                   class="bg-surface-50/60 dark:bg-surface-950/50"
                 >
                   <td :colspan="leafHeaders.length + 2" class="px-6 py-5">
-                    <div
-                      class="rounded-2xl border border-surface-200/80 dark:border-surface-800 bg-white dark:bg-surface-900 p-5 shadow-sm"
-                    >
+                    <!-- 這一整塊已經是「展開列」本身的內容（<tr> 的 bg-surface-50/60
+                         已經做出跟一般列的區隔），不需要再包一層 rounded/border/shadow
+                         的白色卡片——外層的訂單主表本身就是卡片，卡片裡再疊一張卡片會
+                         變成套娃。真正需要獨立框起來的只有下面的品項明細表。 -->
+                    <div>
                       <!-- Order Key Information：一般事實用純文字＋分隔線呈現，只有真正的
                            例外狀態（退款／作廢）才用色塊標示，避免每一項資料都套上同一種
                            「badge」樣式反而讓真正需要注意的例外被淹沒。 -->
-                      <div class="mb-4 border-b border-surface-100 dark:border-surface-800 pb-4">
+                      <div class="mb-4 border-b border-surface-200 dark:border-surface-800 pb-4">
                         <div
                           class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-surface-600 dark:text-surface-400"
                         >
@@ -542,7 +544,7 @@
 
                       <!-- Sub-table for Order Items -->
                       <div
-                        class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800"
+                        class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900"
                       >
                         <table class="w-full text-center text-xs">
                           <thead
