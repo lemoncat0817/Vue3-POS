@@ -42,6 +42,9 @@ export const users = sqliteTable(
     // 個營業日。預設 4 點，深夜營業的租戶可以自行調整，見 @pos/domain 的
     // getBusinessDate() 與 reports.ts 的每小時營收報表。
     businessDayStartHour: integer('business_day_start_hour').notNull().default(4),
+    // 每消費多少元累加 1 點，業主可在會員管理頁自行調整，見 @pos/domain 的
+    // DEFAULT_POINTS_PER_CURRENCY_UNIT 與 routes/tenant-settings.ts。
+    pointsPerCurrencyUnit: integer('points_per_currency_unit').notNull().default(10),
     createdAt: text('created_at')
       .notNull()
       .default(sql`(current_timestamp)`)
@@ -281,6 +284,10 @@ export const orders = sqliteTable(
     invoiceCarrierValue: text('invoice_carrier_value'),
     // 這筆訂單掛在哪個會員名下，沒有掛會員是 null。
     memberId: text('member_id').references(() => members.id),
+    // 這筆訂單掛會員時累加的點數，固定不變（沒有掛會員是 0）；退款/作廢時
+    // 依這個原始值反推應收回多少點，不會回頭改寫這裡，見 routes/orders.ts
+    // 的 pointsWithheldForRefundedAmount()。
+    pointsEarned: integer('points_earned').notNull().default(0),
     // 開立時一律 'issued'，模擬批次上傳後變成 'submitted'，訂單作廢時變成
     // 'voided'。歷史訂單預設也是 'issued'。
     invoiceStatus: text('invoice_status').$type<InvoiceStatus>().notNull().default('issued'),

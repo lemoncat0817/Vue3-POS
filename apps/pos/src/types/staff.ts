@@ -20,8 +20,10 @@ export type AuthorityKey =
   | 'canManageRoles'
   | 'canSetPayMethod'
   | 'canCheckMembers'
+  | 'canManageMembers'
   | 'canManageTables'
   | 'canSetBusinessHours'
+  | 'canManageDevices'
 
 /**
  * 員工資料。權限只存在角色（權限群組）身上，員工只認 roleId；

@@ -27,10 +27,17 @@ export const AUTHORITY_FIELDS: AuthorityField[] = [
   { label: '設定人員名單', value: 'canManageStaff', dependsOn: 'canCheckAuthority' },
   { label: '設定權限群組', value: 'canManageRoles', dependsOn: 'canCheckAuthority' },
   { label: '查看會員管理', value: 'canCheckMembers' },
-  { label: '查看桌況管理', value: 'canManageTables' }
+  { label: '新增／編輯／刪除會員', value: 'canManageMembers', dependsOn: 'canCheckMembers' },
+  { label: '查看桌況管理', value: 'canManageTables' },
+  { label: '管理裝置憑證', value: 'canManageDevices', dependsOn: 'canCheckAuthority' }
 ]
 
-const PARENT_KEYS = ['canCheckOrder', 'canCheckBackgroundSetting', 'canCheckAuthority'] as const
+const PARENT_KEYS = [
+  'canCheckOrder',
+  'canCheckBackgroundSetting',
+  'canCheckAuthority',
+  'canCheckMembers'
+] as const
 
 /** 母權限被取消勾選時，連帶取消勾選依附在它底下的子權限。 */
 export function cascadeAuthorityCheckList(list: AuthorityKey[]): AuthorityKey[] {

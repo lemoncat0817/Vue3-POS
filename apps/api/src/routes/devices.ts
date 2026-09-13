@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { createDeviceRequestSchema, createDeviceResponseSchema, deviceSchema } from '@pos/contract'
 import { generateSecureToken, hashSecret } from '../auth/hash'
 import { devices } from '../db/schema'
+import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import { requireProvisioningSecret } from '../middleware/require-provisioning-secret'
 import { tenantFilter } from '../db/tenant-scope'
@@ -40,10 +41,13 @@ const listDevicesRoute = createRoute({
   }
 })
 
+// 撤銷是破壞性操作（會讓對應的實體終端機立刻無法連線），原本只掛
+// requireDeviceToken、完全沒有能力檢查，等於同租戶下任何一台裝置都能撤銷
+// 別台裝置的憑證，是全專案唯一沒有權限把關的寫入端點，補上 canManageDevices。
 const revokeDeviceRoute = createRoute({
   method: 'post',
   path: '/{id}/revoke',
-  middleware: [requireDeviceToken] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageDevices')] as const,
   request: {
     params: z.object({ id: z.string().min(1) })
   },
@@ -51,6 +55,10 @@ const revokeDeviceRoute = createRoute({
     200: {
       description: '裝置憑證已撤銷',
       content: { 'application/json': { schema: deviceSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } }
     },
     404: {
       description: '找不到這個裝置',

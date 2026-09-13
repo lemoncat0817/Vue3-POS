@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
 import { desc } from 'drizzle-orm'
 import { auditLogSchema, createAuditLogRequestSchema } from '@pos/contract'
 import { auditLogs } from '../db/schema'
+import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
@@ -10,7 +11,10 @@ import type { AppEnv } from '../types'
 const createAuditLogRoute = createRoute({
   method: 'post',
   path: '/',
-  middleware: [requireDeviceToken] as const,
+  // action 目前唯一的值是 cashier_open（沒有交易紀錄的開錢箱），前端按鈕
+  // 靠 canOpenCashier 決定要不要 disable，但這支 API 本身原本沒有把關，
+  // 直接呼叫就能繞過畫面禁用寫入一筆假的稽核紀錄，內控紀錄形同虛設。
+  middleware: [requireDeviceToken, requireCapability('canOpenCashier')] as const,
   request: { body: { content: { 'application/json': { schema: createAuditLogRequestSchema } } } },
   responses: {
     201: {

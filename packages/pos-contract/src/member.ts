@@ -24,7 +24,9 @@ export const memberOrderSummarySchema = z.object({
   orderId: z.string(),
   orderTime: z.string(),
   orderStatus: z.string(),
-  orderPaymentPrice: z.number().int().nonnegative()
+  orderPaymentPrice: z.number().int().nonnegative(),
+  /** 這筆訂單消費當下累加的點數，固定不變；之後若退款/作廢收回點數不會回頭改寫這裡。 */
+  pointsEarned: z.number().int()
 })
 export type MemberOrderSummary = z.infer<typeof memberOrderSummarySchema>
 

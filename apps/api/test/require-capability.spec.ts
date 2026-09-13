@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AuthorityKey } from '@pos/contract'
-import { staff } from '../src/db/schema'
+import { members, staff } from '../src/db/schema'
 import { createTestAppWithDevice, issueTestSession } from './helpers/app'
 import { createTestDb, type TestDb } from './helpers/db'
 import { seedRole } from './helpers/roles'
@@ -169,5 +169,114 @@ describe('requireCapability()：訂單狀態變更依請求內容決定所需權
       body: JSON.stringify({ orderStatus: '已取消', operator: '測試員工', reason: '測試' })
     })
     expect(res.status).toBe(403)
+  })
+})
+
+/**
+ * 會員列表原本沒有依 phone 查詢時（整批撈出全店會員姓名＋電話）完全沒有
+ * 權限檢查，任何裝置憑證都能撈出全店會員個資，見 routes/members.ts。
+ */
+describe('requireCapability()：GET /api/members 依是否帶 phone 動態決定要不要檢查權限', () => {
+  it('帶 phone 查單一會員時，即使沒有 canCheckMembers 也能查（結帳流程要用）', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    await db.insert(members).values({
+      id: 'member-1',
+      tenantId: null,
+      name: '王小明',
+      phone: '0912345678',
+      points: 0,
+      createdAt: new Date().toISOString()
+    })
+    const { sessionToken } = await seedStaffWithCapabilities(db, ['canCheckOrder'])
+
+    const res = await app.request('/api/members?phone=0912345678', {
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
+    expect(res.status).toBe(200)
+  })
+
+  it('沒帶 phone（整批撈會員名單）時，沒有 canCheckMembers 會被擋下，回傳 403', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { sessionToken } = await seedStaffWithCapabilities(db, ['canCheckOrder'])
+
+    const res = await app.request('/api/members', {
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
+    expect(res.status).toBe(403)
+  })
+
+  it('沒帶 phone 但有 canCheckMembers 時允許，回傳 200', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { sessionToken } = await seedStaffWithCapabilities(db, ['canCheckMembers'])
+
+    const res = await app.request('/api/members', {
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
+    expect(res.status).toBe(200)
+  })
+})
+
+describe('requireCapability()：POST /api/devices/:id/revoke 需要 canManageDevices', () => {
+  it('沒有 canManageDevices 時拒絕，回傳 403（原本完全沒有權限檢查）', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { sessionToken } = await seedStaffWithCapabilities(db, ['canCheckOrder'])
+
+    const res = await app.request('/api/devices/does-not-exist/revoke', {
+      method: 'POST',
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
+    expect(res.status).toBe(403)
+  })
+
+  it('有 canManageDevices 時允許（裝置不存在則是 404，代表已通過權限檢查）', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { sessionToken } = await seedStaffWithCapabilities(db, ['canManageDevices'])
+
+    const res = await app.request('/api/devices/does-not-exist/revoke', {
+      method: 'POST',
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('requireCapability()：POST /api/audit-logs 需要 canOpenCashier', () => {
+  it('沒有 canOpenCashier 時拒絕，回傳 403（原本完全沒有權限檢查）', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { sessionToken } = await seedStaffWithCapabilities(db, ['canCheckOrder'])
+
+    const res = await app.request('/api/audit-logs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ action: 'cashier_open', operator: '測試員工', detail: '測試' })
+    })
+    expect(res.status).toBe(403)
+  })
+
+  it('有 canOpenCashier 時允許，回傳 201', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const { sessionToken } = await seedStaffWithCapabilities(db, ['canOpenCashier'])
+
+    const res = await app.request('/api/audit-logs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ action: 'cashier_open', operator: '測試員工', detail: '測試' })
+    })
+    expect(res.status).toBe(201)
   })
 })

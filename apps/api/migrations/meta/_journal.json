@@ -232,6 +232,27 @@
       "when": 1789239686073,
       "tag": "0032_backfill_business_hours_capability",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1789272098566,
+      "tag": "0033_add_member_points_config",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1789272123408,
+      "tag": "0034_backfill_member_manage_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1789272129098,
+      "tag": "0035_backfill_device_manage_capability",
+      "breakpoints": true
     }
   ]
 }
