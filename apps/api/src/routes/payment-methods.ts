@@ -14,7 +14,6 @@ import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
 
-/** 付款方式管理 API：支援後台付款方式設定之 CRUD。 */
 const listPaymentMethodsRoute = createRoute({
   method: 'get',
   path: '/',

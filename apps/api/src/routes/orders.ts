@@ -49,9 +49,6 @@ import { tenantFilter } from '../db/tenant-scope'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
 
-// 送單只包含「選了什麼」，金額一律用 @pos/domain 的 priceLine() 在伺服端
-// 重新計算，不信任用戶端送來的數字。掛 requireDeviceToken 後，apps/pos
-// 送單需帶 X-Device-Token（見 src/api/http.ts）。
 const createOrderRoute = createRoute({
   method: 'post',
   path: '/',
@@ -82,8 +79,6 @@ const createOrderRoute = createRoute({
   }
 })
 
-// 訂單資料無上限成長，列表頁一律後端分頁（見 packages/pos-contract 的
-// listOrdersQuerySchema）——不再像過去一樣整表撈出來在 Worker 記憶體 join。
 const listOrdersRoute = createRoute({
   method: 'get',
   path: '/',
@@ -97,8 +92,6 @@ const listOrdersRoute = createRoute({
   }
 })
 
-// 訂單列表頁的 KPI 摘要，獨立於分頁清單之外：數字是對全部訂單算的聚合值，
-// 不受目前分頁／篩選影響（見 @pos/contract 的 orderSummarySchema 說明）。
 const orderSummaryRoute = createRoute({
   method: 'get',
   path: '/summary',
@@ -113,12 +106,6 @@ const orderSummaryRoute = createRoute({
 
 const errorSchema = z.object({ error: z.string() })
 
-// 訂單列表頁的狀態變更／刪除操作，過去只改本機 Pinia 狀態、沒有打 API
-// ——多終端情境下本機異動會被伺服端資料蓋掉。這兩個端點讓它變成真正的
-// 伺服端操作。改成「已取消」是真正的作廢，必須附上 reason／operator
-// （見 db/schema.ts 的 voidReason 等欄位），班別結算也會排除這筆訂單的
-// 現金 tender（見 shifts.ts 的 sumCashSales）。改回「已完成」則清空
-// 這三個欄位，不需要 reason。
 const updateOrderStatusRequestSchema = z
   .object({
     orderStatus: orderStatusSchema,
@@ -155,9 +142,6 @@ const updateOrderStatusRoute = createRoute({
   }
 })
 
-// 只允許對「已完成」的訂單退款（已作廢的訂單整筆不算數，不需另外退錢，
-// 見 refund.ts）。退款金額不能超過目前還能退的額度（應付金額－已退
-// 金額，用 summarizeOrderRefunds() 驗證），避免分次退款繞過單次金額檢查。
 const createRefundRoute = createRoute({
   method: 'post',
   path: '/{orderId}/refunds',
@@ -184,8 +168,7 @@ const createRefundRoute = createRoute({
   }
 })
 
-// 真的從資料庫刪掉整筆訂單（含明細），不是軟刪除——沿用既有「刪除訂單」
-// 的語意（見 views/order/index.vue）。
+// 實體刪除整筆訂單與關聯明細，非軟刪除
 const deleteOrderRoute = createRoute({
   method: 'delete',
   path: '/{orderId}',
@@ -275,9 +258,6 @@ function toOrderResponse(
   })
 }
 
-// 快速折扣由 quick_discounts 表提供，永遠讀當下的值，不會有「後台改了、
-// 送單卻還用舊值」的不一致。清單筆數不固定，找不到某個 quickDiscountId
-// 時 priceLine() 視為未套用（可能是後台送單當下剛好刪掉那一筆）。
 async function loadQuickDiscounts(db: AnyDb, tenantId: string | null): Promise<QuickDiscount[]> {
   const rows = await db
     .select()
@@ -287,28 +267,12 @@ async function loadQuickDiscounts(db: AnyDb, tenantId: string | null): Promise<Q
   return rows.map((row) => ({ id: row.id, name: row.name, kind: row.kind, value: row.value }))
 }
 
-// 原子核發下一個訂單序號：單一 SQL 陳述式（INSERT ... ON CONFLICT DO
-// UPDATE ... RETURNING）完成「讀計數、加一、寫回」，不需要另外包交易，
-// 兩台終端同時送單也不會核發到同一個序號。第一次插入某營業日的計數列
-// 時，起始值用 COALESCE 抓 orders 表裡該營業日已用掉的最大序號＋1
-// （沒有才是 1）——避免撞到用舊版「查訂單數＋1」算出來的既有資料。
-// 假設 orderId 固定是 8 碼營業日＋序號（businessDateSchema 已驗證 8 碼）。
 async function nextOrderSequence(
   db: AnyDb,
   tenantId: string | null,
   businessDate: string
 ): Promise<number> {
-  // 刻意不把 Column 物件內插進這段 sql``——drizzle 會展開成完整限定名稱，
-  // 但 SQLite 的 INSERT／ON CONFLICT／SET 欄位清單只接受不限定名稱。
-  // 表名／欄位名是寫死常值，只有 tenantId／businessDate 用參數帶入。
-  //
-  // 初始值的 coalesce 子查詢刻意不加租戶過濾：orders.order_id 是全租戶共用
-  // 的 PRIMARY KEY（= businessDate + 序號），不是每個租戶各自獨立的欄位，
-  // 序號一定要避開「全部租戶」當天已經用掉的號碼，否則會撞到別的租戶已經
-  // insert 的 orderId 導致 PRIMARY KEY constraint 失敗。代價是不同租戶同一
-  // 天的訂單編號不會各自從 1 開始（看得出總量、看不到內容），這是已知、
-  // 可接受的取捨——真的要讓每個租戶編號互相獨立，需要把 orderId 改成不再
-  // 是全租戶共用的主鍵，屬於更大範圍的改動。
+  // 子查詢不濾租戶以確保全域唯一的訂單序號不衝突；欄位名稱維持不限定以符 SQLite 語法
   const row = await db.get<{ counter: number }>(sql`
     insert into order_sequences (tenant_id, business_date, counter)
     values (
@@ -329,12 +293,8 @@ async function nextOrderSequence(
   return row.counter
 }
 
-// 原子核發下一個發票號碼，寫法同 nextOrderSequence()（UPDATE ...
-// RETURNING，單一陳述式保證原子性）。找不到啟用中的字軌、或號碼區間
-// 用完，直接丟錯讓送單失敗——字軌用完卻繼續開發票是違法的。
 async function nextInvoiceNumber(db: AnyDb, tenantId: string | null): Promise<string> {
-  // `IS` 而不是 `=`：tenantId 是 null 時要比對「tenant_id 也是 null」，
-  // SQLite 的 IS 對 NULL 是安全的相等比較，= 遇到 NULL 永遠不成立。
+  // 使用 IS 以便在 tenantId 為 null 時能正確比對 null
   const row = await db.get<{ trackCode: string; currentNumber: number }>(sql`
     update invoice_tracks
     set current_number = current_number + 1
@@ -349,21 +309,16 @@ async function nextInvoiceNumber(db: AnyDb, tenantId: string | null): Promise<st
   return `${row.trackCode}${String(row.currentNumber).padStart(8, '0')}`
 }
 
-/** DB 的 invoiceCarrierType／invoiceCarrierValue 兩欄組回 @pos/contract 的 InvoiceCarrier 判別聯集。 */
 function toInvoiceCarrier(type: InvoiceCarrier['type'], value: string | null): InvoiceCarrier {
   if (type === '無載具') return { type }
   return { type, value: value ?? '' }
 }
 
-// line.name 帶規格時是「品名,選項1/選項2」的組合字串，回查菜單品項前要先取逗號前半段。
 function baseProductName(name: string): string {
   return name.split(',')[0]?.trim() ?? name
 }
 
-// 送單成功後扣庫存。訂單品項只存名稱，這裡用名稱比對回菜單品項／配料
-// ——改過名字的品項，舊訂單不會再扣到它的庫存，屬已知限制。庫存為 null
-// 或找不到對應品項時直接略過，扣到 0 就不再往下扣，也不會因庫存不夠
-// 擋下訂單：目前只做「扣減與示警」，真正的超賣防護留待之後需要再做。
+// 以品名比對扣減庫存至 0 為止，目前不阻擋超賣
 async function deductStock(
   db: AnyDb,
   tenantId: string | null,
@@ -384,7 +339,6 @@ async function deductStock(
     }
     if (Array.isArray(line.addList)) {
       for (const addOnName of line.addList) {
-        // 比對方式不變（見函式說明），只是查詢的表從 add_on_options 改成 modifier_options。
         const option = await db
           .select()
           .from(modifierOptions)
@@ -403,7 +357,7 @@ async function deductStock(
   }
 }
 
-// 契約沒有 productId（見 @pos/contract 的 order.ts），比照 deductStock() 用 line.name 逗號前半段回查品項，查無此品項就放行、不擋單。
+// 依品名前半段回查品項校驗配料選項，無對應品項則放行
 async function findIllegalAddOns(
   db: AnyDb,
   tenantId: string | null,
@@ -436,9 +390,7 @@ async function findIllegalAddOns(
   return line.addList.filter((name) => !legalNames.has(name))
 }
 
-// 確認用戶端送來的 memberId 真的對應存在的會員。orders.memberId 有
-// 外鍵約束，存入無效參照會讓整筆訂單 insert 失敗，因此送單當下先確認，
-// 找不到就當成沒有掛會員（回傳 null）而不是讓整筆訂單失敗。
+// 預先校驗會員存在性以避免外鍵錯誤，查無會員時視為未帶會員
 async function resolveMemberId(
   db: AnyDb,
   tenantId: string | null,
@@ -451,17 +403,11 @@ async function resolveMemberId(
     .where(and(eq(members.id, memberId), tenantFilter(members.tenantId, tenantId)))
     .get()
   if (!member) return null
-  // 順便檢查點數到期——這個查詢反正已經把會員整列讀出來了，不用再多一次
-  // 查詢；沒有啟用到期規則或點數本來就是 0 會在 maybeExpireMemberPoints
-  // 內部提早 return，不會多付查詢代價。
   await maybeExpireMemberPoints(db, tenantId, member)
   return member.id
 }
 
-/** 依 memberId 查會員姓名／手機號碼給訂單回應顯示用；沒有掛會員時回傳 null。
- * 會員被刪除是軟刪除（deletedAt 有值但列還在），這裡不特別排除、依然查得到
- * ——訂單消費歷史本來就該留著正確的會員關聯，見 toOrderResponse 的
- * memberName／memberPhone。 */
+// 查詢會員資訊供回應使用，軟刪除之會員仍予回傳以維持歷史關聯
 async function resolveMemberDisplay(
   db: AnyDb,
   tenantId: string | null,
@@ -476,27 +422,17 @@ async function resolveMemberDisplay(
   return member ?? null
 }
 
-/** 租戶自訂的點數比例（消費多少元累加 1 點），業主可在會員管理頁調整，見 routes/tenant-settings.ts。 */
 async function resolvePointsPerCurrencyUnit(db: AnyDb, tenantId: string | null): Promise<number> {
   const tenant = await db.select().from(users).where(tenantFilter(users.id, tenantId)).get()
   return tenant?.pointsPerCurrencyUnit ?? DEFAULT_POINTS_PER_CURRENCY_UNIT
 }
 
-/** 租戶自訂的點數折抵比例（每多少點折抵 1 元），業主可在會員管理頁調整。 */
 async function resolvePointsRedemptionRate(db: AnyDb, tenantId: string | null): Promise<number> {
   const tenant = await db.select().from(users).where(tenantFilter(users.id, tenantId)).get()
   return tenant?.pointsRedemptionRate ?? DEFAULT_POINTS_REDEMPTION_RATE
 }
 
-/**
- * 內用結帳時，若租戶開啟「自動連動桌況」（見 routes/tenant-settings.ts），
- * 依 tableNumber 字串比對桌況管理裡的桌位，找到就自動標記使用中並蓋入座
- * 時間。找不到對應桌位（自由輸入、還沒建檔）就什麼都不做，不會反過來
- * 建立新桌位——這裡的 tableNumber 終究只是字串比對，不是外鍵。
- *
- * 已經是 occupied 的桌位不重蓋入座時間（同一桌加點不該讓「已入座多久」
- * 歸零），但仍會用這次結帳帶的人數覆蓋掉舊的人數（有給的話）。
- */
+// 結帳自動連動桌況：僅更新既有桌位，已入座桌位保留原入座時間
 async function syncTableOnCheckout(
   db: AnyDb,
   tenantId: string | null,
@@ -532,16 +468,7 @@ async function syncTableOnCheckout(
     .where(eq(diningTables.id, table.id))
 }
 
-/**
- * 直接用資料庫端算式做原子加減，不是「先 SELECT 現在的點數、應用層加完
- * 再整包寫回去」——後者在同一個會員短時間內被多筆訂單／退款同時觸發時，
- * 後寫入的那次會蓋掉前一次的中間結果，導致點數少算。delta 可正可負；
- * 減少時用 MAX(0, ...) 防止扣出負值（目前還沒有點數兌換功能，理論上不會
- * 發生，但退款/作廢的收回邏輯本來就該對這種情況防禦）。
- *
- * 同時寫一筆 member_point_ledger，記錄這筆異動的來源——members.points 只有
- * 目前餘額，稽核／對帳／顧客糾紛都得靠這份逐筆明細，不能只看最終數字。
- */
+// 資料庫端原子計算點數避免並發覆蓋，並寫入異動歷程帳本
 async function adjustMemberPoints(
   db: AnyDb,
   tenantId: string | null,
@@ -570,12 +497,7 @@ async function adjustMemberPoints(
   })
 }
 
-/**
- * 訂單目前已經因退款被收回多少點數——用「已退款金額佔應付金額的比例」反推，
- * 不用退款當下最新的點數比例重算，避免租戶事後調整比例讓舊訂單的退點跟著
- * 跑掉（見 @pos/domain 的 pointsWithheldForRefundedAmount）。作廢／恢復作廢
- * 也靠這個算出「還沒被退款收回、應該一次處理掉的剩餘點數」。
- */
+// 依原訂單比例計算尚未被退款收回之剩餘點數
 function remainingReversiblePoints(
   pointsEarned: number,
   orderPaymentPrice: number,
@@ -590,8 +512,6 @@ function remainingReversiblePoints(
   return pointsEarned - alreadyWithheld
 }
 
-// 用戶端只送「套用了哪張」，實際折抵金額查真正的折價券資料重算，不
-// 信任用戶端算好的數字。折抵後金額不會是負的。
 async function resolveOrderPayment(
   db: AnyDb,
   tenantId: string | null,
@@ -614,7 +534,6 @@ async function resolveOrderPayment(
   return { orderPaymentPrice, discountName: coupon.name }
 }
 
-// 驗證混合支付金額總和並算出找零，不信任用戶端自己算的合計。
 function validateTenders(
   tenders: readonly TenderInput[],
   orderPaymentPrice: number
@@ -630,21 +549,15 @@ function validateTenders(
   return { changeDue }
 }
 
-// 訂單列表頁的進階篩選（見 views/order/index.vue）全部搬到這裡組成 SQL
-// where 條件，分頁清單與筆數統計（count）必須用同一份條件，否則兩者算出
-// 來的 totalPages 會對不上實際回傳的 items。
 function buildOrderFilters(query: Pick<ListOrdersQuery, keyof ListOrdersQuery>) {
   const conditions = []
   if (query.keyword) conditions.push(like(orders.orderId, `%${query.keyword}%`))
   if (query.dateFrom) conditions.push(gte(orders.orderTime, query.dateFrom))
-  // orderTime 是含時間的 ISO 字串，dateTo 只有日期，補到當天最後一毫秒
-  // 才不會把 dateTo 當天的訂單排除在篩選範圍外。
+  // 補齊時間至當日結束以包含整天訂單
   if (query.dateTo) conditions.push(lte(orders.orderTime, `${query.dateTo}T23:59:59.999Z`))
   if (query.channel) conditions.push(eq(orders.orderChannel, query.channel))
   if (query.staff) conditions.push(eq(orders.staff, query.staff))
   if (query.status) conditions.push(eq(orders.orderStatus, query.status))
-  // 付款方式是顯示用摘要字串（見 orders.orderPayment 的欄位說明），混合
-  // 支付時以頓號連接，比對邏輯對齊前端原本的 includes() 子字串比對。
   if (query.payMethod) conditions.push(like(orders.orderPayment, `%${query.payMethod}%`))
   return conditions.length > 0 ? and(...conditions) : undefined
 }
@@ -682,7 +595,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json(toOrderResponse(existing, lines, existingTenders, existingRefunds, member), 200)
     }
 
-    // 排在核發序號之前：不合法的訂單不該浪費掉一個序號。
     for (const line of input.lines) {
       const illegal = await findIllegalAddOns(db, tenantId, line)
       if (illegal && illegal.length > 0) {
@@ -693,9 +605,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       }
     }
 
-    // 序號核發之後，如果下面的 insert 因為其他原因失敗，這個序號就浪費
-    // 掉了（不會被回收重用）——序號中間有空隙是可以接受的，序號撞號
-    // （見 nextOrderSequence 的說明）不行。
     const sequence = await nextOrderSequence(db, tenantId, input.businessDate)
     const orderId = `${input.businessDate}${sequence}`
 
@@ -720,9 +629,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
 
     const memberId = await resolveMemberId(db, tenantId, input.memberId)
 
-    // 點數折抵：只有掛會員才能折抵，折抵金額由伺服端依租戶自訂比例重算，
-    // 不信任用戶端算好的數字。折抵順序排在折價券之後——先套用折價券把
-    // 應付金額算出來，點數折抵只能再折這筆金額，不能疊加超過應付金額。
     const pointsToRedeem = memberId ? (input.pointsToRedeem ?? 0) : 0
     if (pointsToRedeem > 0) {
       const redeemingMember = await db
@@ -761,20 +667,14 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const orderDiscount = orderTotalPrice - orderPaymentPrice
     const orderCupCount = pricedLines.reduce((sum, line) => sum + line.count, 0)
     const orderTime = new Date().toISOString()
-    // 顯示用摘要：多筆 tender 用頓號連接（見 db/schema.ts 的 orders.orderPayment）。
     const orderPayment = input.tenders.map((tender) => tender.method).join('、')
 
-    // 每筆訂單一律開立發票（不管有沒有帶載具）。字軌用完或未啟用是可
-    // 預期的商業狀況，回 400 顯示清楚錯誤，不是沒說明原因的 500。
     let invoiceNumber: string
     try {
       invoiceNumber = await nextInvoiceNumber(db, tenantId)
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : '核發發票號碼失敗' }, 400)
     }
-    // 沒有掛會員就是 0，不用另外查租戶的點數比例。應付金額已經先扣掉點數
-    // 折抵的部分才算累加點數，不會出現「拿點數折抵、又靠折抵後的金額賺
-    // 回點數」這種左手換右手的漏洞。
     const pointsEarned = memberId
       ? earnedPointsForPayment(orderPaymentPrice, await resolvePointsPerCurrencyUnit(db, tenantId))
       : 0
@@ -808,7 +708,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       pointsRedeemed: pointsToRedeem,
       invoiceStatus: 'issued',
       invoiceSubmittedAt: null,
-      // 純紀錄用途，不像 memberId 需要驗證存在性（不是外鍵，只是字串）。
       tableNumber: input.tableNumber ?? null,
       note: input.note?.trim() || null
     }
@@ -821,15 +720,10 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       receivedAmount: tender.receivedAmount ?? null
     }))
 
-    // 刻意不用 db.transaction()：better-sqlite3 要求同步回呼、D1 的
-    // batch() 要求非同步，兩者簽章不同、無法透過 AnyDb 泛型統一呼叫，
-    // 這幾個 insert 因此不是原子的——之後要在 D1 上補回原子性，走 D1
-    // 專屬的 db.batch()。
+    // better-sqlite3 與 D1 batch 非同步 API 簽章不相容，此處跨表寫入暫未包交易
     await db.insert(orders).values(newOrder)
     await db.insert(orderLines).values(pricedLines.map((line) => ({ ...line, orderId })))
     await db.insert(orderTenders).values(newTenders)
-    // 只在真的新建立訂單時扣庫存、累加點數；idempotencyKey 命中走上面
-    // 提早 return 的路徑，不會重複執行。
     await deductStock(db, tenantId, input.lines)
     await adjustMemberPoints(db, tenantId, memberId, pointsEarned, 'order_accrual', orderId)
     await adjustMemberPoints(db, tenantId, memberId, -pointsToRedeem, 'redemption', orderId)
@@ -859,8 +753,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       ? and(filters, tenantFilter(orders.tenantId, tenantId))
       : tenantFilter(orders.tenantId, tenantId)
 
-    // count 跟分頁資料用同一個 where，兩條查詢平行送出；count(*) 是資料庫
-    // 端聚合，不會把全表資料拉進 Worker 記憶體。
     const [totalRow, pageOrders] = await Promise.all([
       db
         .select({ count: sql<number>`count(*)` })
@@ -878,11 +770,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     ])
     const totalCount = totalRow?.count ?? 0
 
-    // 明細／支付／退款只抓「這一頁」訂單的 orderId，不再整表撈出來 join
-    // ——這正是原本全量載入最大的效能問題（見 listOrdersRoute 的說明）。
     const pageOrderIds = pageOrders.map((order) => order.orderId)
-    // 掛會員的訂單姓名／手機號碼同樣批次查，用 memberId 去重——理由同上，
-    // 避免「這一頁 N 筆訂單各自查一次會員」的 N+1。
     const pageMemberIds = [...new Set(pageOrders.map((order) => order.memberId).filter((id) => id !== null))]
     const [pageLines, pageTenders, pageRefunds, pageMembers] = await Promise.all([
       pageOrderIds.length > 0
@@ -949,10 +837,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const tenantId = c.get('tenantId')
     const tenantCond = tenantFilter(orders.tenantId, tenantId)
 
-    // 全部是資料庫端算總和／計數的聚合查詢，即使訂單量成長到數十萬筆，
-    // 傳回 Worker 的也只有幾個數字——完全不把逐筆訂單／退款資料拉進記憶體
-    // （之前的寫法曾經先抓出全部已完成訂單的 orderId 清單，一樣犯了整表
-    // 載入的問題，改成下面這兩條 join 聚合）。
     const [totals, completedRefundRow, refundCountRow, staffRows] = await Promise.all([
       db
         .select({
@@ -964,17 +848,12 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
         .from(orders)
         .where(tenantCond)
         .get(),
-      // 只有已完成訂單的退款金額才從營收淨額扣掉，跟前端原本的本機統計
-      // 定義一致（已取消訂單本身就沒算進上面的 completedPaymentTotal）。
       db
         .select({ total: sql<number>`coalesce(sum(${orderRefunds.amount}), 0)` })
         .from(orderRefunds)
         .innerJoin(orders, eq(orders.orderId, orderRefunds.orderId))
         .where(and(eq(orders.orderStatus, '已完成'), tenantCond))
         .get(),
-      // 退款筆數統計不分訂單狀態（跟前端原本定義一致），用 having 在資料庫
-      // 端先篩掉退款淨額為 0 的訂單，避免把逐筆退款資料拉回來數。IS 而不是
-      // =：tenantId 可能是 null，語意見 nextInvoiceNumber() 的說明。
       db.get<{ count: number }>(sql`
         select count(*) as count from (
           select ${orderRefunds.orderId} from ${orderRefunds}
@@ -1004,10 +883,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const db = c.get('db')
     const tenantId = c.get('tenantId')
 
-    // 改成「已取消」是作廢，需要 canRefundOrVoid（比照前端的主管二次授權流程，
-    // 見 apps/pos/src/views/order/index.vue 的 requestRefundOrVoidApproval）；
-    // 其餘狀態變更只需 canEditOrderStatus，所需權限要看請求內容才能決定，
-    // 沒辦法用靜態的 requireCapability() 中介軟體。
+    // 作廢訂單需 canRefundOrVoid 權限，其餘狀態更新需 canEditOrderStatus
     const capabilityCheck = await checkCapability(
       c,
       orderStatus === '已取消' ? 'canRefundOrVoid' : 'canEditOrderStatus'
@@ -1015,8 +891,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     if (!capabilityCheck.ok)
       return c.json({ error: capabilityCheck.message }, capabilityCheck.status)
 
-    // orderId 是「營業日＋序號」組成，可預期、可枚舉——一定要靠 tenantId
-    // 過濾，不然任何租戶都能用猜的 orderId 改到別的租戶的訂單狀態。
     const existing = await db
       .select()
       .from(orders)
@@ -1026,14 +900,11 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '找不到這筆訂單' }, 404)
     }
 
-    // 改成「已取消」記錄作廢理由／經手人／時間；改回「已完成」清空三個欄位。
     const voidFields =
       orderStatus === '已取消'
         ? { voidReason: reason ?? null, voidedBy: operator, voidedAt: new Date().toISOString() }
         : { voidReason: null, voidedBy: null, voidedAt: null }
 
-    // 訂單作廢時發票也一併標成作廢（真正的統一發票作廢要另外向財政部
-    // 平台申報，不在本專案模擬範圍）。撤銷作廢則回到 'issued'。
     const invoiceStatusField: { invoiceStatus?: InvoiceStatus } =
       orderStatus === '已取消' ? { invoiceStatus: 'voided' } : { invoiceStatus: 'issued' }
 
@@ -1060,17 +931,11 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       .where(eq(orderRefunds.orderId, orderId))
       .all()
 
-    // 作廢收回這筆訂單「還沒被退款收回」的剩餘點數；撤銷作廢（改回已完成）
-    // 則原數退還——兩邊用同一個算式反推同一個數字，只有方向相反，見
-    // remainingReversiblePoints()。狀態沒有實際變化（例如已經是已取消還
-    // 再設一次已取消）時不重複處理。
+    // 作廢或撤銷作廢時等額處理尚未被退款收回之會員點數
     if (existing.memberId && orderStatus !== existing.orderStatus) {
       const remaining = remainingReversiblePoints(existing.pointsEarned, existing.orderPaymentPrice, refunds)
       if (orderStatus === '已取消') {
         await adjustMemberPoints(db, tenantId, existing.memberId, -remaining, 'void_reversal', orderId)
-        // 整單作廢，這筆訂單當初折抵掉的點數也全額退還——部分退款不會動
-        // 到這裡，只有整單作廢／撤銷作廢才處理，見 memberPointLedgerReasonSchema
-        // 的說明。
         await adjustMemberPoints(
           db,
           tenantId,
@@ -1081,7 +946,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
         )
       } else if (existing.orderStatus === '已取消') {
         await adjustMemberPoints(db, tenantId, existing.memberId, remaining, 'restore_award', orderId)
-        // 撤銷作廢：訂單重新生效，先前退還的折抵點數要重新扣一次。
         await adjustMemberPoints(
           db,
           tenantId,
@@ -1111,7 +975,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const db = c.get('db')
     const tenantId = c.get('tenantId')
 
-    // orderId 可預期、可枚舉，理由同 updateOrderStatusRoute。
     const existing = await db
       .select()
       .from(orders)
@@ -1127,7 +990,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       .where(eq(orderRefunds.orderId, orderId))
       .all()
 
-    // 冪等：同一個 refundId 重送回傳目前狀態，不重複建立退款紀錄。
     if (existingRefunds.some((refund) => refund.id === input.refundId)) {
       const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
       const tenders = await db
@@ -1167,9 +1029,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       `訂單「${orderId}」退款 ${input.amount} 元（原因：${input.reason}）`
     )
 
-    // 這筆退款讓「已退款收回的點數」往上多了多少，扣掉這個差額——不是整筆
-    // 訂單的點數，多次部分退款各自只收回自己那一段，見
-    // pointsWithheldForRefundedAmount()。
     if (existing.memberId) {
       const before = pointsWithheldForRefundedAmount(
         existing.pointsEarned,
@@ -1201,7 +1060,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     const db = c.get('db')
     const tenantId = c.get('tenantId')
 
-    // orderId 可預期、可枚舉，理由同 updateOrderStatusRoute。
     const existing = await db
       .select()
       .from(orders)
@@ -1211,7 +1069,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '找不到這筆訂單' }, 404)
     }
 
-    // 先刪明細再刪主檔，避免違反外鍵約束。
+    // 先刪明細再刪主檔，防範外鍵約束衝突
     await db.delete(orderLines).where(eq(orderLines.orderId, orderId))
     await db.delete(orderTenders).where(eq(orderTenders.orderId, orderId))
     await db.delete(orderRefunds).where(eq(orderRefunds.orderId, orderId))

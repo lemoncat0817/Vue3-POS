@@ -17,24 +17,14 @@ export type OAuthConfig = {
   githubClientSecret: string
 }
 
-/** OAuth 登入核發裝置時的預設顯示名稱，業主可在後台設定 → 裝置設定自行改名
- *  （見 routes/devices.ts 的 PATCH /devices/:id）。 */
 const DEFAULT_DEVICE_NAME = '總店-機台A'
 
-/** 登入完成（或失敗）後導回前端的網址：session token／錯誤訊息放在 URL fragment（#）
- *  而不是 query string——fragment 不會被送到伺服器、也不會進 Referer，比較不容易外流；
- *  前端讀完就用 history.replaceState 清掉，見 Phase 6 的登入頁。 */
+// token 置於 URL fragment，避免寫入 query string 洩漏至伺服器紀錄或 Referer
 function buildRedirect(frontendUrl: string, params: Record<string, string>): string {
   const fragment = new URLSearchParams(params).toString()
   return `${frontendUrl}#${fragment}`
 }
 
-/**
- * 兩個 provider 拿到 userId 之後共用的收尾流程：核發 web session、視需要
- * 幫這個租戶灌種子資料（見 auth/onboarding.ts 的 ensureTenantOnboarded，
- * 冪等，只有第一次登入才會真的建立資料）、核發這台瀏覽器專屬的裝置憑證，
- * 三者的明碼都只在這次登入回應裡出現一次，之後只存雜湊值。
- */
 async function completeLogin(
   c: Context<AppEnv>,
   frontendUrl: string,
@@ -48,9 +38,6 @@ async function completeLogin(
   const onboarding = await ensureTenantOnboarded(db, userId)
   const deviceToken = await provisionDeviceForLogin(db, userId, deviceName)
 
-  // 這條路由沒有掛 requireDeviceToken，c.get('tenantId') 原本是
-  // undefined；userId 就是這個租戶的邊界（見 db/schema.ts 的 users 說明），
-  // 明確設定後 audit/record.ts 才能正確歸戶，不會把 undefined 綁進 SQL。
   c.set('tenantId', userId)
   await recordAuditLog(
     c,
@@ -71,12 +58,6 @@ async function completeLogin(
   return c.redirect(buildRedirect(frontendUrl, params))
 }
 
-/**
- * OAuth 登入路由的工廠函式：跟 authRoutes（PIN 登入）不同，googleAuth／githubAuth
- * middleware 要在建路由當下就拿到真正的 client_id／client_secret，沒辦法像
- * requireDeviceToken 那樣延後到請求進來時才從 context 解析，所以整支路由要在
- * createApp() 裡帶著 config 現組，不能是模組載入時就建好的靜態實例。
- */
 export function createOAuthRoutes(config: OAuthConfig) {
   const app = new Hono<AppEnv>()
 
@@ -86,9 +67,7 @@ export function createOAuthRoutes(config: OAuthConfig) {
       client_id: config.googleClientId,
       client_secret: config.googleClientSecret,
       scope: ['openid', 'email', 'profile'],
-      // 沒有這個參數的話，瀏覽器已有 Google session 時會直接沿用同一個帳號、
-      // 不會出現選擇帳號畫面——這台裝置想換成別的 Google 帳號（例如換租戶）
-      // 就永遠點不到，強制每次都跳帳號選擇畫面。
+      // 強制跳出帳號選擇畫面，避免瀏覽器自動沿用既有 Google session
       prompt: 'select_account'
     }),
     async (c) => {
@@ -132,8 +111,7 @@ export function createOAuthRoutes(config: OAuthConfig) {
       const userId = await upsertOAuthUser(db, {
         provider: 'github',
         providerAccountId: String(profile.id),
-        // GitHub 的 email 沒公開時是 null（見 auth/oauth-user.ts 的型別），退回
-        // GitHub 官方的 noreply 格式，避免 users.email 這個 NOT NULL 欄位塞不進去。
+        // GitHub email 未公開時退回 noreply 格式，滿足 NOT NULL 約束
         email: profile.email ?? `${profile.id}+${profile.login}@users.noreply.github.com`,
         displayName: profile.name ?? profile.login ?? String(profile.id),
         avatarUrl: profile.avatar_url ?? null

@@ -12,12 +12,6 @@ export type OAuthProfile = {
   avatarUrl: string | null
 }
 
-/**
- * 以 (provider, providerAccountId) 找對應的 users 列，找不到就新建；每次登入
- * 都拿最新的 email／displayName／avatarUrl 覆蓋，避免資料在 Google／GitHub
- * 那邊改了名稱或頭像後這裡一直是舊的。回傳的 id 就是這個使用者的租戶邊界
- * （見 db/schema.ts 的 users 說明）。
- */
 export async function upsertOAuthUser(db: AnyDb, profile: OAuthProfile): Promise<string> {
   const existing = await db
     .select()

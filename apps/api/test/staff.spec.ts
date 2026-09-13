@@ -523,7 +523,7 @@ describe('PUT /api/staff/:id（忘記 PIN 救援：X-Web-Session）', () => {
   })
 })
 
-describe('DELETE /api/staff/:id（P18）', () => {
+describe('DELETE /api/staff/:id', () => {
   it('沒有帶裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/staff/does-not-exist', { method: 'DELETE' })

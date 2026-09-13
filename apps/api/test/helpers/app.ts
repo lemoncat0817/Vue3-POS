@@ -6,15 +6,12 @@ import { devices, staff, users } from '../../src/db/schema'
 import type { AnyDb } from '../../src/db/types'
 import { seedRole } from './roles'
 
-/** 測試用的核發密鑰（見 middleware/require-provisioning-secret.ts）。 */
 export const TEST_PROVISIONING_SECRET = 'test-provisioning-secret'
 
 export function createTestApp(db: AnyDb) {
   return createApp(db, {
     provisioningSecret: TEST_PROVISIONING_SECRET,
     allowedOrigins: ['http://localhost:4173'],
-    // OAuth 登入流程本身有自己的測試（test/oauth.spec.ts），這裡的值不會被用到，
-    // 純粹是滿足 createApp() 的型別要求。
     frontendUrl: 'http://localhost:5173',
     googleClientId: 'test-google-client-id',
     googleClientSecret: 'test-google-client-secret',
@@ -23,13 +20,6 @@ export function createTestApp(db: AnyDb) {
   })
 }
 
-/**
- * 測試用操作員：角色擁有全部權限，通得過 requireCapability()（見
- * src/middleware/require-capability.ts）的檢查。多數測試只在乎「有一個
- * 帳號能執行任何寫入操作」，需要驗證「權限不足會被擋下」的測試才會另外
- * 自己 seedRole() 一個能力較少的角色與員工，再用 issueTestSession() 核發
- * 對應的 session。
- */
 async function seedTestStaff(
   db: AnyDb,
   tenantId: string | null
@@ -50,23 +40,10 @@ async function seedTestStaff(
   return { staffId, sessionToken }
 }
 
-/** 測試用：直接核發一組操作員 session（見 auth/operator-session.ts），省去先跑一次 PIN 登入的流程。 */
 export async function issueTestSession(db: AnyDb, staffId: string): Promise<string> {
   return issueOperatorSession(db, null, staffId)
 }
 
-/**
- * requireDeviceToken（見 src/middleware/require-device-token.ts）現在
- * 真的查 devices 表，測試需要一個裝置憑證時，得先透過核發端點真的建立
- * 一台裝置，不能再用寫死的固定字串。同時附上一個全權限的操作員與對應的
- * session，讓需要 X-Operator-Session 才能通過的寫入端點（見
- * require-capability.ts）也能直接呼叫。
- *
- * `seedStaff: false` 跳過這個自動附掛的操作員：驗證「全店最後一位權限
- * 管理者」這種不可歸零保護的測試，需要精準控制 db 裡有誰、有什麼權限，
- * 多一個全權限的操作員會讓「歸零」條件永遠不成立，見 staff.spec.ts／
- * roles.spec.ts 裡「此變更會讓沒有人擁有設定權限群組的權限時拒絕」等測試。
- */
 export async function createTestAppWithDevice(
   db: AnyDb,
   deviceName = 'test-device',
@@ -82,7 +59,6 @@ export async function createTestAppWithDevice(
 
   let deviceToken: string
   if (tenantId === null) {
-    // 沒指定租戶：照舊真的走核發端點（見 middleware/require-provisioning-secret.ts）。
     const res = await app.request('/api/devices', {
       method: 'POST',
       headers: {
@@ -94,8 +70,7 @@ export async function createTestAppWithDevice(
     const body = (await res.json()) as { token: string }
     deviceToken = body.token
   } else {
-    // devices.tenantId 是外鍵指到 users.id，插入裝置前要先有這個租戶的
-    // users 列存在，不然會撞 FOREIGN KEY constraint（見 db/schema.ts）。
+    // 先確保租戶 user 存在以防外鍵約束失敗
     await db
       .insert(users)
       .values({
@@ -107,8 +82,7 @@ export async function createTestAppWithDevice(
       })
       .onConflictDoNothing()
 
-    // 核發端點目前固定核發到「未分配租戶」的過渡池（見 routes/devices.ts），
-    // 沒有辦法指定 tenantId；要測試多租戶隔離，直接寫入 db，繞過端點。
+    // 指定租戶之測試裝置直接寫入資料庫
     deviceToken = generateSecureToken()
     const { hash, salt } = await hashSecret(deviceToken)
     await db.insert(devices).values({

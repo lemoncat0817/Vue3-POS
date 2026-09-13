@@ -1,7 +1,4 @@
-/**
- * 密鑰雜湊工具。採用 Web Crypto 原生 PBKDF2-SHA256（10 萬次疊代）處理裝置憑證與 PIN，
- * 僅儲存雜湊值與鹽值，明碼不落地。
- */
+// 採用 Web Crypto PBKDF2-SHA256 雜湊處理憑證與 PIN
 const PBKDF2_ITERATIONS = 100_000
 const HASH_BYTE_LENGTH = 32
 const SALT_BYTE_LENGTH = 16
@@ -35,24 +32,17 @@ async function deriveBits(secret: string, salt: Uint8Array): Promise<ArrayBuffer
   )
 }
 
-/** 雜湊一個新的密鑰（設定 PIN／核發裝置憑證時使用），回傳雜湊值與鹽（都是 hex 字串，直接存進資料庫）。 */
 export async function hashSecret(secret: string): Promise<{ hash: string; salt: string }> {
   const saltBytes = crypto.getRandomValues(new Uint8Array(SALT_BYTE_LENGTH))
   const derived = await deriveBits(secret, saltBytes)
   return { hash: toHex(derived), salt: toHex(saltBytes) }
 }
 
-/** 驗證輸入的密鑰是否對應資料庫裡存的雜湊值＋鹽。 */
 export async function verifySecret(secret: string, hash: string, salt: string): Promise<boolean> {
   const derived = await deriveBits(secret, fromHex(salt))
   return toHex(derived) === hash
 }
 
-/**
- * 產生一個高熵亂數 token（256 bits，明碼只在核發當下回傳一次，之後只存
- * 雜湊值）。裝置憑證（routes/devices.ts）與操作員 session（routes/auth.ts）
- * 共用同一套產生方式。
- */
 export function generateSecureToken(): string {
   return toHex(crypto.getRandomValues(new Uint8Array(32)))
 }

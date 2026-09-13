@@ -25,11 +25,6 @@ import type { AnyDb } from '../db/types'
 import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
-/**
- * 依「累積消費金額（排除已取消訂單）」比對業主自訂的分級門檻，取符合門檻中
- * 最高的一級——會員分級不存在會員身上，每次查詢即時算出來，見
- * db/schema.ts 的 memberTiers 說明。
- */
 function pickTier(tiers: MemberTier[], lifetimeSpend: number): MemberTier | null {
   const qualified = tiers
     .filter((tier) => lifetimeSpend >= tier.minSpend)
@@ -37,7 +32,6 @@ function pickTier(tiers: MemberTier[], lifetimeSpend: number): MemberTier | null
   return qualified[0] ?? null
 }
 
-/** 一次查出多個會員各自的累積消費金額，避免在清單頁對每一列各發一次查詢（N+1）。 */
 async function resolveLifetimeSpends(
   db: AnyDb,
   memberIds: string[]
@@ -56,7 +50,6 @@ async function resolveLifetimeSpends(
   return map
 }
 
-/** 把 Member 列補上 tierStatus。多筆會員（清單頁）跟單筆（詳細資料）共用同一套邏輯。 */
 async function attachTierStatus<T extends Member>(
   db: AnyDb,
   tenantId: string | null,
@@ -77,7 +70,6 @@ async function attachTierStatus<T extends Member>(
   })
 }
 
-/** attachTierStatus() 的單筆版本——固定傳一筆進去、拿一筆出來，不必在呼叫端處理陣列可能是空的情形。 */
 async function attachTierStatusOne<T extends Member>(
   db: AnyDb,
   tenantId: string | null,
@@ -86,17 +78,6 @@ async function attachTierStatusOne<T extends Member>(
   const [withTier] = await attachTierStatus(db, tenantId, [row])
   return withTier as T & { tierStatus: MemberTierStatus }
 }
-
-/**
- * 會員管理 API：提供會員 CRUD 與消費紀錄查詢。
- *
- * 查看（列表、詳細資料＋消費紀錄）用 canCheckMembers；新增/編輯/刪除用
- * canManageMembers。列表原本沒有依手機號碼查詢時（後台「會員名單」整批
- * 撈出全部會員姓名＋電話）完全沒有權限檢查，任何裝置憑證都能撈出全店會員
- * 個資，因此改成依請求內容動態檢查：帶 phone 查單一會員（結帳當下查會員
- * 用，任何已登入操作員都能用）維持不用權限；沒帶 phone 等於整批撈會員名單，
- * 才需要 canCheckMembers，沒辦法用靜態 requireCapability() middleware。
- */
 const errorSchema = z.object({ error: z.string() })
 
 const listMembersRoute = createRoute({
@@ -140,8 +121,6 @@ const createMemberRoute = createRoute({
   }
 })
 
-// 本月壽星名單，供生日行銷用；路徑是靜態的 /birthdays，要排在 /{id} 這種
-// 動態路由前面宣告（比照 orderSummaryRoute 的 /summary 排在 /{orderId} 前面）。
 const listMemberBirthdaysRoute = createRoute({
   method: 'get',
   path: '/birthdays',
@@ -163,8 +142,6 @@ const listMemberBirthdaysRoute = createRoute({
   }
 })
 
-// 會員經營摘要（總會員數、本月新增、會員貢獻營收、分級人數分布），同樣是
-// 靜態路徑，要排在 /{id} 前面宣告。
 const getMemberAnalyticsRoute = createRoute({
   method: 'get',
   path: '/analytics',
@@ -188,8 +165,6 @@ const getMemberAnalyticsRoute = createRoute({
 const getMemberRoute = createRoute({
   method: 'get',
   path: '/{id}',
-  // 詳細資料含完整消費紀錄，只有後台會員管理頁會用到，不像列表的單一手機
-  // 號碼查詢有結帳流程要用，直接用靜態權限檢查。
   middleware: [requireDeviceToken, requireCapability('canCheckMembers')] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
@@ -248,9 +223,6 @@ const deleteMemberRoute = createRoute({
   }
 })
 
-// 手動調整點數：客訴補償、活動加點等沒有對應訂單的異動，跟訂單自動累加/
-// 收回一樣走 member_point_ledger，只是 reason 固定是 manual_adjustment、
-// operator／note 有值。
 const createPointsAdjustmentRoute = createRoute({
   method: 'post',
   path: '/{id}/points-adjustments',
@@ -283,8 +255,6 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     }
     const db = c.get('db')
     const tenantId = c.get('tenantId')
-    // 軟刪除的會員一律排除：整批清單不該看到、結帳查會員也不該查得到、
-    // 更不該讓已刪除的會員被掛到新訂單上。
     const tenantCond = and(tenantFilter(members.tenantId, tenantId), isNull(members.deletedAt))
     const where = phone
       ? and(eq(members.phone, phone), tenantCond)
@@ -292,8 +262,6 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
         ? and(or(like(members.name, `%${q}%`), like(members.phone, `%${q}%`)), tenantCond)
         : tenantCond
 
-    // phone 精確查詢頂多 1 筆，維持既有行為不分頁；後台名單／搜尋才真的
-    // 用 count(*) ＋ limit/offset 分頁，避免會員一多整頁一次拉完。
     if (phone) {
       const rows = await db.select().from(members).where(where).all()
       return c.json(
@@ -330,10 +298,7 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     const input = c.req.valid('json')
     const db = c.get('db')
     const tenantId = c.get('tenantId')
-    // 這裡故意不排除已軟刪除的會員：members_tenant_phone_idx 不是部分索引，
-    // 被刪除會員的手機號碼在資料庫層仍然佔用著，如果這裡排除掉、判斷「可以
-    // 用」，實際 INSERT 還是會撞唯一索引丟出沒處理過的錯誤，體驗比清楚的
-    // 409 還差。
+    // 檢查重覆時不排除軟刪除列，因資料庫唯一索引未排除 deletedAt
     const existing = await db
       .select()
       .from(members)
@@ -357,8 +322,6 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
   })
   .openapi(listMemberBirthdaysRoute, async (c) => {
     const { month } = c.req.valid('query')
-    // 沒指定月份就用伺服端當下月份——跟營業日換日時間不一樣，生日行銷不需要
-    // 精確到營業日邊界，用日曆月份即可。
     const targetMonth = month ?? String(new Date().getMonth() + 1).padStart(2, '0')
     const db = c.get('db')
     const tenantId = c.get('tenantId')
@@ -373,8 +336,6 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
         )
       )
       .all()
-    // birthday 固定 YYYY-MM-DD 格式，substr(6,2) 已經篩到目標月份，這裡再依
-    // 「日」排序，讓壽星名單照這個月的日期先後排列。
     const sorted = [...rows]
       .filter((row): row is typeof row & { birthday: string } => row.birthday !== null)
       .sort((a, b) => a.birthday.slice(8, 10).localeCompare(b.birthday.slice(8, 10)))
@@ -385,8 +346,6 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     const tenantId = c.get('tenantId')
     const activeCond = and(tenantFilter(members.tenantId, tenantId), isNull(members.deletedAt))
 
-    // 本月的定義用日曆月份（跟本月壽星一致），不是營業日換日時間——「這個月
-    // 新增了幾個會員」是行銷用的粗略統計，不需要精確到營業日邊界。
     const now = new Date()
     const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
 
@@ -412,8 +371,6 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
         db.select().from(memberTiers).where(tenantFilter(memberTiers.tenantId, tenantId)).all()
       ])
 
-    // 分級人數分布：跟 attachTierStatus() 同一套邏輯，但這裡是為了統計全店
-    // 分布、不是要把 tierStatus 掛回每一列會員身上，所以不透過 attachTierStatus()。
     const spendByMember = await resolveLifetimeSpends(
       db,
       activeMembers.map((row) => row.id)
@@ -461,12 +418,8 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!member) return c.json({ error: '找不到這個會員' }, 404)
 
-    // 順便檢查點數到期（見 db/member-points.ts）；只在單筆詳細資料頁做，
-    // 不對上面的清單頁做，避免整批會員各自多查一次異動明細（N+1）。
     member.points = await maybeExpireMemberPoints(db, tenantId, member)
 
-    // 消費紀錄分頁：老會員訂單一多，整包吐回來畫面會整包渲染，改用跟
-    // GET /api/members 一樣的 count(*) ＋ limit/offset 分頁。
     const ordersWhere = eq(orders.memberId, id)
     const [totalOrdersRow, memberOrders] = await Promise.all([
       db.select({ count: sql<number>`count(*)` }).from(orders).where(ordersWhere).get(),
@@ -561,8 +514,6 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       )
       .get()
     if (!existing) return c.json({ error: '找不到這個會員' }, 404)
-    // 軟刪除：orders.memberId、member_point_ledger.memberId 都不用再改寫，
-    // 消費歷史與點數異動明細永遠留著正確的會員關聯，供之後稽核或申訴查證。
     await db
       .update(members)
       .set({ deletedAt: new Date().toISOString() })

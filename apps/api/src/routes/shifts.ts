@@ -15,7 +15,6 @@ import { tenantFilter } from '../db/tenant-scope'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
 
-/** 班別結帳 API。單店單機情境下同一時間僅允許一筆 open 狀態班別。 */
 const errorSchema = z.object({ error: z.string() })
 
 const openShiftRoute = createRoute({
@@ -161,10 +160,8 @@ async function loadShiftWithMovements(db: AnyDb, tenantId: string | null, shiftI
   return { shift, movements }
 }
 
-// 現金類付款方式目前比對字面值「現金」，未來可擴充為查詢屬性旗標。
 const CASH_METHOD_NAME = '現金'
 
-/** 統計區間內現金 tender 總額。排除已取消訂單，避免虛增應有現金。 */
 async function sumCashSales(
   db: AnyDb,
   tenantId: string | null,
@@ -188,7 +185,6 @@ async function sumCashSales(
   return rows.reduce((sum, row) => sum + row.amount, 0)
 }
 
-/** 統計區間內退款總額。依退款紀錄發生時間（at）歸屬班別，退款均視為現金抽屜支出。 */
 async function sumCashRefunds(
   db: AnyDb,
   tenantId: string | null,
@@ -226,7 +222,6 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
       .where(and(eq(shifts.status, 'open'), tenantFilter(shifts.tenantId, tenantId)))
       .get()
     if (stillOpen) {
-      // 不印 stillOpen.id（內部用的 ULID，使用者看不懂），這則訊息只需要告知「已有班別待收班」。
       return c.json({ error: '尚有班別尚未收班，請先完成收班再開新的班別' }, 409)
     }
 
@@ -246,7 +241,6 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
       variance: null
     }
     await db.insert(shifts).values(newShift)
-    // 不印 newShift.id（內部用的 ULID，前端從未顯示過，對讀 log 的人沒有意義）。
     await recordAuditLog(c, 'shift.open', `開班別（開帳零用金 ${input.openingFloat} 元）`)
     return c.json(toShiftResponse(newShift, []), 201)
   })

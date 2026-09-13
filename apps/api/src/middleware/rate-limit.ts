@@ -2,10 +2,7 @@ import { createMiddleware } from 'hono/factory'
 import { sql } from 'drizzle-orm'
 import type { AppEnv } from '../types'
 
-/**
- * 寫入請求速率限制（每分鐘上限 1000 次，防範自動化濫用；GET 唯讀端點不限）。
- * 辨識鍵依序取裝置憑證、核發密鑰或來源 IP。
- */
+// 寫入請求速率限制，防範自動化濫用（GET 唯讀端點不限）
 const WINDOW_MS = 60_000
 const MAX_REQUESTS_PER_WINDOW = 1000
 

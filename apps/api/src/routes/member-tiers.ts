@@ -14,7 +14,6 @@ import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
 
-/** 會員分級門檻管理 API：業主自訂「累積消費滿多少元升到哪一級」，CRUD 比照 payment-methods.ts。 */
 const listMemberTiersRoute = createRoute({
   method: 'get',
   path: '/',

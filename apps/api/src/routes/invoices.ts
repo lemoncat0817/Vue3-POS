@@ -11,7 +11,6 @@ import { requireDeviceToken } from '../middleware/require-device-token'
 import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
-/** 電子發票字軌與批次上傳模擬 API。 */
 const errorSchema = z.object({ error: z.string() })
 
 const listTracksRoute = createRoute({
@@ -80,7 +79,7 @@ export const invoiceRoutes = new OpenAPIHono<AppEnv>()
     const input = c.req.valid('json')
     const db = c.get('db')
     const tenantId = c.get('tenantId')
-    // 建立新字軌時停用既有字軌，確保同一租戶同一時間僅單一字軌處於啟用狀態。
+    // 建立新字軌時停用既有字軌，確保同一租戶僅單一字軌啟用
     await db
       .update(invoiceTracks)
       .set({ isActive: false })
@@ -98,7 +97,6 @@ export const invoiceRoutes = new OpenAPIHono<AppEnv>()
   .openapi(submitInvoicesRoute, async (c) => {
     const db = c.get('db')
     const tenantId = c.get('tenantId')
-    // 模擬批次上傳：目前尚未介接財政部真實憑證，先以更新狀態為 submitted 模擬。
     const submittedAt = new Date().toISOString()
     const pending = await db
       .select()

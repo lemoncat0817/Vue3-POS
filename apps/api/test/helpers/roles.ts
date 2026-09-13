@@ -2,7 +2,6 @@ import { roles } from '../../src/db/schema'
 import type { AnyDb } from '../../src/db/types'
 import type { AuthorityKey } from '@pos/contract'
 
-/** 測試用權限群組：多數 staff／auth 測試只在乎「有一個角色可以指」，直接寫入 db 省去多一趟 API 呼叫。 */
 export async function seedRole(
   db: AnyDb,
   input: {

@@ -15,19 +15,6 @@ import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
 
-/**
- * 租戶層級的營業設定 API。設定直接存在 users 表（tenantId 就是 users.id，
- * 見 db/schema.ts 的既有慣例），不另外開一張 settings 表。
- *
- * 更新採部分更新：換日時間需要 canSetBusinessHours，點數比例（業主自訂
- * 「消費多少元累加 1 點」）需要 canManageMembers，兩者分屬不同權限領域，
- * 所以依請求內容動態檢查，沒辦法用靜態 requireCapability() middleware
- * （比照 orders.ts 的 updateOrderStatusRoute）。
- *
- * 方法用 PATCH 不是 PUT：PUT 語意是「用請求內容整個取代這個資源」（RFC
- * 7231 §4.3.4），這裡的請求本來就設計成只帶想改的欄位、沒帶到的欄位維持
- * 原值，是局部修改，對應的是 PATCH（RFC 5789）。
- */
 const getTenantSettingsRoute = createRoute({
   method: 'get',
   path: '/',
@@ -71,8 +58,6 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
   .openapi(getTenantSettingsRoute, async (c) => {
     const db = c.get('db')
     const tenantId = c.get('tenantId')
-    // 裝置尚未分配租戶（過渡期）時查不到對應的 users 列，退回系統預設值，
-    // 不當成錯誤——GET 本來就該是安全、隨時能查的。
     const tenant = await db.select().from(users).where(tenantFilter(users.id, tenantId)).get()
     return c.json(
       tenantSettingsSchema.parse({
@@ -109,9 +94,7 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
 
     const tenant = await db.select().from(users).where(tenantFilter(users.id, tenantId)).get()
     if (!tenant) return c.json({ error: '找不到這個租戶（裝置尚未分配租戶）' }, 404)
-    // pointsExpiryMonths 是 nullable 欄位（null＝停用到期規則），不能用 `input.x ?? tenant.x`
-    // 這種寫法——沒送這個欄位是 undefined，明確想停用是 null，兩者意義不同，
-    // `??` 會把「明確傳 null」誤判成「沒送」而沿用舊值。
+    // 需區分 undefined（未傳）與 null（停用到期規則），不可使用 ?? 運算子
     const nextPointsExpiryMonths =
       input.pointsExpiryMonths !== undefined ? input.pointsExpiryMonths : tenant.pointsExpiryMonths
     await db
@@ -135,8 +118,6 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
       })
       .where(eq(users.id, tenant.id))
 
-    // detail 只列出這次請求實際帶到的欄位，跟前面 checkCapability 的判斷
-    // 依據一致——沒送的欄位維持原值，不算這次異動的一部分。
     const changedFields: string[] = []
     if (input.businessDayStartHour !== undefined) {
       changedFields.push(`營業日換日時間：${input.businessDayStartHour} 點`)

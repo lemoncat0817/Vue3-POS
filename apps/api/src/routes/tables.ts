@@ -13,7 +13,6 @@ import { requireDeviceToken } from '../middleware/require-device-token'
 import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
 
-/** 桌況管理 API：支援桌位資料維護與桌況狀態更新。 */
 const errorSchema = z.object({ error: z.string() })
 
 const listTablesRoute = createRoute({
@@ -166,11 +165,6 @@ export const tableRoutes = new OpenAPIHono<AppEnv>()
       .where(and(eq(diningTables.id, id), tenantFilter(diningTables.tenantId, tenantId)))
       .get()
     if (!existing) return c.json({ error: '找不到這個桌位' }, 404)
-    // note 為選填：未帶時保留既有備註，便於快速切換桌況。
-    // guestCount／occupiedAt／reservation* 依「轉去哪個狀態」決定去留：
-    // 轉成 occupied 才可能有人數與入座時間（維持 occupied 不重蓋入座時間，
-    // 見下方判斷），轉成 reserved 才可能有預約資訊，其餘一律清空——避免
-    // 換一輪狀態後畫面還殘留上一輪客人的人數或預約電話。
     const updated = {
       status: input.status,
       note: input.note ?? existing.note,

@@ -47,8 +47,6 @@ const listDevicesRoute = createRoute({
   }
 })
 
-// 給前端顯示「目前這台機台」用（例如頂部列的機台名稱），只需要證明是
-// 合法裝置，不需要 canManageDevices——單純顯示自己的名字不是敏感操作。
 const getCurrentDeviceRoute = createRoute({
   method: 'get',
   path: '/me',
@@ -69,8 +67,6 @@ const getCurrentDeviceRoute = createRoute({
   }
 })
 
-// 改名比照撤銷需要 canManageDevices：機台名稱會顯示在前台頂部列，任何一台
-// 裝置都能改別台的名字等於誰都能亂改其他機台的標示，跟撤銷是同一類風險。
 const renameDeviceRoute = createRoute({
   method: 'patch',
   path: '/{id}',
@@ -99,9 +95,6 @@ const renameDeviceRoute = createRoute({
   }
 })
 
-// 撤銷是破壞性操作（會讓對應的實體終端機立刻無法連線），原本只掛
-// requireDeviceToken、完全沒有能力檢查，等於同租戶下任何一台裝置都能撤銷
-// 別台裝置的憑證，是全專案唯一沒有權限把關的寫入端點，補上 canManageDevices。
 const revokeDeviceRoute = createRoute({
   method: 'post',
   path: '/{id}/revoke',
@@ -145,9 +138,6 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
     const { hash, salt } = await hashSecret(token)
     const newDevice: DeviceRow = {
       id: crypto.randomUUID(),
-      // 這個端點靠 PROVISIONING_SECRET 保護，還沒有裝置身分可以解出 tenantId
-      // ——核發出來的裝置先落在「未分配租戶」的過渡池，Phase 4 的 onboarding
-      // 會改用內部函式直接指定 tenantId，不會經過這支公開端點。
       tenantId: null,
       name: input.name,
       tokenHash: hash,
@@ -156,8 +146,6 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
       revokedAt: null
     }
     await db.insert(devices).values(newDevice)
-    // 這個端點靠核發密鑰保護，還沒有任何員工登入、沒有操作員身分可解析，
-    // operator 記固定字串「系統（裝置核發密鑰）」，理由同上面 tenantId 的說明。
     await recordAuditLog(c, 'device.issue', `核發裝置憑證「${input.name}」`, '系統（裝置核發密鑰）')
 
     return c.json(createDeviceResponseSchema.parse({ ...toDeviceResponse(newDevice), token }), 201)

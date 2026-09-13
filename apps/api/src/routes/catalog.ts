@@ -40,7 +40,6 @@ const getCatalogRoute = createRoute({
   }
 })
 
-/** 菜單管理寫入 API：支援分類、品項、規格群組（含加購用途）之後台維護。 */
 const createCategoryRoute = createRoute({
   method: 'post',
   path: '/categories',
@@ -222,7 +221,6 @@ const deleteModifierGroupRoute = createRoute({
   }
 })
 
-/** 一次寫入規格群組的所有選項：先刪光現有選項再整批重建，避免逐筆 diff 的複雜度。 */
 async function replaceModifierOptions(
   db: AnyDb,
   groupId: string,
@@ -262,7 +260,6 @@ async function loadModifierGroup(db: AnyDb, id: string, tenantId: string | null)
   })
 }
 
-/** 一次寫入品項掛用的規格群組：先刪光現有關聯再整批重建。 */
 async function replaceProductModifierGroups(
   db: AnyDb,
   productId: string,

@@ -297,11 +297,7 @@ describe('GET /api/members/:id、PUT、DELETE', () => {
   })
 })
 
-/**
- * 送單掛會員後累加點數、消費紀錄看得到這筆訂單（P22）：見
- * routes/orders.ts 的 accrueMemberPoints。
- */
-describe('POST /api/orders 掛會員（P22）', () => {
+describe('POST /api/orders 掛會員', () => {
   const validLine = {
     name: '楊枝甘露2.0',
     price: 80,

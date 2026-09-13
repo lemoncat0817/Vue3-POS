@@ -17,17 +17,7 @@ import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
 
-/**
- * 權限群組（角色）管理 API。權限只掛在角色身上，員工只認 roleId——見
- * db/schema.ts 的說明。這裡額外把關兩件事：
- * 1. 系統內建角色（isSystem）不可刪除、不可改名，但權限內容仍可調整。
- * 2. 任何異動都不可讓「擁有 canManageRoles 的員工人數」歸零，否則全店會
- *    沒有人能再打開角色能力設定救援——取代舊版用 jobTitle==='店長'
- *    字串比對的脆弱保護。canManageRoles 是唯一會造成永久鎖死的能力：
- *    只要還有人握有它，就能透過編輯角色把任何其他能力（含 canManageStaff）
- *    補回來；但 canManageRoles 一旦歸零，沒人能再改任何角色的能力，
- *    因此不必另外保護 canManageStaff。
- */
+// 防止擁有的 canManageRoles 管理人數歸零導致永久無法管理
 async function wouldLeaveNoRoleAdmin(
   db: AnyDb,
   tenantId: string | null,
@@ -44,15 +34,12 @@ async function wouldLeaveNoRoleAdmin(
   const currentlyHasAdmin = allStaff.some((row) =>
     capabilitiesById.get(row.roleId)?.includes('canManageRoles')
   )
-  // 系統本來就沒有人擁有這個權限（例如全新環境還沒指派任何管理者），
-  // 不是這次變更造成的，不擋——只防「從有變沒有」這個轉折。
   if (!currentlyHasAdmin) return false
 
   capabilitiesById.set(roleIdBeingChanged, nextCapabilities)
   return !allStaff.some((row) => capabilitiesById.get(row.roleId)?.includes('canManageRoles'))
 }
 
-/** 操作紀錄要給人看，不能直接印權限鍵值（如 canCompItem），一律轉成中文名稱。 */
 function capabilityLabelsText(capabilities: AuthorityKey[]): string {
   return capabilities.map((key) => AUTHORITY_KEY_LABELS[key]).join('、') || '無'
 }

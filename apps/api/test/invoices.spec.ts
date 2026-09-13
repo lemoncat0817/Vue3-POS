@@ -180,7 +180,7 @@ describe('POST /api/invoices/submit（模擬批次上傳）', () => {
   })
 })
 
-describe('作廢訂單時發票一併標成作廢（P23）', () => {
+describe('作廢訂單時發票一併標成作廢', () => {
   it('訂單作廢（已取消）時 invoiceStatus 變成 voided；撤銷作廢改回 issued', async () => {
     const db = createTestDb()
     await seedPromotions(db)

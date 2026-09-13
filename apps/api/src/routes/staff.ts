@@ -15,7 +15,6 @@ import type { AppEnv } from '../types'
 
 const errorSchema = z.object({ error: z.string() })
 
-/** 解析目前操作者自己的 staffId，供「不可變更自己的權限群組」判斷用。 */
 async function resolveOperatorStaffId(c: Context<AppEnv>): Promise<string | null> {
   const sessionToken = c.req.header('X-Operator-Session') ?? null
   if (!sessionToken) return null
@@ -23,7 +22,6 @@ async function resolveOperatorStaffId(c: Context<AppEnv>): Promise<string | null
   return session?.staffId ?? null
 }
 
-/** 依 roleId 解析出 roleName／capabilities，組成回應用的 staffSchema 形狀。 */
 async function toStaffResponse(
   db: AnyDb,
   tenantId: string | null,
@@ -46,8 +44,6 @@ async function toStaffResponse(
   })
 }
 
-/** 判斷「若把某員工的角色改成 nextRoleId」之後，是否還有人擁有 canManageRoles——
- * 這是唯一會造成永久鎖死的能力，理由見 routes/roles.ts 同名函式。 */
 async function wouldLeaveNoRoleAdmin(
   db: AnyDb,
   tenantId: string | null,
@@ -66,7 +62,6 @@ async function wouldLeaveNoRoleAdmin(
   const currentlyHasAdmin = allStaff.some((row) =>
     capabilitiesOf(row.roleId).includes('canManageRoles')
   )
-  // 系統本來就沒有人擁有這個權限，不是這次變更造成的，不擋——只防「從有變沒有」這個轉折。
   if (!currentlyHasAdmin) return false
 
   return !allStaff.some((row) => {
@@ -92,7 +87,6 @@ const listStaffRoute = createRoute({
 const createStaffRoute = createRoute({
   method: 'post',
   path: '/',
-  // 建立員工屬異動操作，需校驗裝置憑證。
   middleware: [requireDeviceToken, requireCapability('canManageStaff')] as const,
   request: {
     body: { content: { 'application/json': { schema: createStaffRequestSchema } } }
@@ -114,11 +108,6 @@ const createStaffRoute = createRoute({
   }
 })
 
-/**
- * 員工管理寫入 API：支援後台編輯與刪除員工。
- * allowWebSession：忘記 PIN 的救援管道——老闆用 OAuth 登入後台也能重設任何員工
- * （含自己）的 PIN，不需要先知道舊 PIN，見 middleware/require-capability.ts。
- */
 const updateStaffRoute = createRoute({
   method: 'put',
   path: '/{id}',
@@ -204,8 +193,6 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (accountTaken) return c.json({ error: '這個帳號已經被使用' }, 409)
 
-    // PIN 只在這裡經手一次，雜湊後存進資料庫，明碼不落地（見
-    // src/auth/hash.ts）。
     const { hash, salt } = await hashSecret(pin)
     const newStaff = {
       id: crypto.randomUUID(),
@@ -255,9 +242,7 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '這個帳號已經被其他員工使用' }, 409)
     }
 
-    // 姓名／帳號／PIN 允許改自己，但角色群組不行——避免自我提權，且比「最後一位
-    // 權限管理者」防呆更直接：那個防呆只擋「改完後沒人有 canManageRoles」，
-    // 擋不住「我本來不是唯一管理者，但我把自己降級」這種情境。
+    // 禁止變更自身角色，防自我提權或意外自我降級
     if (roleId !== existing.roleId && (await resolveOperatorStaffId(c)) === id) {
       return c.json({ error: '不可變更自己的權限群組，請由其他權限管理者協助' }, 403)
     }
@@ -265,8 +250,6 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '此變更會讓沒有人擁有「設定權限群組」的權限，操作已取消' }, 409)
     }
 
-    // pin 選填——只有真的要重設 PIN 才重新雜湊，沒填就沿用既有的雜湊值
-    // ／鹽（見 @pos/contract 的 updateStaffRequestSchema 說明）。
     const pinFields = pin
       ? await hashSecret(pin)
       : { hash: existing.pinHash, salt: existing.pinSalt }
@@ -274,9 +257,6 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
       .update(staff)
       .set({ ...input, roleId, pinHash: pinFields.hash, pinSalt: pinFields.salt })
       .where(eq(staff.id, id))
-    // 沒有 X-Operator-Session 卻能走到這裡，代表是靠 allowWebSession 那條救援
-    // 路徑通過的（見 middleware/require-capability.ts）——稽核紀錄改標記成
-    // OAuth 身分，而不是 recordAuditLog() 預設反解出的「未知操作者」。
     const webSessionUser = c.req.header('X-Operator-Session')
       ? null
       : await resolveWebSessionUser(db, c.req.header('X-Web-Session') ?? '')

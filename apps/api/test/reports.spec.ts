@@ -48,7 +48,7 @@ afterEach(() => {
 })
 
 describe('GET /api/reports/sales', () => {
-  it('沒有裝置憑證時拒絕（跟其他唯讀端點一樣，多租戶後改成一律要驗證，見 P24）', async () => {
+  it('沒有裝置憑證時拒絕', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/reports/sales?from=20260101&to=20260101')
     expect(res.status).toBe(401)

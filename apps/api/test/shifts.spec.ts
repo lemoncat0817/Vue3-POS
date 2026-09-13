@@ -372,7 +372,7 @@ describe('POST /api/shifts/:id/close', () => {
     expect(body.variance).toBe(0)
   })
 
-  it('已作廢的訂單不計入 cashSales（P12：作廢代表整筆訂單不算數）', async () => {
+  it('已作廢的訂單不計入 cashSales', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
@@ -404,7 +404,6 @@ describe('POST /api/shifts/:id/close', () => {
     })
     const created = await readJson(createRes)
 
-    // 作廢這筆現金訂單——收班時不該再把它算進 cashSales。
     await app.request(`/api/orders/${created.orderId}/status`, {
       method: 'PATCH',
       headers: {
@@ -435,7 +434,7 @@ describe('POST /api/shifts/:id/close', () => {
     expect(body.variance).toBe(0)
   })
 
-  it('班別期間的退款從應有現金扣除（P12：退款一律視為現金退出抽屜）', async () => {
+  it('班別期間的退款從應有現金扣除', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)

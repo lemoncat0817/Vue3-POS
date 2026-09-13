@@ -1,7 +1,6 @@
 import { invoiceTracks, orderCoupons, quickDiscounts } from '../../src/db/schema'
 import type { AnyDb } from '../../src/db/types'
 
-/** 測試用促銷與發票字軌前置資料；快速折扣與啟用中字軌為送單必要條件。 */
 export async function seedPromotions(db: AnyDb): Promise<void> {
   await db.insert(quickDiscounts).values([
     { id: 'quick-1', name: '常客優惠', kind: 'amount', value: 5 },
