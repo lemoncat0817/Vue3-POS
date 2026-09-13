@@ -41,6 +41,20 @@ describe('CORS 白名單', () => {
     expect(res.headers.get('access-control-allow-headers')).toContain('X-Operator-Session')
   })
 
+  it('白名單內的來源，OPTIONS 預檢請求允許帶 X-Web-Session 標頭的跨源呼叫', async () => {
+    const app = createTestApp(createTestDb())
+    const res = await app.request('/api/staff', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://localhost:4173',
+        'Access-Control-Request-Method': 'PUT',
+        'Access-Control-Request-Headers': 'X-Web-Session'
+      }
+    })
+    expect(res.status).toBe(204)
+    expect(res.headers.get('access-control-allow-headers')).toContain('X-Web-Session')
+  })
+
   it('白名單外的來源，不會拿到 Access-Control-Allow-Origin', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/catalog', {

@@ -54,7 +54,8 @@ export function createApp(
         'Content-Type',
         'X-Device-Token',
         'X-Provisioning-Secret',
-        'X-Operator-Session'
+        'X-Operator-Session',
+        'X-Web-Session'
       ]
     })
   )
