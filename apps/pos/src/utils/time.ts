@@ -55,3 +55,11 @@ export const formatDateOnly = (value: string): string => {
   const format = (num: number) => (num < 10 ? `0${num}` : num)
   return `${date.getFullYear()}/${format(date.getMonth() + 1)}/${format(date.getDate())}`
 }
+
+// 只需要顯示時間時使用，例如班別開帳時間；避免直接 slice ISO 字串的 11~16 碼，那是 UTC 時間。
+export const formatTimeOnly = (value: string): string => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value.slice(11, 16)
+  const format = (num: number) => (num < 10 ? `0${num}` : num)
+  return `${format(date.getHours())}:${format(date.getMinutes())}`
+}

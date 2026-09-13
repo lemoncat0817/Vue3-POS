@@ -22,7 +22,12 @@
     </p>
   </div>
 
-  <ModalDialog :open="open" title="班別結帳" @update:open="(value) => (open = value)">
+  <ModalDialog
+    :open="open"
+    title="班別結帳"
+    size="lg"
+    @update:open="(value) => (open = value)"
+  >
     <div v-if="!shift" class="flex flex-col gap-3">
       <p class="text-sm text-surface-500 dark:text-surface-400">開帳零用金（找零準備金）</p>
       <input
@@ -59,7 +64,7 @@
         </div>
         <div>
           <span class="text-surface-500 dark:text-surface-400">開帳時間：</span
-          >{{ shift.openedAt.slice(11, 16) }}
+          >{{ formatTimeOnly(shift.openedAt) }}
         </div>
         <div>
           <span class="text-surface-500 dark:text-surface-400">開帳零用金：</span>$
@@ -208,6 +213,7 @@ import { useQuery } from '@tanstack/vue-query'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { addCashMovement, closeShift, fetchCurrentShift, openShift } from '@/api/shifts'
 import { showToast } from '@/composables/useToast'
+import { formatTimeOnly } from '@/utils/time'
 import { useLoginStore } from '@/stores/login'
 import { hasCapability } from '@/utils/selection'
 import { ulid } from '@pos/domain'
