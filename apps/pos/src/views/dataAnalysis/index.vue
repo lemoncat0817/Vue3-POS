@@ -438,8 +438,8 @@ echarts.use([
   CanvasRenderer
 ])
 import { useQuery } from '@tanstack/vue-query'
+import { getBusinessDate } from '@pos/domain'
 import {
-  getDate,
   getTime,
   formatBusinessDate,
   toBusinessDate,
@@ -447,6 +447,7 @@ import {
   fromNativeDate
 } from '@/utils/time'
 import { fetchSalesReport } from '@/api/reports'
+import { useOrderStore } from '@/stores/order'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import TrendBadge from '@/components/ui/TrendBadge.vue'
 import RankedBarChart from '@/components/ui/RankedBarChart.vue'
@@ -455,9 +456,8 @@ import { showToast } from '@/composables/useToast'
 import { useTheme } from '@/composables/useTheme'
 
 const { theme } = useTheme()
+const orderStore = useOrderStore()
 const dialogSettlement = ref(false)
-
-const selectTime = ref<[string, string]>([getDate(), getDate()])
 
 function formatSlashDate(d: Date): string {
   const y = d.getFullYear()
@@ -469,6 +469,23 @@ function parseSlashDate(s: string): Date {
   const [y, m, d] = s.split('/').map(Number)
   return new Date(y ?? 0, (m ?? 1) - 1, d ?? 1)
 }
+
+// 換日時間之前，行事曆上的「今天」其實還算前一個營業日——深夜還在營業時
+// 若拿行事曆日期當「今天」，畫面預設會打開已經跨過午夜、還沒有訂單的
+// 那一天，看起來像沒生意，見 packages/pos-domain 的 getBusinessDate()。
+function businessToday(): Date {
+  const businessDate = getBusinessDate(new Date(), orderStore.businessDayStartHour)
+  return new Date(
+    Number(businessDate.slice(0, 4)),
+    Number(businessDate.slice(4, 6)) - 1,
+    Number(businessDate.slice(6, 8))
+  )
+}
+
+const selectTime = ref<[string, string]>([
+  formatSlashDate(businessToday()),
+  formatSlashDate(businessToday())
+])
 
 const { data: salesReport } = useQuery({
   queryKey: computed(() => ['salesReport', selectTime.value[0], selectTime.value[1]] as const),
@@ -573,7 +590,7 @@ const peakHourInfo = computed(() => {
 // 各頁籤對應的日期區間，setDatePreset／isPresetActive 共用同一份定義，
 // 避免兩邊各算一次、改一邊忘了改另一邊。
 function presetRange(preset: 'today' | 'yesterday' | 'week' | 'month'): [string, string] {
-  const now = new Date()
+  const now = businessToday()
   if (preset === 'today') {
     const t = formatSlashDate(now)
     return [t, t]
