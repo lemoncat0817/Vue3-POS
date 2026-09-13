@@ -1,11 +1,6 @@
 import { z } from 'zod'
 import { createPaginatedResponseSchema, paginationQuerySchema } from './pagination'
 
-/**
- * 稽核紀錄 schema。取代原本只印在瀏覽器主控台的做法，記錄需要較高權限、
- * 屬於「管理者異動」性質的後台操作——不含訂單狀態的例行流轉、桌況的
- * 入座/清空/預約這類高頻操作性狀態變更。
- */
 export const auditLogActionSchema = z.enum([
   'cashier_open',
   'report.export',
@@ -76,9 +71,6 @@ export const createAuditLogRequestSchema = z.object({
 })
 export type CreateAuditLogRequest = z.infer<typeof createAuditLogRequestSchema>
 
-// 列表頁查詢參數：分頁＋進階篩選，寫法對齊 order.ts 的 listOrdersQuerySchema
-// ——dateFrom／dateTo 用 <input type="date"> 原生的 YYYY-MM-DD 格式，直接
-// 對應 auditLogs.createdAt（ISO 字串）的日期前綴做字串區間比對。
 export const listAuditLogsQuerySchema = paginationQuerySchema.extend({
   keyword: z.string().optional(),
   action: auditLogActionSchema.optional(),

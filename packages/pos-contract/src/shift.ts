@@ -1,8 +1,6 @@
 import { z } from 'zod'
 import { ulidSchema } from './common'
 
-/** 班別結帳 schema。單店情境下同一時間僅允許一個班別處於 open 狀態。 */
-
 export const cashMovementTypeSchema = z.enum(['in', 'out'])
 export type CashMovementType = z.infer<typeof cashMovementTypeSchema>
 
@@ -40,7 +38,6 @@ export type CashMovement = z.infer<typeof cashMovementSchema>
 export const shiftStatusSchema = z.enum(['open', 'closed'])
 export type ShiftStatus = z.infer<typeof shiftStatusSchema>
 
-// cashSales/refunds/expectedCash/actualCash/variance 於開班期間為 null，待收班點鈔後結算。
 export const shiftSchema = z.object({
   id: z.string(),
   status: shiftStatusSchema,
@@ -52,7 +49,6 @@ export const shiftSchema = z.object({
   cashSales: z.number().int().nonnegative().nullable(),
   cashIn: z.number().int().nonnegative(),
   cashOut: z.number().int().nonnegative(),
-  /** 班別期間的退款總額。 */
   refunds: z.number().int().nonnegative().nullable(),
   expectedCash: z.number().int().nonnegative().nullable(),
   actualCash: z.number().int().nonnegative().nullable(),

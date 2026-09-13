@@ -25,7 +25,6 @@ describe('getBusinessDate', () => {
   })
 
   it('不依賴 UTC：同一個本地時間點不因時區判斷改變（不使用 toISOString）', () => {
-    // 檢查回傳值僅由本地時間決定，不受時區與 UTC 偏移影響。
     const local = new Date(2024, 5, 10, 1, 0, 0)
     expect(getBusinessDate(local)).toBe('20240609')
     expect(

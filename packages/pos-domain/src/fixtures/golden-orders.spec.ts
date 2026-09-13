@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GOLDEN_ORDERS } from './golden-orders'
 
-/** 鎖定黃金資料集內容與結構性不變式，作為計價重算與迴歸比對基準。 */
 describe('GOLDEN_ORDERS（P0 黃金資料集）', () => {
   it('固定為重構前的 4 筆歷史訂單', () => {
     expect(GOLDEN_ORDERS).toHaveLength(4)

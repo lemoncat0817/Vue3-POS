@@ -44,7 +44,6 @@ describe('priceLine — 對照原本各折扣情境的正向計算式', () => {
     const base: LineBase = { price: 45, count: 30, addListPrice: 0 }
     const flags = toggleQuickDiscount(NO_DISCOUNT, 'quick-3')
     const priced = priceLine(base, flags, QUICK_DISCOUNTS)
-    // 45*30=1350，九折=1215（與黃金資料集 202406107 訂單第一行金額一致）
     expect(priced.totalPrice).toBe(1215)
     expect(priced.discount).toBe(135)
   })

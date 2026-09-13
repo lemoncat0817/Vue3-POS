@@ -3,7 +3,6 @@ import { priceLine, type LineDiscountFlags } from '../pricing'
 import { GOLDEN_ORDERS } from './golden-orders'
 import { DEFAULT_QUICK_DISCOUNTS } from './quick-discounts'
 
-/** 用黃金資料集的品項組成重跑 priceLine()，驗證重算結果與歷史訂單金額一致。 */
 describe('priceLine() 對照黃金資料集', () => {
   const cases = GOLDEN_ORDERS.flatMap((order) =>
     order.orderData.map((line) => ({

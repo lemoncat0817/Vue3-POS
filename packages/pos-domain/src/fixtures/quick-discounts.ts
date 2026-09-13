@@ -1,6 +1,5 @@
 import type { QuickDiscount } from '../pricing'
 
-/** 快速折扣預設值，供領域層測試獨立使用以避免依賴應用層。 */
 export const DEFAULT_QUICK_DISCOUNTS: QuickDiscount[] = [
   { id: 'quick-1', name: '常客優惠', kind: 'amount', value: 5 },
   { id: 'quick-2', name: '大宗採購優惠', kind: 'amount', value: 10 },

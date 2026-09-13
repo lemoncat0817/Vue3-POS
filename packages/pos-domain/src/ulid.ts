@@ -1,7 +1,3 @@
-/**
- * 產生 26 碼 Crockford Base32 ULID（前 10 碼時間戳，後 16 碼亂數），
- * 單調可排序且不依賴伺服端即可作為冪等鍵。
- */
 const CROCKFORD_BASE32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
 const TIME_LEN = 10
 const RANDOM_LEN = 16

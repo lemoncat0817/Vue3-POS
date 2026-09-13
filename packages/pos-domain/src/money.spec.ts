@@ -32,7 +32,6 @@ describe('roundToDollar', () => {
 
 describe('scaleMinor / addMinor / subtractMinor', () => {
   it('乘以折數並四捨五入到分', () => {
-    // 100 元 * 0.9 = 90 元，精確無需取整
     expect(fromMinor(scaleMinor(toMinor(100), 0.9))).toBe(90)
   })
 
@@ -49,7 +48,6 @@ describe('allocate（最大餘數法分攤）', () => {
     const total = toMinor(100) // 10000 分
     const shares = allocate(total, [1, 1, 1])
     expect(shares.reduce((sum, s) => sum + s, 0)).toBe(total)
-    // 10000 分分成三份，每份約 3333.33 分，兩份拿 3333、一份拿 3334
     expect([...shares].sort((a, b) => a - b)).toEqual([3333, 3333, 3334])
   })
 

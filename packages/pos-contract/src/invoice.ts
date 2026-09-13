@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-/** 電子發票字軌與上傳狀態 schema。字軌由後台設定管理；平台介接維持模擬以備未來串接實體憑證。 */
 export const invoiceTrackSchema = z.object({
   id: z.string().min(1),
   trackCode: z.string().regex(/^[A-Z]{2}$/, '字軌代號需為 2 碼大寫英文字母'),
@@ -25,7 +24,6 @@ export const createInvoiceTrackRequestSchema = z
   })
 export type CreateInvoiceTrackRequest = z.infer<typeof createInvoiceTrackRequestSchema>
 
-/** 發票上傳狀態（issued: 已開立, submitted: 模擬上傳成功, voided: 已作廢）。 */
 export const invoiceStatusSchema = z.enum(['issued', 'submitted', 'voided'])
 export type InvoiceStatus = z.infer<typeof invoiceStatusSchema>
 
