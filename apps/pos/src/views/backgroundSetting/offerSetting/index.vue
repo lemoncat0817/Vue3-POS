@@ -557,7 +557,7 @@ function orderCouponSchema(excludeId?: OrderCoupon['id']) {
         '此折價券名稱已存在,請重新輸入'
       ),
     kind: z.enum(['amount', 'percent']),
-    value: z.coerce.number().min(0, '折抵值不可為負數,請重新輸入')
+    value: z.coerce.number({ invalid_type_error: '請輸入數字' }).min(0, '折抵值不可為負數,請重新輸入')
   })
 }
 
@@ -637,7 +637,7 @@ function quickDiscountSchema(excludeId?: QuickDiscount['id']) {
         '此優惠名稱已存在,請重新輸入'
       ),
     kind: z.enum(['amount', 'percent']),
-    value: z.coerce.number().min(0, '折抵值不可為負數,請重新輸入')
+    value: z.coerce.number({ invalid_type_error: '請輸入數字' }).min(0, '折抵值不可為負數,請重新輸入')
   })
 }
 

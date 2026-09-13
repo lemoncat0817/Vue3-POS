@@ -31,11 +31,12 @@
     <div v-if="!shift" class="flex flex-col gap-3">
       <p class="text-sm text-surface-500 dark:text-surface-400">開帳零用金（找零準備金）</p>
       <input
-        v-model.number="openingFloat"
+        :value="openingFloat"
         type="text"
         inputmode="numeric"
         min="0"
         class="w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+        @input="openingFloat = parseRequiredInt(($event.target as HTMLInputElement).value)"
       />
       <div class="mt-2 flex justify-end gap-2">
         <button
@@ -101,11 +102,12 @@
         <label class="flex-1 text-xs font-bold text-surface-500 dark:text-surface-400">
           金額
           <input
-            v-model.number="movementAmount"
+            :value="movementAmount"
             type="text"
             inputmode="numeric"
             min="1"
             class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            @input="movementAmount = parseRequiredInt(($event.target as HTMLInputElement).value)"
           />
         </label>
         <label class="flex-1 text-xs font-bold text-surface-500 dark:text-surface-400">
@@ -119,7 +121,7 @@
         </label>
         <button
           type="button"
-          :disabled="isSubmitting || !canManageShift"
+          :disabled="isSubmitting || !canManageShift || !canSubmitMovement"
           class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:cursor-not-allowed disabled:opacity-40"
           @click="submitMovement('in')"
         >
@@ -127,7 +129,7 @@
         </button>
         <button
           type="button"
-          :disabled="isSubmitting || !canManageShift"
+          :disabled="isSubmitting || !canManageShift || !canSubmitMovement"
           class="rounded-lg border border-surface-300 dark:border-surface-700 px-3 py-1.5 text-sm font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 disabled:cursor-not-allowed disabled:opacity-40"
           @click="submitMovement('out')"
         >
@@ -159,11 +161,12 @@
         依面額點鈔後，實際清點到的現金總額
       </p>
       <input
-        v-model.number="actualCash"
+        :value="actualCash"
         type="text"
         inputmode="numeric"
         min="0"
         class="w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+        @input="actualCash = parseRequiredInt(($event.target as HTMLInputElement).value)"
       />
       <div
         class="grid grid-cols-2 gap-2 rounded-lg bg-surface-50 dark:bg-surface-800 p-3 text-center text-sm"
@@ -217,6 +220,7 @@ import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { addCashMovement, closeShift, fetchCurrentShift, openShift } from '@/api/shifts'
 import { showToast } from '@/composables/useToast'
 import { formatTimeOnly } from '@/utils/time'
+import { parseRequiredInt } from '@/utils/numberInput'
 import { useLoginStore } from '@/stores/login'
 import { hasCapability } from '@/utils/selection'
 import { ulid } from '@pos/domain'
@@ -245,6 +249,7 @@ const previewExpectedCash = computed(() => {
   return shift.value.openingFloat + shift.value.cashIn - shift.value.cashOut
 })
 const previewVariance = computed(() => actualCash.value - previewExpectedCash.value)
+const canSubmitMovement = computed(() => movementAmount.value > 0 && movementReason.value.trim() !== '')
 
 watch(open, (isOpen) => {
   if (!isOpen) {

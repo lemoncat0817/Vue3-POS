@@ -434,26 +434,28 @@
           >
             底價
             <input
-              v-model="productDialog.basePrice"
+              :value="productDialog.basePrice"
               type="text"
               inputmode="numeric"
               min="0"
               step="1"
               class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono"
               placeholder="純數字"
+              @input="productDialog.basePrice = digitsOnly(($event.target as HTMLInputElement).value)"
             />
           </label>
         </div>
         <label class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
           庫存
           <input
-            v-model="productDialog.stock"
+            :value="productDialog.stock"
             type="text"
             inputmode="numeric"
             min="0"
             step="1"
             class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono"
             placeholder="留空代表不追蹤庫存"
+            @input="productDialog.stock = digitsOnly(($event.target as HTMLInputElement).value)"
           />
         </label>
         <div class="flex flex-col gap-1 text-xs font-bold text-surface-600 dark:text-surface-300">
@@ -567,13 +569,14 @@
               placeholder="加減價"
             />
             <input
-              v-model="option.stock"
+              :value="option.stock"
               type="text"
               inputmode="numeric"
               min="0"
               step="1"
               class="w-24 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono"
               placeholder="庫存"
+              @input="option.stock = digitsOnly(($event.target as HTMLInputElement).value)"
             />
             <button
               type="button"
@@ -622,6 +625,7 @@ import { useLoginStore } from '@/stores/login'
 const loginStore = useLoginStore()
 import type { Category, ModifierGroup, ModifierSelectionType, Product } from '@/types'
 import { hasCapability } from '@/utils/selection'
+import { digitsOnly } from '@/utils/numberInput'
 import { ApiError, apiErrorMessage as sharedApiErrorMessage } from '@/api/http'
 import {
   createCategory,

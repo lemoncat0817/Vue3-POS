@@ -205,8 +205,14 @@ const trackSchema = z
       .trim()
       .regex(/^[A-Z]{2}$/, '字軌代號需為 2 碼大寫英文字母'),
     periodLabel: z.string().trim().min(1, '請輸入期別說明'),
-    rangeStart: z.coerce.number().int().positive('起始號碼需為正整數'),
-    rangeEnd: z.coerce.number().int().positive('結束號碼需為正整數')
+    rangeStart: z.coerce
+      .number({ invalid_type_error: '起始號碼需為正整數' })
+      .int()
+      .positive('起始號碼需為正整數'),
+    rangeEnd: z.coerce
+      .number({ invalid_type_error: '結束號碼需為正整數' })
+      .int()
+      .positive('結束號碼需為正整數')
   })
   .refine((input) => input.rangeEnd > input.rangeStart, {
     message: '結束號碼必須大於起始號碼',

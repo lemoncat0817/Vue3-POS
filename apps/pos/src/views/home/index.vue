@@ -125,13 +125,15 @@
             <TableNumberCombobox v-if="orderChannel === '內用'" v-model="tableNumberInput" />
             <input
               v-if="orderChannel === '內用'"
-              v-model.number="guestCountInput"
+              :value="guestCountInput ?? ''"
               type="text"
               inputmode="numeric"
               min="1"
+              maxlength="3"
               placeholder="人數"
               title="用餐人數（選填）"
               class="w-14 rounded-md border border-surface-300 bg-white px-1.5 py-0.5 text-xs font-bold text-surface-700 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 ml-1"
+              @input="guestCountInput = parseOptionalInt(($event.target as HTMLInputElement).value)"
             />
           </div>
         </div>
@@ -490,12 +492,14 @@
               />
             </SliderRoot>
             <input
-              v-model.number="bagCount"
+              :value="bagCount"
               type="text"
               inputmode="numeric"
               min="0"
               max="100"
+              maxlength="3"
               class="w-16 rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-center text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              @input="bagCount = parseRequiredInt(($event.target as HTMLInputElement).value, { max: 100 })"
             />
           </div>
           <div class="mt-6 flex justify-end gap-2">
@@ -585,6 +589,7 @@
 <script setup lang="ts">
 import { formatAddList } from '@/utils/catalog'
 import { getDate, getTime } from '@/utils/time'
+import { parseOptionalInt, parseRequiredInt } from '@/utils/numberInput'
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import CategoryTabs from './categoryTabs/index.vue'
 import ProductMenu from './productMenu/index.vue'

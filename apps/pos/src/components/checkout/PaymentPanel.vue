@@ -87,13 +87,14 @@
           <label class="flex-1 text-xs font-bold text-surface-500 dark:text-surface-400">
             分擔金額
             <input
-              v-model.number="draftAmount"
+              :value="draftAmount"
               type="text"
               inputmode="numeric"
               min="0"
               :max="remaining"
               class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
               @focus="activeField = 'amount'"
+              @input="draftAmount = parseRequiredInt(($event.target as HTMLInputElement).value, { max: remaining })"
             />
           </label>
           <label
@@ -102,12 +103,13 @@
           >
             實收金額（選填，用來算找零）
             <input
-              v-model.number="draftReceivedAmount"
+              :value="draftReceivedAmount ?? ''"
               type="text"
               inputmode="numeric"
               min="0"
               class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
               @focus="activeField = 'received'"
+              @input="draftReceivedAmount = parseOptionalInt(($event.target as HTMLInputElement).value) ?? undefined"
             />
           </label>
           <button
@@ -181,6 +183,7 @@
 import { computed, ref, watch } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import NumericKeypad from '@/components/ui/NumericKeypad.vue'
+import { parseOptionalInt, parseRequiredInt } from '@/utils/numberInput'
 import type { PaymentMethod } from '@/types'
 
 export interface TenderDraft {
@@ -246,10 +249,15 @@ const quickCashAmounts = computed(() => {
 
 const canAddDraftTender = computed(() => {
   if (!draftMethod.value) return false
+  // Number.isFinite 明確擋掉 NaN——NaN 跟任何數字比較都是 false，底下這些
+  // <=／> 判斷式對 NaN 全部會直接放行，不能只靠它們擋壞值。
+  if (!Number.isFinite(draftAmount.value)) return false
   if (draftAmount.value <= 0 && remaining.value > 0) return false
   if (draftAmount.value > remaining.value) return false
-  if (draftReceivedAmount.value !== undefined && draftReceivedAmount.value < draftAmount.value)
-    return false
+  if (draftReceivedAmount.value !== undefined) {
+    if (!Number.isFinite(draftReceivedAmount.value)) return false
+    if (draftReceivedAmount.value < draftAmount.value) return false
+  }
   return true
 })
 
