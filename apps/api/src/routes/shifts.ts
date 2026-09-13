@@ -226,7 +226,8 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
       .where(and(eq(shifts.status, 'open'), tenantFilter(shifts.tenantId, tenantId)))
       .get()
     if (stillOpen) {
-      return c.json({ error: `班別 ${stillOpen.id} 尚未收班，請先完成收班再開新的班別` }, 409)
+      // 不印 stillOpen.id（內部用的 ULID，使用者看不懂），這則訊息只需要告知「已有班別待收班」。
+      return c.json({ error: '尚有班別尚未收班，請先完成收班再開新的班別' }, 409)
     }
 
     const newShift: ShiftRow = {
