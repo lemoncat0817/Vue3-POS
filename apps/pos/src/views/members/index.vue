@@ -226,6 +226,7 @@
             name="phone"
             label="手機號碼"
             :disabled="isSubmitting"
+            :maxlength="10"
             placeholder="例如: 0912345678"
           />
           <FormField name="birthday" label="生日（選填）" type="date" :disabled="isSubmitting" />
@@ -273,6 +274,7 @@
             name="phone"
             label="手機號碼"
             :disabled="isSubmitting"
+            :maxlength="10"
             placeholder="例如: 0912345678"
           />
           <FormField name="birthday" label="生日（選填）" type="date" :disabled="isSubmitting" />

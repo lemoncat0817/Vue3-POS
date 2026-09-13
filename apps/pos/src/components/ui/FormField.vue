@@ -5,6 +5,7 @@
       :value="value"
       :type="type ?? 'text'"
       :step="step"
+      :maxlength="maxlength"
       :disabled="disabled"
       class="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm font-normal text-surface-900 outline-none transition-colors disabled:cursor-not-allowed disabled:bg-surface-100 disabled:text-surface-400 dark:bg-surface-800 dark:text-surface-100 dark:disabled:bg-surface-900 dark:disabled:text-surface-600"
       :class="
@@ -34,6 +35,7 @@ const props = defineProps<{
   placeholder?: string
   type?: string
   step?: string
+  maxlength?: number
   disabled?: boolean
 }>()
 
