@@ -27,6 +27,7 @@ import {
   type QuickDiscount
 } from '@pos/domain'
 import {
+  diningTables,
   members,
   memberPointLedger,
   modifierOptions,
@@ -487,6 +488,50 @@ async function resolvePointsRedemptionRate(db: AnyDb, tenantId: string | null): 
 }
 
 /**
+ * 內用結帳時，若租戶開啟「自動連動桌況」（見 routes/tenant-settings.ts），
+ * 依 tableNumber 字串比對桌況管理裡的桌位，找到就自動標記使用中並蓋入座
+ * 時間。找不到對應桌位（自由輸入、還沒建檔）就什麼都不做，不會反過來
+ * 建立新桌位——這裡的 tableNumber 終究只是字串比對，不是外鍵。
+ *
+ * 已經是 occupied 的桌位不重蓋入座時間（同一桌加點不該讓「已入座多久」
+ * 歸零），但仍會用這次結帳帶的人數覆蓋掉舊的人數（有給的話）。
+ */
+async function syncTableOnCheckout(
+  db: AnyDb,
+  tenantId: string | null,
+  tableNumber: string,
+  guestCount: number | undefined
+): Promise<void> {
+  const tenant = await db.select().from(users).where(tenantFilter(users.id, tenantId)).get()
+  if (tenant && !tenant.autoOccupyTableOnCheckout) return
+
+  const table = await db
+    .select()
+    .from(diningTables)
+    .where(and(eq(diningTables.tableNumber, tableNumber), tenantFilter(diningTables.tenantId, tenantId)))
+    .get()
+  if (!table) return
+
+  if (table.status === 'occupied') {
+    if (guestCount !== undefined) {
+      await db.update(diningTables).set({ guestCount }).where(eq(diningTables.id, table.id))
+    }
+    return
+  }
+
+  await db
+    .update(diningTables)
+    .set({
+      status: 'occupied',
+      occupiedAt: new Date().toISOString(),
+      guestCount: guestCount ?? table.guestCount ?? null,
+      reservationPhone: null,
+      reservationTime: null
+    })
+    .where(eq(diningTables.id, table.id))
+}
+
+/**
  * 直接用資料庫端算式做原子加減，不是「先 SELECT 現在的點數、應用層加完
  * 再整包寫回去」——後者在同一個會員短時間內被多筆訂單／退款同時觸發時，
  * 後寫入的那次會蓋掉前一次的中間結果，導致點數少算。delta 可正可負；
@@ -787,6 +832,9 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     await deductStock(db, tenantId, input.lines)
     await adjustMemberPoints(db, tenantId, memberId, pointsEarned, 'order_accrual', orderId)
     await adjustMemberPoints(db, tenantId, memberId, -pointsToRedeem, 'redemption', orderId)
+    if (input.orderChannel === '內用' && input.tableNumber) {
+      await syncTableOnCheckout(db, tenantId, input.tableNumber, input.guestCount)
+    }
 
     const insertedLines = await db
       .select()

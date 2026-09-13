@@ -106,8 +106,14 @@ export const createOrderRequestSchema = z.object({
    * 超過會員目前點數或超過應付金額都會被擋下（見 routes/orders.ts）。
    */
   pointsToRedeem: z.number().int().nonnegative().optional(),
-  /** 選填，純粹是訂單的紀錄用途，不是桌況的外鍵——桌況由店員手動維護，不由訂單生命週期推導。 */
+  /**
+   * 選填，不是桌況的外鍵（用字串比對，不是 id）。租戶開啟「結帳自動連動桌況」
+   * 設定時，伺服端會用這個字串去比對桌況管理裡的桌號，找到就自動標記使用中
+   * （見 routes/orders.ts）；找不到對應桌位就單純當訂單紀錄，不會建立新桌位。
+   */
   tableNumber: z.string().min(1).optional(),
+  /** 選填，內用訂單目前的用餐人數；有對應桌位且自動連動有開時，會一併寫回桌況管理的人數紀錄。 */
+  guestCount: z.number().int().positive().optional(),
   /** 選填備註（外送地址、取件時間、客製化需求等），純文字紀錄用途，伺服端不解析內容。 */
   note: z.string().max(200).optional()
 })

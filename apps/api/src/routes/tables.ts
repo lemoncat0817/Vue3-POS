@@ -125,7 +125,11 @@ export const tableRoutes = new OpenAPIHono<AppEnv>()
       tenantId,
       ...input,
       status: 'empty' as const,
-      note: ''
+      note: '',
+      guestCount: null,
+      occupiedAt: null,
+      reservationPhone: null,
+      reservationTime: null
     }
     await db.insert(diningTables).values(newTable)
     return c.json(newTable, 201)
@@ -156,7 +160,25 @@ export const tableRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這個桌位' }, 404)
     // note 為選填：未帶時保留既有備註，便於快速切換桌況。
-    const updated = { status: input.status, note: input.note ?? existing.note }
+    // guestCount／occupiedAt／reservation* 依「轉去哪個狀態」決定去留：
+    // 轉成 occupied 才可能有人數與入座時間（維持 occupied 不重蓋入座時間，
+    // 見下方判斷），轉成 reserved 才可能有預約資訊，其餘一律清空——避免
+    // 換一輪狀態後畫面還殘留上一輪客人的人數或預約電話。
+    const updated = {
+      status: input.status,
+      note: input.note ?? existing.note,
+      guestCount: input.status === 'occupied' ? (input.guestCount ?? existing.guestCount ?? null) : null,
+      occupiedAt:
+        input.status === 'occupied'
+          ? existing.status === 'occupied'
+            ? existing.occupiedAt
+            : new Date().toISOString()
+          : null,
+      reservationPhone:
+        input.status === 'reserved' ? (input.reservationPhone ?? existing.reservationPhone ?? null) : null,
+      reservationTime:
+        input.status === 'reserved' ? (input.reservationTime ?? existing.reservationTime ?? null) : null
+    }
     await db.update(diningTables).set(updated).where(eq(diningTables.id, id))
     return c.json({ ...existing, ...updated }, 200)
   })

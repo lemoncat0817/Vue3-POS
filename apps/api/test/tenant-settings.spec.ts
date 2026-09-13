@@ -51,7 +51,8 @@ describe('GET /api/tenant-settings', () => {
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 10,
       pointsRedemptionRate: 10,
-      pointsExpiryMonths: null
+      pointsExpiryMonths: null,
+      autoOccupyTableOnCheckout: true
     })
   })
 
@@ -67,7 +68,8 @@ describe('GET /api/tenant-settings', () => {
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 10,
       pointsRedemptionRate: 10,
-      pointsExpiryMonths: null
+      pointsExpiryMonths: null,
+      autoOccupyTableOnCheckout: true
     })
   })
 })
@@ -103,7 +105,8 @@ describe('PATCH /api/tenant-settings', () => {
       businessDayStartHour: 18,
       pointsPerCurrencyUnit: 10,
       pointsRedemptionRate: 10,
-      pointsExpiryMonths: null
+      pointsExpiryMonths: null,
+      autoOccupyTableOnCheckout: true
     })
 
     const getRes = await app.request('/api/tenant-settings', {
@@ -113,7 +116,8 @@ describe('PATCH /api/tenant-settings', () => {
       businessDayStartHour: 18,
       pointsPerCurrencyUnit: 10,
       pointsRedemptionRate: 10,
-      pointsExpiryMonths: null
+      pointsExpiryMonths: null,
+      autoOccupyTableOnCheckout: true
     })
   })
 
@@ -137,7 +141,8 @@ describe('PATCH /api/tenant-settings', () => {
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 5,
       pointsRedemptionRate: 10,
-      pointsExpiryMonths: null
+      pointsExpiryMonths: null,
+      autoOccupyTableOnCheckout: true
     })
   })
 
@@ -161,7 +166,8 @@ describe('PATCH /api/tenant-settings', () => {
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 10,
       pointsRedemptionRate: 20,
-      pointsExpiryMonths: null
+      pointsExpiryMonths: null,
+      autoOccupyTableOnCheckout: true
     })
   })
 
@@ -186,7 +192,8 @@ describe('PATCH /api/tenant-settings', () => {
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 10,
       pointsRedemptionRate: 10,
-      pointsExpiryMonths: 6
+      pointsExpiryMonths: 6,
+      autoOccupyTableOnCheckout: true
     })
 
     // 明確傳 null 是「停用」，跟沒送這個欄位（維持原值）意義不同，兩者都要能正常運作。
@@ -200,7 +207,8 @@ describe('PATCH /api/tenant-settings', () => {
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 10,
       pointsRedemptionRate: 10,
-      pointsExpiryMonths: null
+      pointsExpiryMonths: null,
+      autoOccupyTableOnCheckout: true
     })
   })
 
@@ -272,6 +280,56 @@ describe('PATCH /api/tenant-settings', () => {
         'X-Operator-Session': sessionToken
       },
       body: JSON.stringify({ pointsPerCurrencyUnit: 5 })
+    })
+    expect(res.status).toBe(403)
+  })
+
+  it('可以關閉／重新開啟結帳自動連動桌況設定，預設為開啟', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(
+      createTestDb(),
+      'test-device',
+      { tenantId: 'tenant-1' }
+    )
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const disableRes = await app.request('/api/tenant-settings', {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ autoOccupyTableOnCheckout: false })
+    })
+    expect(disableRes.status).toBe(200)
+    expect((await readJson(disableRes)).autoOccupyTableOnCheckout).toBe(false)
+
+    const getRes = await app.request('/api/tenant-settings', {
+      headers: { 'X-Device-Token': deviceToken }
+    })
+    expect((await readJson(getRes)).autoOccupyTableOnCheckout).toBe(false)
+
+    const enableRes = await app.request('/api/tenant-settings', {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ autoOccupyTableOnCheckout: true })
+    })
+    expect((await readJson(enableRes)).autoOccupyTableOnCheckout).toBe(true)
+  })
+
+  it('沒有 canManageTables 時，改結帳自動連動桌況設定會被擋下，回傳 403', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      tenantId: 'tenant-1'
+    })
+    const { sessionToken } = await seedStaffWithCapabilities(db, ['canSetBusinessHours'])
+    const res = await app.request('/api/tenant-settings', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ autoOccupyTableOnCheckout: false })
     })
     expect(res.status).toBe(403)
   })

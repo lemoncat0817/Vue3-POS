@@ -117,6 +117,84 @@ describe('PATCH /api/tables/:id/status', () => {
     expect(body).toMatchObject({ status: 'empty', note: '4 位客人' })
   })
 
+  it('轉成使用中會自動蓋入座時間、可以帶用餐人數；維持使用中重存不會重蓋入座時間', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const table = await readJson(
+      await app.request('/api/tables', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ tableNumber: 'A1', seats: 4 })
+      })
+    )
+    const firstRes = await app.request(`/api/tables/${table.id}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ status: 'occupied', guestCount: 3 })
+    })
+    const first = await readJson(firstRes)
+    expect(first.guestCount).toBe(3)
+    expect(typeof first.occupiedAt).toBe('string')
+
+    const secondRes = await app.request(`/api/tables/${table.id}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ status: 'occupied', guestCount: 5 })
+    })
+    const second = await readJson(secondRes)
+    expect(second.guestCount).toBe(5)
+    expect(second.occupiedAt).toBe(first.occupiedAt)
+  })
+
+  it('轉成已預約可以帶聯絡電話與預約時間；轉回空桌會清空人數／入座時間／預約資訊', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const table = await readJson(
+      await app.request('/api/tables', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ tableNumber: 'A1', seats: 4 })
+      })
+    )
+    const reservedRes = await app.request(`/api/tables/${table.id}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        status: 'reserved',
+        reservationPhone: '0912345678',
+        reservationTime: '2026-09-13T10:00:00.000Z'
+      })
+    })
+    const reserved = await readJson(reservedRes)
+    expect(reserved).toMatchObject({
+      reservationPhone: '0912345678',
+      reservationTime: '2026-09-13T10:00:00.000Z',
+      guestCount: null,
+      occupiedAt: null
+    })
+
+    const emptyRes = await app.request(`/api/tables/${table.id}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ status: 'empty' })
+    })
+    const empty = await readJson(emptyRes)
+    expect(empty).toMatchObject({
+      guestCount: null,
+      occupiedAt: null,
+      reservationPhone: null,
+      reservationTime: null
+    })
+  })
+
   it('找不到桌位時回傳 404', async () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/tables/does-not-exist/status', {

@@ -3,17 +3,34 @@ import { eq } from 'drizzle-orm'
 import { createTestApp, createTestAppWithDevice } from './helpers/app'
 import {
   categories,
+  invoiceTracks,
   modifierGroups,
   modifierOptions,
   productModifierGroups,
   products
 } from '../src/db/schema'
 import { createTestDb } from './helpers/db'
+import type { TestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 測試只做屬性斷言，不需要完整型別
 async function readJson(res: Response): Promise<any> {
   return res.json()
+}
+
+// seedPromotions() 的字軌固定是 tenantId: null，掛實體租戶（tenantId 不是
+// null）的測試送單需要自己的字軌，否則會在核發發票號碼那步被擋下 400。
+async function seedInvoiceTrackForTenant(db: TestDb, tenantId: string): Promise<void> {
+  await db.insert(invoiceTracks).values({
+    id: `track-${tenantId}`,
+    tenantId,
+    trackCode: 'AA',
+    periodLabel: '測試期別',
+    rangeStart: 1,
+    rangeEnd: 50000000,
+    currentNumber: 0,
+    isActive: true
+  })
 }
 
 const validLine = {
@@ -396,6 +413,157 @@ describe('POST /api/orders', () => {
       body: JSON.stringify(buildRequest({ lines: [] }))
     })
     expect(res.status).toBe(400)
+  })
+})
+
+describe('POST /api/orders（內用結帳自動連動桌況）', () => {
+  it('租戶開啟自動連動（預設值）時，內用結帳會把對應桌位標記使用中、蓋入座時間、帶入人數', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db, 'test-device', {
+      tenantId: 'tenant-1'
+    })
+    await seedInvoiceTrackForTenant(db, 'tenant-1')
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    await app.request('/api/tables', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ tableNumber: 'A1', seats: 4 })
+    })
+
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(buildRequest({ orderChannel: '內用', tableNumber: 'A1', guestCount: 3 }))
+    })
+    expect(res.status).toBe(201)
+
+    const tables = await readJson(
+      await app.request('/api/tables', { headers: { 'X-Device-Token': deviceToken } })
+    )
+    const a1 = tables.find((t: { tableNumber: string }) => t.tableNumber === 'A1')
+    expect(a1.status).toBe('occupied')
+    expect(a1.guestCount).toBe(3)
+    expect(typeof a1.occupiedAt).toBe('string')
+  })
+
+  it('同一桌已經是使用中時，再收到一筆訂單不會重蓋入座時間，但人數會更新成最新一筆', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db, 'test-device', {
+      tenantId: 'tenant-1'
+    })
+    await seedInvoiceTrackForTenant(db, 'tenant-1')
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    await app.request('/api/tables', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ tableNumber: 'A1', seats: 4 })
+    })
+    await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(
+        buildRequest({
+          idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FD1',
+          orderChannel: '內用',
+          tableNumber: 'A1',
+          guestCount: 2
+        })
+      )
+    })
+    const firstTables = await readJson(
+      await app.request('/api/tables', { headers: { 'X-Device-Token': deviceToken } })
+    )
+    const occupiedAtAfterFirst = firstTables.find(
+      (t: { tableNumber: string }) => t.tableNumber === 'A1'
+    ).occupiedAt
+
+    await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(
+        buildRequest({
+          idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FD2',
+          orderChannel: '內用',
+          tableNumber: 'A1',
+          guestCount: 4
+        })
+      )
+    })
+    const secondTables = await readJson(
+      await app.request('/api/tables', { headers: { 'X-Device-Token': deviceToken } })
+    )
+    const a1 = secondTables.find((t: { tableNumber: string }) => t.tableNumber === 'A1')
+    expect(a1.guestCount).toBe(4)
+    expect(a1.occupiedAt).toBe(occupiedAtAfterFirst)
+  })
+
+  it('租戶關閉自動連動時，內用結帳不會改動桌況', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db, 'test-device', {
+      tenantId: 'tenant-1'
+    })
+    await seedInvoiceTrackForTenant(db, 'tenant-1')
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    await app.request('/api/tables', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ tableNumber: 'A1', seats: 4 })
+    })
+    await app.request('/api/tenant-settings', {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ autoOccupyTableOnCheckout: false })
+    })
+
+    await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(buildRequest({ orderChannel: '內用', tableNumber: 'A1', guestCount: 3 }))
+    })
+    const tables = await readJson(
+      await app.request('/api/tables', { headers: { 'X-Device-Token': deviceToken } })
+    )
+    expect(tables.find((t: { tableNumber: string }) => t.tableNumber === 'A1').status).toBe('empty')
+  })
+
+  it('桌況管理裡找不到對應桌號時，結帳照常成功，也不會建立新桌位', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db, 'test-device', {
+      tenantId: 'tenant-1'
+    })
+    await seedInvoiceTrackForTenant(db, 'tenant-1')
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(buildRequest({ orderChannel: '內用', tableNumber: 'Z9' }))
+    })
+    expect(res.status).toBe(201)
+
+    const tables = await readJson(
+      await app.request('/api/tables', { headers: { 'X-Device-Token': deviceToken } })
+    )
+    expect(tables).toHaveLength(0)
   })
 })
 

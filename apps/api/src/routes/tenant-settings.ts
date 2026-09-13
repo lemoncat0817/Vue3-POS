@@ -78,7 +78,8 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
         businessDayStartHour: tenant?.businessDayStartHour ?? DEFAULT_BUSINESS_DAY_START_HOUR,
         pointsPerCurrencyUnit: tenant?.pointsPerCurrencyUnit ?? DEFAULT_POINTS_PER_CURRENCY_UNIT,
         pointsRedemptionRate: tenant?.pointsRedemptionRate ?? DEFAULT_POINTS_REDEMPTION_RATE,
-        pointsExpiryMonths: tenant?.pointsExpiryMonths ?? null
+        pointsExpiryMonths: tenant?.pointsExpiryMonths ?? null,
+        autoOccupyTableOnCheckout: tenant?.autoOccupyTableOnCheckout ?? true
       }),
       200
     )
@@ -98,6 +99,10 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
       input.pointsExpiryMonths !== undefined
     ) {
       const check = await checkCapability(c, 'canManageMembers')
+      if (!check.ok) return c.json({ error: check.message }, check.status)
+    }
+    if (input.autoOccupyTableOnCheckout !== undefined) {
+      const check = await checkCapability(c, 'canManageTables')
       if (!check.ok) return c.json({ error: check.message }, check.status)
     }
 
@@ -122,6 +127,9 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
         }),
         ...(input.pointsExpiryMonths !== undefined && {
           pointsExpiryMonths: input.pointsExpiryMonths
+        }),
+        ...(input.autoOccupyTableOnCheckout !== undefined && {
+          autoOccupyTableOnCheckout: input.autoOccupyTableOnCheckout
         })
       })
       .where(eq(users.id, tenant.id))
@@ -130,7 +138,9 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
         businessDayStartHour: input.businessDayStartHour ?? tenant.businessDayStartHour,
         pointsPerCurrencyUnit: input.pointsPerCurrencyUnit ?? tenant.pointsPerCurrencyUnit,
         pointsRedemptionRate: input.pointsRedemptionRate ?? tenant.pointsRedemptionRate,
-        pointsExpiryMonths: nextPointsExpiryMonths
+        pointsExpiryMonths: nextPointsExpiryMonths,
+        autoOccupyTableOnCheckout:
+          input.autoOccupyTableOnCheckout ?? tenant.autoOccupyTableOnCheckout
       }),
       200
     )

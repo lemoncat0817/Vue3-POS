@@ -347,7 +347,8 @@ describe('跨租戶隔離', () => {
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 10,
       pointsRedemptionRate: 10,
-      pointsExpiryMonths: null
+      pointsExpiryMonths: null,
+      autoOccupyTableOnCheckout: true
     })
   })
 

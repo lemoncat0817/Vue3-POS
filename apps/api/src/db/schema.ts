@@ -52,6 +52,11 @@ export const users = sqliteTable(
     // 就整包歸零。null 代表沒有啟用，點數永久有效（預設行為，向下相容既有
     // 租戶）。惰性判斷、不用排程掃全表，見 db/member-points.ts 的說明。
     pointsExpiryMonths: integer('points_expiry_months'),
+    // 內用結帳時是否自動把對應桌位標記為使用中，見 routes/orders.ts 的
+    // createOrderRoute；預設開啟，店家想全部手動維護桌況可以自行關閉。
+    autoOccupyTableOnCheckout: integer('auto_occupy_table_on_checkout', { mode: 'boolean' })
+      .notNull()
+      .default(true),
     createdAt: text('created_at')
       .notNull()
       .default(sql`(current_timestamp)`)
@@ -563,7 +568,16 @@ export const diningTables = sqliteTable('dining_tables', {
   tableNumber: text('table_number').notNull(),
   seats: integer('seats').notNull(),
   status: text('status').$type<TableStatus>().notNull().default('empty'),
-  note: text('note').notNull().default('')
+  note: text('note').notNull().default(''),
+  // 目前用餐人數，只在 status 為 occupied 時有意義；轉離開 occupied 就清成
+  // null，見 routes/tables.ts 的狀態轉換規則。
+  guestCount: integer('guest_count'),
+  // 轉成 occupied 當下的時間戳，用來在畫面算「已入座多久」；轉離開 occupied
+  // 就清成 null，不是「最後一次入座時間」的歷史紀錄。
+  occupiedAt: text('occupied_at'),
+  // 已預約狀態的聯絡電話／預約時間，只在 status 為 reserved 時有意義。
+  reservationPhone: text('reservation_phone'),
+  reservationTime: text('reservation_time')
 })
 
 export const schema = {
