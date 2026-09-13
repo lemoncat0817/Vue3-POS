@@ -211,11 +211,21 @@
           class="mb-3 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3.5 py-2.5"
         >
           <span class="text-xs font-bold text-surface-600 dark:text-surface-400">目前累積點數</span>
-          <span class="font-mono text-sm font-black text-primary-600 dark:text-primary-400"
-            >{{ detail?.points ?? 0 }} 點</span
-          >
+          <div class="flex items-center gap-2.5">
+            <span class="font-mono text-sm font-black text-primary-600 dark:text-primary-400"
+              >{{ detail?.points ?? 0 }} 點</span
+            >
+            <button
+              type="button"
+              class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
+              :class="{ 'pointer-events-none opacity-40': !canManage }"
+              @click="openAdjustPointsDialog"
+            >
+              調整點數
+            </button>
+          </div>
         </div>
-        <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+        <div class="mb-4 overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
           <table class="w-full text-left text-sm">
             <thead
               class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
@@ -276,6 +286,95 @@
             </tbody>
           </table>
         </div>
+
+        <div class="mb-2 text-xs font-black text-surface-700 dark:text-surface-300">點數異動明細</div>
+        <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+          <table class="w-full text-left text-sm">
+            <thead
+              class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
+            >
+              <tr>
+                <th class="px-3 py-2.5 text-left">時間</th>
+                <th class="px-3 py-2.5 text-left">來源</th>
+                <th class="px-3 py-2.5 text-right">異動點數</th>
+                <th class="px-3 py-2.5 text-left">備註</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+              <tr v-if="!detail || detail.pointsLedger.length === 0">
+                <td colspan="4" class="px-3 py-8 text-center text-surface-400 dark:text-surface-500">
+                  <span class="text-xs font-semibold text-surface-600 dark:text-surface-400"
+                    >還沒有點數異動</span
+                  >
+                </td>
+              </tr>
+              <tr
+                v-for="entry in detail?.pointsLedger ?? []"
+                :key="entry.id"
+                class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
+              >
+                <td class="px-3 py-2.5 text-xs text-surface-500 dark:text-surface-400">
+                  {{ formatDateTime(entry.createdAt) }}
+                </td>
+                <td class="px-3 py-2.5 text-xs text-surface-700 dark:text-surface-300">
+                  {{ pointsLedgerReasonLabel(entry.reason) }}
+                </td>
+                <td
+                  class="px-3 py-2.5 text-right font-mono text-xs font-bold"
+                  :class="entry.delta >= 0 ? 'text-primary-600 dark:text-primary-400' : 'text-danger-600 dark:text-danger-400'"
+                >
+                  {{ entry.delta >= 0 ? '+' : '' }}{{ entry.delta }}
+                </td>
+                <td class="px-3 py-2.5 text-xs text-surface-500 dark:text-surface-400">
+                  {{ entry.note ?? entry.operator ?? '—' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ModalDialog>
+
+      <ModalDialog v-model:open="adjustPointsDialog" title="調整點數">
+        <Form
+          v-slot="{ isSubmitting }"
+          :validation-schema="toTypedSchema(adjustPointsSchema)"
+          :initial-values="{ delta: '', reason: '' }"
+          @submit="onSubmitAdjustPoints"
+        >
+          <p class="mb-3 text-xs text-surface-500 dark:text-surface-400">
+            {{ detail?.name }} 目前 {{ detail?.points ?? 0 }} 點。加點請輸入正數，扣點請輸入負數（例如
+            -20），扣點不能讓點數變成負值。
+          </p>
+          <FormField
+            name="delta"
+            label="調整量"
+            type="number"
+            :disabled="isSubmitting"
+            placeholder="例如: 50 或 -20"
+          />
+          <FormField
+            name="reason"
+            label="調整原因"
+            :disabled="isSubmitting"
+            placeholder="例如: 生日活動加點、客訴補償"
+          />
+          <div class="mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              class="pos-btn pos-btn-secondary px-4 py-2 text-sm font-bold"
+              @click="adjustPointsDialog = false"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              :disabled="isSubmitting"
+              class="pos-btn pos-btn-primary px-4 py-2 text-sm font-bold"
+            >
+              確認調整
+            </button>
+          </div>
+        </Form>
       </ModalDialog>
 
       <ModalDialog v-model:open="pointsSettingDialog" title="點數設定">
@@ -332,12 +431,13 @@ import ModalDialog from '@/components/ui/ModalDialog.vue'
 import FormField from '@/components/ui/FormField.vue'
 import TablePagination from '@/components/ui/TablePagination.vue'
 import { useLoginStore } from '@/stores/login'
-import { hasCapability } from '@/utils/selection'
+import { fromSelection, hasCapability } from '@/utils/selection'
 import { formatDateOnly, formatDateTime } from '@/utils/time'
 import { ApiError, apiErrorMessage as sharedApiErrorMessage } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import {
+  adjustMemberPoints,
   createMember,
   deleteMember,
   fetchMemberDetail,
@@ -345,7 +445,7 @@ import {
   updateMember
 } from '@/api/members'
 import { fetchTenantSettings, updateTenantSettings } from '@/api/tenant-settings'
-import type { Member, MemberDetail } from '@pos/contract'
+import type { Member, MemberDetail, MemberPointLedgerReason } from '@pos/contract'
 
 const loginStore = useLoginStore()
 const canManage = () => hasCapability(loginStore.userInfo, 'canManageMembers')
@@ -452,6 +552,48 @@ async function openDetail(member: Member) {
   try {
     detail.value = await fetchMemberDetail(member.id)
     detailDialog.value = true
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
+}
+
+const POINTS_LEDGER_REASON_LABELS: Record<MemberPointLedgerReason, string> = {
+  order_accrual: '消費累加',
+  refund_reversal: '退款收回',
+  void_reversal: '作廢收回',
+  restore_award: '撤銷作廢退還',
+  manual_adjustment: '手動調整'
+}
+function pointsLedgerReasonLabel(reason: MemberPointLedgerReason): string {
+  return POINTS_LEDGER_REASON_LABELS[reason]
+}
+
+const adjustPointsDialog = ref(false)
+const adjustPointsSchema = z.object({
+  delta: z.coerce.number().int().refine((value) => value !== 0, '調整量不能是 0'),
+  reason: z.string().trim().min(1, '請說明調整原因')
+})
+function openAdjustPointsDialog() {
+  if (!canManage() || !detail.value) return
+  adjustPointsDialog.value = true
+}
+async function onSubmitAdjustPoints(values: Record<string, unknown>) {
+  if (!detail.value) return
+  const input = values as { delta: number; reason: string }
+  const operatorName = fromSelection(loginStore.userInfo)
+  try {
+    const updated = await adjustMemberPoints(detail.value.id, {
+      delta: input.delta,
+      reason: input.reason,
+      operator: operatorName ? `${operatorName.jobTitle} - ${operatorName.name}` : '未知操作員'
+    })
+    // 調整成功後整份重新拉最新的消費紀錄＋異動明細，不手動拼湊——後端才是
+    // 唯一可信來源，尤其異動明細的排序、內容都是伺服端組出來的。
+    detail.value = await fetchMemberDetail(updated.id)
+    const target = members.value.find((item) => item.id === updated.id)
+    if (target) target.points = updated.points
+    adjustPointsDialog.value = false
+    showToast('點數調整成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }

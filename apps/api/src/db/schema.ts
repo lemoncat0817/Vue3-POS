@@ -13,6 +13,7 @@ import type {
   AuthorityKey,
   InvoiceCarrierType,
   InvoiceStatus,
+  MemberPointLedgerReason,
   ModifierSelectionType,
   OrderChannel,
   OrderStatus,
@@ -319,15 +320,51 @@ export const members = sqliteTable(
     tenantId: text('tenant_id').references(() => users.id),
     name: text('name').notNull(),
     phone: text('phone').notNull(),
-    // 訂單完成時依應付金額累加，只存目前累積值，不記逐筆異動明細。
+    // 目前累積值，逐筆異動明細見下面的 memberPointLedger。
     points: integer('points').notNull().default(0),
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    // 軟刪除：有值代表已刪除。改用軟刪除是因為 member_point_ledger、orders
+    // 都有外鍵指到這裡——硬刪除得先斷開所有關聯（例如把 orders.memberId
+    // 設回 null），異動明細更是沒辦法斷開（memberId 是 NOT NULL），會直接
+    // 撞上外鍵約束。軟刪除後 orders.memberId 不用再改寫，消費歷史永遠留著
+    // 正確的會員關聯；手機號碼欄位不會因軟刪除而釋出重複使用，見下面
+    // members_tenant_phone_idx 的說明。
+    deletedAt: text('deleted_at')
+  },
+  // (tenantId, phone) 複合唯一索引，理由同 roles_tenant_name_idx——手機號碼
+  // 的唯一性只需要在同一租戶內成立。刻意不排除已軟刪除的列（不是部分索引），
+  // 代價是被刪除會員的手機號碼無法給新會員繼續使用；換成部分索引雖然能解決，
+  // 但目前沒有實際需求，先用簡單、不會讓 unique 約束跟應用層檢查邏輯兜不
+  // 起來的版本。
+  (table) => [uniqueIndex('members_tenant_phone_idx').on(table.tenantId, table.phone)]
+)
+
+// 會員點數異動明細——members.points 只存目前餘額，每一筆加點/扣點的來源
+// 記在這裡，供稽核、對帳、日後爭議查詢。reason 是封閉集合（見 @pos/contract
+// 的 memberPointLedgerReasonSchema），orderId 只有訂單相關的異動才有值。
+export const memberPointLedger = sqliteTable(
+  'member_point_ledger',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id').references(() => users.id),
+    memberId: text('member_id')
+      .notNull()
+      .references(() => members.id),
+    delta: integer('delta').notNull(),
+    reason: text('reason').$type<MemberPointLedgerReason>().notNull(),
+    orderId: text('order_id').references(() => orders.orderId),
+    // 手動調整才有操作人／備註；訂單相關的異動由訂單本身的 staff／operator 交代來源。
+    operator: text('operator'),
+    note: text('note'),
     createdAt: text('created_at')
       .notNull()
       .default(sql`(current_timestamp)`)
   },
-  // (tenantId, phone) 複合唯一索引，理由同 roles_tenant_name_idx——手機號碼
-  // 的唯一性只需要在同一租戶內成立。
-  (table) => [uniqueIndex('members_tenant_phone_idx').on(table.tenantId, table.phone)]
+  (table) => [
+    index('member_point_ledger_tenant_member_idx').on(table.tenantId, table.memberId)
+  ]
 )
 
 // 訂單序號的原子計數器。用 SQLite 的 `INSERT ... ON CONFLICT DO UPDATE
@@ -527,6 +564,7 @@ export const schema = {
   rateLimitCounters,
   auditLogs,
   members,
+  memberPointLedger,
   invoiceTracks,
   diningTables
 }

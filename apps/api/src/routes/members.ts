@@ -1,12 +1,13 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 import {
   createMemberRequestSchema,
+  manualPointAdjustmentRequestSchema,
   memberDetailSchema,
   memberSchema,
   updateMemberRequestSchema
 } from '@pos/contract'
-import { members, orders } from '../db/schema'
+import { members, memberPointLedger, orders } from '../db/schema'
 import { checkCapability, requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import { tenantFilter } from '../db/tenant-scope'
@@ -126,6 +127,31 @@ const deleteMemberRoute = createRoute({
   }
 })
 
+// 手動調整點數：客訴補償、活動加點等沒有對應訂單的異動，跟訂單自動累加/
+// 收回一樣走 member_point_ledger，只是 reason 固定是 manual_adjustment、
+// operator／note 有值。
+const createPointsAdjustmentRoute = createRoute({
+  method: 'post',
+  path: '/{id}/points-adjustments',
+  middleware: [requireDeviceToken, requireCapability('canManageMembers')] as const,
+  request: {
+    params: z.object({ id: z.string().min(1) }),
+    body: { content: { 'application/json': { schema: manualPointAdjustmentRequestSchema } } }
+  },
+  responses: {
+    200: { description: '調整成功，回傳更新後的會員資料', content: { 'application/json': { schema: memberSchema } } },
+    400: {
+      description: '扣點會讓點數變成負值',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    404: { description: '找不到這個會員', content: { 'application/json': { schema: errorSchema } } }
+  }
+})
+
 export const memberRoutes = new OpenAPIHono<AppEnv>()
   .openapi(listMembersRoute, async (c) => {
     const { phone } = c.req.valid('query')
@@ -136,7 +162,9 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     }
     const db = c.get('db')
     const tenantId = c.get('tenantId')
-    const tenantCond = tenantFilter(members.tenantId, tenantId)
+    // 軟刪除的會員一律排除：整批清單不該看到、結帳查會員也不該查得到、
+    // 更不該讓已刪除的會員被掛到新訂單上。
+    const tenantCond = and(tenantFilter(members.tenantId, tenantId), isNull(members.deletedAt))
     const rows = await db
       .select()
       .from(members)
@@ -148,6 +176,10 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     const input = c.req.valid('json')
     const db = c.get('db')
     const tenantId = c.get('tenantId')
+    // 這裡故意不排除已軟刪除的會員：members_tenant_phone_idx 不是部分索引，
+    // 被刪除會員的手機號碼在資料庫層仍然佔用著，如果這裡排除掉、判斷「可以
+    // 用」，實際 INSERT 還是會撞唯一索引丟出沒處理過的錯誤，體驗比清楚的
+    // 409 還差。
     const existing = await db
       .select()
       .from(members)
@@ -159,7 +191,8 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       tenantId,
       ...input,
       points: 0,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      deletedAt: null
     }
     await db.insert(members).values(newMember)
     return c.json(newMember, 201)
@@ -171,7 +204,9 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     const member = await db
       .select()
       .from(members)
-      .where(and(eq(members.id, id), tenantFilter(members.tenantId, tenantId)))
+      .where(
+        and(eq(members.id, id), tenantFilter(members.tenantId, tenantId), isNull(members.deletedAt))
+      )
       .get()
     if (!member) return c.json({ error: '找不到這個會員' }, 404)
     const memberOrders = await db
@@ -186,7 +221,21 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       .where(eq(orders.memberId, id))
       .orderBy(desc(orders.orderTime))
       .all()
-    return c.json({ ...member, orders: memberOrders }, 200)
+    const pointsLedger = await db
+      .select({
+        id: memberPointLedger.id,
+        delta: memberPointLedger.delta,
+        reason: memberPointLedger.reason,
+        orderId: memberPointLedger.orderId,
+        operator: memberPointLedger.operator,
+        note: memberPointLedger.note,
+        createdAt: memberPointLedger.createdAt
+      })
+      .from(memberPointLedger)
+      .where(eq(memberPointLedger.memberId, id))
+      .orderBy(desc(memberPointLedger.createdAt))
+      .all()
+    return c.json({ ...member, orders: memberOrders, pointsLedger }, 200)
   })
   .openapi(updateMemberRoute, async (c) => {
     const { id } = c.req.valid('param')
@@ -196,7 +245,9 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     const existing = await db
       .select()
       .from(members)
-      .where(and(eq(members.id, id), tenantFilter(members.tenantId, tenantId)))
+      .where(
+        and(eq(members.id, id), tenantFilter(members.tenantId, tenantId), isNull(members.deletedAt))
+      )
       .get()
     if (!existing) return c.json({ error: '找不到這個會員' }, 404)
     const phoneTaken = await db
@@ -216,11 +267,53 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     const existing = await db
       .select()
       .from(members)
-      .where(and(eq(members.id, id), tenantFilter(members.tenantId, tenantId)))
+      .where(
+        and(eq(members.id, id), tenantFilter(members.tenantId, tenantId), isNull(members.deletedAt))
+      )
       .get()
     if (!existing) return c.json({ error: '找不到這個會員' }, 404)
-    // 訂單為交易憑證需保留，刪除會員時僅解除關聯（memberId 設為 null）。
-    await db.update(orders).set({ memberId: null }).where(eq(orders.memberId, id))
-    await db.delete(members).where(eq(members.id, id))
+    // 軟刪除：orders.memberId、member_point_ledger.memberId 都不用再改寫，
+    // 消費歷史與點數異動明細永遠留著正確的會員關聯，供之後稽核或申訴查證。
+    await db
+      .update(members)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(members.id, id))
     return c.body(null, 204)
+  })
+  .openapi(createPointsAdjustmentRoute, async (c) => {
+    const { id } = c.req.valid('param')
+    const input = c.req.valid('json')
+    const db = c.get('db')
+    const tenantId = c.get('tenantId')
+    const existing = await db
+      .select()
+      .from(members)
+      .where(
+        and(eq(members.id, id), tenantFilter(members.tenantId, tenantId), isNull(members.deletedAt))
+      )
+      .get()
+    if (!existing) return c.json({ error: '找不到這個會員' }, 404)
+    if (existing.points + input.delta < 0) {
+      return c.json(
+        { error: `扣點會讓點數變成負值（目前 ${existing.points} 點，欲扣 ${-input.delta} 點）` },
+        400
+      )
+    }
+    const nextPoints = existing.points + input.delta
+    await db
+      .update(members)
+      .set({ points: sql`${members.points} + ${input.delta}` })
+      .where(and(eq(members.id, id), tenantFilter(members.tenantId, tenantId)))
+    await db.insert(memberPointLedger).values({
+      id: crypto.randomUUID(),
+      tenantId,
+      memberId: id,
+      delta: input.delta,
+      reason: 'manual_adjustment',
+      orderId: null,
+      operator: input.operator,
+      note: input.reason,
+      createdAt: new Date().toISOString()
+    })
+    return c.json({ ...existing, points: nextPoints }, 200)
   })

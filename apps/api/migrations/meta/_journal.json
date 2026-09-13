@@ -253,6 +253,13 @@
       "when": 1789272129098,
       "tag": "0035_backfill_device_manage_capability",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1789274859492,
+      "tag": "0036_add_member_point_ledger_and_soft_delete",
+      "breakpoints": true
     }
   ]
 }

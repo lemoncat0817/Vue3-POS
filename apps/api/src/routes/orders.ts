@@ -12,6 +12,7 @@ import {
   type InvoiceCarrier,
   type InvoiceStatus,
   type ListOrdersQuery,
+  type MemberPointLedgerReason,
   type OrderLineInput,
   type TenderInput
 } from '@pos/contract'
@@ -25,6 +26,7 @@ import {
 } from '@pos/domain'
 import {
   members,
+  memberPointLedger,
   modifierOptions,
   orderCoupons,
   orderLines,
@@ -454,12 +456,17 @@ async function resolvePointsPerCurrencyUnit(db: AnyDb, tenantId: string | null):
  * 後寫入的那次會蓋掉前一次的中間結果，導致點數少算。delta 可正可負；
  * 減少時用 MAX(0, ...) 防止扣出負值（目前還沒有點數兌換功能，理論上不會
  * 發生，但退款/作廢的收回邏輯本來就該對這種情況防禦）。
+ *
+ * 同時寫一筆 member_point_ledger，記錄這筆異動的來源——members.points 只有
+ * 目前餘額，稽核／對帳／顧客糾紛都得靠這份逐筆明細，不能只看最終數字。
  */
 async function adjustMemberPoints(
   db: AnyDb,
   tenantId: string | null,
   memberId: string | null,
-  delta: number
+  delta: number,
+  reason: MemberPointLedgerReason,
+  orderId: string | null = null
 ): Promise<void> {
   if (!memberId || delta === 0) return
   const nextPoints =
@@ -468,6 +475,17 @@ async function adjustMemberPoints(
     .update(members)
     .set({ points: nextPoints })
     .where(and(eq(members.id, memberId), tenantFilter(members.tenantId, tenantId)))
+  await db.insert(memberPointLedger).values({
+    id: crypto.randomUUID(),
+    tenantId,
+    memberId,
+    delta,
+    reason,
+    orderId,
+    operator: null,
+    note: null,
+    createdAt: new Date().toISOString()
+  })
 }
 
 /**
@@ -693,7 +711,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     // 只在真的新建立訂單時扣庫存、累加點數；idempotencyKey 命中走上面
     // 提早 return 的路徑，不會重複執行。
     await deductStock(db, tenantId, input.lines)
-    await adjustMemberPoints(db, tenantId, memberId, pointsEarned)
+    await adjustMemberPoints(db, tenantId, memberId, pointsEarned, 'order_accrual', orderId)
 
     const insertedLines = await db
       .select()
@@ -902,9 +920,9 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     if (existing.memberId && orderStatus !== existing.orderStatus) {
       const remaining = remainingReversiblePoints(existing.pointsEarned, existing.orderPaymentPrice, refunds)
       if (orderStatus === '已取消') {
-        await adjustMemberPoints(db, tenantId, existing.memberId, -remaining)
+        await adjustMemberPoints(db, tenantId, existing.memberId, -remaining, 'void_reversal', orderId)
       } else if (existing.orderStatus === '已取消') {
-        await adjustMemberPoints(db, tenantId, existing.memberId, remaining)
+        await adjustMemberPoints(db, tenantId, existing.memberId, remaining, 'restore_award', orderId)
       }
     }
 
@@ -988,7 +1006,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
         existing.orderPaymentPrice,
         existingRefunds.reduce((sum, refund) => sum + refund.amount, 0) + input.amount
       )
-      await adjustMemberPoints(db, tenantId, existing.memberId, before - after)
+      await adjustMemberPoints(db, tenantId, existing.memberId, before - after, 'refund_reversal', orderId)
     }
 
     const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()

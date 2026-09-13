@@ -168,7 +168,7 @@ describe('GET /api/members/:id、PUT、DELETE', () => {
     ).toBe(404)
   })
 
-  it('刪除有消費紀錄的會員：訂單本身保留，只是解除會員關聯，不是被 FK 約束擋下來', async () => {
+  it('刪除有消費紀錄的會員是軟刪除：訂單與點數異動明細都保留正確的會員關聯', async () => {
     const db = createTestDb()
     await seedPromotions(db)
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
@@ -229,7 +229,40 @@ describe('GET /api/members/:id、PUT、DELETE', () => {
       (item: { orderId: string }) => item.orderId === order.orderId
     )
     expect(persistedOrder).toBeDefined()
-    expect(persistedOrder.memberId).toBeNull()
+    // 軟刪除不再需要斷開關聯，訂單的 memberId 維持指向那個（已刪除的）會員。
+    expect(persistedOrder.memberId).toBe(member.id)
+
+    // 刪除後這個會員在一般查詢裡形同不存在：查不到、也搜尋不到。
+    expect((await app.request(`/api/members/${member.id}`, { headers })).status).toBe(404)
+    const list2 = await readJson(await app.request('/api/members', { headers }))
+    expect(list2.find((item: { id: string }) => item.id === member.id)).toBeUndefined()
+  })
+
+  it('刪除找不到會員時回傳 404；重複刪除同一個會員第二次也回傳 404', async () => {
+    const db = createTestDb()
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0955555555' })
+      })
+    )
+    const first = await app.request(`/api/members/${member.id}`, {
+      method: 'DELETE',
+      headers
+    })
+    expect(first.status).toBe(204)
+    const second = await app.request(`/api/members/${member.id}`, {
+      method: 'DELETE',
+      headers
+    })
+    expect(second.status).toBe(404)
   })
 })
 
@@ -408,6 +441,19 @@ describe('退款／作廢會收回會員點數', () => {
 
     const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
     expect(detail.points).toBe(8)
+    // 消費當下的 order_accrual、退款當下的 refund_reversal 都留在異動明細裡，
+    // 最新的排最前面。
+    expect(detail.pointsLedger).toHaveLength(2)
+    expect(detail.pointsLedger[0]).toMatchObject({
+      delta: -8,
+      reason: 'refund_reversal',
+      orderId: order.orderId
+    })
+    expect(detail.pointsLedger[1]).toMatchObject({
+      delta: 16,
+      reason: 'order_accrual',
+      orderId: order.orderId
+    })
   })
 
   it('整單作廢收回全部點數；撤銷作廢（改回已完成）原數退還', async () => {
@@ -422,6 +468,7 @@ describe('退款／作廢會收回會員點數', () => {
     expect(voidRes.status).toBe(200)
     const afterVoid = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
     expect(afterVoid.points).toBe(0)
+    expect(afterVoid.pointsLedger[0]).toMatchObject({ delta: -16, reason: 'void_reversal' })
 
     const restoreRes = await app.request(`/api/orders/${order.orderId}/status`, {
       method: 'PATCH',
@@ -431,6 +478,7 @@ describe('退款／作廢會收回會員點數', () => {
     expect(restoreRes.status).toBe(200)
     const afterRestore = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
     expect(afterRestore.points).toBe(16)
+    expect(afterRestore.pointsLedger[0]).toMatchObject({ delta: 16, reason: 'restore_award' })
   })
 
   it('先部分退款、再整單作廢，只收回「還沒被退款收回」的剩餘點數', async () => {
@@ -531,5 +579,114 @@ describe('會員點數比例可由租戶自訂（PUT /api/tenant-settings）', (
     // 應付金額 160 元，每 5 元 1 點 = 32 點（原本每 10 元 1 點只會是 16 點）。
     const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
     expect(detail.points).toBe(32)
+  })
+})
+
+/** 手動調整點數：客訴補償、活動加點等沒有對應訂單的異動。 */
+describe('POST /api/members/:id/points-adjustments（手動調整點數）', () => {
+  it('沒有裝置憑證時拒絕，回傳 401', async () => {
+    const app = createTestApp(createTestDb())
+    const res = await app.request('/api/members/does-not-exist/points-adjustments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ delta: 10, reason: '活動加點', operator: '店長 - Lemon' })
+    })
+    expect(res.status).toBe(401)
+  })
+
+  it('找不到會員時回傳 404', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/members/does-not-exist/points-adjustments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ delta: 10, reason: '活動加點', operator: '店長 - Lemon' })
+    })
+    expect(res.status).toBe(404)
+  })
+
+  it('加點成功：點數增加、寫入一筆 manual_adjustment 異動明細（含操作人與原因）', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0911222333' })
+      })
+    )
+    const res = await app.request(`/api/members/${member.id}/points-adjustments`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ delta: 50, reason: '生日活動加點', operator: '店長 - Lemon' })
+    })
+    expect(res.status).toBe(200)
+    expect((await readJson(res)).points).toBe(50)
+
+    const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(detail.points).toBe(50)
+    expect(detail.pointsLedger).toHaveLength(1)
+    expect(detail.pointsLedger[0]).toMatchObject({
+      delta: 50,
+      reason: 'manual_adjustment',
+      orderId: null,
+      operator: '店長 - Lemon',
+      note: '生日活動加點'
+    })
+  })
+
+  it('扣點超過目前點數時拒絕，回傳 400，點數與異動明細都不受影響', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0911222334' })
+      })
+    )
+    const res = await app.request(`/api/members/${member.id}/points-adjustments`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ delta: -10, reason: '扣錯', operator: '店長 - Lemon' })
+    })
+    expect(res.status).toBe(400)
+
+    const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(detail.points).toBe(0)
+    expect(detail.pointsLedger).toHaveLength(0)
+  })
+
+  it('調整量是 0 時，請求本身就會被 schema 擋下來，回傳 400', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0911222335' })
+      })
+    )
+    const res = await app.request(`/api/members/${member.id}/points-adjustments`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ delta: 0, reason: '測試', operator: '店長 - Lemon' })
+    })
+    expect(res.status).toBe(400)
   })
 })

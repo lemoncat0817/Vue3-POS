@@ -2,6 +2,7 @@ import {
   memberDetailSchema,
   memberSchema,
   type CreateMemberRequest,
+  type ManualPointAdjustmentRequest,
   type Member,
   type MemberDetail,
   type UpdateMemberRequest
@@ -44,4 +45,16 @@ export async function updateMember(id: string, input: UpdateMemberRequest): Prom
 
 export async function deleteMember(id: string): Promise<void> {
   await fetchJson<null>(`/api/members/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+/** 手動調整點數（客訴補償、活動加點）。 */
+export async function adjustMemberPoints(
+  id: string,
+  input: ManualPointAdjustmentRequest
+): Promise<Member> {
+  const body = await fetchJson<unknown>(`/api/members/${encodeURIComponent(id)}/points-adjustments`, {
+    method: 'POST',
+    body: JSON.stringify(input)
+  })
+  return memberSchema.parse(body)
 }

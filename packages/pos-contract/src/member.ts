@@ -30,8 +30,43 @@ export const memberOrderSummarySchema = z.object({
 })
 export type MemberOrderSummary = z.infer<typeof memberOrderSummarySchema>
 
-/** 會員詳細資料＋消費紀錄，GET /api/members/:id 的回應形狀。 */
+/**
+ * 會員點數異動明細的來源分類。order_accrual／refund_reversal／void_reversal／
+ * restore_award 由訂單流程自動寫入（見 apps/api/src/routes/orders.ts），
+ * manual_adjustment 是後台手動加點/扣點（見 POST /api/members/:id/points-adjustments）。
+ */
+export const memberPointLedgerReasonSchema = z.enum([
+  'order_accrual',
+  'refund_reversal',
+  'void_reversal',
+  'restore_award',
+  'manual_adjustment'
+])
+export type MemberPointLedgerReason = z.infer<typeof memberPointLedgerReasonSchema>
+
+/** 單筆點數異動紀錄。delta 可正可負；orderId 只有訂單相關的異動才有值。 */
+export const memberPointLedgerEntrySchema = z.object({
+  id: z.string().min(1),
+  delta: z.number().int(),
+  reason: memberPointLedgerReasonSchema,
+  orderId: z.string().nullable(),
+  operator: z.string().nullable(),
+  note: z.string().nullable(),
+  createdAt: z.string()
+})
+export type MemberPointLedgerEntry = z.infer<typeof memberPointLedgerEntrySchema>
+
+/** 手動調整點數的請求——常見於客訴補償、活動加點。delta 不能是 0（沒有意義的調整）。 */
+export const manualPointAdjustmentRequestSchema = z.object({
+  delta: z.number().int().refine((value) => value !== 0, '調整量不能是 0'),
+  reason: z.string().trim().min(1, '請說明調整原因'),
+  operator: z.string().trim().min(1)
+})
+export type ManualPointAdjustmentRequest = z.infer<typeof manualPointAdjustmentRequestSchema>
+
+/** 會員詳細資料＋消費紀錄＋點數異動明細，GET /api/members/:id 的回應形狀。 */
 export const memberDetailSchema = memberSchema.extend({
-  orders: z.array(memberOrderSummarySchema)
+  orders: z.array(memberOrderSummarySchema),
+  pointsLedger: z.array(memberPointLedgerEntrySchema)
 })
 export type MemberDetail = z.infer<typeof memberDetailSchema>
