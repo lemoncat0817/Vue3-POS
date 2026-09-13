@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { memberTierStatusSchema } from './member-tier'
 import { createPaginatedResponseSchema, paginationQuerySchema } from './pagination'
 
 /** 台灣手機號碼格式：09 開頭共 10 碼數字。結帳查會員、簡訊發送都靠這個格式成立。 */
@@ -19,7 +20,10 @@ export const memberSchema = z.object({
   phone: z.string().min(1),
   points: z.number().int().nonnegative(),
   birthday: z.string().nullable(),
-  createdAt: z.string()
+  createdAt: z.string(),
+  // 只有列表／詳細資料會即時算好附上；建立/更新/調整點數的回應不含這欄，
+  // 那幾個場景用不到、算了也是浪費一次查詢。
+  tierStatus: memberTierStatusSchema.optional()
 })
 export type Member = z.infer<typeof memberSchema>
 

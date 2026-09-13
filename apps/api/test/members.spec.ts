@@ -907,3 +907,143 @@ describe('會員生日與本月壽星名單', () => {
     expect(res.status).toBe(403)
   })
 })
+
+/** 會員分級：依累積消費金額即時比對業主自訂門檻，見 routes/members.ts 的 pickTier()。 */
+describe('會員清單／詳細資料附上目前分級（tierStatus）', () => {
+  const validLine = {
+    name: '楊枝甘露2.0',
+    price: 80,
+    count: 1,
+    addList: '無添加配料' as const,
+    addListPrice: 0,
+    freeDiscount: false,
+    quickDiscountId: null
+  }
+
+  async function placeOrder(
+    app: ReturnType<typeof createTestApp>,
+    headers: Record<string, string>,
+    idempotencyKey: string,
+    memberId: string,
+    amount: number
+  ) {
+    await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        idempotencyKey,
+        businessDate: '20240610',
+        staff: '店長 - Lemon',
+        lines: [{ ...validLine, price: amount }],
+        bagCount: 0,
+        tenders: [{ method: '現金', amount }],
+        appliedCoupon: { type: 'none' },
+        orderChannel: '外帶',
+        invoiceCarrier: { type: '無載具' },
+        memberId
+      })
+    })
+  }
+
+  it('累積消費達到門檻時升級；沒有任何門檻達標時 tier 是 null', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    await app.request('/api/member-tiers', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ name: '銀卡會員', minSpend: 100 })
+    })
+    await app.request('/api/member-tiers', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ name: '金卡會員', minSpend: 500 })
+    })
+
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0912345678' })
+      })
+    )
+
+    // 還沒有任何消費：沒有門檻達標。
+    const beforeDetail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(beforeDetail.tierStatus).toEqual({ tier: null, lifetimeSpend: 0 })
+
+    // 消費 200 元，達到銀卡門檻（100），還沒到金卡（500）。
+    await placeOrder(app, headers, '01ARZ3NDEKTSV4RRFFQ69G5FD1', member.id, 200)
+    const afterSilver = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(afterSilver.tierStatus).toMatchObject({
+      tier: { name: '銀卡會員', minSpend: 100 },
+      lifetimeSpend: 200
+    })
+
+    // 再消費 400 元，累積 600 元，達到金卡門檻（500），取最高一級。
+    await placeOrder(app, headers, '01ARZ3NDEKTSV4RRFFQ69G5FD2', member.id, 400)
+    const afterGold = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(afterGold.tierStatus).toMatchObject({
+      tier: { name: '金卡會員', minSpend: 500 },
+      lifetimeSpend: 600
+    })
+
+    // 整批清單（GET /api/members，無 phone）也附上同樣的 tierStatus。
+    const list = await readJson(await app.request('/api/members', { headers }))
+    const listed = list.items.find((item: { id: string }) => item.id === member.id)
+    expect(listed.tierStatus).toMatchObject({ tier: { name: '金卡會員' }, lifetimeSpend: 600 })
+  })
+
+  it('作廢的訂單不計入累積消費', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    await app.request('/api/member-tiers', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ name: '銀卡會員', minSpend: 100 })
+    })
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0912345678' })
+      })
+    )
+    const orderRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FD3',
+        businessDate: '20240610',
+        staff: '店長 - Lemon',
+        lines: [validLine],
+        bagCount: 0,
+        tenders: [{ method: '現金', amount: 80 }],
+        appliedCoupon: { type: 'none' },
+        orderChannel: '外帶',
+        invoiceCarrier: { type: '無載具' },
+        memberId: member.id
+      })
+    })
+    const order = await readJson(orderRes)
+    await app.request(`/api/orders/${order.orderId}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '測試作廢' })
+    })
+
+    const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(detail.tierStatus).toEqual({ tier: null, lifetimeSpend: 0 })
+  })
+})

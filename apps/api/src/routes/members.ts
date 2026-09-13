@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { and, desc, eq, isNull, like, or, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, like, ne, or, sql } from 'drizzle-orm'
 import {
   createMemberRequestSchema,
   listMembersQuerySchema,
@@ -10,13 +10,79 @@ import {
   memberDetailSchema,
   memberListResponseSchema,
   memberSchema,
-  updateMemberRequestSchema
+  updateMemberRequestSchema,
+  type Member,
+  type MemberTier,
+  type MemberTierStatus
 } from '@pos/contract'
-import { members, memberPointLedger, orders } from '../db/schema'
+import { members, memberPointLedger, memberTiers, orders } from '../db/schema'
 import { checkCapability, requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import type { AnyDb } from '../db/types'
 import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
+
+/**
+ * 依「累積消費金額（排除已取消訂單）」比對業主自訂的分級門檻，取符合門檻中
+ * 最高的一級——會員分級不存在會員身上，每次查詢即時算出來，見
+ * db/schema.ts 的 memberTiers 說明。
+ */
+function pickTier(tiers: MemberTier[], lifetimeSpend: number): MemberTier | null {
+  const qualified = tiers
+    .filter((tier) => lifetimeSpend >= tier.minSpend)
+    .sort((a, b) => b.minSpend - a.minSpend)
+  return qualified[0] ?? null
+}
+
+/** 一次查出多個會員各自的累積消費金額，避免在清單頁對每一列各發一次查詢（N+1）。 */
+async function resolveLifetimeSpends(
+  db: AnyDb,
+  memberIds: string[]
+): Promise<Map<string, number>> {
+  if (memberIds.length === 0) return new Map()
+  const rows = await db
+    .select({ memberId: orders.memberId, total: sql<number>`sum(${orders.orderPaymentPrice})` })
+    .from(orders)
+    .where(and(inArray(orders.memberId, memberIds), ne(orders.orderStatus, '已取消')))
+    .groupBy(orders.memberId)
+    .all()
+  const map = new Map<string, number>()
+  for (const row of rows) {
+    if (row.memberId) map.set(row.memberId, row.total)
+  }
+  return map
+}
+
+/** 把 Member 列補上 tierStatus。多筆會員（清單頁）跟單筆（詳細資料）共用同一套邏輯。 */
+async function attachTierStatus<T extends Member>(
+  db: AnyDb,
+  tenantId: string | null,
+  rows: T[]
+): Promise<(T & { tierStatus: MemberTierStatus })[]> {
+  const tiers = await db
+    .select()
+    .from(memberTiers)
+    .where(tenantFilter(memberTiers.tenantId, tenantId))
+    .all()
+  const spendByMember = await resolveLifetimeSpends(
+    db,
+    rows.map((row) => row.id)
+  )
+  return rows.map((row) => {
+    const lifetimeSpend = spendByMember.get(row.id) ?? 0
+    return { ...row, tierStatus: { tier: pickTier(tiers, lifetimeSpend), lifetimeSpend } }
+  })
+}
+
+/** attachTierStatus() 的單筆版本——固定傳一筆進去、拿一筆出來，不必在呼叫端處理陣列可能是空的情形。 */
+async function attachTierStatusOne<T extends Member>(
+  db: AnyDb,
+  tenantId: string | null,
+  row: T
+): Promise<T & { tierStatus: MemberTierStatus }> {
+  const [withTier] = await attachTierStatus(db, tenantId, [row])
+  return withTier as T & { tierStatus: MemberTierStatus }
+}
 
 /**
  * 會員管理 API：提供會員 CRUD 與消費紀錄查詢。
@@ -226,9 +292,10 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
         .all()
     ])
     const totalCount = totalRow?.count ?? 0
+    const itemsWithTier = await attachTierStatus(db, tenantId, rows)
     return c.json(
       {
-        items: rows,
+        items: itemsWithTier,
         pagination: { page, pageSize, totalCount, totalPages: Math.max(1, Math.ceil(totalCount / pageSize)) }
       },
       200
@@ -335,9 +402,10 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       .where(eq(memberPointLedger.memberId, id))
       .orderBy(desc(memberPointLedger.createdAt))
       .all()
+    const memberWithTier = await attachTierStatusOne(db, tenantId, member)
     return c.json(
       {
-        ...member,
+        ...memberWithTier,
         orders: {
           items: memberOrders,
           pagination: {

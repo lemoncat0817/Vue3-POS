@@ -9,6 +9,7 @@ import { catalogRoutes } from './routes/catalog'
 import { deviceRoutes } from './routes/devices'
 import { invoiceRoutes } from './routes/invoices'
 import { memberRoutes } from './routes/members'
+import { memberTierRoutes } from './routes/member-tiers'
 import { createOAuthRoutes, type OAuthConfig } from './routes/oauth'
 import { orderRoutes } from './routes/orders'
 import { paymentMethodRoutes } from './routes/payment-methods'
@@ -76,6 +77,7 @@ export function createApp(
   app.route('/api/devices', deviceRoutes)
   app.route('/api/invoices', invoiceRoutes)
   app.route('/api/members', memberRoutes)
+  app.route('/api/member-tiers', memberTierRoutes)
   app.route('/api/orders', orderRoutes)
   app.route('/api/payment-methods', paymentMethodRoutes)
   app.route('/api/promotions', promotionRoutes)

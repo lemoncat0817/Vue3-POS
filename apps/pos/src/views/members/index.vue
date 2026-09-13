@@ -28,6 +28,15 @@
             type="button"
             class="flex items-center gap-1.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-2 text-xs lg:text-sm font-bold text-surface-600 dark:text-surface-300 transition-all hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 select-none"
             :class="{ 'pointer-events-none opacity-40': !canManage }"
+            @click="openTiersDialog"
+          >
+            <Gem class="h-4 w-4" />
+            <span>分級設定</span>
+          </button>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-2 text-xs lg:text-sm font-bold text-surface-600 dark:text-surface-300 transition-all hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 select-none"
+            :class="{ 'pointer-events-none opacity-40': !canManage }"
             @click="openPointsSettingDialog"
           >
             <Coins class="h-4 w-4" />
@@ -84,6 +93,7 @@
               <tr>
                 <th class="w-16 px-4 py-3.5 text-center">序號</th>
                 <th class="px-4 py-3.5 text-left">姓名</th>
+                <th class="px-4 py-3.5 text-left">分級</th>
                 <th class="px-4 py-3.5 text-left">手機</th>
                 <th class="px-4 py-3.5 text-right">點數</th>
                 <th class="px-4 py-3.5 text-left">生日</th>
@@ -94,7 +104,7 @@
             <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
               <tr v-if="members.length === 0">
                 <td
-                  colspan="7"
+                  colspan="8"
                   class="px-4 py-16 text-center text-surface-400 dark:text-surface-500"
                 >
                   <div class="flex flex-col items-center justify-center gap-2">
@@ -120,6 +130,15 @@
                 </td>
                 <td class="px-4 py-3.5 text-left font-bold text-surface-900 dark:text-surface-100">
                   {{ member.name }}
+                </td>
+                <td class="px-4 py-3.5 text-left">
+                  <span
+                    v-if="member.tierStatus?.tier"
+                    class="inline-flex items-center gap-1 rounded-full bg-accent-50 dark:bg-accent-950/40 px-2 py-0.5 text-[11px] font-bold text-accent-700 dark:text-accent-400"
+                  >
+                    <Gem class="h-3 w-3" />{{ member.tierStatus.tier.name }}
+                  </span>
+                  <span v-else class="text-xs text-surface-400 dark:text-surface-500">一般會員</span>
                 </td>
                 <td class="px-4 py-3.5 text-left font-mono text-surface-600 dark:text-surface-400">
                   {{ member.phone }}
@@ -249,6 +268,23 @@
       </ModalDialog>
 
       <ModalDialog v-model:open="detailDialog" :title="`${detail?.name ?? ''} 的消費紀錄`">
+        <div
+          class="mb-3 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3.5 py-2.5"
+        >
+          <span class="text-xs font-bold text-surface-600 dark:text-surface-400">目前分級</span>
+          <div class="flex items-center gap-2">
+            <span
+              v-if="detail?.tierStatus?.tier"
+              class="inline-flex items-center gap-1 rounded-full bg-accent-50 dark:bg-accent-950/40 px-2 py-0.5 text-[11px] font-bold text-accent-700 dark:text-accent-400"
+            >
+              <Gem class="h-3 w-3" />{{ detail.tierStatus.tier.name }}
+            </span>
+            <span v-else class="text-xs text-surface-400 dark:text-surface-500">一般會員</span>
+            <span class="text-[11px] text-surface-400 dark:text-surface-500"
+              >（累積消費 {{ detail?.tierStatus?.lifetimeSpend ?? 0 }} 元）</span
+            >
+          </div>
+        </div>
         <div
           class="mb-3 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3.5 py-2.5"
         >
@@ -513,13 +549,103 @@
           </div>
         </div>
       </ModalDialog>
+
+      <ModalDialog v-model:open="tiersDialog" title="會員分級設定">
+        <div class="flex flex-col gap-3">
+          <p class="text-xs text-surface-500 dark:text-surface-400">
+            依會員累積消費金額（不含已作廢訂單）自動比對最高符合的等級，沒有達到任何門檻是「一般會員」。
+          </p>
+          <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+            <table class="w-full text-left text-sm">
+              <thead
+                class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
+              >
+                <tr>
+                  <th class="px-3 py-2.5 text-left">等級名稱</th>
+                  <th class="px-3 py-2.5 text-right">累積消費門檻</th>
+                  <th class="px-3 py-2.5 text-center">操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+                <tr v-if="sortedTiers.length === 0">
+                  <td colspan="3" class="px-3 py-8 text-center text-xs text-surface-400">
+                    尚未設定任何分級門檻
+                  </td>
+                </tr>
+                <tr v-for="tier in sortedTiers" :key="tier.id">
+                  <td class="px-3 py-2.5 font-bold text-surface-900 dark:text-surface-100">
+                    {{ tier.name }}
+                  </td>
+                  <td class="px-3 py-2.5 text-right font-mono text-surface-600 dark:text-surface-400">
+                    {{ tier.minSpend }} 元
+                  </td>
+                  <td class="px-3 py-2.5 text-center">
+                    <div class="flex items-center justify-center gap-1.5">
+                      <button
+                        type="button"
+                        class="pos-btn pos-btn-secondary px-2.5 py-1 text-xs"
+                        @click="openEditTier(tier)"
+                      >
+                        編輯
+                      </button>
+                      <button
+                        type="button"
+                        class="pos-btn pos-btn-danger px-2.5 py-1 text-xs"
+                        @click="removeTier(tier)"
+                      >
+                        刪除
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <Form
+            v-slot="{ isSubmitting }"
+            :validation-schema="toTypedSchema(tierFormSchema)"
+            :initial-values="{ name: editingTier?.name ?? '', minSpend: editingTier?.minSpend ?? '' }"
+            @submit="onSubmitTier"
+          >
+            <div class="text-xs font-black text-surface-700 dark:text-surface-300 mb-1.5">
+              {{ editingTier ? '編輯分級門檻' : '新增分級門檻' }}
+            </div>
+            <FormField name="name" label="等級名稱" :disabled="isSubmitting" placeholder="例如: 金卡會員" />
+            <FormField
+              name="minSpend"
+              label="累積消費門檻（元）"
+              type="number"
+              :disabled="isSubmitting"
+              placeholder="例如: 10000"
+            />
+            <div class="mt-2 flex justify-end gap-2">
+              <button
+                v-if="editingTier"
+                type="button"
+                class="pos-btn pos-btn-secondary px-4 py-2 text-sm font-bold"
+                @click="editingTier = null"
+              >
+                取消編輯
+              </button>
+              <button
+                type="submit"
+                :disabled="isSubmitting"
+                class="pos-btn pos-btn-primary px-4 py-2 text-sm font-bold"
+              >
+                {{ editingTier ? '保存' : '新增' }}
+              </button>
+            </div>
+          </Form>
+        </div>
+      </ModalDialog>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Cake, Coins, Receipt, Search, UserPlus, Users } from 'lucide-vue-next'
-import { onMounted, ref } from 'vue'
+import { Cake, Coins, Gem, Receipt, Search, UserPlus, Users } from 'lucide-vue-next'
+import { computed, onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form } from 'vee-validate'
@@ -544,12 +670,19 @@ import {
 } from '@/api/members'
 import { fetchTenantSettings, updateTenantSettings } from '@/api/tenant-settings'
 import {
+  createMemberTier,
+  deleteMemberTier,
+  fetchMemberTiers,
+  updateMemberTier
+} from '@/api/member-tiers'
+import {
   memberBirthdaySchema,
   memberPhoneSchema,
   type Member,
   type MemberBirthdayEntry,
   type MemberDetail,
-  type MemberPointLedgerReason
+  type MemberPointLedgerReason,
+  type MemberTier
 } from '@pos/contract'
 
 const loginStore = useLoginStore()
@@ -816,6 +949,70 @@ async function openBirthdaysDialog() {
     showToast(apiErrorMessage(err), 'error')
   } finally {
     birthdaysLoading.value = false
+  }
+}
+
+// 會員分級門檻：業主自訂「累積消費滿多少元升到哪一級」，等級本身不存在
+// 會員身上，由伺服端即時算好附在 member.tierStatus 裡（見 @pos/contract
+// 的 memberTierStatusSchema）。
+const tiersDialog = ref(false)
+const tiers = ref<MemberTier[]>([])
+const sortedTiers = computed(() => [...tiers.value].sort((a, b) => b.minSpend - a.minSpend))
+const editingTier = ref<MemberTier | null>(null)
+const tierFormSchema = z.object({
+  name: z.string().trim().min(1, '請輸入等級名稱'),
+  minSpend: z.coerce.number().int().min(0, '門檻不能是負數')
+})
+
+async function loadTiers() {
+  try {
+    tiers.value = await fetchMemberTiers()
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
+}
+function openTiersDialog() {
+  if (!canManage()) return
+  editingTier.value = null
+  tiersDialog.value = true
+  loadTiers()
+}
+function openEditTier(tier: MemberTier) {
+  editingTier.value = tier
+}
+async function onSubmitTier(values: Record<string, unknown>) {
+  const input = values as { name: string; minSpend: number }
+  try {
+    if (editingTier.value) {
+      await updateMemberTier(editingTier.value.id, input)
+      showToast('保存成功', 'success')
+    } else {
+      await createMemberTier(input)
+      showToast('新增成功', 'success')
+    }
+    editingTier.value = null
+    await loadTiers()
+    // 分級門檻變動會影響所有會員目前的等級，重新整理當頁名單讓畫面對得起來。
+    await loadMembers()
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
+}
+async function removeTier(tier: MemberTier) {
+  const result = await confirm({
+    title: '警告',
+    description: `是否刪除分級門檻「${tier.name}」？`,
+    variant: 'danger'
+  })
+  if (result !== 'confirm') return
+  try {
+    await deleteMemberTier(tier.id)
+    if (editingTier.value?.id === tier.id) editingTier.value = null
+    showToast('刪除成功', 'success')
+    await loadTiers()
+    await loadMembers()
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
   }
 }
 </script>

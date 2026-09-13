@@ -370,6 +370,17 @@ export const memberPointLedger = sqliteTable(
   ]
 )
 
+// 會員分級門檻，業主自訂（比照 payment_methods 的做法）。等級不存在會員
+// 身上，而是每次查詢時依「累積消費金額」（sum(orderPaymentPrice)，排除
+// 已取消訂單）即時比對門檻算出目前等級，避免額外一份可能跟訂單資料兜不
+// 起來的快取欄位，見 routes/members.ts 的 resolveMemberTiers()。
+export const memberTiers = sqliteTable('member_tiers', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id').references(() => users.id),
+  name: text('name').notNull(),
+  minSpend: integer('min_spend').notNull()
+})
+
 // 訂單序號的原子計數器。用 SQLite 的 `INSERT ... ON CONFLICT DO UPDATE
 // ... RETURNING` 在單一陳述式內完成「讀當前值、加一、寫回」，避免兩台
 // 終端幾乎同時送單時算出相同序號、後 insert 者因主鍵衝突失敗（見
@@ -568,6 +579,7 @@ export const schema = {
   auditLogs,
   members,
   memberPointLedger,
+  memberTiers,
   invoiceTracks,
   diningTables
 }

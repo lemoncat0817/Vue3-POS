@@ -267,6 +267,13 @@
       "when": 1789276062566,
       "tag": "0037_add_member_birthday",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1789276545069,
+      "tag": "0038_add_member_tiers",
+      "breakpoints": true
     }
   ]
 }
