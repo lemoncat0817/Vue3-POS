@@ -91,10 +91,6 @@
             >
               #{{ orderStore.nextOrderId }}
             </span>
-            <span class="text-xs text-surface-500 font-medium">
-              ({{ fromSelection(loginStore.userInfo)?.jobTitle }} -
-              {{ fromSelection(loginStore.userInfo)?.name }})
-            </span>
           </div>
 
           <!-- data-testid 與樣式類別為 e2e 依賴，勿調整 -->
