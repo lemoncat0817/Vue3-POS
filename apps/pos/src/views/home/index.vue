@@ -655,6 +655,26 @@ watch(
   }
 )
 
+// 判斷兩筆購物車列是否為「同一個品項＋同樣的規格／加購」，用來決定新增時
+// 要合併數量還是另開一列。刻意排除已經套用折扣的列（discount／freeDiscount／
+// quickDiscountId 任一有值）不參與合併：那一列已經是「這次特別處理過」的
+// 品項，一旦被新的、還沒折扣的同款品項悄悄合併，折扣範圍會在使用者沒注意
+// 到的情況下跟著擴大到新加的份數，不是使用者操作當下能預期的結果。
+function isSameCartLine(existing: CartLineItem, incoming: CartLineItem): boolean {
+  return (
+    existing.productId === incoming.productId &&
+    existing.name === incoming.name &&
+    Number(existing.price) === Number(incoming.price) &&
+    existing.addListPrice === incoming.addListPrice &&
+    JSON.stringify(existing.addList) === JSON.stringify(incoming.addList) &&
+    JSON.stringify(existing.selectedModifiers ?? {}) ===
+      JSON.stringify(incoming.selectedModifiers ?? {}) &&
+    existing.discount === 0 &&
+    !existing.freeDiscount &&
+    existing.quickDiscountId === null
+  )
+}
+
 const addNewProduct = () => {
   const selectedProduct = fromSelection(catalogStore.selectedProduct)
   if (selectedProduct === undefined) {
@@ -689,7 +709,15 @@ const addNewProduct = () => {
     productId: String(selectedProduct.id),
     selectedModifiers: JSON.parse(JSON.stringify(catalogStore.selectedModifiers))
   }
-  catalogStore.cartLines.push(newLine)
+  const existingLine = catalogStore.cartLines.find((line) => isSameCartLine(line, newLine))
+  if (existingLine) {
+    // 同一個品項＋同樣的規格再加一次，合併成一列累加數量——分開點兩次
+    // 一樣的「漢堡排」不該在購物車跟出餐單上變成兩列，這是點餐 POS 的
+    // 標準做法（比照 Square、Toast 等：同款品項重複點選只會累加份數）。
+    updateLineCount(existingLine, existingLine.count + newLine.count)
+  } else {
+    catalogStore.cartLines.push(newLine)
+  }
   catalogStore.selectedCategoryId = ''
   catalogStore.selectedProduct = []
   catalogStore.selectedModifiers = {}
