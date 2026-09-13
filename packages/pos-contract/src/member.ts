@@ -1,5 +1,11 @@
 import { z } from 'zod'
 
+/** 台灣手機號碼格式：09 開頭共 10 碼數字。結帳查會員、簡訊發送都靠這個格式成立。 */
+export const memberPhoneSchema = z
+  .string()
+  .trim()
+  .regex(/^09\d{8}$/, '請輸入正確的手機號碼格式（09 開頭共 10 碼數字）')
+
 /** 會員 schema。手機號碼為唯一識別鍵，消費依應付金額累積點數。 */
 export const memberSchema = z.object({
   id: z.string().min(1),
@@ -11,8 +17,8 @@ export const memberSchema = z.object({
 export type Member = z.infer<typeof memberSchema>
 
 export const createMemberRequestSchema = z.object({
-  name: z.string().min(1),
-  phone: z.string().min(1)
+  name: z.string().trim().min(1),
+  phone: memberPhoneSchema
 })
 export type CreateMemberRequest = z.infer<typeof createMemberRequestSchema>
 

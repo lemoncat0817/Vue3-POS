@@ -445,7 +445,7 @@ import {
   updateMember
 } from '@/api/members'
 import { fetchTenantSettings, updateTenantSettings } from '@/api/tenant-settings'
-import type { Member, MemberDetail, MemberPointLedgerReason } from '@pos/contract'
+import { memberPhoneSchema, type Member, type MemberDetail, type MemberPointLedgerReason } from '@pos/contract'
 
 const loginStore = useLoginStore()
 const canManage = () => hasCapability(loginStore.userInfo, 'canManageMembers')
@@ -477,10 +477,17 @@ onMounted(async () => {
 function memberSchema(excludeId?: string) {
   return z.object({
     name: z.string().trim().min(1, '請輸入姓名'),
+    // @pos/contract 用 zod v4、這裡是 apps/pos 自己的 zod v3（見 api/http.ts
+    // 的 isZodError 說明），兩邊的 schema 物件型別互不相容，沒辦法直接把
+    // memberPhoneSchema 接到這裡的 z.object() 裡；改成只呼叫它的 safeParse()
+    // 判斷格式，規則本身還是單一來源，只是驗證動作留在 v3 這邊組合。
     phone: z
       .string()
       .trim()
-      .min(1, '請輸入手機號碼')
+      .refine(
+        (phone) => memberPhoneSchema.safeParse(phone).success,
+        '請輸入正確的手機號碼格式（09 開頭共 10 碼數字）'
+      )
       .refine(
         (phone) => !members.value.some((item) => item.phone === phone && item.id !== excludeId),
         '這個手機號碼已經是會員'

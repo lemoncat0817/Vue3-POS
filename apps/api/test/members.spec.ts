@@ -108,7 +108,7 @@ describe('GET /api/members/:id、PUT、DELETE', () => {
         await app.request('/api/members/does-not-exist', {
           method: 'PUT',
           headers,
-          body: JSON.stringify({ name: 'x', phone: 'y' })
+          body: JSON.stringify({ name: 'x', phone: '0900000000' })
         })
       ).status
     ).toBe(404)
