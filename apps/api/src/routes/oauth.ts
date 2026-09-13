@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import type { Context } from 'hono'
 import { googleAuth } from '@hono/oauth-providers/google'
 import { githubAuth } from '@hono/oauth-providers/github'
+import { recordAuditLog } from '../audit/record'
 import { upsertOAuthUser } from '../auth/oauth-user'
 import { issueWebSession } from '../auth/web-session'
 import { ensureTenantOnboarded, provisionDeviceForLogin } from '../auth/onboarding'
@@ -35,12 +36,24 @@ async function completeLogin(
   frontendUrl: string,
   userId: string,
   provider: 'google' | 'github',
-  deviceName: string
+  deviceName: string,
+  operatorLabel: string
 ): Promise<Response> {
   const db: AnyDb = c.get('db')
   const sessionToken = await issueWebSession(db, userId)
   const onboarding = await ensureTenantOnboarded(db, userId)
   const deviceToken = await provisionDeviceForLogin(db, userId, deviceName)
+
+  // 這條路由沒有掛 requireDeviceToken，c.get('tenantId') 原本是
+  // undefined；userId 就是這個租戶的邊界（見 db/schema.ts 的 users 說明），
+  // 明確設定後 audit/record.ts 才能正確歸戶，不會把 undefined 綁進 SQL。
+  c.set('tenantId', userId)
+  await recordAuditLog(
+    c,
+    'auth.oauthLogin',
+    `使用 ${provider === 'google' ? 'Google' : 'GitHub'} 帳號登入後台管理`,
+    operatorLabel
+  )
 
   const params: Record<string, string> = {
     session: sessionToken,
@@ -83,7 +96,14 @@ export function createOAuthRoutes(config: OAuthConfig) {
         displayName: profile.name ?? profile.email,
         avatarUrl: profile.picture ?? null
       })
-      return completeLogin(c, config.frontendUrl, userId, 'google', 'Google 登入的瀏覽器')
+      return completeLogin(
+        c,
+        config.frontendUrl,
+        userId,
+        'google',
+        'Google 登入的瀏覽器',
+        profile.name ?? profile.email
+      )
     }
   )
 
@@ -110,7 +130,14 @@ export function createOAuthRoutes(config: OAuthConfig) {
         displayName: profile.name ?? profile.login ?? String(profile.id),
         avatarUrl: profile.avatar_url ?? null
       })
-      return completeLogin(c, config.frontendUrl, userId, 'github', 'GitHub 登入的瀏覽器')
+      return completeLogin(
+        c,
+        config.frontendUrl,
+        userId,
+        'github',
+        'GitHub 登入的瀏覽器',
+        profile.name ?? profile.login ?? String(profile.id)
+      )
     }
   )
 

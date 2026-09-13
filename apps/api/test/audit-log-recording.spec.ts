@@ -16,6 +16,14 @@ async function readJson(res: Response): Promise<any> {
  * 查到對應的 action。刻意用單一測試依序執行、共用同一組裝置/操作員 session，
  * 避免每個模組各自重建 app／裝置／促銷字軌等前置資料——這裡只在乎「有沒有
  * 記到」，不重複各業務路由自己 *.spec.ts 已經涵蓋的商業邏輯正確性。
+ *
+ * 登入/登出相關的 staff.login／staff.loginFailed／staff.logout／device.issue
+ * 不在這裡涵蓋，改由 auth.spec.ts／devices.spec.ts 各自驗證——這幾個動作
+ * 跟這裡統一沿用的「同一組裝置＋操作員」前提衝突（登入/登出本身就是在
+ * 建立/撤銷這組身分；device.issue 落在未分配租戶過渡池，不是這裡用的
+ * tenant-1）。auth.oauthLogin 需要真的走一次 Google／GitHub OAuth，
+ * routes/oauth.ts 目前完全沒有路由測試（連結不到測試用的 provider），
+ * 沿用既有邊界不強加。
  */
 describe('操作紀錄：各業務路由的異動都寫入 audit_logs', () => {
   it('人員/權限/裝置、後台型錄、促銷、付款方式、營業設定、會員、桌況、訂單、班別的異動都留下對應紀錄', async () => {
