@@ -30,6 +30,18 @@ export function setOperatorSession(token: string | null): void {
 }
 
 /**
+ * OAuth 登入核發的瀏覽器 session（見 stores/device.ts 的 webSessionToken），
+ * 忘記 PIN 時的救援管道：伺服端驗證這組 session 屬於同一租戶，就放行原本
+ * 需要 X-Operator-Session 才能打的「重設員工 PIN」（見 apps/api/src/
+ * middleware/require-capability.ts 的 allowWebSession）。跟 operator session
+ * 不同層級，兩者都可能同時存在，互不覆蓋。
+ */
+let currentWebSessionToken: string | null = null
+export function setWebSessionToken(token: string | null): void {
+  currentWebSessionToken = token
+}
+
+/**
  * 操作員 session 失效時的全域回呼（見 router/index.ts 註冊：強制登出＋導回登入頁）。
  * 用回呼而不是直接在這裡 import store／router，是為了避免 http.ts 被
  * stores/login.ts（設定 X-Operator-Session）與 router（導頁）互相 import 形成循環依賴。
@@ -90,6 +102,7 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
       // 預設值（見 api/orders.ts 的退款／作廢，主管二次授權時要送核可者
       // 剛登入核發的 session，不是目前登入中的操作員）。
       ...(currentOperatorSession ? { 'X-Operator-Session': currentOperatorSession } : {}),
+      ...(currentWebSessionToken ? { 'X-Web-Session': currentWebSessionToken } : {}),
       ...init?.headers
     }
   })

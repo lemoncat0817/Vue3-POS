@@ -1,6 +1,6 @@
 import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { setDeviceToken } from '@/api/http'
+import { setDeviceToken, setWebSessionToken } from '@/api/http'
 
 const STORAGE_KEY = 'device'
 
@@ -45,6 +45,11 @@ export const useDeviceStore = defineStore(
     // 顯示過後由畫面呼叫 clearPendingOwnerCredentials() 清掉，不持久化。
     const pendingOwnerAccount = ref<string | null>(null)
     const pendingOwnerPin = ref<string | null>(null)
+    // OAuth 登入核發的瀏覽器 session，忘記 PIN 時用來重設員工 PIN（見
+    // api/http.ts 的 X-Web-Session、views/login/index.vue 的重設面板）。跟
+    // deviceToken 一樣可以安全持久化——12 小時就過期，過期後這個功能打不動，
+    // 使用者只要重新用 Google／GitHub 登入即可再拿到一組新的。
+    const webSessionToken = ref<string | null>(null)
 
     // 故意不加 `immediate: true`：ref() 剛建立時是預設值 null，若立刻觸發
     // callback 會用這個假的 null 去覆蓋掉 primeDeviceTokenFromStorage() 剛
@@ -55,6 +60,7 @@ export const useDeviceStore = defineStore(
     // immediate 後，只有「真的變動」（hydrate 完成、或登入／登出）才會
     // 觸發，初始值交給 primeDeviceTokenFromStorage() 負責就好。
     watch(deviceToken, (value) => setDeviceToken(value))
+    watch(webSessionToken, (value) => setWebSessionToken(value))
 
     function clearPendingOwnerCredentials(): void {
       pendingOwnerAccount.value = null
@@ -70,6 +76,7 @@ export const useDeviceStore = defineStore(
       deviceName,
       pendingOwnerAccount,
       pendingOwnerPin,
+      webSessionToken,
       clearPendingOwnerCredentials,
       hydrateDeviceNameFromServer
     }

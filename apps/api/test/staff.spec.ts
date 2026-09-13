@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { staff } from '../src/db/schema'
+import { issueWebSession } from '../src/auth/web-session'
 import { createTestApp, createTestAppWithDevice, issueTestSession } from './helpers/app'
 import { createTestDb } from './helpers/db'
 import { seedRole } from './helpers/roles'
@@ -415,6 +416,110 @@ describe('PUT /api/staff/:id', () => {
       body: JSON.stringify({ name: 'Lemon', jobTitle: '店長', account: 'lemon', roleId: partTimerRoleId })
     })
     expect(res.status).toBe(409)
+  })
+})
+
+describe('PUT /api/staff/:id（忘記 PIN 救援：X-Web-Session）', () => {
+  it('沒有 X-Operator-Session，但帶著同一租戶有效的 X-Web-Session 也能重設 PIN', async () => {
+    const db = createTestDb()
+    const tenantId = 'tenant-owner'
+    // tenantId 就是 users.id（見 db/schema.ts 的說明），staff／roles 的
+    // tenantId 外鍵指到這裡——要先讓 createTestAppWithDevice() 建好 users 列，
+    // 才能接著插入同租戶的角色／員工，不然會撞 FOREIGN KEY constraint。
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false,
+      tenantId
+    })
+    const roleId = await seedRole(db, { capabilities: [], tenantId })
+    const staffId = crypto.randomUUID()
+    await db.insert(staff).values({
+      id: staffId,
+      tenantId,
+      ...staffBaseFields,
+      roleId,
+      pinHash: 'old-hash',
+      pinSalt: 'old-salt'
+    })
+    const webSessionToken = await issueWebSession(db, tenantId)
+
+    const res = await app.request(`/api/staff/${staffId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Web-Session': webSessionToken
+      },
+      body: JSON.stringify({ ...staffBaseFields, roleId, pin: '9999' })
+    })
+    expect(res.status).toBe(200)
+
+    // 新 PIN 應該真的生效了。
+    const login = await app.request('/api/auth/operator-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ account: staffBaseFields.account, pin: '9999' })
+    })
+    expect(login.status).toBe(200)
+  })
+
+  it('X-Web-Session 屬於別的租戶時拒絕，回傳 401', async () => {
+    const db = createTestDb()
+    const tenantId = 'tenant-owner'
+    const otherTenantId = 'tenant-intruder'
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false,
+      tenantId
+    })
+    const roleId = await seedRole(db, { capabilities: [], tenantId })
+    const staffId = crypto.randomUUID()
+    await db.insert(staff).values({
+      id: staffId,
+      tenantId,
+      ...staffBaseFields,
+      roleId,
+      pinHash: 'old-hash',
+      pinSalt: 'old-salt'
+    })
+    // 另一個租戶自己的 web session，不該對這個租戶的裝置有任何效力。
+    await createTestAppWithDevice(db, 'other-device', { seedStaff: false, tenantId: otherTenantId })
+    const foreignWebSessionToken = await issueWebSession(db, otherTenantId)
+
+    const res = await app.request(`/api/staff/${staffId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Web-Session': foreignWebSessionToken
+      },
+      body: JSON.stringify({ ...staffBaseFields, roleId, pin: '9999' })
+    })
+    expect(res.status).toBe(401)
+  })
+
+  it('缺少 X-Operator-Session 又沒有 X-Web-Session 時，一樣拒絕，回傳 401', async () => {
+    const db = createTestDb()
+    const tenantId = 'tenant-owner'
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false,
+      tenantId
+    })
+    const roleId = await seedRole(db, { capabilities: [], tenantId })
+    const staffId = crypto.randomUUID()
+    await db.insert(staff).values({
+      id: staffId,
+      tenantId,
+      ...staffBaseFields,
+      roleId,
+      pinHash: 'old-hash',
+      pinSalt: 'old-salt'
+    })
+
+    const res = await app.request(`/api/staff/${staffId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      body: JSON.stringify({ ...staffBaseFields, roleId, pin: '9999' })
+    })
+    expect(res.status).toBe(401)
   })
 })
 

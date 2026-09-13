@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm'
 import { createStaffRequestSchema, staffSchema, updateStaffRequestSchema } from '@pos/contract'
 import { hashSecret } from '../auth/hash'
 import { findActiveOperatorSession } from '../auth/operator-session'
+import { resolveWebSessionUser } from '../auth/web-session'
 import { recordAuditLog } from '../audit/record'
 import { roles, staff } from '../db/schema'
 import type { AnyDb } from '../db/types'
@@ -113,11 +114,15 @@ const createStaffRoute = createRoute({
   }
 })
 
-/** 員工管理寫入 API：支援後台編輯與刪除員工。 */
+/**
+ * 員工管理寫入 API：支援後台編輯與刪除員工。
+ * allowWebSession：忘記 PIN 的救援管道——老闆用 OAuth 登入後台也能重設任何員工
+ * （含自己）的 PIN，不需要先知道舊 PIN，見 middleware/require-capability.ts。
+ */
 const updateStaffRoute = createRoute({
   method: 'put',
   path: '/{id}',
-  middleware: [requireDeviceToken, requireCapability('canManageStaff')] as const,
+  middleware: [requireDeviceToken, requireCapability('canManageStaff', { allowWebSession: true })] as const,
   request: {
     params: z.object({ id: z.string().min(1) }),
     body: { content: { 'application/json': { schema: updateStaffRequestSchema } } }
@@ -269,10 +274,17 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
       .update(staff)
       .set({ ...input, roleId, pinHash: pinFields.hash, pinSalt: pinFields.salt })
       .where(eq(staff.id, id))
+    // 沒有 X-Operator-Session 卻能走到這裡，代表是靠 allowWebSession 那條救援
+    // 路徑通過的（見 middleware/require-capability.ts）——稽核紀錄改標記成
+    // OAuth 身分，而不是 recordAuditLog() 預設反解出的「未知操作者」。
+    const webSessionUser = c.req.header('X-Operator-Session')
+      ? null
+      : await resolveWebSessionUser(db, c.req.header('X-Web-Session') ?? '')
     await recordAuditLog(
       c,
       'staff.update',
-      `更新員工「${input.name}」（帳號 ${input.account}，角色：${role.name}）`
+      `更新員工「${input.name}」（帳號 ${input.account}，角色：${role.name}）${pin ? '，含重設 PIN' : ''}`,
+      webSessionUser ? `${webSessionUser.displayName}（OAuth 管理者，忘記 PIN 救援）` : undefined
     )
 
     return c.json(await toStaffResponse(db, tenantId, { id, ...input, roleId }), 200)

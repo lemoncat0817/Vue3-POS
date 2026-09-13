@@ -52,6 +52,55 @@
         </div>
       </template>
 
+      <!-- 忘記 PIN 的救援面板：靠 OAuth 登入核發的 web session 重設任一員工的 PIN，
+           不需要先知道舊 PIN（見 apps/api/src/middleware/require-capability.ts 的
+           allowWebSession）。只在使用者主動點「忘記 PIN？」之後才顯示，不會在
+           拿到 web session 當下就自動蓋掉正常的 PIN 登入畫面。 -->
+      <template v-else-if="showResetPin">
+        <p class="mb-4 text-center text-sm text-surface-500 dark:text-surface-400">
+          選擇員工並輸入新 PIN，重設後請改用新 PIN 登入。
+        </p>
+        <form class="flex flex-col gap-4" @submit.prevent="submitResetPin">
+          <label class="flex flex-col gap-1 text-sm font-bold text-surface-600 dark:text-surface-300">
+            員工
+            <select
+              v-model="resetPinStaffId"
+              class="rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-50"
+            >
+              <option value="" disabled>請選擇員工</option>
+              <option v-for="item in resetPinStaffList" :key="item.id" :value="item.id">
+                {{ item.jobTitle }} - {{ item.name }}（{{ item.account }}）
+              </option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1 text-sm font-bold text-surface-600 dark:text-surface-300">
+            新 PIN
+            <input
+              v-model="resetPinValue"
+              placeholder="請輸入新 PIN"
+              type="password"
+              inputmode="numeric"
+              maxlength="6"
+              class="rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-center text-lg font-bold tracking-[0.3em] text-surface-900 outline-none transition-colors focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-50"
+            />
+          </label>
+          <button
+            type="submit"
+            :disabled="resetPinLoading"
+            class="rounded-lg bg-primary-600 py-2.5 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:opacity-60"
+          >
+            重設 PIN
+          </button>
+          <button
+            type="button"
+            class="text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
+            @click="showResetPin = false"
+          >
+            取消，改用 PIN 登入
+          </button>
+        </form>
+      </template>
+
       <template v-else>
         <form class="flex flex-col gap-4" @submit.prevent="login">
           <label class="flex flex-col gap-1 text-sm font-bold text-surface-600 dark:text-surface-300">
@@ -104,6 +153,30 @@
           >
             重新用 GitHub 登入
           </a>
+          <!-- 有 webSessionToken 代表最近登入過、還在 12 小時效期內，直接開重設
+               面板；沒有的話得先重新走一次 OAuth 才拿得到，見 api/oauth.ts。 -->
+          <button
+            v-if="deviceStore.webSessionToken"
+            type="button"
+            class="text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
+            @click="openResetPin"
+          >
+            忘記 PIN？用管理者身分重設
+          </button>
+          <template v-else>
+            <a
+              :href="googleLoginUrl"
+              class="text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
+            >
+              忘記 PIN？改用 Google 帳號登入重設
+            </a>
+            <a
+              :href="githubLoginUrl"
+              class="text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
+            >
+              忘記 PIN？改用 GitHub 帳號登入重設
+            </a>
+          </template>
         </div>
       </template>
     </div>
@@ -111,7 +184,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 import { useQueryClient } from '@tanstack/vue-query'
@@ -122,8 +195,59 @@ const deviceStore = useDeviceStore()
 const queryClient = useQueryClient()
 import { showToast } from '@/composables/useToast'
 import { operatorLogin, toStaffMember } from '@/api/auth'
+import { fetchStaffList, updateStaff } from '@/api/staff'
 import { googleLoginUrl, githubLoginUrl } from '@/api/oauth'
 import { ApiError, apiErrorMessage } from '@/api/http'
+import type { Staff } from '@pos/contract'
+
+const RESET_PIN_PATTERN = /^\d{4,6}$/
+const showResetPin = ref(false)
+const resetPinStaffList = ref<Staff[]>([])
+const resetPinStaffId = ref('')
+const resetPinValue = ref('')
+const resetPinLoading = ref(false)
+
+async function openResetPin() {
+  showResetPin.value = true
+  try {
+    resetPinStaffList.value = await fetchStaffList()
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+    showResetPin.value = false
+  }
+}
+
+async function submitResetPin() {
+  const target = resetPinStaffList.value.find((item) => item.id === resetPinStaffId.value)
+  if (!target) {
+    showToast('請選擇要重設 PIN 的員工', 'error')
+    return
+  }
+  if (!RESET_PIN_PATTERN.test(resetPinValue.value)) {
+    showToast('PIN 必須是 4 到 6 碼數字', 'error')
+    return
+  }
+  resetPinLoading.value = true
+  try {
+    await updateStaff(target.id, {
+      name: target.name,
+      jobTitle: target.jobTitle,
+      account: target.account,
+      roleId: target.roleId,
+      pin: resetPinValue.value
+    })
+    showToast(`已重設「${target.name}」的 PIN，請改用新 PIN 登入`, 'success')
+    // 用過即丟：這組 web session 的用途就是救援 PIN，重設完沒有理由繼續留著。
+    deviceStore.webSessionToken = null
+    resetPinStaffId.value = ''
+    resetPinValue.value = ''
+    showResetPin.value = false
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  } finally {
+    resetPinLoading.value = false
+  }
+}
 
 // 帳號欄位可能還殘留上次登入（甚至上一個租戶）記住的舊帳號；新租戶第一次
 // 登入核發 owner 帳號時，一律覆蓋成這組新帳號，不要讓使用者對著錯的帳號送出登入。

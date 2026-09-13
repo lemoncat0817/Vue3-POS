@@ -31,6 +31,7 @@ describe('consumeOAuthCallback', () => {
 
     expect(result).toEqual({ status: 'success', provider: 'google', isNewTenant: false })
     expect(deviceStore.deviceToken).toBe('d-1')
+    expect(deviceStore.webSessionToken).toBe('s-1')
     expect(deviceStore.pendingOwnerAccount).toBeNull()
     expect(window.location.hash).toBe('')
   })
@@ -43,6 +44,7 @@ describe('consumeOAuthCallback', () => {
 
     expect(result).toEqual({ status: 'success', provider: 'github', isNewTenant: true })
     expect(deviceStore.deviceToken).toBe('d-1')
+    expect(deviceStore.webSessionToken).toBe('s-1')
     expect(deviceStore.pendingOwnerAccount).toBe('owner-abc123')
     expect(deviceStore.pendingOwnerPin).toBe('4821')
   })

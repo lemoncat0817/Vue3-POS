@@ -1,6 +1,6 @@
 import { eq, isNull } from 'drizzle-orm'
 import { generateSecureToken, hashSecret, verifySecret } from './hash'
-import { webSessions } from '../db/schema'
+import { users, webSessions } from '../db/schema'
 import type { AnyDb } from '../db/types'
 
 /** OAuth 登入 session 效期：比照操作員 session（見 auth/operator-session.ts），過期要求重新登入。 */
@@ -36,6 +36,18 @@ export async function findActiveWebSession(db: AnyDb, token: string): Promise<We
     }
   }
   return null
+}
+
+/** 解析 web session 對應的 OAuth 使用者，供 requireCapability 的 PIN 重設救援路徑與稽核紀錄使用。 */
+export async function resolveWebSessionUser(
+  db: AnyDb,
+  token: string
+): Promise<{ userId: string; displayName: string } | null> {
+  const session = await findActiveWebSession(db, token)
+  if (!session) return null
+  const user = await db.select().from(users).where(eq(users.id, session.userId)).get()
+  if (!user) return null
+  return { userId: session.userId, displayName: user.displayName }
 }
 
 /** 撤銷一組 session（登出）。找不到或已撤銷都視為成功，登出本身應該是冪等操作。 */

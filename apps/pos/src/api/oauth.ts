@@ -30,6 +30,7 @@ export function consumeOAuthCallback(
   const params = new URLSearchParams(hash.slice(1))
   const error = params.get('error')
   const deviceToken = params.get('device')
+  const webSessionToken = params.get('session')
   const provider = params.get('provider')
 
   if (!error && !deviceToken) return { status: 'none' }
@@ -43,6 +44,9 @@ export function consumeOAuthCallback(
   if (!deviceToken || !provider) return { status: 'none' }
 
   deviceStore.deviceToken = deviceToken
+  // 忘記 PIN 時的重設面板要靠這組 session 打 X-Web-Session（見
+  // views/login/index.vue），過去這裡只讀了 device 就把 session 丟掉。
+  if (webSessionToken) deviceStore.webSessionToken = webSessionToken
   const ownerAccount = params.get('ownerAccount')
   const ownerPin = params.get('ownerPin')
   if (ownerAccount && ownerPin) {
