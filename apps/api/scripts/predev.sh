@@ -4,3 +4,9 @@ pkill -f 'Vue3-POS/apps/api/node_modules/.bin/wrangler' 2>/dev/null
 pkill -f 'Vue3-POS/node_modules/.pnpm/wrangler@' 2>/dev/null
 sleep 0.3
 kill-port 8787
+
+# 本機 D1 是獨立於 migrations/*.sql 的一份 sqlite 檔案，schema 改動 commit 進來後
+# 不會自動套用，忘記手動跑 db:migrate:local 就會在真的用起來時撞到「no such
+# column」500 錯誤（新欄位在程式碼裡有、本機資料庫裡沒有）。每次啟動都先套用一次
+# 未套用的 migration，避免這個一直重演的手動步驟被漏掉。
+wrangler d1 migrations apply pos-db --local
