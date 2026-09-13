@@ -134,8 +134,8 @@
                     {{ AUDIT_ACTION_LABELS[log.action] }}
                   </span>
                 </td>
-                <td class="px-4 py-3.5 text-left text-surface-600 dark:text-surface-400">
-                  {{ log.detail }}
+                <td class="px-4 py-3.5 text-left text-surface-600 dark:text-surface-400 max-w-md">
+                  <p class="line-clamp-2" :title="log.detail">{{ log.detail }}</p>
                 </td>
               </tr>
             </tbody>
