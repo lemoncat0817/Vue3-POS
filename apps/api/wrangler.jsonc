@@ -15,6 +15,6 @@
     // 非密鑰，用 vars 而非 wrangler secret；本機用 .dev.vars 覆蓋成 localhost（見 .dev.vars.example）
     "ALLOWED_ORIGINS": "https://lemoncat0817.github.io",
     // OAuth 登入完成後導回的前端網址，見 routes/oauth.ts 的 buildRedirect()。
-    "FRONTEND_URL": "https://lemoncat0817.github.io/Vue3-POS/"
+    "FRONTEND_URL": "https://lemoncat0817.github.io/pos-system/"
   }
 }

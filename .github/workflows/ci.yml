@@ -12,7 +12,7 @@
 #
 # Required GitHub Actions variables (already configured):
 #   VITE_API_BASE_URL       — https://pos-api.jimdeng0817.workers.dev
-#   VITE_BASE_PATH          — /Vue3-POS/
+#   VITE_BASE_PATH          — /pos-system/
 #
 # Repo Settings → Pages → Source must be "GitHub Actions" (not the legacy gh-pages branch).
 # D1 migrate/seed is an ops step and is intentionally not run here.

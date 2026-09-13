@@ -8,7 +8,7 @@
 
 ## Demo網站
 
-[POS機系統 Demo](https://lemoncat0817.github.io/Vue3-POS/)
+[POS機系統 Demo](https://lemoncat0817.github.io/pos-system/)
 
 ## 開發功能
 
@@ -153,5 +153,5 @@ Secrets：
 Variables：
 
 - `VITE_API_BASE_URL`（例如 `https://pos-api.jimdeng0817.workers.dev`）
-- `VITE_BASE_PATH`（GitHub Pages 專案站必須是 `/Vue3-POS/`）
+- `VITE_BASE_PATH`（GitHub Pages 專案站必須是 `/pos-system/`）
 - `CLOUDFLARE_ACCOUNT_ID`（可選；wrangler 需要時設為 Cloudflare account id）
