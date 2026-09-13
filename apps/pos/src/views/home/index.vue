@@ -122,14 +122,7 @@
             >
               內用
             </button>
-            <input
-              v-if="orderChannel === '內用'"
-              v-model="tableNumberInput"
-              type="text"
-              placeholder="桌號"
-              data-testid="table-number-input"
-              class="w-14 rounded-md border border-surface-300 bg-white px-1.5 py-0.5 text-xs font-bold text-surface-700 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 ml-1"
-            />
+            <TableNumberCombobox v-if="orderChannel === '內用'" v-model="tableNumberInput" />
           </div>
         </div>
 
@@ -588,6 +581,7 @@ import ProductModifiers from './productModifiers/index.vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
+import TableNumberCombobox from '@/components/ui/TableNumberCombobox.vue'
 import PaymentPanel, { type TenderDraft } from '@/components/checkout/PaymentPanel.vue'
 import ShiftPanel from '@/components/checkout/ShiftPanel.vue'
 import ParkedOrdersPanel from '@/components/checkout/ParkedOrdersPanel.vue'
