@@ -23,7 +23,8 @@ export const authorityKeySchema = z.enum([
   'canManageMembers',
   'canManageTables',
   'canSetBusinessHours',
-  'canManageDevices'
+  'canManageDevices',
+  'canCheckAuditLog'
 ])
 export type AuthorityKey = z.infer<typeof authorityKeySchema>
 
