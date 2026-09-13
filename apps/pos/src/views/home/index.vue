@@ -376,7 +376,11 @@
 
         <div class="grid grid-cols-3 gap-1.5">
           <InvoiceCarrierPanel v-model="invoiceCarrier" />
-          <MemberPanel v-model="currentOrderMember" />
+          <MemberPanel
+            v-model="currentOrderMember"
+            v-model:points-to-redeem="pointsToRedeem"
+            :redemption-rate="orderStore.pointsRedemptionRate"
+          />
           <button
             type="button"
             class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 py-2 px-1 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 transition-all shadow-sm flex items-center justify-center text-center select-none disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 disabled:hover:bg-white dark:disabled:hover:bg-surface-800"
@@ -418,6 +422,12 @@
               >-$ {{ catalogStore.useDiscountPrice }}</span
             >
           </div>
+          <div v-if="pointsToRedeem > 0" class="flex justify-between">
+            <span>點數折抵:</span>
+            <span class="font-bold text-danger-600 dark:text-danger-400"
+              >-$ {{ catalogStore.cartPayPrice - finalPayablePrice }}</span
+            >
+          </div>
           <div class="flex justify-between">
             <span>包材份數:</span>
             <span class="font-bold text-surface-800 dark:text-surface-200"
@@ -440,7 +450,7 @@
               >應付總額 DUE TOTAL</span
             >
             <span class="text-2xl font-black text-primary-600 dark:text-primary-400 font-mono">
-              $ {{ catalogStore.cartPayPrice }} 元
+              $ {{ finalPayablePrice }} 元
             </span>
           </div>
 
@@ -458,7 +468,7 @@
 
         <PaymentPanel
           :open="dialogPayment"
-          :due-amount="catalogStore.cartPayPrice"
+          :due-amount="finalPayablePrice"
           :payment-methods="orderStore.paymentList"
           @cancel="cancelPayment"
           @submit="submitPayment"
@@ -607,6 +617,7 @@ import { fromSelection, hasCapability } from '@/utils/selection'
 import {
   getBusinessDate,
   priceLine,
+  redemptionValueForPoints,
   toggleFree,
   toggleQuickDiscount,
   type LineDiscountFlags,
@@ -747,6 +758,16 @@ const invoiceCarrier = ref<InvoiceCarrier>({ type: '無載具' })
 
 // 同 invoiceCarrier，屬於單次交易的個別需求，送單後重置回預設值。
 const currentOrderMember = ref<Member | null>(null)
+// 這筆訂單要用多少點數折抵，換會員或取消計入會員時歸零（見 MemberPanel 的 update:pointsToRedeem）。
+const pointsToRedeem = ref(0)
+// 折抵後的實際應付金額——結帳摘要、收銀面板、送出的訂單都用這個，不是
+// catalogStore.cartPayPrice（那個不知道會員折抵，只算優惠券）。
+const finalPayablePrice = computed(() =>
+  Math.max(
+    0,
+    catalogStore.cartPayPrice - redemptionValueForPoints(pointsToRedeem.value, orderStore.pointsRedemptionRate)
+  )
+)
 
 // 純文字輸入，故意不跟桌況資料綁外鍵（見 dining_tables 說明），只在選了「內用」時顯示。
 const tableNumberInput = ref('')
@@ -1048,10 +1069,16 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     orderTotalPrice: catalogStore.cartTotalMoney,
     // orderPayment 是顯示用摘要（多筆 tender 用頓號連接），需跟伺服端算出的摘要規則一致。
     orderPayment: tenders.map((tender) => tender.method).join('、'),
-    orderDiscount: catalogStore.useDiscountPrice,
-    orderPaymentPrice: catalogStore.cartPayPrice,
+    orderDiscount: catalogStore.cartTotalMoney + catalogStore.currentBagCount - finalPayablePrice.value,
+    orderPaymentPrice: finalPayablePrice.value,
     discountName:
-      discountStore.currentDiscountName === '' ? '無' : discountStore.currentDiscountName,
+      pointsToRedeem.value > 0
+        ? discountStore.currentDiscountName === ''
+          ? '點數折抵'
+          : `${discountStore.currentDiscountName}、點數折抵`
+        : discountStore.currentDiscountName === ''
+          ? '無'
+          : discountStore.currentDiscountName,
     refundedAmount: 0,
     voidReason: null,
     voidedBy: null,
@@ -1060,6 +1087,11 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     invoiceNumber: '',
     invoiceCarrier: invoiceCarrier.value,
     memberId: currentOrderMember.value?.id ?? null,
+    // 本機樂觀估算，真正算數以伺服端回應為準（見 orderStore.pointsPerCurrencyUnit 的說明）。
+    pointsEarned: currentOrderMember.value
+      ? Math.floor(finalPayablePrice.value / orderStore.pointsPerCurrencyUnit)
+      : 0,
+    pointsRedeemed: currentOrderMember.value ? pointsToRedeem.value : 0,
     tableNumber: orderChannel.value === '內用' ? tableNumberInput.value.trim() || null : null,
     note: orderNote.value.trim() || null
   }
@@ -1086,6 +1118,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
       orderChannel: toPayOrder.orderChannel,
       invoiceCarrier: toPayOrder.invoiceCarrier,
       memberId: toPayOrder.memberId ?? null,
+      pointsToRedeem: toPayOrder.pointsRedeemed,
       tableNumber: toPayOrder.tableNumber ?? null,
       note: toPayOrder.note ?? null
     })
@@ -1123,6 +1156,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
   void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
   invoiceCarrier.value = { type: '無載具' }
   currentOrderMember.value = null
+  pointsToRedeem.value = 0
   tableNumberInput.value = ''
   orderNote.value = ''
 

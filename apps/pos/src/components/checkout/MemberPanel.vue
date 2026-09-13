@@ -20,6 +20,22 @@
         <span class="font-bold text-primary-600 dark:text-primary-400">{{ modelValue.name }}</span>
         （{{ modelValue.phone }}，目前 {{ modelValue.points }} 點）
       </p>
+      <label class="block text-xs font-bold text-surface-500 dark:text-surface-400">
+        使用點數折抵（目前 {{ modelValue.points }} 點，每 {{ redemptionRate }} 點折抵 1 元）
+        <input
+          :value="pointsToRedeem"
+          type="number"
+          min="0"
+          :max="modelValue.points"
+          step="1"
+          data-testid="points-to-redeem-input"
+          class="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
+          @input="onPointsToRedeemInput"
+        />
+      </label>
+      <p v-if="pointsToRedeem > 0" class="text-xs text-surface-500 dark:text-surface-400">
+        折抵 {{ pointsToRedeem }} 點 = <span class="font-bold text-danger-600 dark:text-danger-400">-{{ redemptionValue }} 元</span>
+      </p>
       <div class="mt-2 flex justify-end gap-2">
         <button
           type="button"
@@ -102,10 +118,18 @@ import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { showToast } from '@/composables/useToast'
 import { apiErrorMessage } from '@/api/http'
 import { createMember, findMemberByPhone } from '@/api/members'
+import { redemptionValueForPoints } from '@pos/domain'
 import type { Member } from '@pos/contract'
 
-const props = defineProps<{ modelValue: Member | null }>()
-const emit = defineEmits<{ 'update:modelValue': [Member | null] }>()
+const props = defineProps<{
+  modelValue: Member | null
+  pointsToRedeem: number
+  redemptionRate: number
+}>()
+const emit = defineEmits<{
+  'update:modelValue': [Member | null]
+  'update:pointsToRedeem': [number]
+}>()
 
 const open = ref(false)
 const phoneInput = ref('')
@@ -113,7 +137,15 @@ const newMemberName = ref('')
 const isSearching = ref(false)
 const searchResult = ref<'idle' | 'not-found'>('idle')
 
-const triggerLabel = computed(() => (props.modelValue ? `會員：${props.modelValue.name}` : '會員'))
+const redemptionValue = computed(() =>
+  redemptionValueForPoints(props.pointsToRedeem, props.redemptionRate)
+)
+const triggerLabel = computed(() => {
+  if (!props.modelValue) return '會員'
+  return props.pointsToRedeem > 0
+    ? `會員：${props.modelValue.name}（折抵${props.pointsToRedeem}點）`
+    : `會員：${props.modelValue.name}`
+})
 
 function openDialog() {
   phoneInput.value = ''
@@ -125,6 +157,13 @@ function onOpenChange(value: boolean) {
   open.value = value
 }
 
+function onPointsToRedeemInput(event: Event) {
+  if (!props.modelValue) return
+  const raw = Math.floor(Number((event.target as HTMLInputElement).value))
+  const clamped = Math.min(Math.max(0, Number.isFinite(raw) ? raw : 0), props.modelValue.points)
+  emit('update:pointsToRedeem', clamped)
+}
+
 async function search() {
   if (phoneInput.value.trim() === '') return
   isSearching.value = true
@@ -132,6 +171,7 @@ async function search() {
     const found = await findMemberByPhone(phoneInput.value.trim())
     if (found) {
       emit('update:modelValue', found)
+      emit('update:pointsToRedeem', 0)
       open.value = false
     } else {
       searchResult.value = 'not-found'
@@ -151,6 +191,7 @@ async function createNewMember() {
       phone: phoneInput.value.trim()
     })
     emit('update:modelValue', created)
+    emit('update:pointsToRedeem', 0)
     showToast('會員建立成功', 'success')
     open.value = false
   } catch (err) {
@@ -160,6 +201,7 @@ async function createNewMember() {
 
 function unsetMember() {
   emit('update:modelValue', null)
+  emit('update:pointsToRedeem', 0)
   open.value = false
 }
 </script>

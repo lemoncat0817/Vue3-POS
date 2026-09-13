@@ -1047,3 +1047,185 @@ describe('會員清單／詳細資料附上目前分級（tierStatus）', () => 
     expect(detail.tierStatus).toEqual({ tier: null, lifetimeSpend: 0 })
   })
 })
+
+/** 結帳點數折抵，見 routes/orders.ts createOrderRoute 裡的折抵邏輯。 */
+describe('結帳使用點數折抵', () => {
+  const headers = (deviceToken: string, sessionToken: string) => ({
+    'Content-Type': 'application/json',
+    'X-Device-Token': deviceToken,
+    'X-Operator-Session': sessionToken
+  })
+
+  async function setupMemberWithPoints(points: number) {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const h = headers(deviceToken, sessionToken)
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers: h,
+        body: JSON.stringify({ name: '王小明', phone: '0912345678' })
+      })
+    )
+    await app.request(`/api/members/${member.id}/points-adjustments`, {
+      method: 'POST',
+      headers: h,
+      body: JSON.stringify({ delta: points, reason: '測試預先加點', operator: '店長 - Lemon' })
+    })
+    return { app, headers: h, member }
+  }
+
+  function buildRequest(overrides: Record<string, unknown>) {
+    return {
+      idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FE1',
+      businessDate: '20240610',
+      staff: '店長 - Lemon',
+      lines: [
+        {
+          name: '楊枝甘露2.0',
+          price: 200,
+          count: 1,
+          addList: '無添加配料' as const,
+          addListPrice: 0,
+          freeDiscount: false,
+          quickDiscountId: null
+        }
+      ],
+      bagCount: 0,
+      appliedCoupon: { type: 'none' },
+      orderChannel: '外帶',
+      invoiceCarrier: { type: '無載具' },
+      ...overrides
+    }
+  }
+
+  it('折抵金額由伺服端依租戶比例重算，扣點、應付金額都正確反映；累加點數只算折抵後的淨額', async () => {
+    const { app, headers, member } = await setupMemberWithPoints(500)
+
+    // 應付金額 200 元，折抵 100 點（預設每 10 點折抵 1 元 = 10 元），
+    // 實付 190 元；累加點數只算淨額：190 / 10 = 19 點。
+    const orderRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(
+        buildRequest({
+          memberId: member.id,
+          pointsToRedeem: 100,
+          tenders: [{ method: '現金', amount: 190 }]
+        })
+      )
+    })
+    expect(orderRes.status).toBe(201)
+    const order = await readJson(orderRes)
+    expect(order.orderPaymentPrice).toBe(190)
+    expect(order.pointsRedeemed).toBe(100)
+    expect(order.pointsEarned).toBe(19)
+    expect(order.discountName).toBe('點數折抵')
+
+    const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(detail.points).toBe(500 - 100 + 19)
+    // 依 createdAt 新到舊排序，redemption 在 order_accrual 之後才寫入，排最前面。
+    expect(
+      detail.pointsLedger.map((entry: { reason: string; delta: number }) => ({
+        reason: entry.reason,
+        delta: entry.delta
+      }))
+    ).toEqual(
+      expect.arrayContaining([
+        { reason: 'order_accrual', delta: 19 },
+        { reason: 'redemption', delta: -100 },
+        { reason: 'manual_adjustment', delta: 500 }
+      ])
+    )
+  })
+
+  it('折抵點數超過會員目前點數時拒絕，回傳 400，不影響點數或訂單', async () => {
+    const { app, headers, member } = await setupMemberWithPoints(50)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(
+        buildRequest({
+          memberId: member.id,
+          pointsToRedeem: 100,
+          tenders: [{ method: '現金', amount: 190 }]
+        })
+      )
+    })
+    expect(res.status).toBe(400)
+    const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(detail.points).toBe(50)
+  })
+
+  it('折抵金額超過應付金額時拒絕，回傳 400', async () => {
+    const { app, headers, member } = await setupMemberWithPoints(100000)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(
+        buildRequest({
+          memberId: member.id,
+          // 每 10 點折抵 1 元，10000 點會折抵 1000 元，遠超過應付金額 200 元。
+          pointsToRedeem: 10000,
+          tenders: [{ method: '現金', amount: 0 }]
+        })
+      )
+    })
+    expect(res.status).toBe(400)
+  })
+
+  it('整單作廢會全額退還折抵掉的點數；撤銷作廢會重新扣一次', async () => {
+    const { app, headers, member } = await setupMemberWithPoints(500)
+    const orderRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(
+        buildRequest({
+          memberId: member.id,
+          pointsToRedeem: 100,
+          tenders: [{ method: '現金', amount: 190 }]
+        })
+      )
+    })
+    const order = await readJson(orderRes)
+    // 500 - 100(折抵) + 19(累加) = 419。
+    const afterOrder = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(afterOrder.points).toBe(419)
+
+    await app.request(`/api/orders/${order.orderId}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ orderStatus: '已取消', operator: '店長 - Lemon', reason: '測試作廢' })
+    })
+    // 作廢收回累加的 19 點、退還折抵的 100 點：419 - 19 + 100 = 500（回到原點）。
+    const afterVoid = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(afterVoid.points).toBe(500)
+
+    await app.request(`/api/orders/${order.orderId}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ orderStatus: '已完成', operator: '店長 - Lemon' })
+    })
+    // 撤銷作廢：重新累加 19 點、重新扣 100 點，回到作廢前的狀態。
+    const afterRestore = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
+    expect(afterRestore.points).toBe(419)
+  })
+
+  it('沒有掛會員時，pointsToRedeem 直接被忽略，不會報錯', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const res = await app.request('/api/orders', {
+      method: 'POST',
+      headers: headers(deviceToken, sessionToken),
+      body: JSON.stringify(
+        buildRequest({ pointsToRedeem: 100, tenders: [{ method: '現金', amount: 200 }] })
+      )
+    })
+    expect(res.status).toBe(201)
+    const order = await readJson(res)
+    expect(order.pointsRedeemed).toBe(0)
+    expect(order.orderPaymentPrice).toBe(200)
+  })
+})

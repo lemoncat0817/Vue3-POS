@@ -7,6 +7,9 @@
 /** 沒有租戶自訂設定時的預設值：每消費 10 元累加 1 點。 */
 export const DEFAULT_POINTS_PER_CURRENCY_UNIT = 10
 
+/** 沒有租戶自訂設定時的預設值：每 10 點折抵 1 元。 */
+export const DEFAULT_POINTS_REDEMPTION_RATE = 10
+
 /** 依應付金額與比例算出這筆訂單應得的點數，無條件捨去。 */
 export function earnedPointsForPayment(
   orderPaymentPrice: number,
@@ -14,6 +17,15 @@ export function earnedPointsForPayment(
 ): number {
   if (pointsPerCurrencyUnit <= 0) return 0
   return Math.floor(orderPaymentPrice / pointsPerCurrencyUnit)
+}
+
+/** 依折抵比例算出要花掉的點數能折抵多少錢，無條件捨去（跟累加點數同一套「金額÷比例」邏輯，方向相反）。 */
+export function redemptionValueForPoints(
+  pointsToRedeem: number,
+  pointsRedemptionRate: number
+): number {
+  if (pointsRedemptionRate <= 0 || pointsToRedeem <= 0) return 0
+  return Math.floor(pointsToRedeem / pointsRedemptionRate)
 }
 
 /** 依「已退款金額佔應付金額」的比例，反推應該收回多少點數。 */

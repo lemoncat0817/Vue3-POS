@@ -47,7 +47,11 @@ describe('GET /api/tenant-settings', () => {
       headers: { 'X-Device-Token': deviceToken }
     })
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ businessDayStartHour: 4, pointsPerCurrencyUnit: 10 })
+    expect(await res.json()).toEqual({
+      businessDayStartHour: 4,
+      pointsPerCurrencyUnit: 10,
+      pointsRedemptionRate: 10
+    })
   })
 
   it('已分配租戶但尚未調整過時，回傳欄位預設值（換日時間 4 點、每 10 元 1 點）', async () => {
@@ -58,7 +62,11 @@ describe('GET /api/tenant-settings', () => {
       headers: { 'X-Device-Token': deviceToken }
     })
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ businessDayStartHour: 4, pointsPerCurrencyUnit: 10 })
+    expect(await res.json()).toEqual({
+      businessDayStartHour: 4,
+      pointsPerCurrencyUnit: 10,
+      pointsRedemptionRate: 10
+    })
   })
 })
 
@@ -89,12 +97,20 @@ describe('PUT /api/tenant-settings', () => {
       body: JSON.stringify({ businessDayStartHour: 18 })
     })
     expect(updateRes.status).toBe(200)
-    expect(await readJson(updateRes)).toEqual({ businessDayStartHour: 18, pointsPerCurrencyUnit: 10 })
+    expect(await readJson(updateRes)).toEqual({
+      businessDayStartHour: 18,
+      pointsPerCurrencyUnit: 10,
+      pointsRedemptionRate: 10
+    })
 
     const getRes = await app.request('/api/tenant-settings', {
       headers: { 'X-Device-Token': deviceToken }
     })
-    expect(await readJson(getRes)).toEqual({ businessDayStartHour: 18, pointsPerCurrencyUnit: 10 })
+    expect(await readJson(getRes)).toEqual({
+      businessDayStartHour: 18,
+      pointsPerCurrencyUnit: 10,
+      pointsRedemptionRate: 10
+    })
   })
 
   it('只更新點數比例（業主自訂消費多少元累加 1 點）時，換日時間不受影響', async () => {
@@ -113,7 +129,34 @@ describe('PUT /api/tenant-settings', () => {
       body: JSON.stringify({ pointsPerCurrencyUnit: 5 })
     })
     expect(res.status).toBe(200)
-    expect(await readJson(res)).toEqual({ businessDayStartHour: 4, pointsPerCurrencyUnit: 5 })
+    expect(await readJson(res)).toEqual({
+      businessDayStartHour: 4,
+      pointsPerCurrencyUnit: 5,
+      pointsRedemptionRate: 10
+    })
+  })
+
+  it('可以只更新點數折抵比例（業主自訂每多少點折抵 1 元）', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(
+      createTestDb(),
+      'test-device',
+      { tenantId: 'tenant-1' }
+    )
+    const res = await app.request('/api/tenant-settings', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ pointsRedemptionRate: 20 })
+    })
+    expect(res.status).toBe(200)
+    expect(await readJson(res)).toEqual({
+      businessDayStartHour: 4,
+      pointsPerCurrencyUnit: 10,
+      pointsRedemptionRate: 20
+    })
   })
 
   it('換日時間超出 0～23 範圍時拒絕，回傳 400', async () => {

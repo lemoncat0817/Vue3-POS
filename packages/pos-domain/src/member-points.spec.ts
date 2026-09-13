@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { earnedPointsForPayment, pointsWithheldForRefundedAmount } from './member-points'
+import {
+  earnedPointsForPayment,
+  pointsWithheldForRefundedAmount,
+  redemptionValueForPoints
+} from './member-points'
 
 describe('earnedPointsForPayment', () => {
   it('每消費 10 元累加 1 點，無條件捨去', () => {
@@ -32,5 +36,21 @@ describe('pointsWithheldForRefundedAmount', () => {
 
   it('應付金額為 0 時不計算（防止除以 0）', () => {
     expect(pointsWithheldForRefundedAmount(16, 0, 0)).toBe(0)
+  })
+})
+
+describe('redemptionValueForPoints', () => {
+  it('每 10 點折抵 1 元，無條件捨去', () => {
+    expect(redemptionValueForPoints(100, 10)).toBe(10)
+    expect(redemptionValueForPoints(105, 10)).toBe(10)
+  })
+
+  it('沒有要折抵點數時是 0', () => {
+    expect(redemptionValueForPoints(0, 10)).toBe(0)
+  })
+
+  it('比例不合法（0 或負數）時不折抵，避免除以 0', () => {
+    expect(redemptionValueForPoints(100, 0)).toBe(0)
+    expect(redemptionValueForPoints(100, -1)).toBe(0)
   })
 })

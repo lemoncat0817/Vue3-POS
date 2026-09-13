@@ -80,7 +80,7 @@ watch(paymentMethods, (value) => {
   orderStore.hydratePaymentMethodsFromServer(value)
 })
 
-// 應用啟動時一次性同步租戶營業設定（目前只有營業日換日時間）。
+// 應用啟動時一次性同步租戶營業設定（換日時間、點數折抵比例）。
 const { data: tenantSettings } = useQuery({
   queryKey: ['tenant-settings'],
   queryFn: fetchTenantSettings,
@@ -90,6 +90,8 @@ const { data: tenantSettings } = useQuery({
 watch(tenantSettings, (value) => {
   if (!value) return
   orderStore.hydrateBusinessDayStartHourFromServer(value.businessDayStartHour)
+  orderStore.hydratePointsRedemptionRateFromServer(value.pointsRedemptionRate)
+  orderStore.hydratePointsPerCurrencyUnitFromServer(value.pointsPerCurrencyUnit)
 })
 
 // 應用啟動時一次性同步人員名單。

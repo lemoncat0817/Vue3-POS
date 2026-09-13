@@ -343,7 +343,11 @@ describe('跨租戶隔離', () => {
         headers: { 'X-Device-Token': tenantB.deviceToken }
       })
     ))
-    expect(settingsB).toEqual({ businessDayStartHour: 4, pointsPerCurrencyUnit: 10 })
+    expect(settingsB).toEqual({
+      businessDayStartHour: 4,
+      pointsPerCurrencyUnit: 10,
+      pointsRedemptionRate: 10
+    })
   })
 
   it('裝置：B 的裝置清單看不到 A 的裝置', async () => {

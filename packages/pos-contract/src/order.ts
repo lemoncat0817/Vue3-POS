@@ -100,6 +100,12 @@ export const createOrderRequestSchema = z.object({
   invoiceCarrier: invoiceCarrierSchema,
   /** 選填，沒有輸入會員手機就是一般訂單。伺服端依應付金額累加點數（見 routes/orders.ts 的 accrueMemberPoints）。 */
   memberId: z.string().min(1).optional(),
+  /**
+   * 選填，這筆訂單要用多少點數折抵。沒有掛會員（memberId）時一律視為 0；
+   * 折抵金額由伺服端依租戶自訂的兌換比例重算，不信任用戶端算好的數字，
+   * 超過會員目前點數或超過應付金額都會被擋下（見 routes/orders.ts）。
+   */
+  pointsToRedeem: z.number().int().nonnegative().optional(),
   /** 選填，純粹是訂單的紀錄用途，不是桌況的外鍵——桌況由店員手動維護，不由訂單生命週期推導。 */
   tableNumber: z.string().min(1).optional(),
   /** 選填備註（外送地址、取件時間、客製化需求等），純文字紀錄用途，伺服端不解析內容。 */
@@ -173,6 +179,8 @@ export const orderSchema = z.object({
   memberId: z.string().nullable(),
   /** 這筆訂單掛會員時累加的點數，沒有掛會員是 0；固定不變，退款/作廢的收回不會回頭改寫這裡。 */
   pointsEarned: z.number().int().nonnegative(),
+  /** 這筆訂單折抵時花掉的點數，沒有折抵是 0；固定不變，作廢會全額退還但不會回頭改寫這裡。 */
+  pointsRedeemed: z.number().int().nonnegative(),
   /** 沒有指定是 null。 */
   tableNumber: z.string().nullable(),
   /** 沒有填寫是 null。 */

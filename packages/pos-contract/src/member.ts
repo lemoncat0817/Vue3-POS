@@ -81,14 +81,21 @@ export type MemberOrderSummary = z.infer<typeof memberOrderSummarySchema>
 
 /**
  * 會員點數異動明細的來源分類。order_accrual／refund_reversal／void_reversal／
- * restore_award 由訂單流程自動寫入（見 apps/api/src/routes/orders.ts），
- * manual_adjustment 是後台手動加點/扣點（見 POST /api/members/:id/points-adjustments）。
+ * restore_award／redemption／redemption_refund 由訂單流程自動寫入（見
+ * apps/api/src/routes/orders.ts），manual_adjustment 是後台手動加點/扣點
+ * （見 POST /api/members/:id/points-adjustments）。
+ *
+ * redemption 是結帳當下拿點數折抵的扣點；redemption_refund 是訂單整單作廢
+ * 時把折抵掉的點數還回去（作廢後又撤銷作廢，會重新扣一次 redemption）。
+ * 部分退款不會自動調整已折抵的點數，需要的話用手動調整補回來。
  */
 export const memberPointLedgerReasonSchema = z.enum([
   'order_accrual',
   'refund_reversal',
   'void_reversal',
   'restore_award',
+  'redemption',
+  'redemption_refund',
   'manual_adjustment'
 ])
 export type MemberPointLedgerReason = z.infer<typeof memberPointLedgerReasonSchema>

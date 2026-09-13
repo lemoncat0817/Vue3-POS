@@ -1,6 +1,11 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { DEFAULT_BUSINESS_DAY_START_HOUR, getBusinessDate } from '@pos/domain'
+import {
+  DEFAULT_BUSINESS_DAY_START_HOUR,
+  DEFAULT_POINTS_PER_CURRENCY_UNIT,
+  DEFAULT_POINTS_REDEMPTION_RATE,
+  getBusinessDate
+} from '@pos/domain'
 import type { OrderRecord, PaymentMethod } from '@/types'
 
 export const useOrderStore = defineStore(
@@ -74,6 +79,14 @@ export const useOrderStore = defineStore(
     // persist 下來的上次設定值繼續當 fallback。
     const businessDayStartHour = ref(DEFAULT_BUSINESS_DAY_START_HOUR)
 
+    // 結帳點數折抵比例：每多少點折抵 1 元，開機時會用租戶實際設定覆蓋
+    // （見 hydratePointsRedemptionRateFromServer 與 App.vue）。
+    const pointsRedemptionRate = ref(DEFAULT_POINTS_REDEMPTION_RATE)
+
+    // 每消費多少元累加 1 點，開機時會用租戶實際設定覆蓋。只用來在送單當下
+    // 估算本機樂觀顯示用的 pointsEarned，真正算數以伺服端回應為準。
+    const pointsPerCurrencyUnit = ref(DEFAULT_POINTS_PER_CURRENCY_UNIT)
+
     // 送單當下依 getBusinessDate() 計算營業日，記錄上次核發日以利跨日重置序號。
     const lastBusinessDate = ref(getBusinessDate(new Date(), businessDayStartHour.value))
     // 預覽即將送出的單號。
@@ -117,13 +130,25 @@ export const useOrderStore = defineStore(
       businessDayStartHour.value = hour
     }
 
+    const hydratePointsRedemptionRateFromServer = (rate: number) => {
+      pointsRedemptionRate.value = rate
+    }
+
+    const hydratePointsPerCurrencyUnitFromServer = (value: number) => {
+      pointsPerCurrencyUnit.value = value
+    }
+
     return {
       currentOrderNumber,
       order,
       paymentList,
       businessDayStartHour,
+      pointsRedemptionRate,
+      pointsPerCurrencyUnit,
       hydratePaymentMethodsFromServer,
       hydrateBusinessDayStartHourFromServer,
+      hydratePointsRedemptionRateFromServer,
+      hydratePointsPerCurrencyUnitFromServer,
       nextOrderId,
       issueOrderId,
       reconcileOrderId

@@ -18,9 +18,11 @@ import {
 } from '@pos/contract'
 import {
   DEFAULT_POINTS_PER_CURRENCY_UNIT,
+  DEFAULT_POINTS_REDEMPTION_RATE,
   earnedPointsForPayment,
   pointsWithheldForRefundedAmount,
   priceLine,
+  redemptionValueForPoints,
   summarizeOrderRefunds,
   type QuickDiscount
 } from '@pos/domain'
@@ -240,6 +242,7 @@ function toOrderResponse(
     invoiceCarrier: toInvoiceCarrier(order.invoiceCarrierType, order.invoiceCarrierValue),
     memberId: order.memberId,
     pointsEarned: order.pointsEarned,
+    pointsRedeemed: order.pointsRedeemed,
     invoiceStatus: order.invoiceStatus,
     invoiceSubmittedAt: order.invoiceSubmittedAt,
     tableNumber: order.tableNumber,
@@ -450,6 +453,12 @@ async function resolvePointsPerCurrencyUnit(db: AnyDb, tenantId: string | null):
   return tenant?.pointsPerCurrencyUnit ?? DEFAULT_POINTS_PER_CURRENCY_UNIT
 }
 
+/** 租戶自訂的點數折抵比例（每多少點折抵 1 元），業主可在會員管理頁調整。 */
+async function resolvePointsRedemptionRate(db: AnyDb, tenantId: string | null): Promise<number> {
+  const tenant = await db.select().from(users).where(tenantFilter(users.id, tenantId)).get()
+  return tenant?.pointsRedemptionRate ?? DEFAULT_POINTS_REDEMPTION_RATE
+}
+
 /**
  * 直接用資料庫端算式做原子加減，不是「先 SELECT 現在的點數、應用層加完
  * 再整包寫回去」——後者在同一個會員短時間內被多筆訂單／退款同時觸發時，
@@ -632,7 +641,42 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     if ('error' in payment) {
       return c.json({ error: payment.error }, 400)
     }
-    const { orderPaymentPrice, discountName } = payment
+    let orderPaymentPrice = payment.orderPaymentPrice
+    let discountName = payment.discountName
+
+    const memberId = await resolveMemberId(db, tenantId, input.memberId)
+
+    // 點數折抵：只有掛會員才能折抵，折抵金額由伺服端依租戶自訂比例重算，
+    // 不信任用戶端算好的數字。折抵順序排在折價券之後——先套用折價券把
+    // 應付金額算出來，點數折抵只能再折這筆金額，不能疊加超過應付金額。
+    const pointsToRedeem = memberId ? (input.pointsToRedeem ?? 0) : 0
+    if (pointsToRedeem > 0) {
+      const redeemingMember = await db
+        .select()
+        .from(members)
+        .where(and(eq(members.id, memberId as string), tenantFilter(members.tenantId, tenantId)))
+        .get()
+      if (!redeemingMember || pointsToRedeem > redeemingMember.points) {
+        return c.json(
+          {
+            error: `折抵點數（${pointsToRedeem}）超過會員目前點數（${redeemingMember?.points ?? 0}）`
+          },
+          400
+        )
+      }
+      const redemptionValue = redemptionValueForPoints(
+        pointsToRedeem,
+        await resolvePointsRedemptionRate(db, tenantId)
+      )
+      if (redemptionValue > orderPaymentPrice) {
+        return c.json(
+          { error: `折抵金額（${redemptionValue}）超過應付金額（${orderPaymentPrice}）` },
+          400
+        )
+      }
+      orderPaymentPrice -= redemptionValue
+      discountName = discountName === '無' ? '點數折抵' : `${discountName}、點數折抵`
+    }
 
     const tenderResult = validateTenders(input.tenders, orderPaymentPrice)
     if ('error' in tenderResult) {
@@ -654,8 +698,9 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : '核發發票號碼失敗' }, 400)
     }
-    const memberId = await resolveMemberId(db, tenantId, input.memberId)
-    // 沒有掛會員就是 0，不用另外查租戶的點數比例。
+    // 沒有掛會員就是 0，不用另外查租戶的點數比例。應付金額已經先扣掉點數
+    // 折抵的部分才算累加點數，不會出現「拿點數折抵、又靠折抵後的金額賺
+    // 回點數」這種左手換右手的漏洞。
     const pointsEarned = memberId
       ? earnedPointsForPayment(orderPaymentPrice, await resolvePointsPerCurrencyUnit(db, tenantId))
       : 0
@@ -686,6 +731,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
         input.invoiceCarrier.type === '無載具' ? null : input.invoiceCarrier.value,
       memberId,
       pointsEarned,
+      pointsRedeemed: pointsToRedeem,
       invoiceStatus: 'issued',
       invoiceSubmittedAt: null,
       // 純紀錄用途，不像 memberId 需要驗證存在性（不是外鍵，只是字串）。
@@ -712,6 +758,7 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     // 提早 return 的路徑，不會重複執行。
     await deductStock(db, tenantId, input.lines)
     await adjustMemberPoints(db, tenantId, memberId, pointsEarned, 'order_accrual', orderId)
+    await adjustMemberPoints(db, tenantId, memberId, -pointsToRedeem, 'redemption', orderId)
 
     const insertedLines = await db
       .select()
@@ -921,8 +968,28 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       const remaining = remainingReversiblePoints(existing.pointsEarned, existing.orderPaymentPrice, refunds)
       if (orderStatus === '已取消') {
         await adjustMemberPoints(db, tenantId, existing.memberId, -remaining, 'void_reversal', orderId)
+        // 整單作廢，這筆訂單當初折抵掉的點數也全額退還——部分退款不會動
+        // 到這裡，只有整單作廢／撤銷作廢才處理，見 memberPointLedgerReasonSchema
+        // 的說明。
+        await adjustMemberPoints(
+          db,
+          tenantId,
+          existing.memberId,
+          existing.pointsRedeemed,
+          'redemption_refund',
+          orderId
+        )
       } else if (existing.orderStatus === '已取消') {
         await adjustMemberPoints(db, tenantId, existing.memberId, remaining, 'restore_award', orderId)
+        // 撤銷作廢：訂單重新生效，先前退還的折抵點數要重新扣一次。
+        await adjustMemberPoints(
+          db,
+          tenantId,
+          existing.memberId,
+          -existing.pointsRedeemed,
+          'redemption',
+          orderId
+        )
       }
     }
 

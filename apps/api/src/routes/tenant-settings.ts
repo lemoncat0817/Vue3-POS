@@ -1,7 +1,11 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { tenantSettingsSchema, updateTenantSettingsRequestSchema } from '@pos/contract'
-import { DEFAULT_BUSINESS_DAY_START_HOUR, DEFAULT_POINTS_PER_CURRENCY_UNIT } from '@pos/domain'
+import {
+  DEFAULT_BUSINESS_DAY_START_HOUR,
+  DEFAULT_POINTS_PER_CURRENCY_UNIT,
+  DEFAULT_POINTS_REDEMPTION_RATE
+} from '@pos/domain'
 import { users } from '../db/schema'
 import { checkCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -68,7 +72,8 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
     return c.json(
       tenantSettingsSchema.parse({
         businessDayStartHour: tenant?.businessDayStartHour ?? DEFAULT_BUSINESS_DAY_START_HOUR,
-        pointsPerCurrencyUnit: tenant?.pointsPerCurrencyUnit ?? DEFAULT_POINTS_PER_CURRENCY_UNIT
+        pointsPerCurrencyUnit: tenant?.pointsPerCurrencyUnit ?? DEFAULT_POINTS_PER_CURRENCY_UNIT,
+        pointsRedemptionRate: tenant?.pointsRedemptionRate ?? DEFAULT_POINTS_REDEMPTION_RATE
       }),
       200
     )
@@ -82,7 +87,7 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
       const check = await checkCapability(c, 'canSetBusinessHours')
       if (!check.ok) return c.json({ error: check.message }, check.status)
     }
-    if (input.pointsPerCurrencyUnit !== undefined) {
+    if (input.pointsPerCurrencyUnit !== undefined || input.pointsRedemptionRate !== undefined) {
       const check = await checkCapability(c, 'canManageMembers')
       if (!check.ok) return c.json({ error: check.message }, check.status)
     }
@@ -97,13 +102,17 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
         }),
         ...(input.pointsPerCurrencyUnit !== undefined && {
           pointsPerCurrencyUnit: input.pointsPerCurrencyUnit
+        }),
+        ...(input.pointsRedemptionRate !== undefined && {
+          pointsRedemptionRate: input.pointsRedemptionRate
         })
       })
       .where(eq(users.id, tenant.id))
     return c.json(
       tenantSettingsSchema.parse({
         businessDayStartHour: input.businessDayStartHour ?? tenant.businessDayStartHour,
-        pointsPerCurrencyUnit: input.pointsPerCurrencyUnit ?? tenant.pointsPerCurrencyUnit
+        pointsPerCurrencyUnit: input.pointsPerCurrencyUnit ?? tenant.pointsPerCurrencyUnit,
+        pointsRedemptionRate: input.pointsRedemptionRate ?? tenant.pointsRedemptionRate
       }),
       200
     )

@@ -102,6 +102,8 @@ export function orderToRecord(order: Order): OrderRecord {
     voidedBy: order.voidedBy,
     voidedAt: order.voidedAt,
     memberId: order.memberId,
+    pointsEarned: order.pointsEarned,
+    pointsRedeemed: order.pointsRedeemed,
     tableNumber: order.tableNumber,
     note: order.note
   }
@@ -133,6 +135,8 @@ export function buildCreateOrderRequest(params: {
   invoiceCarrier: InvoiceCarrier
   /** 會員 ID，未選擇則不帶。 */
   memberId?: string | null
+  /** 這筆訂單要用多少點數折抵，沒有掛會員或不折抵就不帶。 */
+  pointsToRedeem?: number
   /** 內用桌號，純紀錄用途。 */
   tableNumber?: string | null
   /** 訂單備註，純紀錄用途。 */
@@ -157,6 +161,7 @@ export function buildCreateOrderRequest(params: {
     orderChannel: params.orderChannel,
     invoiceCarrier: params.invoiceCarrier,
     ...(params.memberId ? { memberId: params.memberId } : {}),
+    ...(params.memberId && params.pointsToRedeem ? { pointsToRedeem: params.pointsToRedeem } : {}),
     ...(params.tableNumber ? { tableNumber: params.tableNumber } : {}),
     ...(params.note ? { note: params.note } : {})
   })

@@ -5,7 +5,9 @@ export const tenantSettingsSchema = z.object({
   /** 營業日換日時間（0~23 時鐘小時）。凌晨營業到這個時間之前的訂單仍歸屬前一個營業日。 */
   businessDayStartHour: z.number().int().min(0).max(23),
   /** 每消費多少元累加 1 點（正整數）。 */
-  pointsPerCurrencyUnit: z.number().int().positive()
+  pointsPerCurrencyUnit: z.number().int().positive(),
+  /** 結帳折抵時，每多少點折抵 1 元（正整數）。跟 pointsPerCurrencyUnit 是相反方向的兩個比例，各自設定。 */
+  pointsRedemptionRate: z.number().int().positive()
 })
 export type TenantSettings = z.infer<typeof tenantSettingsSchema>
 

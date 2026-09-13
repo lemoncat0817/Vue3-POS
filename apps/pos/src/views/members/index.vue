@@ -468,12 +468,23 @@
       <ModalDialog v-model:open="pointsSettingDialog" title="點數設定">
         <div class="flex flex-col gap-3">
           <p class="text-xs text-surface-500 dark:text-surface-400">
-            設定顧客消費多少元累加 1 點，調整後只套用到「儲存之後」新產生的訂單，已入帳的點數不會被回頭改寫。
+            設定顧客消費多少元累加 1 點、結帳時每多少點可以折抵 1 元，調整後只套用到「儲存之後」新產生的訂單，已入帳／已折抵的點數不會被回頭改寫。
           </p>
           <label class="block text-sm font-bold text-surface-700 dark:text-surface-300">
             消費多少元累加 1 點
             <input
               v-model.number="pointsPerCurrencyUnitInput"
+              type="number"
+              min="1"
+              step="1"
+              :disabled="pointsSettingSaving || pointsSettingLoading"
+              class="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-surface-100 disabled:text-surface-400 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:disabled:bg-surface-900 dark:disabled:text-surface-600"
+            />
+          </label>
+          <label class="block text-sm font-bold text-surface-700 dark:text-surface-300">
+            結帳時每多少點折抵 1 元
+            <input
+              v-model.number="pointsRedemptionRateInput"
               type="number"
               min="1"
               step="1"
@@ -495,7 +506,9 @@
                 pointsSettingSaving ||
                 pointsSettingLoading ||
                 !Number.isInteger(pointsPerCurrencyUnitInput) ||
-                pointsPerCurrencyUnitInput < 1
+                pointsPerCurrencyUnitInput < 1 ||
+                !Number.isInteger(pointsRedemptionRateInput) ||
+                pointsRedemptionRateInput < 1
               "
               class="pos-btn pos-btn-primary px-4 py-2 text-sm font-bold"
               @click="onSavePointsSetting"
@@ -860,6 +873,8 @@ const POINTS_LEDGER_REASON_LABELS: Record<MemberPointLedgerReason, string> = {
   refund_reversal: '退款收回',
   void_reversal: '作廢收回',
   restore_award: '撤銷作廢退還',
+  redemption: '結帳折抵',
+  redemption_refund: '作廢退還折抵',
   manual_adjustment: '手動調整'
 }
 function pointsLedgerReasonLabel(reason: MemberPointLedgerReason): string {
@@ -900,10 +915,11 @@ async function onSubmitAdjustPoints(values: Record<string, unknown>) {
   }
 }
 
-// 消費多少元累加 1 點，業主可自訂——跟營業設定的換日時間一樣存在租戶層級，
-// 見 apps/api/src/routes/tenant-settings.ts。
+// 消費多少元累加 1 點、結帳每多少點折抵 1 元，業主可自訂——跟營業設定的
+// 換日時間一樣存在租戶層級，見 apps/api/src/routes/tenant-settings.ts。
 const pointsSettingDialog = ref(false)
 const pointsPerCurrencyUnitInput = ref(10)
+const pointsRedemptionRateInput = ref(10)
 const pointsSettingLoading = ref(false)
 const pointsSettingSaving = ref(false)
 async function openPointsSettingDialog() {
@@ -913,6 +929,7 @@ async function openPointsSettingDialog() {
   try {
     const settings = await fetchTenantSettings()
     pointsPerCurrencyUnitInput.value = settings.pointsPerCurrencyUnit
+    pointsRedemptionRateInput.value = settings.pointsRedemptionRate
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   } finally {
@@ -923,9 +940,11 @@ async function onSavePointsSetting() {
   pointsSettingSaving.value = true
   try {
     const settings = await updateTenantSettings({
-      pointsPerCurrencyUnit: pointsPerCurrencyUnitInput.value
+      pointsPerCurrencyUnit: pointsPerCurrencyUnitInput.value,
+      pointsRedemptionRate: pointsRedemptionRateInput.value
     })
     pointsPerCurrencyUnitInput.value = settings.pointsPerCurrencyUnit
+    pointsRedemptionRateInput.value = settings.pointsRedemptionRate
     pointsSettingDialog.value = false
     showToast('已更新點數設定', 'success')
   } catch (err) {
