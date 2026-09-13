@@ -17,7 +17,8 @@
           退款金額
           <input
             v-model.number="state.amount"
-            type="number"
+            type="text"
+            inputmode="numeric"
             min="1"
             :max="state.max"
             class="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"

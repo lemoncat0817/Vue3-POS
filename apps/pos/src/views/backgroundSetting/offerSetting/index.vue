@@ -287,7 +287,8 @@
           <FormField
             name="value"
             :label="values.kind === 'amount' ? '折抵金額' : '折抵折數'"
-            type="number"
+            type="text"
+            :inputmode="values.kind === 'amount' ? 'numeric' : 'decimal'"
             :step="values.kind === 'amount' ? '1' : '0.01'"
             :disabled="isSubmitting"
             :placeholder="
@@ -347,7 +348,8 @@
           <FormField
             name="value"
             :label="values.kind === 'amount' ? '折抵金額' : '折抵折數'"
-            type="number"
+            type="text"
+            :inputmode="values.kind === 'amount' ? 'numeric' : 'decimal'"
             :step="values.kind === 'amount' ? '1' : '0.01'"
             :disabled="isSubmitting"
             :placeholder="
@@ -403,7 +405,8 @@
           <FormField
             name="value"
             :label="values.kind === 'amount' ? '折抵金額' : '折抵折數'"
-            type="number"
+            type="text"
+            :inputmode="values.kind === 'amount' ? 'numeric' : 'decimal'"
             :step="values.kind === 'amount' ? '1' : '0.01'"
             :disabled="isSubmitting"
             :placeholder="
@@ -463,7 +466,8 @@
           <FormField
             name="value"
             :label="values.kind === 'amount' ? '折抵金額' : '折抵折數'"
-            type="number"
+            type="text"
+            :inputmode="values.kind === 'amount' ? 'numeric' : 'decimal'"
             :step="values.kind === 'amount' ? '1' : '0.01'"
             :disabled="isSubmitting"
             :placeholder="

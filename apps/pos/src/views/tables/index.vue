@@ -143,7 +143,8 @@
           <FormField
             name="seats"
             label="座位數"
-            type="number"
+            type="text"
+            inputmode="numeric"
             step="1"
             :disabled="isSubmitting"
             placeholder="例如: 4"
@@ -189,7 +190,8 @@
             用餐人數
             <input
               v-model.number="pendingGuestCount"
-              type="number"
+              type="text"
+              inputmode="numeric"
               min="1"
               :disabled="!canManage"
               placeholder="選填"

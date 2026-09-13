@@ -532,7 +532,8 @@
             消費多少元累加 1 點
             <input
               v-model.number="pointsPerCurrencyUnitInput"
-              type="number"
+              type="text"
+              inputmode="numeric"
               min="1"
               step="1"
               :disabled="pointsSettingSaving || pointsSettingLoading"
@@ -543,7 +544,8 @@
             結帳時每多少點折抵 1 元
             <input
               v-model.number="pointsRedemptionRateInput"
-              type="number"
+              type="text"
+              inputmode="numeric"
               min="1"
               step="1"
               :disabled="pointsSettingSaving || pointsSettingLoading"
@@ -567,7 +569,8 @@
             <input
               v-if="pointsExpiryEnabled"
               v-model.number="pointsExpiryMonthsInput"
-              type="number"
+              type="text"
+              inputmode="numeric"
               min="1"
               step="1"
               placeholder="幾個月沒有異動就歸零"
@@ -713,7 +716,8 @@
             <FormField
               name="minSpend"
               label="累積消費門檻（元）"
-              type="number"
+              type="text"
+              inputmode="numeric"
               :disabled="isSubmitting"
               placeholder="例如: 10000"
             />

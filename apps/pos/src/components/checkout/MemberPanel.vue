@@ -24,7 +24,8 @@
         使用點數折抵（目前 {{ modelValue.points }} 點，每 {{ redemptionRate }} 點折抵 1 元）
         <input
           :value="pointsToRedeem"
-          type="number"
+          type="text"
+          inputmode="numeric"
           min="0"
           :max="modelValue.points"
           step="1"

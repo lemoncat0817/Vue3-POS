@@ -132,7 +132,8 @@
         <FormField
           name="rangeStart"
           label="起始號碼"
-          type="number"
+          type="text"
+          inputmode="numeric"
           step="1"
           :disabled="isSubmitting"
           placeholder="例如: 1"
@@ -140,7 +141,8 @@
         <FormField
           name="rangeEnd"
           label="結束號碼"
-          type="number"
+          type="text"
+          inputmode="numeric"
           step="1"
           :disabled="isSubmitting"
           placeholder="例如: 50000000"

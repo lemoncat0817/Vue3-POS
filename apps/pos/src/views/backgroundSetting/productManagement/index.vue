@@ -435,7 +435,8 @@
             底價
             <input
               v-model="productDialog.basePrice"
-              type="number"
+              type="text"
+              inputmode="numeric"
               min="0"
               step="1"
               class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono"
@@ -447,7 +448,8 @@
           庫存
           <input
             v-model="productDialog.stock"
-            type="number"
+            type="text"
+            inputmode="numeric"
             min="0"
             step="1"
             class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono"
@@ -566,7 +568,8 @@
             />
             <input
               v-model="option.stock"
-              type="number"
+              type="text"
+              inputmode="numeric"
               min="0"
               step="1"
               class="w-24 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none font-mono"

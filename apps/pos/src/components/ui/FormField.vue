@@ -4,6 +4,7 @@
     <input
       :value="value"
       :type="type ?? 'text'"
+      :inputmode="inputmode"
       :step="step"
       :maxlength="maxlength"
       :disabled="disabled"
@@ -34,6 +35,7 @@ const props = defineProps<{
   label: string
   placeholder?: string
   type?: string
+  inputmode?: 'numeric' | 'decimal'
   step?: string
   maxlength?: number
   disabled?: boolean

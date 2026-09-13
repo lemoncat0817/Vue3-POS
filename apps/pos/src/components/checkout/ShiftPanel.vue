@@ -32,7 +32,8 @@
       <p class="text-sm text-surface-500 dark:text-surface-400">開帳零用金（找零準備金）</p>
       <input
         v-model.number="openingFloat"
-        type="number"
+        type="text"
+        inputmode="numeric"
         min="0"
         class="w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
       />
@@ -101,7 +102,8 @@
           金額
           <input
             v-model.number="movementAmount"
-            type="number"
+            type="text"
+            inputmode="numeric"
             min="1"
             class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
           />
@@ -158,7 +160,8 @@
       </p>
       <input
         v-model.number="actualCash"
-        type="number"
+        type="text"
+        inputmode="numeric"
         min="0"
         class="w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
       />

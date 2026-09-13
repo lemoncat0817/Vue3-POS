@@ -126,7 +126,8 @@
             <input
               v-if="orderChannel === '內用'"
               v-model.number="guestCountInput"
-              type="number"
+              type="text"
+              inputmode="numeric"
               min="1"
               placeholder="人數"
               title="用餐人數（選填）"
@@ -490,7 +491,8 @@
             </SliderRoot>
             <input
               v-model.number="bagCount"
-              type="number"
+              type="text"
+              inputmode="numeric"
               min="0"
               max="100"
               class="w-16 rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1 text-center text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
