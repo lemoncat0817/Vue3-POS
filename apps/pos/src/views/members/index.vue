@@ -129,7 +129,18 @@
                   {{ (memberPage - 1) * memberPageSize + index + 1 }}
                 </td>
                 <td class="px-4 py-3.5 text-left font-bold text-surface-900 dark:text-surface-100">
-                  {{ member.name }}
+                  <div class="flex flex-col gap-1">
+                    <span>{{ member.name }}</span>
+                    <div v-if="member.tags.length > 0" class="flex flex-wrap gap-1">
+                      <span
+                        v-for="tag in member.tags"
+                        :key="tag"
+                        class="rounded-full bg-surface-100 dark:bg-surface-800 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 dark:text-surface-400"
+                      >
+                        {{ tag }}
+                      </span>
+                    </div>
+                  </div>
                 </td>
                 <td class="px-4 py-3.5 text-left">
                   <span
@@ -199,7 +210,7 @@
         <Form
           v-slot="{ isSubmitting }"
           :validation-schema="toTypedSchema(memberSchema())"
-          :initial-values="{ name: '', phone: '', birthday: '' }"
+          :initial-values="{ name: '', phone: '', birthday: '', tags: '', notes: '' }"
           @submit="onSubmitAdd"
         >
           <FormField name="name" label="姓名" :disabled="isSubmitting" placeholder="例如: 王小明" />
@@ -210,6 +221,13 @@
             placeholder="例如: 0912345678"
           />
           <FormField name="birthday" label="生日（選填）" type="date" :disabled="isSubmitting" />
+          <FormField
+            name="tags"
+            label="標籤（選填，用逗號分隔）"
+            :disabled="isSubmitting"
+            placeholder="例如: 常點無糖, 對堅果過敏"
+          />
+          <FormField name="notes" label="備註（選填）" :disabled="isSubmitting" placeholder="例如: 喜歡坐窗邊" />
           <div class="mt-2 flex justify-end gap-2">
             <button
               type="button"
@@ -236,7 +254,9 @@
           :initial-values="{
             name: currentMember?.name ?? '',
             phone: currentMember?.phone ?? '',
-            birthday: currentMember?.birthday ?? ''
+            birthday: currentMember?.birthday ?? '',
+            tags: currentMember?.tags?.join(', ') ?? '',
+            notes: currentMember?.notes ?? ''
           }"
           @submit="onSubmitEdit"
         >
@@ -248,6 +268,13 @@
             placeholder="例如: 0912345678"
           />
           <FormField name="birthday" label="生日（選填）" type="date" :disabled="isSubmitting" />
+          <FormField
+            name="tags"
+            label="標籤（選填，用逗號分隔）"
+            :disabled="isSubmitting"
+            placeholder="例如: 常點無糖, 對堅果過敏"
+          />
+          <FormField name="notes" label="備註（選填）" :disabled="isSubmitting" placeholder="例如: 喜歡坐窗邊" />
           <div class="mt-2 flex justify-end gap-2">
             <button
               type="button"
@@ -284,6 +311,23 @@
               >（累積消費 {{ detail?.tierStatus?.lifetimeSpend ?? 0 }} 元）</span
             >
           </div>
+        </div>
+        <div
+          v-if="detail && (detail.tags.length > 0 || detail.notes)"
+          class="mb-3 flex flex-col gap-1.5 rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3.5 py-2.5"
+        >
+          <div v-if="detail.tags.length > 0" class="flex flex-wrap gap-1.5">
+            <span
+              v-for="tag in detail.tags"
+              :key="tag"
+              class="rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[11px] font-medium text-surface-600 dark:text-surface-300"
+            >
+              {{ tag }}
+            </span>
+          </div>
+          <p v-if="detail.notes" class="text-xs text-surface-600 dark:text-surface-400">
+            備註：{{ detail.notes }}
+          </p>
         </div>
         <div
           class="mb-3 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3.5 py-2.5"
@@ -782,8 +826,20 @@ function memberSchema(excludeId?: string) {
       .refine(
         (value) => value === '' || memberBirthdaySchema.safeParse(value).success,
         '請輸入正確的日期格式'
-      )
+      ),
+    // 選填：逗號分隔的純文字，送出時拆成陣列（見 parseTagsInput）。
+    tags: z.string(),
+    // 選填：空字串代表沒有填，送出時轉成 null。
+    notes: z.string()
   })
+}
+
+/** 逗號分隔的標籤輸入，拆成陣列並去除空白／空字串。 */
+function parseTagsInput(value: string): string[] {
+  return value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0)
 }
 
 const addDialog = ref(false)
@@ -792,9 +848,15 @@ function openAddDialog() {
   addDialog.value = true
 }
 async function onSubmitAdd(values: Record<string, unknown>) {
-  const input = values as { name: string; phone: string; birthday: string }
+  const input = values as { name: string; phone: string; birthday: string; tags: string; notes: string }
   try {
-    await createMember({ ...input, birthday: input.birthday || null })
+    await createMember({
+      name: input.name,
+      phone: input.phone,
+      birthday: input.birthday || null,
+      tags: parseTagsInput(input.tags),
+      notes: input.notes.trim() || null
+    })
     addDialog.value = false
     showToast('新增成功', 'success')
     await loadMembers()
@@ -812,9 +874,15 @@ function openEditDialog(member: Member) {
 }
 async function onSubmitEdit(values: Record<string, unknown>) {
   if (!currentMember.value) return
-  const input = values as { name: string; phone: string; birthday: string }
+  const input = values as { name: string; phone: string; birthday: string; tags: string; notes: string }
   try {
-    await updateMember(currentMember.value.id, { ...input, birthday: input.birthday || null })
+    await updateMember(currentMember.value.id, {
+      name: input.name,
+      phone: input.phone,
+      birthday: input.birthday || null,
+      tags: parseTagsInput(input.tags),
+      notes: input.notes.trim() || null
+    })
     editDialog.value = false
     showToast('保存成功', 'success')
     await loadMembers()

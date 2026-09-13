@@ -320,6 +320,8 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       tenantId,
       ...input,
       birthday: input.birthday ?? null,
+      tags: input.tags ?? [],
+      notes: input.notes ?? null,
       points: 0,
       createdAt: new Date().toISOString(),
       deletedAt: null
@@ -440,7 +442,12 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (phoneTaken && phoneTaken.id !== id)
       return c.json({ error: '這個手機號碼已經是別的會員' }, 409)
-    const patch = { ...input, birthday: input.birthday ?? null }
+    const patch = {
+      ...input,
+      birthday: input.birthday ?? null,
+      tags: input.tags ?? [],
+      notes: input.notes ?? null
+    }
     await db.update(members).set(patch).where(eq(members.id, id))
     return c.json({ ...existing, ...patch }, 200)
   })

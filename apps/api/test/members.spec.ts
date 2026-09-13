@@ -1229,3 +1229,69 @@ describe('結帳使用點數折抵', () => {
     expect(order.orderPaymentPrice).toBe(200)
   })
 })
+
+/** 會員標籤與備註：自由標記與備註，純顯示用途。 */
+describe('會員標籤與備註', () => {
+  it('新增時可以帶標籤與備註，沒帶時分別是空陣列與 null', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const withTags = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          name: '王小明',
+          phone: '0912345678',
+          tags: ['常點無糖', '對堅果過敏'],
+          notes: '喜歡坐窗邊'
+        })
+      })
+    )
+    expect(withTags.tags).toEqual(['常點無糖', '對堅果過敏'])
+    expect(withTags.notes).toBe('喜歡坐窗邊')
+
+    const withoutTags = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '林小華', phone: '0987654321' })
+      })
+    )
+    expect(withoutTags.tags).toEqual([])
+    expect(withoutTags.notes).toBeNull()
+  })
+
+  it('編輯可以更新標籤與備註', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0912345678' })
+      })
+    )
+    const updateRes = await app.request(`/api/members/${member.id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({
+        name: '王小明',
+        phone: '0912345678',
+        tags: ['熟客'],
+        notes: '常客訴，需特別注意服務態度'
+      })
+    })
+    expect(updateRes.status).toBe(200)
+    const updated = await readJson(updateRes)
+    expect(updated.tags).toEqual(['熟客'])
+    expect(updated.notes).toBe('常客訴，需特別注意服務態度')
+  })
+})

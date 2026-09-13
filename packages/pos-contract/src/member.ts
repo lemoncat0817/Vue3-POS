@@ -20,6 +20,10 @@ export const memberSchema = z.object({
   phone: z.string().min(1),
   points: z.number().int().nonnegative(),
   birthday: z.string().nullable(),
+  /** 自由標記（例如「常點無糖」「對堅果過敏」），純顯示用途，不是分級或權限。 */
+  tags: z.array(z.string().min(1)),
+  /** 顧客備註，自由文字，選填。 */
+  notes: z.string().nullable(),
   createdAt: z.string(),
   // 只有列表／詳細資料會即時算好附上；建立/更新/調整點數的回應不含這欄，
   // 那幾個場景用不到、算了也是浪費一次查詢。
@@ -30,7 +34,9 @@ export type Member = z.infer<typeof memberSchema>
 export const createMemberRequestSchema = z.object({
   name: z.string().trim().min(1),
   phone: memberPhoneSchema,
-  birthday: memberBirthdaySchema.nullable().optional()
+  birthday: memberBirthdaySchema.nullable().optional(),
+  tags: z.array(z.string().trim().min(1)).optional(),
+  notes: z.string().trim().max(1000).nullable().optional()
 })
 export type CreateMemberRequest = z.infer<typeof createMemberRequestSchema>
 

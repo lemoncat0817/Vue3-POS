@@ -330,6 +330,11 @@ export const members = sqliteTable(
     // 生日，YYYY-MM-DD，選填。用來做生日行銷（本月壽星名單），見
     // routes/members.ts 的 listMemberBirthdaysRoute。
     birthday: text('birthday'),
+    // 自由標記（例如「常點無糖」「對堅果過敏」），供客服／行銷人員快速辨識，
+    // 不是分級或權限，純顯示用途。
+    tags: text('tags', { mode: 'json' }).$type<string[]>().notNull().default([]),
+    // 顧客備註，自由文字，選填。
+    notes: text('notes'),
     createdAt: text('created_at')
       .notNull()
       .default(sql`(current_timestamp)`),
