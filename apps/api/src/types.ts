@@ -11,5 +11,8 @@ export type AppEnv = {
     /** requireDeviceToken 通過驗證後，解出這台裝置所屬的租戶 id（見
      *  middleware/require-device-token.ts）。單租戶過渡期資料為 null。 */
     tenantId: string | null
+    /** requireDeviceToken 通過驗證後，比對出的裝置本身 id，供 GET /devices/me
+     *  查自己的資訊用，不用另外靠前端回報 deviceId。 */
+    deviceId: string
   }
 }

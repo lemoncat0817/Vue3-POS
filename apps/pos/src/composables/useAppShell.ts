@@ -13,6 +13,7 @@ import {
 import { revokeSession } from '@/api/auth'
 import { useCatalogStore } from '@/stores/catalog'
 import { useLoginStore } from '@/stores/login'
+import { useDeviceStore } from '@/stores/device'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { useTheme } from '@/composables/useTheme'
@@ -34,6 +35,7 @@ export const navItems = [
 export function useAppShell() {
   const catalogStore = useCatalogStore()
   const loginStore = useLoginStore()
+  const deviceStore = useDeviceStore()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
 
@@ -42,6 +44,9 @@ export function useAppShell() {
     if (!user) return '未登入'
     return `${user.jobTitle} - ${user.name}`
   })
+
+  // GET /devices/me 還沒回來、或這台裝置還沒被命名時的預設顯示文字。
+  const deviceDisplayName = computed(() => deviceStore.deviceName ?? '未命名機台')
 
   const changePage = async (path: string) => {
     if (path === '/backgroundSetting' && catalogStore.cartLines.length != 0) {
@@ -95,6 +100,7 @@ export function useAppShell() {
     toggleTheme,
     syncStatus,
     cashierDisplayName,
+    deviceDisplayName,
     changePage,
     logout
   }

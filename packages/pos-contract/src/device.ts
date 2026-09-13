@@ -19,3 +19,8 @@ export const createDeviceResponseSchema = deviceSchema.extend({
   token: z.string().min(1)
 })
 export type CreateDeviceResponse = z.infer<typeof createDeviceResponseSchema>
+
+export const updateDeviceRequestSchema = z.object({
+  name: z.string().min(1)
+})
+export type UpdateDeviceRequest = z.infer<typeof updateDeviceRequestSchema>

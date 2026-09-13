@@ -36,6 +36,10 @@ export const useDeviceStore = defineStore(
   'device',
   () => {
     const deviceToken = ref<string | null>(null)
+    // 這台裝置的顯示名稱（例如「旗艦店 · 機台 A」），開機時由 App.vue 呼叫
+    // GET /devices/me 覆蓋成伺服端最新值；先持久化這份快取，避免每次重新
+    // 整理都要等那支請求回來才有值可顯示，畫面先閃一下舊名字總比空白好。
+    const deviceName = ref<string | null>(null)
     // 新租戶第一次登入時，後端隨裝置一起核發的 owner 帳號／PIN（見
     // auth/onboarding.ts），只在這次登入畫面顯示一次給使用者抄下來，
     // 顯示過後由畫面呼叫 clearPendingOwnerCredentials() 清掉，不持久化。
@@ -57,7 +61,18 @@ export const useDeviceStore = defineStore(
       pendingOwnerPin.value = null
     }
 
-    return { deviceToken, pendingOwnerAccount, pendingOwnerPin, clearPendingOwnerCredentials }
+    function hydrateDeviceNameFromServer(name: string): void {
+      deviceName.value = name
+    }
+
+    return {
+      deviceToken,
+      deviceName,
+      pendingOwnerAccount,
+      pendingOwnerPin,
+      clearPendingOwnerCredentials,
+      hydrateDeviceNameFromServer
+    }
   },
   {
     persist: {

@@ -22,10 +22,12 @@ import { useDiscountStore } from '@/stores/discount'
 import { useOrderStore } from '@/stores/order'
 import { useAuthorityManagementStore } from '@/stores/authorityManagement'
 import { useRolesStore } from '@/stores/roles'
+import { useDeviceStore } from '@/stores/device'
 import { fetchCatalog, toLocalCategories, toLocalModifierGroups, toLocalProducts } from '@/api/catalog'
 import { fetchPromotions, toOrderCoupons, toQuickDiscounts } from '@/api/promotions'
 import { fetchPaymentMethods } from '@/api/payment-methods'
 import { fetchTenantSettings } from '@/api/tenant-settings'
+import { fetchCurrentDevice } from '@/api/devices'
 import { fetchStaffList } from '@/api/staff'
 import { fetchRoleList } from '@/api/roles'
 import { toStaffMember } from '@/api/auth'
@@ -92,6 +94,20 @@ watch(tenantSettings, (value) => {
   orderStore.hydrateBusinessDayStartHourFromServer(value.businessDayStartHour)
   orderStore.hydratePointsRedemptionRateFromServer(value.pointsRedemptionRate)
   orderStore.hydratePointsPerCurrencyUnitFromServer(value.pointsPerCurrencyUnit)
+})
+
+// 應用啟動時一次性同步目前裝置的名稱（頂部列的「機台」顯示，見
+// layout/header/index.vue 與 layout/admin/AdminTopbar.vue）。
+const deviceStore = useDeviceStore()
+const { data: currentDevice } = useQuery({
+  queryKey: ['current-device'],
+  queryFn: fetchCurrentDevice,
+  staleTime: Infinity,
+  retry: 1
+})
+watch(currentDevice, (value) => {
+  if (!value) return
+  deviceStore.hydrateDeviceNameFromServer(value.name)
 })
 
 // 應用啟動時一次性同步人員名單。

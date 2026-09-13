@@ -21,6 +21,7 @@ export const auditLogActionSchema = z.enum([
   'role.update',
   'role.delete',
   'device.revoke',
+  'device.rename',
   'category.create',
   'category.update',
   'category.delete',

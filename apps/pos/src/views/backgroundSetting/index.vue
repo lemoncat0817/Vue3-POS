@@ -83,6 +83,19 @@
             <Clock class="h-4 w-4" />
             <span>營業設定</span>
           </button>
+          <button
+            type="button"
+            class="flex items-center gap-2 rounded-lg px-4 py-2 text-xs lg:text-sm font-bold transition-all select-none"
+            :class="
+              settingStore.currentSettingPage === 5
+                ? 'bg-white dark:bg-surface-900 text-primary-600 dark:text-primary-400 shadow-sm ring-1 ring-black/5 dark:ring-white/5'
+                : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-200'
+            "
+            @click="settingStore.currentSettingPage = 5"
+          >
+            <Smartphone class="h-4 w-4" />
+            <span>裝置設定</span>
+          </button>
         </div>
       </div>
 
@@ -92,18 +105,20 @@
         <InvoiceTrackSetting v-if="settingStore.currentSettingPage === 2" class="w-full" />
         <PaymentMethodSetting v-if="settingStore.currentSettingPage === 3" class="w-full" />
         <BusinessHourSetting v-if="settingStore.currentSettingPage === 4" class="w-full" />
+        <DeviceSetting v-if="settingStore.currentSettingPage === 5" class="w-full" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Clock, Coffee, CreditCard, Percent, Receipt } from 'lucide-vue-next'
+import { Clock, Coffee, CreditCard, Percent, Receipt, Smartphone } from 'lucide-vue-next'
 import ProductManagement from './productManagement/index.vue'
 import OfferSetting from './offerSetting/index.vue'
 import InvoiceTrackSetting from './invoiceTrackSetting/index.vue'
 import PaymentMethodSetting from './paymentMethodSetting/index.vue'
 import BusinessHourSetting from './businessHourSetting/index.vue'
+import DeviceSetting from './deviceSetting/index.vue'
 import { useSettingStore } from '@/stores/setting'
 const settingStore = useSettingStore()
 </script>

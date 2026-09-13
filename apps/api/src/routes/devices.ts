@@ -1,6 +1,11 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
-import { createDeviceRequestSchema, createDeviceResponseSchema, deviceSchema } from '@pos/contract'
+import {
+  createDeviceRequestSchema,
+  createDeviceResponseSchema,
+  deviceSchema,
+  updateDeviceRequestSchema
+} from '@pos/contract'
 import { recordAuditLog } from '../audit/record'
 import { generateSecureToken, hashSecret } from '../auth/hash'
 import { devices } from '../db/schema'
@@ -38,6 +43,58 @@ const listDevicesRoute = createRoute({
     200: {
       description: '裝置清單（不含憑證本身）',
       content: { 'application/json': { schema: z.array(deviceSchema) } }
+    }
+  }
+})
+
+// 給前端顯示「目前這台機台」用（例如頂部列的機台名稱），只需要證明是
+// 合法裝置，不需要 canManageDevices——單純顯示自己的名字不是敏感操作。
+const getCurrentDeviceRoute = createRoute({
+  method: 'get',
+  path: '/me',
+  middleware: [requireDeviceToken] as const,
+  responses: {
+    200: {
+      description: '目前這台裝置的資訊',
+      content: { 'application/json': { schema: deviceSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } }
+    },
+    404: {
+      description: '找不到這個裝置',
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } }
+    }
+  }
+})
+
+// 改名比照撤銷需要 canManageDevices：機台名稱會顯示在前台頂部列，任何一台
+// 裝置都能改別台的名字等於誰都能亂改其他機台的標示，跟撤銷是同一類風險。
+const renameDeviceRoute = createRoute({
+  method: 'patch',
+  path: '/{id}',
+  middleware: [requireDeviceToken, requireCapability('canManageDevices')] as const,
+  request: {
+    params: z.object({ id: z.string().min(1) }),
+    body: { content: { 'application/json': { schema: updateDeviceRequestSchema } } }
+  },
+  responses: {
+    200: {
+      description: '裝置名稱更新成功',
+      content: { 'application/json': { schema: deviceSchema } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏、或缺少操作員身分',
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } }
+    },
+    403: {
+      description: '沒有 canManageDevices 權限',
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } }
+    },
+    404: {
+      description: '找不到這個裝置',
+      content: { 'application/json': { schema: z.object({ error: z.string() }) } }
     }
   }
 })
@@ -117,6 +174,34 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
       rows.map((row) => toDeviceResponse(row)),
       200
     )
+  })
+  .openapi(getCurrentDeviceRoute, async (c) => {
+    const db = c.get('db')
+    const deviceId = c.get('deviceId')
+    const existing = await db.select().from(devices).where(eq(devices.id, deviceId)).get()
+    if (!existing) {
+      return c.json({ error: '找不到這個裝置' }, 404)
+    }
+    return c.json(toDeviceResponse(existing), 200)
+  })
+  .openapi(renameDeviceRoute, async (c) => {
+    const { id } = c.req.valid('param')
+    const { name } = c.req.valid('json')
+    const db = c.get('db')
+    const tenantId = c.get('tenantId')
+
+    const existing = await db
+      .select()
+      .from(devices)
+      .where(and(eq(devices.id, id), tenantFilter(devices.tenantId, tenantId)))
+      .get()
+    if (!existing) {
+      return c.json({ error: '找不到這個裝置' }, 404)
+    }
+
+    await db.update(devices).set({ name }).where(eq(devices.id, id))
+    await recordAuditLog(c, 'device.rename', `裝置「${existing.name}」重新命名為「${name}」`)
+    return c.json(toDeviceResponse({ ...existing, name }), 200)
   })
   .openapi(revokeDeviceRoute, async (c) => {
     const { id } = c.req.valid('param')

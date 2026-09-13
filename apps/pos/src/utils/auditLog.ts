@@ -16,6 +16,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditLogAction, string> = {
   'role.update': '更新權限群組',
   'role.delete': '刪除權限群組',
   'device.revoke': '撤銷裝置憑證',
+  'device.rename': '重新命名裝置',
   'category.create': '新增分類',
   'category.update': '更新分類',
   'category.delete': '刪除分類',
@@ -75,7 +76,8 @@ export const AUDIT_ACTION_GROUPS: AuditActionGroup[] = [
       'role.update',
       'role.delete',
       'device.issue',
-      'device.revoke'
+      'device.revoke',
+      'device.rename'
     ]
   },
   {

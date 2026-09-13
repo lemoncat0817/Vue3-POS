@@ -36,7 +36,7 @@
       <div
         class="hidden lg:flex items-center gap-2 rounded-full border border-surface-200 bg-surface-50 px-3 py-1 text-xs font-semibold text-surface-700 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300 shadow-inner"
       >
-        <span>旗艦店 · 機台 A</span>
+        <span>{{ deviceDisplayName }}</span>
         <span class="h-1 w-1 rounded-full bg-surface-300 dark:bg-surface-600"></span>
         <span>{{ cashierDisplayName }}</span>
       </div>
@@ -84,6 +84,14 @@
 import { Sun, Moon, LogOut, RefreshCw } from 'lucide-vue-next'
 import { navItems, useAppShell } from '@/composables/useAppShell'
 
-const { router, theme, toggleTheme, syncStatus, cashierDisplayName, changePage, logout } =
-  useAppShell()
+const {
+  router,
+  theme,
+  toggleTheme,
+  syncStatus,
+  cashierDisplayName,
+  deviceDisplayName,
+  changePage,
+  logout
+} = useAppShell()
 </script>
