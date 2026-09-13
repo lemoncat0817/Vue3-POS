@@ -114,10 +114,12 @@
 import { watch } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
+import { useQueryClient } from '@tanstack/vue-query'
 import { useLoginStore } from '@/stores/login'
 import { useDeviceStore } from '@/stores/device'
 const loginStore = useLoginStore()
 const deviceStore = useDeviceStore()
+const queryClient = useQueryClient()
 import { showToast } from '@/composables/useToast'
 import { operatorLogin, toStaffMember } from '@/api/auth'
 import { googleLoginUrl, githubLoginUrl } from '@/api/oauth'
@@ -150,6 +152,17 @@ const login = async () => {
     loginStore.userInfo = toStaffMember(staff)
     loginStore.sessionToken = staff.sessionToken
     loginStore.isLogin = true
+    // App.vue 的 roles／staff 兩個 useQuery 是 staleTime: Infinity、開機只拿一次，
+    // 同一個瀏覽器分頁在這次登入之前可能還停留在舊的權限群組資料（例如另一台
+    // 裝置改過權限、或剛剛才調整完自己的角色又登出重登）——這裡強制在登入當下
+    // 重新整份拉最新的，權限管理頁的勾選框才不會顯示過期的權限內容。至於這個
+    // 操作員「當下能不能做某件事」本來就是看這次登入回應自帶的 capabilities
+    // （見 loginStore.userInfo），不受這兩個 store 是否過期影響，不算安全漏洞，
+    // 只是畫面顯示會跟資料庫實際狀態對不起來。
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['roles'] }),
+      queryClient.invalidateQueries({ queryKey: ['staff'] })
+    ])
     router.push('/home')
     showToast(`登入成功：${staff.jobTitle} - ${staff.name}，歡迎進入 POS機系統`, 'success')
   } catch (err) {
