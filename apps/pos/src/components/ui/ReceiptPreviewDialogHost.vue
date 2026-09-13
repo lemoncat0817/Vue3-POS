@@ -39,6 +39,13 @@
             <span class="shrink-0">備註</span>
             <span class="text-right whitespace-pre-wrap">{{ state.order.note }}</span>
           </div>
+          <div v-if="state.order.memberId" class="flex justify-between">
+            <span>會員</span>
+            <span
+              >{{ state.order.memberName ?? state.order.memberId
+              }}{{ state.order.memberPhone ? `（${state.order.memberPhone}）` : '' }}</span
+            >
+          </div>
         </div>
         <div class="my-2 border-t border-dashed border-surface-300 dark:border-surface-700" />
         <table class="w-full text-xs">
@@ -82,6 +89,12 @@
           </div>
           <div class="flex justify-between">
             <span>付款方式</span><span>{{ state.order.orderPayment }}</span>
+          </div>
+          <div v-if="state.order.pointsRedeemed > 0" class="flex justify-between">
+            <span>本次折抵點數</span><span>−{{ state.order.pointsRedeemed }} 點</span>
+          </div>
+          <div v-if="state.order.pointsEarned > 0" class="flex justify-between">
+            <span>本次獲得點數</span><span>+{{ state.order.pointsEarned }} 點</span>
           </div>
         </div>
         <div class="my-2 border-t border-dashed border-surface-300 dark:border-surface-700" />
