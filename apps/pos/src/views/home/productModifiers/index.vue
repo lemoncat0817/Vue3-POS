@@ -211,20 +211,6 @@
           >
             {{ preset }}
           </button>
-          <button
-            type="button"
-            class="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-black select-none transition-all active:scale-95 cursor-pointer"
-            :class="
-              ![1, 2, 3, 5].includes(productCountDisplay)
-                ? 'border-primary-500 bg-primary-600 text-white shadow-sm'
-                : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700'
-            "
-            title="開啟數字鍵盤自訂數量"
-            @click="isKeypadOpen = true"
-          >
-            <span>自訂</span>
-            <Keyboard class="w-3 h-3" />
-          </button>
         </div>
       </div>
 
