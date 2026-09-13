@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { createDeviceRequestSchema, createDeviceResponseSchema, deviceSchema } from '@pos/contract'
+import { recordAuditLog } from '../audit/record'
 import { generateSecureToken, hashSecret } from '../auth/hash'
 import { devices } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
@@ -130,5 +131,6 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
 
     const revokedAt = new Date().toISOString()
     await db.update(devices).set({ revokedAt }).where(eq(devices.id, id))
+    await recordAuditLog(c, 'device.revoke', `撤銷裝置憑證「${existing.name}」`)
     return c.json(toDeviceResponse({ ...existing, revokedAt }), 200)
   })

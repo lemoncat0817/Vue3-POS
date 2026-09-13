@@ -6,6 +6,7 @@ import {
   updateRoleRequestSchema,
   type AuthorityKey
 } from '@pos/contract'
+import { recordAuditLog } from '../audit/record'
 import { roles, staff } from '../db/schema'
 import type { AnyDb } from '../db/types'
 import { requireCapability } from '../middleware/require-capability'
@@ -154,6 +155,11 @@ export const roleRoutes = new OpenAPIHono<AppEnv>()
 
     const newRole = { id: crypto.randomUUID(), tenantId, ...input, isSystem: false }
     await db.insert(roles).values(newRole)
+    await recordAuditLog(
+      c,
+      'role.create',
+      `新增權限群組「${input.name}」（能力：${input.capabilities.join('、') || '無'}）`
+    )
     return c.json(roleSchema.parse(newRole), 201)
   })
   .openapi(updateRoleRoute, async (c) => {
@@ -185,6 +191,11 @@ export const roleRoutes = new OpenAPIHono<AppEnv>()
     }
 
     await db.update(roles).set(input).where(eq(roles.id, id))
+    await recordAuditLog(
+      c,
+      'role.update',
+      `更新權限群組「${input.name}」（能力：${input.capabilities.join('、') || '無'}）`
+    )
     return c.json(roleSchema.parse({ id, ...input, isSystem: existing.isSystem }), 200)
   })
   .openapi(deleteRoleRoute, async (c) => {
@@ -204,5 +215,6 @@ export const roleRoutes = new OpenAPIHono<AppEnv>()
     if (inUse) return c.json({ error: '仍有員工使用此角色，請先改指到其他角色' }, 409)
 
     await db.delete(roles).where(eq(roles.id, id))
+    await recordAuditLog(c, 'role.delete', `刪除權限群組「${existing.name}」`)
     return c.body(null, 204)
   })

@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm'
 import { createStaffRequestSchema, staffSchema, updateStaffRequestSchema } from '@pos/contract'
 import { hashSecret } from '../auth/hash'
 import { findActiveOperatorSession } from '../auth/operator-session'
+import { recordAuditLog } from '../audit/record'
 import { roles, staff } from '../db/schema'
 import type { AnyDb } from '../db/types'
 import { requireCapability } from '../middleware/require-capability'
@@ -212,6 +213,11 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
       lockedUntil: null
     }
     await db.insert(staff).values(newStaff)
+    await recordAuditLog(
+      c,
+      'staff.create',
+      `新增員工「${input.name}」（帳號 ${input.account}，角色：${role.name}）`
+    )
 
     return c.json(await toStaffResponse(db, tenantId, newStaff), 201)
   })
@@ -263,6 +269,11 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
       .update(staff)
       .set({ ...input, roleId, pinHash: pinFields.hash, pinSalt: pinFields.salt })
       .where(eq(staff.id, id))
+    await recordAuditLog(
+      c,
+      'staff.update',
+      `更新員工「${input.name}」（帳號 ${input.account}，角色：${role.name}）`
+    )
 
     return c.json(await toStaffResponse(db, tenantId, { id, ...input, roleId }), 200)
   })
@@ -283,5 +294,6 @@ export const staffRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '此操作會讓沒有人擁有「設定權限群組」的權限，操作已取消' }, 409)
     }
     await db.delete(staff).where(eq(staff.id, id))
+    await recordAuditLog(c, 'staff.delete', `刪除員工「${existing.name}」（帳號 ${existing.account}）`)
     return c.body(null, 204)
   })
