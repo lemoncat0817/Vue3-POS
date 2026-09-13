@@ -3,6 +3,11 @@ import type { AuditLogAction } from '@pos/contract'
 /** 操作紀錄動作的中文顯示文字與分組，供篩選下拉選單與列表欄位使用。 */
 export const AUDIT_ACTION_LABELS: Record<AuditLogAction, string> = {
   cashier_open: '開啟收銀機',
+  'staff.login': '員工登入',
+  'staff.loginFailed': '登入失敗',
+  'staff.logout': '員工登出',
+  'auth.oauthLogin': '後台管理者登入',
+  'device.issue': '裝置配對核發',
   'staff.create': '新增員工',
   'staff.update': '更新員工',
   'staff.delete': '刪除員工',
@@ -55,6 +60,10 @@ export interface AuditActionGroup {
 export const AUDIT_ACTION_GROUPS: AuditActionGroup[] = [
   { title: '收銀', actions: ['cashier_open'] },
   {
+    title: '登入／登出',
+    actions: ['staff.login', 'staff.loginFailed', 'staff.logout', 'auth.oauthLogin']
+  },
+  {
     title: '人員與權限',
     actions: [
       'staff.create',
@@ -63,6 +72,7 @@ export const AUDIT_ACTION_GROUPS: AuditActionGroup[] = [
       'role.create',
       'role.update',
       'role.delete',
+      'device.issue',
       'device.revoke'
     ]
   },

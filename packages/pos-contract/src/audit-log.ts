@@ -8,6 +8,11 @@ import { createPaginatedResponseSchema, paginationQuerySchema } from './paginati
  */
 export const auditLogActionSchema = z.enum([
   'cashier_open',
+  'staff.login',
+  'staff.loginFailed',
+  'staff.logout',
+  'auth.oauthLogin',
+  'device.issue',
   'staff.create',
   'staff.update',
   'staff.delete',
