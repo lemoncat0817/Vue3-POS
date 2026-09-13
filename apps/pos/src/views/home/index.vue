@@ -17,11 +17,6 @@
           </div>
           <span class="h-4 w-px bg-surface-200 dark:bg-surface-700"></span>
           <div class="flex items-center gap-2">
-            <div
-              class="rounded-md bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 px-2 py-0.5 text-xs font-bold"
-            >
-              機台編號 A
-            </div>
             <ShiftPanel
               :operator="`${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`"
             />
