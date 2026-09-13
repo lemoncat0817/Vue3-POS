@@ -7,7 +7,8 @@ import {
   BarChart3,
   ShieldCheck,
   Users,
-  LayoutGrid
+  LayoutGrid,
+  History
 } from 'lucide-vue-next'
 import { revokeSession } from '@/api/auth'
 import { useCatalogStore } from '@/stores/catalog'
@@ -26,7 +27,8 @@ export const navItems = [
   { path: '/dataAnalysis', label: '數據分析', icon: BarChart3 },
   { path: '/authorityManagement', label: '權限管理', icon: ShieldCheck },
   { path: '/members', label: '會員管理', icon: Users },
-  { path: '/tables', label: '桌況管理', icon: LayoutGrid }
+  { path: '/tables', label: '桌況管理', icon: LayoutGrid },
+  { path: '/auditLog', label: '操作紀錄', icon: History }
 ]
 
 export function useAppShell() {

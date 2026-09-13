@@ -24,6 +24,7 @@ export type AuthorityKey =
   | 'canManageTables'
   | 'canSetBusinessHours'
   | 'canManageDevices'
+  | 'canCheckAuditLog'
 
 /**
  * 員工資料。權限只存在角色（權限群組）身上，員工只認 roleId；

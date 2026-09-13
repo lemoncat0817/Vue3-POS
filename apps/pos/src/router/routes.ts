@@ -91,6 +91,15 @@ export const constantRoutes: RouteRecordRaw[] = [
           title: '桌況管理',
           capability: 'canManageTables'
         }
+      },
+      {
+        path: '/auditLog',
+        name: 'auditLog',
+        component: () => import('@/views/auditLog/index.vue'),
+        meta: {
+          title: '操作紀錄',
+          capability: 'canCheckAuditLog'
+        }
       }
     ]
   },
