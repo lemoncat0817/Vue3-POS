@@ -5,6 +5,7 @@ import {
   paymentMethodSchema,
   updatePaymentMethodRequestSchema
 } from '@pos/contract'
+import { recordAuditLog } from '../audit/record'
 import { paymentMethods } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -107,6 +108,7 @@ export const paymentMethodRoutes = new OpenAPIHono<AppEnv>()
     const tenantId = c.get('tenantId')
     const newMethod = { id: crypto.randomUUID(), tenantId, ...input }
     await db.insert(paymentMethods).values(newMethod)
+    await recordAuditLog(c, 'paymentMethod.create', `新增付款方式「${input.name}」`)
     return c.json(newMethod, 201)
   })
   .openapi(updatePaymentMethodRoute, async (c) => {
@@ -121,6 +123,11 @@ export const paymentMethodRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這個付款方式' }, 404)
     await db.update(paymentMethods).set(input).where(eq(paymentMethods.id, id))
+    await recordAuditLog(
+      c,
+      'paymentMethod.update',
+      `更新付款方式「${existing.name}」→「${input.name}」`
+    )
     return c.json({ id, ...input }, 200)
   })
   .openapi(deletePaymentMethodRoute, async (c) => {
@@ -134,5 +141,6 @@ export const paymentMethodRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這個付款方式' }, 404)
     await db.delete(paymentMethods).where(eq(paymentMethods.id, id))
+    await recordAuditLog(c, 'paymentMethod.delete', `刪除付款方式「${existing.name}」`)
     return c.body(null, 204)
   })

@@ -6,6 +6,7 @@ import {
   DEFAULT_POINTS_PER_CURRENCY_UNIT,
   DEFAULT_POINTS_REDEMPTION_RATE
 } from '@pos/domain'
+import { recordAuditLog } from '../audit/record'
 import { users } from '../db/schema'
 import { checkCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -133,6 +134,29 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
         })
       })
       .where(eq(users.id, tenant.id))
+
+    // detail 只列出這次請求實際帶到的欄位，跟前面 checkCapability 的判斷
+    // 依據一致——沒送的欄位維持原值，不算這次異動的一部分。
+    const changedFields: string[] = []
+    if (input.businessDayStartHour !== undefined) {
+      changedFields.push(`營業日換日時間：${input.businessDayStartHour} 點`)
+    }
+    if (input.pointsPerCurrencyUnit !== undefined) {
+      changedFields.push(`每消費 ${input.pointsPerCurrencyUnit} 元累加 1 點`)
+    }
+    if (input.pointsRedemptionRate !== undefined) {
+      changedFields.push(`每 ${input.pointsRedemptionRate} 點折抵 1 元`)
+    }
+    if (input.pointsExpiryMonths !== undefined) {
+      changedFields.push(
+        input.pointsExpiryMonths === null ? '點數到期規則：停用' : `點數 ${input.pointsExpiryMonths} 個月未異動即歸零`
+      )
+    }
+    if (input.autoOccupyTableOnCheckout !== undefined) {
+      changedFields.push(`內用結帳自動標記桌位使用中：${input.autoOccupyTableOnCheckout ? '開啟' : '關閉'}`)
+    }
+    await recordAuditLog(c, 'tenantSettings.update', `更新營業設定（${changedFields.join('、')}）`)
+
     return c.json(
       tenantSettingsSchema.parse({
         businessDayStartHour: input.businessDayStartHour ?? tenant.businessDayStartHour,

@@ -12,6 +12,7 @@ import {
   updateModifierGroupRequestSchema,
   updateProductRequestSchema
 } from '@pos/contract'
+import { recordAuditLog } from '../audit/record'
 import {
   categories,
   modifierGroups,
@@ -354,6 +355,7 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     const tenantId = c.get('tenantId')
     const newCategory = { id: crypto.randomUUID(), tenantId, ...input }
     await db.insert(categories).values(newCategory)
+    await recordAuditLog(c, 'category.create', `新增分類「${input.name}」`)
     return c.json(newCategory, 201)
   })
   .openapi(updateCategoryRoute, async (c) => {
@@ -368,6 +370,7 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這個分類' }, 404)
     await db.update(categories).set(input).where(eq(categories.id, id))
+    await recordAuditLog(c, 'category.update', `更新分類「${existing.name}」→「${input.name}」`)
     return c.json({ id, ...input }, 200)
   })
   .openapi(deleteCategoryRoute, async (c) => {
@@ -389,6 +392,7 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
       return c.json({ error: '這個分類底下還有品項，請先刪除或搬移品項' }, 409)
     }
     await db.delete(categories).where(eq(categories.id, id))
+    await recordAuditLog(c, 'category.delete', `刪除分類「${existing.name}」`)
     return c.body(null, 204)
   })
   .openapi(createProductRoute, async (c) => {
@@ -419,6 +423,7 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     }
     await db.insert(products).values(newProduct)
     await replaceProductModifierGroups(db, newProduct.id, tenantId, input.modifierGroupIds)
+    await recordAuditLog(c, 'product.create', `新增品項「${input.name}」（售價 ${input.basePrice}）`)
     return c.json({ ...newProduct, modifierGroupIds: input.modifierGroupIds }, 201)
   })
   .openapi(updateProductRoute, async (c) => {
@@ -456,6 +461,11 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
       })
       .where(eq(products.id, id))
     await replaceProductModifierGroups(db, id, tenantId, input.modifierGroupIds)
+    await recordAuditLog(
+      c,
+      'product.update',
+      `更新品項「${existing.name}」→「${input.name}」（售價 ${input.basePrice}）`
+    )
     return c.json({ id, ...input }, 200)
   })
   .openapi(deleteProductRoute, async (c) => {
@@ -470,6 +480,7 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     if (!existing) return c.json({ error: '找不到這個品項' }, 404)
     await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, id))
     await db.delete(products).where(eq(products.id, id))
+    await recordAuditLog(c, 'product.delete', `刪除品項「${existing.name}」`)
     return c.body(null, 204)
   })
   .openapi(createModifierGroupRoute, async (c) => {
@@ -485,6 +496,7 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     }
     await db.insert(modifierGroups).values(newGroup)
     await replaceModifierOptions(db, newGroup.id, tenantId, input.options)
+    await recordAuditLog(c, 'modifierGroup.create', `新增規格群組「${input.name}」`)
     const created = await loadModifierGroup(db, newGroup.id, tenantId)
     return c.json(created!, 201)
   })
@@ -504,6 +516,11 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
       .set({ name: input.name, selectionType: input.selectionType, required: input.required })
       .where(eq(modifierGroups.id, id))
     await replaceModifierOptions(db, id, tenantId, input.options)
+    await recordAuditLog(
+      c,
+      'modifierGroup.update',
+      `更新規格群組「${existing.name}」→「${input.name}」`
+    )
     const updated = await loadModifierGroup(db, id, tenantId)
     return c.json(updated!, 200)
   })
@@ -520,5 +537,6 @@ export const catalogRoutes = new OpenAPIHono<AppEnv>()
     await db.delete(modifierOptions).where(eq(modifierOptions.groupId, id))
     await db.delete(productModifierGroups).where(eq(productModifierGroups.groupId, id))
     await db.delete(modifierGroups).where(eq(modifierGroups.id, id))
+    await recordAuditLog(c, 'modifierGroup.delete', `刪除規格群組「${existing.name}」`)
     return c.body(null, 204)
   })

@@ -9,6 +9,7 @@ import {
   updateOrderCouponRequestSchema,
   updateQuickDiscountRequestSchema
 } from '@pos/contract'
+import { recordAuditLog } from '../audit/record'
 import { orderCoupons, quickDiscounts } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -192,6 +193,7 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
     const tenantId = c.get('tenantId')
     const newCoupon = { id: crypto.randomUUID(), tenantId, ...input }
     await db.insert(orderCoupons).values(newCoupon)
+    await recordAuditLog(c, 'orderCoupon.create', `新增訂單折價券「${input.name}」`)
     return c.json(orderCouponSchema.parse(newCoupon), 201)
   })
   .openapi(updateOrderCouponRoute, async (c) => {
@@ -206,6 +208,7 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這張折價券' }, 404)
     await db.update(orderCoupons).set(input).where(eq(orderCoupons.id, id))
+    await recordAuditLog(c, 'orderCoupon.update', `更新訂單折價券「${existing.name}」→「${input.name}」`)
     return c.json(orderCouponSchema.parse({ id, ...input }), 200)
   })
   .openapi(deleteOrderCouponRoute, async (c) => {
@@ -219,6 +222,7 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這張折價券' }, 404)
     await db.delete(orderCoupons).where(eq(orderCoupons.id, id))
+    await recordAuditLog(c, 'orderCoupon.delete', `刪除訂單折價券「${existing.name}」`)
     return c.body(null, 204)
   })
   .openapi(createQuickDiscountRoute, async (c) => {
@@ -227,6 +231,7 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
     const tenantId = c.get('tenantId')
     const newDiscount = { id: crypto.randomUUID(), tenantId, ...input }
     await db.insert(quickDiscounts).values(newDiscount)
+    await recordAuditLog(c, 'quickDiscount.create', `新增快速折扣「${input.name}」`)
     return c.json(quickDiscountSchema.parse(newDiscount), 201)
   })
   .openapi(updateQuickDiscountRoute, async (c) => {
@@ -241,6 +246,11 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這筆快速折扣' }, 404)
     await db.update(quickDiscounts).set(input).where(eq(quickDiscounts.id, id))
+    await recordAuditLog(
+      c,
+      'quickDiscount.update',
+      `更新快速折扣「${existing.name}」→「${input.name}」`
+    )
     return c.json(quickDiscountSchema.parse({ id, ...input }), 200)
   })
   .openapi(deleteQuickDiscountRoute, async (c) => {
@@ -254,5 +264,6 @@ export const promotionRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這筆快速折扣' }, 404)
     await db.delete(quickDiscounts).where(eq(quickDiscounts.id, id))
+    await recordAuditLog(c, 'quickDiscount.delete', `刪除快速折扣「${existing.name}」`)
     return c.body(null, 204)
   })
