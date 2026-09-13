@@ -322,6 +322,9 @@ export const members = sqliteTable(
     phone: text('phone').notNull(),
     // 目前累積值，逐筆異動明細見下面的 memberPointLedger。
     points: integer('points').notNull().default(0),
+    // 生日，YYYY-MM-DD，選填。用來做生日行銷（本月壽星名單），見
+    // routes/members.ts 的 listMemberBirthdaysRoute。
+    birthday: text('birthday'),
     createdAt: text('created_at')
       .notNull()
       .default(sql`(current_timestamp)`),

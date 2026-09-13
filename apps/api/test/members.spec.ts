@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest'
-import { invoiceTracks } from '../src/db/schema'
-import { createTestApp, createTestAppWithDevice } from './helpers/app'
-import { createTestDb } from './helpers/db'
+import { describe, expect, it, vi } from 'vitest'
+import { invoiceTracks, staff } from '../src/db/schema'
+import { createTestApp, createTestAppWithDevice, issueTestSession } from './helpers/app'
+import { createTestDb, type TestDb } from './helpers/db'
 import { seedPromotions } from './helpers/promotions'
+import { seedRole } from './helpers/roles'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 測試只做屬性斷言，不需要完整型別
 async function readJson(res: Response): Promise<any> {
@@ -785,5 +786,124 @@ describe('POST /api/members/:id/points-adjustments（手動調整點數）', () 
       body: JSON.stringify({ delta: 0, reason: '測試', operator: '店長 - Lemon' })
     })
     expect(res.status).toBe(400)
+  })
+})
+
+/** 生日欄位＋本月壽星名單，見 routes/members.ts 的 listMemberBirthdaysRoute。 */
+describe('會員生日與本月壽星名單', () => {
+  it('新增/編輯會員可以選填生日，格式不對會被擋下', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const res = await app.request('/api/members', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ name: '王小明', phone: '0912345678', birthday: '1995-06-15' })
+    })
+    expect(res.status).toBe(201)
+    const created = await readJson(res)
+    expect(created.birthday).toBe('1995-06-15')
+
+    const badFormat = await app.request('/api/members', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ name: '林小華', phone: '0987654321', birthday: '95/06/15' })
+    })
+    expect(badFormat.status).toBe(400)
+
+    const updateRes = await app.request(`/api/members/${created.id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ name: '王小明', phone: '0912345678', birthday: '1995-07-20' })
+    })
+    expect(updateRes.status).toBe(200)
+    expect((await readJson(updateRes)).birthday).toBe('1995-07-20')
+  })
+
+  it('沒有填生日時是 null，不影響會員建立', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const res = await app.request('/api/members', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ name: '王小明', phone: '0912345678' })
+    })
+    expect(res.status).toBe(201)
+    expect((await readJson(res)).birthday).toBeNull()
+  })
+
+  it('依指定月份列出壽星，依日期排序，跟其他月份的會員無關', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const seeds = [
+      { name: '六月晚生日', phone: '0911111111', birthday: '1990-06-20' },
+      { name: '六月早生日', phone: '0922222222', birthday: '1988-06-05' },
+      { name: '七月生日', phone: '0933333333', birthday: '1992-07-01' },
+      { name: '沒填生日', phone: '0944444444' }
+    ]
+    for (const seed of seeds) {
+      await app.request('/api/members', { method: 'POST', headers, body: JSON.stringify(seed) })
+    }
+
+    const res = await app.request('/api/members/birthdays?month=06', { headers })
+    expect(res.status).toBe(200)
+    const body = await readJson(res)
+    expect(body.map((m: { name: string }) => m.name)).toEqual(['六月早生日', '六月晚生日'])
+  })
+
+  it('沒帶 month 時預設用伺服端當下月份', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-10T00:00:00.000Z'))
+    try {
+      const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      }
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '三月壽星', phone: '0911111111', birthday: '2000-03-10' })
+      })
+      const res = await app.request('/api/members/birthdays', { headers })
+      const body = await readJson(res)
+      expect(body).toHaveLength(1)
+      expect(body[0]).toMatchObject({ name: '三月壽星' })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('沒有 canCheckMembers 時查壽星名單會被擋下，回傳 403', async () => {
+    const db: TestDb = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const roleId = await seedRole(db, { capabilities: ['canCheckOrder'] })
+    const staffId = crypto.randomUUID()
+    await db.insert(staff).values({
+      id: staffId,
+      name: '測試員工',
+      jobTitle: '測試',
+      account: `staff-${staffId}`,
+      roleId,
+      pinHash: 'x',
+      pinSalt: 'x'
+    })
+    const sessionToken = await issueTestSession(db, staffId)
+
+    const res = await app.request('/api/members/birthdays', {
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
+    expect(res.status).toBe(403)
   })
 })

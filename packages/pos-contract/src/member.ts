@@ -7,24 +7,48 @@ export const memberPhoneSchema = z
   .trim()
   .regex(/^09\d{8}$/, '請輸入正確的手機號碼格式（09 開頭共 10 碼數字）')
 
+/** 生日格式 YYYY-MM-DD，對應 <input type="date"> 的原生格式。選填，用於生日行銷。 */
+export const memberBirthdaySchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, '請輸入正確的日期格式（YYYY-MM-DD）')
+
 /** 會員 schema。手機號碼為唯一識別鍵，消費依應付金額累積點數。 */
 export const memberSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   phone: z.string().min(1),
   points: z.number().int().nonnegative(),
+  birthday: z.string().nullable(),
   createdAt: z.string()
 })
 export type Member = z.infer<typeof memberSchema>
 
 export const createMemberRequestSchema = z.object({
   name: z.string().trim().min(1),
-  phone: memberPhoneSchema
+  phone: memberPhoneSchema,
+  birthday: memberBirthdaySchema.nullable().optional()
 })
 export type CreateMemberRequest = z.infer<typeof createMemberRequestSchema>
 
 export const updateMemberRequestSchema = createMemberRequestSchema
 export type UpdateMemberRequest = z.infer<typeof updateMemberRequestSchema>
+
+/** 本月壽星名單的查詢參數。month 不帶時預設伺服端當下月份。 */
+export const memberBirthdaysQuerySchema = z.object({
+  month: z
+    .string()
+    .regex(/^(0[1-9]|1[0-2])$/, 'month 必須是 01～12')
+    .optional()
+})
+export type MemberBirthdaysQuery = z.infer<typeof memberBirthdaysQuerySchema>
+
+export const memberBirthdayEntrySchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  phone: z.string().min(1),
+  birthday: z.string()
+})
+export type MemberBirthdayEntry = z.infer<typeof memberBirthdayEntrySchema>
 
 /**
  * GET /api/members 的查詢參數。phone 是結帳流程的精確查詢（維持既有行為，

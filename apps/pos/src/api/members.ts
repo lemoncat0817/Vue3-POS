@@ -1,10 +1,12 @@
 import {
+  memberBirthdayEntrySchema,
   memberDetailSchema,
   memberListResponseSchema,
   memberSchema,
   type CreateMemberRequest,
   type ManualPointAdjustmentRequest,
   type Member,
+  type MemberBirthdayEntry,
   type MemberDetail,
   type MemberListResponse,
   type UpdateMemberRequest
@@ -63,6 +65,14 @@ export async function updateMember(id: string, input: UpdateMemberRequest): Prom
 
 export async function deleteMember(id: string): Promise<void> {
   await fetchJson<null>(`/api/members/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+/** 本月壽星名單（生日行銷）；不帶 month 時伺服端用當下月份。 */
+export async function fetchMemberBirthdays(
+  month?: string | undefined
+): Promise<MemberBirthdayEntry[]> {
+  const body = await fetchJson<unknown>(`/api/members/birthdays${month ? `?month=${month}` : ''}`)
+  return memberBirthdayEntrySchema.array().parse(body)
 }
 
 /** 手動調整點數（客訴補償、活動加點）。 */

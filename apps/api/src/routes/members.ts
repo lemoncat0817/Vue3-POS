@@ -4,6 +4,8 @@ import {
   createMemberRequestSchema,
   listMembersQuerySchema,
   manualPointAdjustmentRequestSchema,
+  memberBirthdayEntrySchema,
+  memberBirthdaysQuerySchema,
   memberDetailQuerySchema,
   memberDetailSchema,
   memberListResponseSchema,
@@ -64,6 +66,29 @@ const createMemberRoute = createRoute({
     },
     409: {
       description: '這個手機號碼已經是會員',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
+})
+
+// 本月壽星名單，供生日行銷用；路徑是靜態的 /birthdays，要排在 /{id} 這種
+// 動態路由前面宣告（比照 orderSummaryRoute 的 /summary 排在 /{orderId} 前面）。
+const listMemberBirthdaysRoute = createRoute({
+  method: 'get',
+  path: '/birthdays',
+  middleware: [requireDeviceToken, requireCapability('canCheckMembers')] as const,
+  request: { query: memberBirthdaysQuerySchema },
+  responses: {
+    200: {
+      description: '指定月份壽星名單，依日期排序',
+      content: { 'application/json': { schema: memberBirthdayEntrySchema.array() } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    403: {
+      description: '沒有 canCheckMembers',
       content: { 'application/json': { schema: errorSchema } }
     }
   }
@@ -227,12 +252,38 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       id: crypto.randomUUID(),
       tenantId,
       ...input,
+      birthday: input.birthday ?? null,
       points: 0,
       createdAt: new Date().toISOString(),
       deletedAt: null
     }
     await db.insert(members).values(newMember)
     return c.json(newMember, 201)
+  })
+  .openapi(listMemberBirthdaysRoute, async (c) => {
+    const { month } = c.req.valid('query')
+    // 沒指定月份就用伺服端當下月份——跟營業日換日時間不一樣，生日行銷不需要
+    // 精確到營業日邊界，用日曆月份即可。
+    const targetMonth = month ?? String(new Date().getMonth() + 1).padStart(2, '0')
+    const db = c.get('db')
+    const tenantId = c.get('tenantId')
+    const rows = await db
+      .select({ id: members.id, name: members.name, phone: members.phone, birthday: members.birthday })
+      .from(members)
+      .where(
+        and(
+          tenantFilter(members.tenantId, tenantId),
+          isNull(members.deletedAt),
+          sql`substr(${members.birthday}, 6, 2) = ${targetMonth}`
+        )
+      )
+      .all()
+    // birthday 固定 YYYY-MM-DD 格式，substr(6,2) 已經篩到目標月份，這裡再依
+    // 「日」排序，讓壽星名單照這個月的日期先後排列。
+    const sorted = [...rows]
+      .filter((row): row is typeof row & { birthday: string } => row.birthday !== null)
+      .sort((a, b) => a.birthday.slice(8, 10).localeCompare(b.birthday.slice(8, 10)))
+    return c.json(sorted, 200)
   })
   .openapi(getMemberRoute, async (c) => {
     const { id } = c.req.valid('param')
@@ -321,8 +372,9 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (phoneTaken && phoneTaken.id !== id)
       return c.json({ error: '這個手機號碼已經是別的會員' }, 409)
-    await db.update(members).set(input).where(eq(members.id, id))
-    return c.json({ ...existing, ...input }, 200)
+    const patch = { ...input, birthday: input.birthday ?? null }
+    await db.update(members).set(patch).where(eq(members.id, id))
+    return c.json({ ...existing, ...patch }, 200)
   })
   .openapi(deleteMemberRoute, async (c) => {
     const { id } = c.req.valid('param')

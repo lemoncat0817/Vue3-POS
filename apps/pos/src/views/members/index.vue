@@ -19,6 +19,14 @@
           <button
             type="button"
             class="flex items-center gap-1.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-2 text-xs lg:text-sm font-bold text-surface-600 dark:text-surface-300 transition-all hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 select-none"
+            @click="openBirthdaysDialog"
+          >
+            <Cake class="h-4 w-4" />
+            <span>本月壽星</span>
+          </button>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-2 text-xs lg:text-sm font-bold text-surface-600 dark:text-surface-300 transition-all hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 select-none"
             :class="{ 'pointer-events-none opacity-40': !canManage }"
             @click="openPointsSettingDialog"
           >
@@ -78,6 +86,7 @@
                 <th class="px-4 py-3.5 text-left">姓名</th>
                 <th class="px-4 py-3.5 text-left">手機</th>
                 <th class="px-4 py-3.5 text-right">點數</th>
+                <th class="px-4 py-3.5 text-left">生日</th>
                 <th class="px-4 py-3.5 text-left">加入時間</th>
                 <th class="px-4 py-3.5 text-center">操作</th>
               </tr>
@@ -85,7 +94,7 @@
             <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
               <tr v-if="members.length === 0">
                 <td
-                  colspan="6"
+                  colspan="7"
                   class="px-4 py-16 text-center text-surface-400 dark:text-surface-500"
                 >
                   <div class="flex flex-col items-center justify-center gap-2">
@@ -119,6 +128,9 @@
                   class="px-4 py-3.5 text-right font-mono font-bold text-primary-600 dark:text-primary-400"
                 >
                   {{ member.points }}
+                </td>
+                <td class="px-4 py-3.5 text-left font-mono text-surface-500 dark:text-surface-400">
+                  {{ member.birthday ?? '—' }}
                 </td>
                 <td class="px-4 py-3.5 text-left text-surface-500 dark:text-surface-400">
                   {{ formatDateOnly(member.createdAt) }}
@@ -168,7 +180,7 @@
         <Form
           v-slot="{ isSubmitting }"
           :validation-schema="toTypedSchema(memberSchema())"
-          :initial-values="{ name: '', phone: '' }"
+          :initial-values="{ name: '', phone: '', birthday: '' }"
           @submit="onSubmitAdd"
         >
           <FormField name="name" label="姓名" :disabled="isSubmitting" placeholder="例如: 王小明" />
@@ -178,6 +190,7 @@
             :disabled="isSubmitting"
             placeholder="例如: 0912345678"
           />
+          <FormField name="birthday" label="生日（選填）" type="date" :disabled="isSubmitting" />
           <div class="mt-2 flex justify-end gap-2">
             <button
               type="button"
@@ -201,7 +214,11 @@
         <Form
           v-slot="{ isSubmitting }"
           :validation-schema="toTypedSchema(memberSchema(currentMember?.id))"
-          :initial-values="{ name: currentMember?.name ?? '', phone: currentMember?.phone ?? '' }"
+          :initial-values="{
+            name: currentMember?.name ?? '',
+            phone: currentMember?.phone ?? '',
+            birthday: currentMember?.birthday ?? ''
+          }"
           @submit="onSubmitEdit"
         >
           <FormField name="name" label="姓名" :disabled="isSubmitting" placeholder="例如: 王小明" />
@@ -211,6 +228,7 @@
             :disabled="isSubmitting"
             placeholder="例如: 0912345678"
           />
+          <FormField name="birthday" label="生日（選填）" type="date" :disabled="isSubmitting" />
           <div class="mt-2 flex justify-end gap-2">
             <button
               type="button"
@@ -451,12 +469,56 @@
           </div>
         </div>
       </ModalDialog>
+
+      <ModalDialog v-model:open="birthdaysDialog" title="本月壽星">
+        <div class="flex flex-col gap-3">
+          <p class="text-xs text-surface-500 dark:text-surface-400">
+            以下是這個月生日的會員名單，依日期排序，可用來安排生日禮遇或簡訊祝賀。
+          </p>
+          <div v-if="birthdaysLoading" class="py-8 text-center text-xs text-surface-400">載入中…</div>
+          <div
+            v-else-if="birthdayEntries.length === 0"
+            class="flex flex-col items-center justify-center gap-1.5 py-8"
+          >
+            <Cake class="h-8 w-8 text-surface-300 dark:text-surface-700" />
+            <span class="text-xs font-semibold text-surface-600 dark:text-surface-400"
+              >這個月沒有會員生日</span
+            >
+          </div>
+          <div v-else class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
+            <table class="w-full text-left text-sm">
+              <thead
+                class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800 text-xs font-bold uppercase tracking-wider text-surface-500 dark:text-surface-400"
+              >
+                <tr>
+                  <th class="px-3 py-2.5 text-left">姓名</th>
+                  <th class="px-3 py-2.5 text-left">手機</th>
+                  <th class="px-3 py-2.5 text-left">生日</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+                <tr v-for="entry in birthdayEntries" :key="entry.id">
+                  <td class="px-3 py-2.5 font-bold text-surface-900 dark:text-surface-100">
+                    {{ entry.name }}
+                  </td>
+                  <td class="px-3 py-2.5 font-mono text-surface-600 dark:text-surface-400">
+                    {{ entry.phone }}
+                  </td>
+                  <td class="px-3 py-2.5 font-mono text-surface-600 dark:text-surface-400">
+                    {{ entry.birthday }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </ModalDialog>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Coins, Receipt, Search, UserPlus, Users } from 'lucide-vue-next'
+import { Cake, Coins, Receipt, Search, UserPlus, Users } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -474,13 +536,21 @@ import {
   adjustMemberPoints,
   createMember,
   deleteMember,
+  fetchMemberBirthdays,
   fetchMemberDetail,
   fetchMembers,
   findMemberByPhone,
   updateMember
 } from '@/api/members'
 import { fetchTenantSettings, updateTenantSettings } from '@/api/tenant-settings'
-import { memberPhoneSchema, type Member, type MemberDetail, type MemberPointLedgerReason } from '@pos/contract'
+import {
+  memberBirthdaySchema,
+  memberPhoneSchema,
+  type Member,
+  type MemberBirthdayEntry,
+  type MemberDetail,
+  type MemberPointLedgerReason
+} from '@pos/contract'
 
 const loginStore = useLoginStore()
 const canManage = () => hasCapability(loginStore.userInfo, 'canManageMembers')
@@ -558,7 +628,15 @@ function memberSchema(excludeId?: string) {
         } catch {
           return true
         }
-      }, '這個手機號碼已經是會員')
+      }, '這個手機號碼已經是會員'),
+    // 選填：空字串代表沒有填，送出時轉成 null（見 onSubmitAdd／onSubmitEdit）。
+    birthday: z
+      .string()
+      .trim()
+      .refine(
+        (value) => value === '' || memberBirthdaySchema.safeParse(value).success,
+        '請輸入正確的日期格式'
+      )
   })
 }
 
@@ -568,9 +646,9 @@ function openAddDialog() {
   addDialog.value = true
 }
 async function onSubmitAdd(values: Record<string, unknown>) {
-  const input = values as { name: string; phone: string }
+  const input = values as { name: string; phone: string; birthday: string }
   try {
-    await createMember(input)
+    await createMember({ ...input, birthday: input.birthday || null })
     addDialog.value = false
     showToast('新增成功', 'success')
     await loadMembers()
@@ -588,9 +666,9 @@ function openEditDialog(member: Member) {
 }
 async function onSubmitEdit(values: Record<string, unknown>) {
   if (!currentMember.value) return
-  const input = values as { name: string; phone: string }
+  const input = values as { name: string; phone: string; birthday: string }
   try {
-    await updateMember(currentMember.value.id, input)
+    await updateMember(currentMember.value.id, { ...input, birthday: input.birthday || null })
     editDialog.value = false
     showToast('保存成功', 'success')
     await loadMembers()
@@ -721,6 +799,23 @@ async function onSavePointsSetting() {
     showToast(apiErrorMessage(err), 'error')
   } finally {
     pointsSettingSaving.value = false
+  }
+}
+
+// 本月壽星名單，供生日行銷（禮遇、簡訊祝賀）用；查看只需要 canCheckMembers
+// （能進這個頁面就有），不像新增/編輯/刪除需要 canManageMembers。
+const birthdaysDialog = ref(false)
+const birthdaysLoading = ref(false)
+const birthdayEntries = ref<MemberBirthdayEntry[]>([])
+async function openBirthdaysDialog() {
+  birthdaysDialog.value = true
+  birthdaysLoading.value = true
+  try {
+    birthdayEntries.value = await fetchMemberBirthdays()
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  } finally {
+    birthdaysLoading.value = false
   }
 }
 </script>
