@@ -28,6 +28,36 @@ export const authorityKeySchema = z.enum([
 ])
 export type AuthorityKey = z.infer<typeof authorityKeySchema>
 
+/**
+ * 權限鍵值的中文顯示名稱。前端權限勾選清單（utils/authority.ts）與後端組操作
+ * 紀錄文字（routes/roles.ts）共用同一份，避免各自維護導致顯示文案兜不起來。
+ */
+export const AUTHORITY_KEY_LABELS: Record<AuthorityKey, string> = {
+  canCompItem: '招待',
+  canOpenCashier: '開收銀機',
+  canManageShift: '管理班別／現金',
+  canCheckOrder: '查看訂單',
+  canEditOrderStatus: '編輯訂單狀態',
+  canDeleteOrder: '刪除訂單',
+  canRefundOrVoid: '退款／作廢',
+  canCheckBackgroundSetting: '查看後台設定',
+  canSetCategory: '設定分類',
+  canSetProduct: '設定品項',
+  canSetOrderCoupon: '設定訂單折價券',
+  canSetQuickDiscount: '設定快速折扣',
+  canSetPayMethod: '設定付款方式',
+  canSetBusinessHours: '設定營業日換日時間',
+  canCheckDataAnalysis: '查看數據分析',
+  canCheckAuthority: '查看權限管理',
+  canManageStaff: '設定人員名單',
+  canManageRoles: '設定權限群組',
+  canCheckMembers: '查看會員管理',
+  canManageMembers: '新增／編輯／刪除會員',
+  canManageTables: '查看桌況管理',
+  canManageDevices: '管理裝置憑證',
+  canCheckAuditLog: '查看操作紀錄'
+}
+
 /** 權限群組（角色）。isSystem 標記系統內建範本，不可刪除／改名，但權限內容仍可調整。 */
 export const roleSchema = z.object({
   id: z.string().min(1),

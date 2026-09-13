@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import {
+  AUTHORITY_KEY_LABELS,
   createRoleRequestSchema,
   roleSchema,
   updateRoleRequestSchema,
@@ -49,6 +50,11 @@ async function wouldLeaveNoRoleAdmin(
 
   capabilitiesById.set(roleIdBeingChanged, nextCapabilities)
   return !allStaff.some((row) => capabilitiesById.get(row.roleId)?.includes('canManageRoles'))
+}
+
+/** 操作紀錄要給人看，不能直接印權限鍵值（如 canCompItem），一律轉成中文名稱。 */
+function capabilityLabelsText(capabilities: AuthorityKey[]): string {
+  return capabilities.map((key) => AUTHORITY_KEY_LABELS[key]).join('、') || '無'
 }
 
 const listRolesRoute = createRoute({
@@ -158,7 +164,7 @@ export const roleRoutes = new OpenAPIHono<AppEnv>()
     await recordAuditLog(
       c,
       'role.create',
-      `新增權限群組「${input.name}」（能力：${input.capabilities.join('、') || '無'}）`
+      `新增權限群組「${input.name}」（能力：${capabilityLabelsText(input.capabilities)}）`
     )
     return c.json(roleSchema.parse(newRole), 201)
   })
@@ -194,7 +200,7 @@ export const roleRoutes = new OpenAPIHono<AppEnv>()
     await recordAuditLog(
       c,
       'role.update',
-      `更新權限群組「${input.name}」（能力：${input.capabilities.join('、') || '無'}）`
+      `更新權限群組「${input.name}」（能力：${capabilityLabelsText(input.capabilities)}）`
     )
     return c.json(roleSchema.parse({ id, ...input, isSystem: existing.isSystem }), 200)
   })

@@ -245,7 +245,8 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
       variance: null
     }
     await db.insert(shifts).values(newShift)
-    await recordAuditLog(c, 'shift.open', `開班別「${newShift.id}」（開帳零用金 ${input.openingFloat} 元）`)
+    // 不印 newShift.id（內部用的 ULID，前端從未顯示過，對讀 log 的人沒有意義）。
+    await recordAuditLog(c, 'shift.open', `開班別（開帳零用金 ${input.openingFloat} 元）`)
     return c.json(toShiftResponse(newShift, []), 201)
   })
   .openapi(getCurrentShiftRoute, async (c) => {
@@ -292,7 +293,7 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
     await recordAuditLog(
       c,
       'shift.cashMovement',
-      `班別「${id}」現金${input.type === 'in' ? '存入' : '提領'} ${input.amount} 元（原因：${input.reason}）`
+      `班別現金${input.type === 'in' ? '存入' : '提領'} ${input.amount} 元（原因：${input.reason}）`
     )
 
     const movements = await db
@@ -361,7 +362,7 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
     await recordAuditLog(
       c,
       'shift.close',
-      `收班「${id}」（實收現金 ${input.actualCash} 元，${variance === 0 ? '無差異' : `差異 ${variance} 元`}）`
+      `收班（實收現金 ${input.actualCash} 元，${variance === 0 ? '無差異' : `差異 ${variance} 元`}）`
     )
 
     return c.json(toShiftResponse(closedShift, existing.movements), 200)

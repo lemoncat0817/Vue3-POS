@@ -1,3 +1,4 @@
+import { AUTHORITY_KEY_LABELS } from '@pos/contract'
 import type { AuthorityKey } from '@/types'
 
 /** 權限欄位清單、依附關係共用定義。權限的實際分組（角色）改由後端 roles 管理，見 stores/roles.ts。 */
@@ -7,31 +8,38 @@ export interface AuthorityField {
   dependsOn?: AuthorityKey
 }
 
-export const AUTHORITY_FIELDS: AuthorityField[] = [
-  { label: '招待', value: 'canCompItem' },
-  { label: '開收銀機', value: 'canOpenCashier' },
-  { label: '管理班別／現金', value: 'canManageShift' },
-  { label: '查看訂單', value: 'canCheckOrder' },
-  { label: '編輯訂單狀態', value: 'canEditOrderStatus', dependsOn: 'canCheckOrder' },
-  { label: '刪除訂單', value: 'canDeleteOrder', dependsOn: 'canCheckOrder' },
-  { label: '退款／作廢', value: 'canRefundOrVoid', dependsOn: 'canCheckOrder' },
-  { label: '查看後台設定', value: 'canCheckBackgroundSetting' },
-  { label: '設定分類', value: 'canSetCategory', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定品項', value: 'canSetProduct', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定訂單折價券', value: 'canSetOrderCoupon', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定快速折扣', value: 'canSetQuickDiscount', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定付款方式', value: 'canSetPayMethod', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '設定營業日換日時間', value: 'canSetBusinessHours', dependsOn: 'canCheckBackgroundSetting' },
-  { label: '查看數據分析', value: 'canCheckDataAnalysis' },
-  { label: '查看權限管理', value: 'canCheckAuthority' },
-  { label: '設定人員名單', value: 'canManageStaff', dependsOn: 'canCheckAuthority' },
-  { label: '設定權限群組', value: 'canManageRoles', dependsOn: 'canCheckAuthority' },
-  { label: '查看會員管理', value: 'canCheckMembers' },
-  { label: '新增／編輯／刪除會員', value: 'canManageMembers', dependsOn: 'canCheckMembers' },
-  { label: '查看桌況管理', value: 'canManageTables' },
-  { label: '管理裝置憑證', value: 'canManageDevices', dependsOn: 'canCheckAuthority' },
-  { label: '查看操作紀錄', value: 'canCheckAuditLog' }
+// 顯示順序與階層（dependsOn）是這裡的職責；中文文案統一交給 @pos/contract 的
+// AUTHORITY_KEY_LABELS，避免和後端組操作紀錄文字時用的名稱兜不起來。
+const AUTHORITY_FIELD_ORDER: Array<{ value: AuthorityKey; dependsOn?: AuthorityKey }> = [
+  { value: 'canCompItem' },
+  { value: 'canOpenCashier' },
+  { value: 'canManageShift' },
+  { value: 'canCheckOrder' },
+  { value: 'canEditOrderStatus', dependsOn: 'canCheckOrder' },
+  { value: 'canDeleteOrder', dependsOn: 'canCheckOrder' },
+  { value: 'canRefundOrVoid', dependsOn: 'canCheckOrder' },
+  { value: 'canCheckBackgroundSetting' },
+  { value: 'canSetCategory', dependsOn: 'canCheckBackgroundSetting' },
+  { value: 'canSetProduct', dependsOn: 'canCheckBackgroundSetting' },
+  { value: 'canSetOrderCoupon', dependsOn: 'canCheckBackgroundSetting' },
+  { value: 'canSetQuickDiscount', dependsOn: 'canCheckBackgroundSetting' },
+  { value: 'canSetPayMethod', dependsOn: 'canCheckBackgroundSetting' },
+  { value: 'canSetBusinessHours', dependsOn: 'canCheckBackgroundSetting' },
+  { value: 'canCheckDataAnalysis' },
+  { value: 'canCheckAuthority' },
+  { value: 'canManageStaff', dependsOn: 'canCheckAuthority' },
+  { value: 'canManageRoles', dependsOn: 'canCheckAuthority' },
+  { value: 'canCheckMembers' },
+  { value: 'canManageMembers', dependsOn: 'canCheckMembers' },
+  { value: 'canManageTables' },
+  { value: 'canManageDevices', dependsOn: 'canCheckAuthority' },
+  { value: 'canCheckAuditLog' }
 ]
+
+export const AUTHORITY_FIELDS: AuthorityField[] = AUTHORITY_FIELD_ORDER.map((field) => ({
+  ...field,
+  label: AUTHORITY_KEY_LABELS[field.value]
+}))
 
 const PARENT_KEYS = [
   'canCheckOrder',
