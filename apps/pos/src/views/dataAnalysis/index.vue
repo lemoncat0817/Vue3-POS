@@ -607,7 +607,7 @@ const isPresetActive = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
 const columnTextWidth = (text: string) => {
   let width = 0
   for (const ch of text) {
-    width += /[　-鿿＀-￯]/.test(ch) ? 2 : 1
+    width += /[\u3000-\u9fff\uff00-\uffef]/.test(ch) ? 2 : 1
   }
   return width
 }
