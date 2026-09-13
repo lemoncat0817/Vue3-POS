@@ -62,12 +62,14 @@
       <label class="block text-xs font-bold text-surface-500 dark:text-surface-400">
         手機號碼
         <input
-          v-model="phoneInput"
+          :value="phoneInput"
           type="text"
+          inputmode="numeric"
           maxlength="10"
           placeholder="0912345678"
           data-testid="member-phone-input"
           class="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
+          @input="phoneInput = digitsOnly(($event.target as HTMLInputElement).value)"
         />
       </label>
       <div class="flex justify-end">
@@ -124,6 +126,7 @@ import { showToast } from '@/composables/useToast'
 import { apiErrorMessage } from '@/api/http'
 import { createMember, findMemberByPhone } from '@/api/members'
 import { redemptionValueForPoints } from '@pos/domain'
+import { digitsOnly } from '@/utils/numberInput'
 import { memberPhoneSchema, type Member } from '@pos/contract'
 
 const props = defineProps<{

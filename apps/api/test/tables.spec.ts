@@ -217,6 +217,28 @@ describe('PATCH /api/tables/:id/status', () => {
     expect(res.status).toBe(400)
   })
 
+  it('聯絡電話限定手機，市話格式也拒絕，回傳 400', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const table = await readJson(
+      await app.request('/api/tables', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ tableNumber: 'A1', seats: 4 })
+      })
+    )
+    const res = await app.request(`/api/tables/${table.id}/status`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ status: 'reserved', reservationPhone: '02-12345678' })
+    })
+    expect(res.status).toBe(400)
+  })
+
   it('找不到桌位時回傳 404', async () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/tables/does-not-exist/status', {

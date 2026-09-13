@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { memberPhoneSchema } from './member'
 
 /**
  * 桌況管理 schema。狀態切換本身仍由店員手動確認（含結帳自動連動觸發的切換，
@@ -10,13 +11,10 @@ export const tableStatusSchema = z.enum(['empty', 'occupied', 'reserved'])
 export type TableStatus = z.infer<typeof tableStatusSchema>
 
 /**
- * 預約聯絡電話格式：手機（09 開頭共 10 碼）或市話（區碼＋6~8碼、可加一個連字號）。
- * 訂位常見用市話回電，不能比照 memberPhoneSchema 只收手機號碼。
+ * 預約聯絡電話格式，直接沿用 memberPhoneSchema（09 開頭共 10 碼手機）——
+ * 全站聯絡資訊統一限定手機，市話收不到簡訊/來電確認，不符合訂位提醒的需求。
  */
-export const reservationPhoneSchema = z
-  .string()
-  .trim()
-  .regex(/^09\d{8}$|^0\d{1,2}-?\d{6,8}$/, '請輸入正確的電話號碼格式（例如：0912345678 或 02-12345678）')
+export const reservationPhoneSchema = memberPhoneSchema
 
 export const diningTableSchema = z.object({
   id: z.string().min(1),

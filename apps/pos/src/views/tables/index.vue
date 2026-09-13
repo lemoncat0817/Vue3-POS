@@ -189,27 +189,40 @@
           >
             用餐人數
             <input
-              v-model.number="pendingGuestCount"
+              :value="pendingGuestCount ?? ''"
               type="text"
               inputmode="numeric"
               min="1"
               :disabled="!canManage"
               placeholder="選填"
               class="rounded-lg border border-surface-300 bg-white p-2 text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
+              @input="pendingGuestCount = parseOptionalInt(($event.target as HTMLInputElement).value)"
             />
+            <!-- 座位數只是店內配置的參考基準，加椅、併桌都可能讓實際人數超過；
+                 用提醒而非擋下送出，避免擋到真的有這種需求的場景，只是幫忙抓
+                 打錯字（例如多打一個 0）。 -->
+            <span
+              v-if="guestCountExceedsSeats"
+              class="text-xs font-bold text-warning-600 dark:text-warning-400"
+            >
+              目前人數超過座位數（{{ currentTable?.seats }} 人座），請確認是否為加椅／併桌
+            </span>
           </label>
           <template v-if="pendingStatus === 'reserved'">
             <label class="flex flex-col gap-1 text-sm text-surface-600 dark:text-surface-400">
               聯絡電話
               <input
-                v-model="pendingReservationPhone"
+                :value="pendingReservationPhone"
                 type="tel"
+                inputmode="numeric"
+                maxlength="10"
                 :disabled="!canManage"
                 placeholder="例如：0912345678"
                 class="rounded-lg border border-surface-300 bg-white p-2 text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
+                @input="pendingReservationPhone = digitsOnly(($event.target as HTMLInputElement).value)"
               />
               <span v-if="!reservationPhoneValid" class="text-xs font-bold text-danger-600 dark:text-danger-400">
-                請輸入正確的電話號碼格式（例如：0912345678 或 02-12345678）
+                請輸入正確的手機號碼格式（09 開頭共 10 碼數字）
               </span>
             </label>
             <label class="flex flex-col gap-1 text-sm text-surface-600 dark:text-surface-400">
@@ -283,6 +296,7 @@ import { createTable, deleteTable, fetchTables, updateTableStatus } from '@/api/
 import { fetchTenantSettings, updateTenantSettings } from '@/api/tenant-settings'
 import { tableStatusCardClass, tableStatusLabel, tableStatusOptions } from '@/utils/tableStatus'
 import { formatDateTime, formatElapsedMinutes } from '@/utils/time'
+import { digitsOnly, parseOptionalInt } from '@/utils/numberInput'
 import { reservationPhoneSchema, type DiningTable, type TableStatus } from '@pos/contract'
 
 const loginStore = useLoginStore()
@@ -343,7 +357,7 @@ function statusButtonClass(status: TableStatus): string {
 
 const addTableSchema = z.object({
   tableNumber: z.string().trim().min(1, '請輸入桌號'),
-  seats: z.coerce.number().int().positive('座位數需為正整數')
+  seats: z.coerce.number({ invalid_type_error: '座位數需為正整數' }).int().positive('座位數需為正整數')
 })
 
 const addDialog = ref(false)
@@ -376,6 +390,11 @@ const reservationPhoneValid = computed(() => {
   const trimmed = pendingReservationPhone.value.trim()
   if (trimmed === '') return true
   return reservationPhoneSchema.safeParse(trimmed).success
+})
+// 只提醒不擋下：座位數是店內配置參考，加椅/併桌會讓實際人數合理地超過。
+const guestCountExceedsSeats = computed(() => {
+  if (pendingGuestCount.value === null || !currentTable.value) return false
+  return pendingGuestCount.value > currentTable.value.seats
 })
 
 // <input type="datetime-local"> 用的是不帶時區的本地時間字串，跟伺服端存的 ISO UTC 互轉。
