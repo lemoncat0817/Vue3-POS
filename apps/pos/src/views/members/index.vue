@@ -225,6 +225,7 @@
           <FormField
             name="phone"
             label="手機號碼"
+            inputmode="numeric"
             :disabled="isSubmitting"
             :maxlength="10"
             placeholder="例如: 0912345678"
@@ -273,6 +274,7 @@
           <FormField
             name="phone"
             label="手機號碼"
+            inputmode="numeric"
             :disabled="isSubmitting"
             :maxlength="10"
             placeholder="例如: 0912345678"
@@ -531,26 +533,38 @@
           <label class="block text-sm font-bold text-surface-700 dark:text-surface-300">
             消費多少元累加 1 點
             <input
-              v-model.number="pointsPerCurrencyUnitInput"
+              :value="pointsPerCurrencyUnitInput"
               type="text"
               inputmode="numeric"
               min="1"
               step="1"
               :disabled="pointsSettingSaving || pointsSettingLoading"
               class="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-surface-100 disabled:text-surface-400 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:disabled:bg-surface-900 dark:disabled:text-surface-600"
+              @input="pointsPerCurrencyUnitInput = parseRequiredInt(($event.target as HTMLInputElement).value)"
             />
+            <span
+              v-if="pointsPerCurrencyUnitInput < 1"
+              class="mt-1 block text-xs font-bold text-danger-600 dark:text-danger-400"
+              >請輸入 1 以上的整數</span
+            >
           </label>
           <label class="block text-sm font-bold text-surface-700 dark:text-surface-300">
             結帳時每多少點折抵 1 元
             <input
-              v-model.number="pointsRedemptionRateInput"
+              :value="pointsRedemptionRateInput"
               type="text"
               inputmode="numeric"
               min="1"
               step="1"
               :disabled="pointsSettingSaving || pointsSettingLoading"
               class="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-surface-100 disabled:text-surface-400 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:disabled:bg-surface-900 dark:disabled:text-surface-600"
+              @input="pointsRedemptionRateInput = parseRequiredInt(($event.target as HTMLInputElement).value)"
             />
+            <span
+              v-if="pointsRedemptionRateInput < 1"
+              class="mt-1 block text-xs font-bold text-danger-600 dark:text-danger-400"
+              >請輸入 1 以上的整數</span
+            >
           </label>
           <div class="border-t border-surface-200 pt-3 dark:border-surface-800">
             <label class="flex items-center gap-2 text-sm font-bold text-surface-700 dark:text-surface-300">
@@ -568,7 +582,7 @@
             </p>
             <input
               v-if="pointsExpiryEnabled"
-              v-model.number="pointsExpiryMonthsInput"
+              :value="pointsExpiryMonthsInput ?? ''"
               type="text"
               inputmode="numeric"
               min="1"
@@ -576,7 +590,13 @@
               placeholder="幾個月沒有異動就歸零"
               :disabled="pointsSettingSaving || pointsSettingLoading"
               class="mt-2 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-surface-100 disabled:text-surface-400 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:disabled:bg-surface-900 dark:disabled:text-surface-600"
+              @input="pointsExpiryMonthsInput = parseOptionalInt(($event.target as HTMLInputElement).value)"
             />
+            <span
+              v-if="pointsExpiryEnabled && (pointsExpiryMonthsInput ?? 0) < 1"
+              class="mt-1 block text-xs font-bold text-danger-600 dark:text-danger-400"
+              >請輸入 1 以上的整數</span
+            >
           </div>
           <div class="mt-2 flex justify-end gap-2">
             <button
@@ -813,6 +833,7 @@ import TablePagination from '@/components/ui/TablePagination.vue'
 import { useLoginStore } from '@/stores/login'
 import { fromSelection, hasCapability } from '@/utils/selection'
 import { formatDateOnly, formatDateTime } from '@/utils/time'
+import { parseOptionalInt, parseRequiredInt } from '@/utils/numberInput'
 import { ApiError, apiErrorMessage as sharedApiErrorMessage } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
@@ -1055,7 +1076,10 @@ function pointsLedgerReasonLabel(reason: MemberPointLedgerReason): string {
 
 const adjustPointsDialog = ref(false)
 const adjustPointsSchema = z.object({
-  delta: z.coerce.number().int().refine((value) => value !== 0, '調整量不能是 0'),
+  delta: z.coerce
+    .number({ invalid_type_error: '請輸入整數，加點請輸入正數、扣點請輸入負數' })
+    .int()
+    .refine((value) => value !== 0, '調整量不能是 0'),
   reason: z.string().trim().min(1, '請說明調整原因')
 })
 function openAdjustPointsDialog() {
@@ -1166,7 +1190,7 @@ const sortedTiers = computed(() => [...tiers.value].sort((a, b) => b.minSpend - 
 const editingTier = ref<MemberTier | null>(null)
 const tierFormSchema = z.object({
   name: z.string().trim().min(1, '請輸入等級名稱'),
-  minSpend: z.coerce.number().int().min(0, '門檻不能是負數')
+  minSpend: z.coerce.number({ invalid_type_error: '請輸入數字' }).int().min(0, '門檻不能是負數')
 })
 
 async function loadTiers() {
