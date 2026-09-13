@@ -64,7 +64,7 @@
                   v-if="line.addList !== '無添加配料' && line.addList.length > 0"
                   class="block text-surface-500 dark:text-surface-400"
                 >
-                  ＋{{ Array.isArray(line.addList) ? line.addList.join('、') : line.addList }}
+                  ＋{{ formatAddList(line.addList) }}
                 </span>
               </td>
               <td class="py-0.5 text-right align-top">{{ line.count }}</td>
@@ -128,6 +128,7 @@
 // 全域收據預覽與列印視窗（掛載於 App.vue）
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { closeReceipt, useReceiptPreviewState } from '@/composables/useReceiptPreview'
+import { formatAddList } from '@/utils/catalog'
 import { formatDateTime } from '@/utils/time'
 
 const state = useReceiptPreviewState()

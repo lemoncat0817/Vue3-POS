@@ -269,9 +269,9 @@
               <td class="px-1 py-2 font-mono">${{ row.price }}</td>
               <td
                 class="px-2 py-2 text-surface-500 max-w-[90px] truncate"
-                :title="String(row.addList)"
+                :title="formatAddList(row.addList)"
               >
-                {{ row.addList }}
+                {{ formatAddList(row.addList) }}
               </td>
               <td class="px-1 py-2 font-mono">${{ row.addListPrice }}</td>
               <td class="px-1 py-2 font-black text-primary-600 dark:text-primary-400">
@@ -588,6 +588,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatAddList } from '@/utils/catalog'
 import { getDate, getTime } from '@/utils/time'
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import CategoryTabs from './categoryTabs/index.vue'

@@ -580,7 +580,7 @@
                                 {{ line.price }} 元
                               </td>
                               <td class="px-3 py-2.5 text-surface-600 dark:text-surface-400">
-                                {{ line.addList || '-' }}
+                                {{ formatAddList(line.addList) || '-' }}
                               </td>
                               <td class="px-3 py-2.5 text-surface-600 dark:text-surface-400">
                                 {{ line.addListPrice }} 元
@@ -675,6 +675,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { FlexRender, createColumnHelper, getCoreRowModel, useVueTable } from '@tanstack/vue-table'
 import { Receipt, CheckCircle2, AlertTriangle, RotateCcw, ChevronRight, X } from 'lucide-vue-next'
 import TablePagination from '@/components/ui/TablePagination.vue'
+import { formatAddList } from '@/utils/catalog'
 import { formatDateTime, getDate } from '@/utils/time'
 import { useOrderStore } from '@/stores/order'
 const orderStore = useOrderStore()
