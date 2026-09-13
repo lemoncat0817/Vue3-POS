@@ -26,16 +26,26 @@ async function resolveOperatorLabel(c: Context<AppEnv>): Promise<string> {
  * 慣例），改以 session 反解，讓新增的稽核軌跡比舊欄位更可信；寫入失敗
  * 不擋原本的業務異動，操作紀錄是輔助性質，不該讓一筆稽核寫入失敗擋住
  * 使用者真正在做的事。
+ *
+ * `operatorOverride` 供沒有（或還沒有）有效 X-Operator-Session 可解析的
+ * 呼叫端使用：PIN 登入失敗當下還沒有 session、登出要在撤銷 session 前先
+ * 解析身分、OAuth 登入走的是 web session 不是操作員 session、裝置配對
+ * 核發靠核發密鑰而非操作員身分。
+ *
+ * tenantId 沒有明確經 requireDeviceToken 設定時（例如 OAuth 回呼、裝置
+ * 核發）`c.get('tenantId')` 會是 undefined，這裡一律退回 null 而不是讓
+ * undefined 直接綁進 SQL 參數。
  */
 export async function recordAuditLog(
   c: Context<AppEnv>,
   action: AuditLogAction,
-  detail: string
+  detail: string,
+  operatorOverride?: string
 ): Promise<void> {
   try {
     const db = c.get('db')
-    const tenantId = c.get('tenantId')
-    const operator = await resolveOperatorLabel(c)
+    const tenantId = c.get('tenantId') ?? null
+    const operator = operatorOverride ?? (await resolveOperatorLabel(c))
     await db.insert(auditLogs).values({
       tenantId,
       action,

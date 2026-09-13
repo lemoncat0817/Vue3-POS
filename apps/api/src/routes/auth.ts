@@ -1,8 +1,13 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { operatorLoginRequestSchema, operatorLoginResponseSchema } from '@pos/contract'
+import { recordAuditLog } from '../audit/record'
 import { verifySecret } from '../auth/hash'
-import { issueOperatorSession, revokeOperatorSession } from '../auth/operator-session'
+import {
+  findActiveOperatorSession,
+  issueOperatorSession,
+  revokeOperatorSession
+} from '../auth/operator-session'
 import { roles, staff } from '../db/schema'
 import { requireDeviceToken } from '../middleware/require-device-token'
 import { tenantFilter } from '../db/tenant-scope'
@@ -67,11 +72,21 @@ export const authRoutes = new OpenAPIHono<AppEnv>()
       .where(and(eq(staff.account, account), tenantFilter(staff.tenantId, tenantId)))
       .get()
     if (!row) {
+      // 查無此帳號，沒有 staff 列可以解析身分，operator 直接記攻擊者
+      // 輸入的帳號字串——跟一般登入失敗紀錄一樣，記「聲稱的身分」，
+      // 這正是暴力破解／帳號列舉的偵測訊號。
+      await recordAuditLog(c, 'staff.loginFailed', `登入失敗：帳號「${account}」不存在`, account)
       return invalidCredentials()
     }
 
     const now = new Date()
     if (row.lockedUntil && new Date(row.lockedUntil) > now) {
+      await recordAuditLog(
+        c,
+        'staff.loginFailed',
+        '登入失敗：帳號已鎖定中',
+        `${row.jobTitle} - ${row.name}`
+      )
       return c.json({ error: '帳號已鎖定，請稍後再試' }, 401)
     }
 
@@ -88,6 +103,12 @@ export const authRoutes = new OpenAPIHono<AppEnv>()
         .update(staff)
         .set({ failedPinAttempts: attempts, lockedUntil })
         .where(eq(staff.id, row.id))
+      await recordAuditLog(
+        c,
+        'staff.loginFailed',
+        `登入失敗：PIN 錯誤（第 ${attempts} 次${lockedUntil ? '，已鎖定 5 分鐘' : ''}）`,
+        `${row.jobTitle} - ${row.name}`
+      )
       return invalidCredentials()
     }
 
@@ -106,6 +127,7 @@ export const authRoutes = new OpenAPIHono<AppEnv>()
     // 對應權限（見 middleware/require-capability.ts）——不能再直接信任
     // 用戶端回報的 staffId，那是 GET /api/staff 就查得到的公開資訊。
     const sessionToken = await issueOperatorSession(db, tenantId, row.id)
+    await recordAuditLog(c, 'staff.login', '登入成功', `${row.jobTitle} - ${row.name}`)
 
     return c.json(
       operatorLoginResponseSchema.parse({
@@ -124,6 +146,17 @@ export const authRoutes = new OpenAPIHono<AppEnv>()
   .openapi(logoutRoute, async (c) => {
     const token = c.req.header('X-Operator-Session')
     if (!token) return c.json({ error: '缺少操作員 session' }, 400)
-    await revokeOperatorSession(c.get('db'), token)
+    const db = c.get('db')
+    // 要在撤銷之前解析身分——撤銷後 findActiveOperatorSession 就查不到
+    // 這組 session、也就解不出是誰登出了。查無此 session（已撤銷或
+    // 從未存在）沒有身分可記，登出本身仍視為成功（冪等），只是不留痕。
+    const session = await findActiveOperatorSession(db, token)
+    const staffRow = session
+      ? await db.select().from(staff).where(eq(staff.id, session.staffId)).get()
+      : null
+    await revokeOperatorSession(db, token)
+    if (staffRow) {
+      await recordAuditLog(c, 'staff.logout', '登出', `${staffRow.jobTitle} - ${staffRow.name}`)
+    }
     return c.body(null, 204)
   })

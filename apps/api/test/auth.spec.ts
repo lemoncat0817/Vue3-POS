@@ -129,6 +129,67 @@ describe('POST /api/auth/operator-login', () => {
     expect(await lockedRes.json()).toMatchObject({ error: expect.stringContaining('鎖定') })
   })
 
+  it('登入成功寫入操作紀錄 staff.login，operator 用伺服端解析出的身分（不是自己填的字串）', async () => {
+    const db = createTestDb()
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    await createStaff(db, app, deviceToken, sessionToken)
+
+    await app.request('/api/auth/operator-login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ account: 'emily', pin: '3456' })
+    })
+
+    const list = (await (
+      await app.request('/api/audit-logs?action=staff.login', {
+        headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+      })
+    ).json()) as { items: Array<{ operator: string; detail: string }> }
+    expect(list.items).toHaveLength(1)
+    expect(list.items[0]).toMatchObject({ operator: '工讀生 - Emily', detail: '登入成功' })
+  })
+
+  it('帳號不存在、帳號已鎖定、PIN 錯誤都各自寫入操作紀錄 staff.loginFailed', async () => {
+    const db = createTestDb()
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    await createStaff(db, app, deviceToken, sessionToken)
+
+    await app.request('/api/auth/operator-login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ account: 'does-not-exist', pin: '0000' })
+    })
+    await app.request('/api/auth/operator-login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ account: 'emily', pin: '0000' })
+    })
+
+    const list = (await (
+      await app.request('/api/audit-logs?action=staff.loginFailed', {
+        headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+      })
+    ).json()) as { items: Array<{ operator: string; detail: string }> }
+    expect(list.items).toHaveLength(2)
+    // 由新到舊：PIN 錯誤那筆在前面。
+    expect(list.items[0]).toMatchObject({ operator: '工讀生 - Emily' })
+    expect(list.items[0]?.detail).toContain('PIN 錯誤')
+    expect(list.items[1]).toMatchObject({ operator: 'does-not-exist' })
+    expect(list.items[1]?.detail).toContain('不存在')
+  })
+
   it('登入成功會重置先前累積的錯誤次數', async () => {
     const db = createTestDb()
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
@@ -201,6 +262,32 @@ describe('POST /api/auth/logout', () => {
       headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': 'does-not-exist' }
     })
     expect(res.status).toBe(204)
+  })
+
+  it('登出成功寫入操作紀錄 staff.logout；查無 session 時不留痕（沒有身分可記）', async () => {
+    const db = createTestDb()
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+
+    await app.request('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
+    await app.request('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': 'does-not-exist' }
+    })
+
+    // 登出後這組 session 已撤銷，查詢改核發一組新的裝置＋操作員身分。
+    const { app: appForQuery, deviceToken: queryToken, sessionToken: querySession } =
+      await createTestAppWithDevice(db, 'query-device')
+    const list = (await (
+      await appForQuery.request('/api/audit-logs?action=staff.logout', {
+        headers: { 'X-Device-Token': queryToken, 'X-Operator-Session': querySession }
+      })
+    ).json()) as { items: Array<{ operator: string; detail: string }> }
+    expect(list.items).toHaveLength(1)
+    // createTestAppWithDevice() 預設核發的測試操作員身分（見 helpers/app.ts）。
+    expect(list.items[0]).toMatchObject({ operator: '測試 - 測試操作員', detail: '登出' })
   })
 })
 
