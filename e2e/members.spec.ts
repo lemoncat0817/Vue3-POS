@@ -82,7 +82,7 @@ test('後台新增／編輯／刪除會員；重複的手機號碼會被擋', as
   await page.getByText('會員管理', { exact: true }).click()
   await expect(page).toHaveURL(/\/members$/)
 
-  const phone = `08${Date.now().toString().slice(-8)}`
+  const phone = `09${Date.now().toString().slice(-8)}`
   const name = `P22後台測試-${Date.now()}`
 
   await page.getByRole('button', { name: '新增會員', exact: true }).click()

@@ -1,9 +1,11 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { and, desc, eq, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, isNull, like, or, sql } from 'drizzle-orm'
 import {
   createMemberRequestSchema,
+  listMembersQuerySchema,
   manualPointAdjustmentRequestSchema,
   memberDetailSchema,
+  memberListResponseSchema,
   memberSchema,
   updateMemberRequestSchema
 } from '@pos/contract'
@@ -30,13 +32,12 @@ const listMembersRoute = createRoute({
   path: '/',
   middleware: [requireDeviceToken] as const,
   request: {
-    // 支援依手機號碼精確查詢，供結帳流程快速檢索。
-    query: z.object({ phone: z.string().min(1).optional() })
+    query: listMembersQuerySchema
   },
   responses: {
     200: {
-      description: '會員列表',
-      content: { 'application/json': { schema: memberSchema.array() } }
+      description: '分頁後的會員列表；帶 phone 查詢時 items 最多 1 筆',
+      content: { 'application/json': { schema: memberListResponseSchema } }
     },
     401: {
       description: '裝置憑證無效或缺漏',
@@ -154,7 +155,7 @@ const createPointsAdjustmentRoute = createRoute({
 
 export const memberRoutes = new OpenAPIHono<AppEnv>()
   .openapi(listMembersRoute, async (c) => {
-    const { phone } = c.req.valid('query')
+    const { phone, q, page, pageSize } = c.req.valid('query')
     if (!phone) {
       const capabilityCheck = await checkCapability(c, 'canCheckMembers')
       if (!capabilityCheck.ok)
@@ -165,12 +166,44 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
     // 軟刪除的會員一律排除：整批清單不該看到、結帳查會員也不該查得到、
     // 更不該讓已刪除的會員被掛到新訂單上。
     const tenantCond = and(tenantFilter(members.tenantId, tenantId), isNull(members.deletedAt))
-    const rows = await db
-      .select()
-      .from(members)
-      .where(phone ? and(eq(members.phone, phone), tenantCond) : tenantCond)
-      .all()
-    return c.json(rows, 200)
+    const where = phone
+      ? and(eq(members.phone, phone), tenantCond)
+      : q
+        ? and(or(like(members.name, `%${q}%`), like(members.phone, `%${q}%`)), tenantCond)
+        : tenantCond
+
+    // phone 精確查詢頂多 1 筆，維持既有行為不分頁；後台名單／搜尋才真的
+    // 用 count(*) ＋ limit/offset 分頁，避免會員一多整頁一次拉完。
+    if (phone) {
+      const rows = await db.select().from(members).where(where).all()
+      return c.json(
+        {
+          items: rows,
+          pagination: { page: 1, pageSize: Math.max(rows.length, 1), totalCount: rows.length, totalPages: 1 }
+        },
+        200
+      )
+    }
+
+    const [totalRow, rows] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(members).where(where).get(),
+      db
+        .select()
+        .from(members)
+        .where(where)
+        .orderBy(desc(members.createdAt))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
+        .all()
+    ])
+    const totalCount = totalRow?.count ?? 0
+    return c.json(
+      {
+        items: rows,
+        pagination: { page, pageSize, totalCount, totalPages: Math.max(1, Math.ceil(totalCount / pageSize)) }
+      },
+      200
+    )
   })
   .openapi(createMemberRoute, async (c) => {
     const input = c.req.valid('json')

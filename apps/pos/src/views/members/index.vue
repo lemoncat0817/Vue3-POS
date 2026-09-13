@@ -41,9 +41,31 @@
         class="w-full overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm flex flex-col justify-between min-h-[540px]"
       >
         <div
-          class="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-100 dark:border-surface-800 px-5 py-3.5"
         >
           <div class="text-sm font-black text-surface-900 dark:text-surface-100">會員名單</div>
+          <form class="flex items-center gap-2" @submit.prevent="onSearchSubmit">
+            <div class="relative">
+              <Search
+                class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-surface-400"
+              />
+              <input
+                v-model="searchInput"
+                type="text"
+                placeholder="搜尋姓名或手機號碼"
+                class="w-56 rounded-lg border border-surface-300 bg-white py-1.5 pl-8 pr-3 text-xs text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
+              />
+            </div>
+            <button type="submit" class="pos-btn pos-btn-secondary px-3 py-1.5 text-xs">搜尋</button>
+            <button
+              v-if="activeSearch"
+              type="button"
+              class="pos-btn pos-btn-secondary px-3 py-1.5 text-xs"
+              @click="clearSearch"
+            >
+              清除
+            </button>
+          </form>
         </div>
 
         <div class="overflow-x-auto flex-1">
@@ -68,17 +90,19 @@
                 >
                   <div class="flex flex-col items-center justify-center gap-2">
                     <Users class="h-10 w-10 text-surface-300 dark:text-surface-700" />
-                    <span class="text-base font-semibold text-surface-700 dark:text-surface-300"
-                      >目前無會員</span
-                    >
-                    <span class="text-xs text-surface-400 dark:text-surface-500"
-                      >尚未建立任何會員資料，可點選上方「新增會員」</span
-                    >
+                    <span class="text-base font-semibold text-surface-700 dark:text-surface-300">{{
+                      activeSearch ? '找不到符合的會員' : '目前無會員'
+                    }}</span>
+                    <span class="text-xs text-surface-400 dark:text-surface-500">{{
+                      activeSearch
+                        ? `沒有姓名或手機號碼包含「${activeSearch}」的會員`
+                        : '尚未建立任何會員資料，可點選上方「新增會員」'
+                    }}</span>
                   </div>
                 </td>
               </tr>
               <tr
-                v-for="(member, index) in sliceMembers"
+                v-for="(member, index) in members"
                 :key="member.id"
                 class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
               >
@@ -133,10 +157,10 @@
         <TablePagination
           :page="memberPage"
           :page-count="memberPageCount"
-          :total="members.length"
-          :current-count="sliceMembers.length"
+          :total="memberTotalCount"
+          :current-count="members.length"
           unit="位會員"
-          @update:page="(p) => (memberPage = p)"
+          @update:page="handleMemberPageChange"
         />
       </div>
 
@@ -422,8 +446,8 @@
 </template>
 
 <script setup lang="ts">
-import { Coins, Receipt, UserPlus, Users } from 'lucide-vue-next'
-import { computed, onMounted, ref } from 'vue'
+import { Coins, Receipt, Search, UserPlus, Users } from 'lucide-vue-next'
+import { onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form } from 'vee-validate'
@@ -442,6 +466,7 @@ import {
   deleteMember,
   fetchMemberDetail,
   fetchMembers,
+  findMemberByPhone,
   updateMember
 } from '@/api/members'
 import { fetchTenantSettings, updateTenantSettings } from '@/api/tenant-settings'
@@ -455,24 +480,47 @@ function apiErrorMessage(err: unknown): string {
   return sharedApiErrorMessage(err)
 }
 
-// 會員名單為後台管理專用資料，無需離線可用，掛載時直接向伺服端獲取最新清單。
+// 會員名單為後台管理專用資料，無需離線可用；改成後端分頁＋搜尋，不再
+// 一次整批撈回來前端切頁——會員一多，整表下載對流量跟畫面都是負擔。
 const members = ref<Member[]>([])
 const memberPage = ref(1)
 const memberPageSize = 10
-const memberPageCount = computed(() =>
-  Math.max(1, Math.ceil(members.value.length / memberPageSize))
-)
-const sliceMembers = computed(() => {
-  const start = (memberPage.value - 1) * memberPageSize
-  return members.value.slice(start, start + memberPageSize)
-})
-onMounted(async () => {
+const memberPageCount = ref(1)
+const memberTotalCount = ref(0)
+const searchInput = ref('')
+// 目前實際套用中的搜尋字——跟 searchInput 分開，避免打字打到一半就觸發搜尋。
+const activeSearch = ref('')
+
+async function loadMembers() {
   try {
-    members.value = await fetchMembers()
+    const result = await fetchMembers({
+      q: activeSearch.value || undefined,
+      page: memberPage.value,
+      pageSize: memberPageSize
+    })
+    members.value = result.items
+    memberPageCount.value = result.pagination.totalPages
+    memberTotalCount.value = result.pagination.totalCount
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }
-})
+}
+function onSearchSubmit() {
+  activeSearch.value = searchInput.value.trim()
+  memberPage.value = 1
+  loadMembers()
+}
+function clearSearch() {
+  searchInput.value = ''
+  activeSearch.value = ''
+  memberPage.value = 1
+  loadMembers()
+}
+function handleMemberPageChange(page: number) {
+  memberPage.value = page
+  loadMembers()
+}
+onMounted(loadMembers)
 
 function memberSchema(excludeId?: string) {
   return z.object({
@@ -488,10 +536,19 @@ function memberSchema(excludeId?: string) {
         (phone) => memberPhoneSchema.safeParse(phone).success,
         '請輸入正確的手機號碼格式（09 開頭共 10 碼數字）'
       )
-      .refine(
-        (phone) => !members.value.some((item) => item.phone === phone && item.id !== excludeId),
-        '這個手機號碼已經是會員'
-      )
+      // 現在後台名單是分頁的，members.value 只有目前這一頁，沒辦法可靠地
+      // 判斷「這支手機是不是別人已經在用」，改成直接問伺服端（結帳查會員
+      // 用的同一支 API，不需要額外權限）；查詢本身失敗（離線／連線問題）
+      // 不擋住送出，交給送出當下伺服端的 409 做最後把關。
+      .refine(async (phone) => {
+        if (!memberPhoneSchema.safeParse(phone).success) return true
+        try {
+          const found = await findMemberByPhone(phone)
+          return !found || found.id === excludeId
+        } catch {
+          return true
+        }
+      }, '這個手機號碼已經是會員')
   })
 }
 
@@ -503,10 +560,10 @@ function openAddDialog() {
 async function onSubmitAdd(values: Record<string, unknown>) {
   const input = values as { name: string; phone: string }
   try {
-    const created = await createMember(input)
-    members.value.push(created)
+    await createMember(input)
     addDialog.value = false
     showToast('新增成功', 'success')
+    await loadMembers()
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }
@@ -523,14 +580,10 @@ async function onSubmitEdit(values: Record<string, unknown>) {
   if (!currentMember.value) return
   const input = values as { name: string; phone: string }
   try {
-    const updated = await updateMember(currentMember.value.id, input)
-    const target = members.value.find((item) => item.id === updated.id)
-    if (target) {
-      target.name = updated.name
-      target.phone = updated.phone
-    }
+    await updateMember(currentMember.value.id, input)
     editDialog.value = false
     showToast('保存成功', 'success')
+    await loadMembers()
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }
@@ -546,8 +599,10 @@ async function deleteMemberRow(member: Member) {
   if (result !== 'confirm') return
   try {
     await deleteMember(member.id)
-    members.value = members.value.filter((item) => item.id !== member.id)
     showToast('刪除成功', 'success')
+    // 刪掉當頁最後一筆時，這一頁可能已經不存在了，退回上一頁再重新拉。
+    if (members.value.length === 1 && memberPage.value > 1) memberPage.value -= 1
+    await loadMembers()
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }

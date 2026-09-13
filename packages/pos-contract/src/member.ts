@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { createPaginatedResponseSchema, paginationQuerySchema } from './pagination'
 
 /** 台灣手機號碼格式：09 開頭共 10 碼數字。結帳查會員、簡訊發送都靠這個格式成立。 */
 export const memberPhoneSchema = z
@@ -24,6 +25,20 @@ export type CreateMemberRequest = z.infer<typeof createMemberRequestSchema>
 
 export const updateMemberRequestSchema = createMemberRequestSchema
 export type UpdateMemberRequest = z.infer<typeof updateMemberRequestSchema>
+
+/**
+ * GET /api/members 的查詢參數。phone 是結帳流程的精確查詢（維持既有行為，
+ * 回應只會有 0～1 筆）；q 是後台會員名單的姓名/手機模糊搜尋，兩者互斥，
+ * 帶 phone 時 q 會被忽略。分頁欄位沿用全站共用的 paginationQuerySchema。
+ */
+export const listMembersQuerySchema = paginationQuerySchema.extend({
+  phone: z.string().min(1).optional(),
+  q: z.string().trim().min(1).optional()
+})
+export type ListMembersQuery = z.infer<typeof listMembersQuerySchema>
+
+export const memberListResponseSchema = createPaginatedResponseSchema(memberSchema)
+export type MemberListResponse = z.infer<typeof memberListResponseSchema>
 
 /** 會員的消費紀錄——訂單本身的形狀見 order.ts 的 orderSchema，這裡只挑列表用得到的欄位，不是另一份訂單資料來源。 */
 export const memberOrderSummarySchema = z.object({

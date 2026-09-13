@@ -1,25 +1,34 @@
 import {
   memberDetailSchema,
+  memberListResponseSchema,
   memberSchema,
   type CreateMemberRequest,
   type ManualPointAdjustmentRequest,
   type Member,
   type MemberDetail,
+  type MemberListResponse,
   type UpdateMemberRequest
 } from '@pos/contract'
 import { fetchJson } from './http'
 
 /** 會員管理 API 用戶端。 */
-export async function fetchMembers(): Promise<Member[]> {
-  const body = await fetchJson<unknown>('/api/members')
-  return memberSchema.array().parse(body)
+export async function fetchMembers(
+  options: { q?: string | undefined; page?: number | undefined; pageSize?: number | undefined } = {}
+): Promise<MemberListResponse> {
+  const params = new URLSearchParams()
+  if (options.q) params.set('q', options.q)
+  if (options.page) params.set('page', String(options.page))
+  if (options.pageSize) params.set('pageSize', String(options.pageSize))
+  const query = params.toString()
+  const body = await fetchJson<unknown>(`/api/members${query ? `?${query}` : ''}`)
+  return memberListResponseSchema.parse(body)
 }
 
 /** 結帳當下用手機號碼查會員——找不到回傳 null，不是丟例外（沒有這個會員是正常情況，不是錯誤）。 */
 export async function findMemberByPhone(phone: string): Promise<Member | null> {
   const body = await fetchJson<unknown>(`/api/members?phone=${encodeURIComponent(phone)}`)
-  const results = memberSchema.array().parse(body)
-  return results[0] ?? null
+  const result = memberListResponseSchema.parse(body)
+  return result.items[0] ?? null
 }
 
 export async function fetchMemberDetail(id: string): Promise<MemberDetail> {

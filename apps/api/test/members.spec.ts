@@ -89,8 +89,38 @@ describe('GET /api/members', () => {
       headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
     })
     const body = await readJson(res)
-    expect(body).toHaveLength(1)
-    expect(body[0]).toMatchObject({ name: '林小華' })
+    expect(body.items).toHaveLength(1)
+    expect(body.items[0]).toMatchObject({ name: '林小華' })
+  })
+
+  it('依姓名或手機號碼模糊搜尋（q），並依 page／pageSize 分頁', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const seeds = [
+      { name: '王小明', phone: '0911111111' },
+      { name: '王大明', phone: '0922222222' },
+      { name: '林小華', phone: '0933333333' }
+    ]
+    for (const seed of seeds) {
+      await app.request('/api/members', { method: 'POST', headers, body: JSON.stringify(seed) })
+    }
+
+    const byName = await readJson(await app.request('/api/members?q=王', { headers }))
+    expect(byName.items.map((m: { name: string }) => m.name).sort()).toEqual(['王大明', '王小明'])
+
+    const byPhone = await readJson(await app.request('/api/members?q=0933333333', { headers }))
+    expect(byPhone.items).toHaveLength(1)
+    expect(byPhone.items[0]).toMatchObject({ name: '林小華' })
+
+    const page1 = await readJson(await app.request('/api/members?pageSize=2&page=1', { headers }))
+    expect(page1.items).toHaveLength(2)
+    expect(page1.pagination).toMatchObject({ page: 1, pageSize: 2, totalCount: 3, totalPages: 2 })
+    const page2 = await readJson(await app.request('/api/members?pageSize=2&page=2', { headers }))
+    expect(page2.items).toHaveLength(1)
   })
 })
 
@@ -235,7 +265,7 @@ describe('GET /api/members/:id、PUT、DELETE', () => {
     // 刪除後這個會員在一般查詢裡形同不存在：查不到、也搜尋不到。
     expect((await app.request(`/api/members/${member.id}`, { headers })).status).toBe(404)
     const list2 = await readJson(await app.request('/api/members', { headers }))
-    expect(list2.find((item: { id: string }) => item.id === member.id)).toBeUndefined()
+    expect(list2.items.find((item: { id: string }) => item.id === member.id)).toBeUndefined()
   })
 
   it('刪除找不到會員時回傳 404；重複刪除同一個會員第二次也回傳 404', async () => {

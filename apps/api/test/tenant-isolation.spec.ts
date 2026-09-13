@@ -279,7 +279,7 @@ describe('跨租戶隔離', () => {
     const listB = await readJson((
       await tenantB.app.request('/api/members', { headers: authHeaders(tenantB) })
     ))
-    expect(listB).toEqual([])
+    expect(listB.items).toEqual([])
 
     const getRes = await tenantB.app.request(`/api/members/${member.id}`, {
       headers: authHeaders(tenantB)
