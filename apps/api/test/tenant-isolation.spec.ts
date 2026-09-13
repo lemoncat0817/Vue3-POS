@@ -332,7 +332,7 @@ describe('跨租戶隔離', () => {
     const { tenantA, tenantB } = await twoTenants()
 
     const updateRes = await tenantA.app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: authHeaders(tenantA),
       body: JSON.stringify({ businessDayStartHour: 18 })
     })

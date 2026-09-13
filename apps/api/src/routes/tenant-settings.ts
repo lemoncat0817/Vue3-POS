@@ -22,6 +22,10 @@ const errorSchema = z.object({ error: z.string() })
  * 「消費多少元累加 1 點」）需要 canManageMembers，兩者分屬不同權限領域，
  * 所以依請求內容動態檢查，沒辦法用靜態 requireCapability() middleware
  * （比照 orders.ts 的 updateOrderStatusRoute）。
+ *
+ * 方法用 PATCH 不是 PUT：PUT 語意是「用請求內容整個取代這個資源」（RFC
+ * 7231 §4.3.4），這裡的請求本來就設計成只帶想改的欄位、沒帶到的欄位維持
+ * 原值，是局部修改，對應的是 PATCH（RFC 5789）。
  */
 const getTenantSettingsRoute = createRoute({
   method: 'get',
@@ -36,7 +40,7 @@ const getTenantSettingsRoute = createRoute({
 })
 
 const updateTenantSettingsRoute = createRoute({
-  method: 'put',
+  method: 'patch',
   path: '/',
   middleware: [requireDeviceToken] as const,
   request: {

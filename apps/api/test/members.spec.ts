@@ -607,10 +607,10 @@ describe('退款／作廢會收回會員點數', () => {
 })
 
 /** 業主可自訂「消費多少元累加 1 點」，見 routes/tenant-settings.ts。 */
-describe('會員點數比例可由租戶自訂（PUT /api/tenant-settings）', () => {
+describe('會員點數比例可由租戶自訂（PATCH /api/tenant-settings）', () => {
   it('調整 pointsPerCurrencyUnit 後，新訂單依新比例累加點數', async () => {
     const db = createTestDb()
-    // PUT /api/tenant-settings 要更新的租戶列要先存在（見 routes/tenant-settings.ts
+    // PATCH /api/tenant-settings 要更新的租戶列要先存在（見 routes/tenant-settings.ts
     // 的「找不到這個租戶」404），沒指定 tenantId 時裝置停留在過渡池、沒有對應的
     // users 列，這裡跟 tenant-isolation.spec.ts 的 twoTenants() 一樣自行指定
     // tenantId 並各自種一組發票字軌（不能沿用 seedPromotions()，它種的字軌
@@ -634,7 +634,7 @@ describe('會員點數比例可由租戶自訂（PUT /api/tenant-settings）', (
       'X-Operator-Session': sessionToken
     }
     const settingsRes = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers,
       body: JSON.stringify({ pointsPerCurrencyUnit: 5 })
     })
@@ -740,7 +740,7 @@ describe('會員點數到期規則', () => {
         'X-Operator-Session': sessionToken
       }
       await app.request('/api/tenant-settings', {
-        method: 'PUT',
+        method: 'PATCH',
         headers,
         body: JSON.stringify({ pointsExpiryMonths: 6 })
       })
@@ -790,7 +790,7 @@ describe('會員點數到期規則', () => {
         'X-Operator-Session': sessionToken
       }
       await app.request('/api/tenant-settings', {
-        method: 'PUT',
+        method: 'PATCH',
         headers,
         body: JSON.stringify({ pointsExpiryMonths: 6 })
       })
@@ -845,7 +845,7 @@ describe('會員點數到期規則', () => {
         'X-Operator-Session': sessionToken
       }
       await app.request('/api/tenant-settings', {
-        method: 'PUT',
+        method: 'PATCH',
         headers,
         body: JSON.stringify({ pointsExpiryMonths: 6 })
       })

@@ -15,7 +15,7 @@ export async function updateTenantSettings(
   input: UpdateTenantSettingsRequest
 ): Promise<TenantSettings> {
   const body = await fetchJson<unknown>('/api/tenant-settings', {
-    method: 'PUT',
+    method: 'PATCH',
     body: JSON.stringify(input)
   })
   return tenantSettingsSchema.parse(body)

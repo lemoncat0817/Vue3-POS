@@ -72,11 +72,11 @@ describe('GET /api/tenant-settings', () => {
   })
 })
 
-describe('PUT /api/tenant-settings', () => {
+describe('PATCH /api/tenant-settings', () => {
   it('沒有裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())
     const res = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ businessDayStartHour: 6 })
     })
@@ -90,7 +90,7 @@ describe('PUT /api/tenant-settings', () => {
       { tenantId: 'tenant-1' }
     )
     const updateRes = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'X-Device-Token': deviceToken,
@@ -124,7 +124,7 @@ describe('PUT /api/tenant-settings', () => {
       { tenantId: 'tenant-1' }
     )
     const res = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'X-Device-Token': deviceToken,
@@ -148,7 +148,7 @@ describe('PUT /api/tenant-settings', () => {
       { tenantId: 'tenant-1' }
     )
     const res = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'X-Device-Token': deviceToken,
@@ -177,7 +177,7 @@ describe('PUT /api/tenant-settings', () => {
       'X-Operator-Session': sessionToken
     }
     const enableRes = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers,
       body: JSON.stringify({ pointsExpiryMonths: 6 })
     })
@@ -191,7 +191,7 @@ describe('PUT /api/tenant-settings', () => {
 
     // 明確傳 null 是「停用」，跟沒送這個欄位（維持原值）意義不同，兩者都要能正常運作。
     const disableRes = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers,
       body: JSON.stringify({ pointsExpiryMonths: null })
     })
@@ -211,7 +211,7 @@ describe('PUT /api/tenant-settings', () => {
     })
     const { sessionToken } = await seedStaffWithCapabilities(db, ['canSetBusinessHours'])
     const res = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'X-Device-Token': deviceToken,
@@ -229,7 +229,7 @@ describe('PUT /api/tenant-settings', () => {
       { tenantId: 'tenant-1' }
     )
     const res = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'X-Device-Token': deviceToken,
@@ -247,7 +247,7 @@ describe('PUT /api/tenant-settings', () => {
     })
     const { sessionToken } = await seedStaffWithCapabilities(db, ['canManageMembers'])
     const res = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'X-Device-Token': deviceToken,
@@ -265,7 +265,7 @@ describe('PUT /api/tenant-settings', () => {
     })
     const { sessionToken } = await seedStaffWithCapabilities(db, ['canSetBusinessHours'])
     const res = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'X-Device-Token': deviceToken,
@@ -279,7 +279,7 @@ describe('PUT /api/tenant-settings', () => {
   it('裝置尚未分配租戶時，找不到租戶可更新，回傳 404', async () => {
     const { app, deviceToken, sessionToken } = await createTestAppWithDevice(createTestDb())
     const res = await app.request('/api/tenant-settings', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'X-Device-Token': deviceToken,
