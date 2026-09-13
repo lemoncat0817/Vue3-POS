@@ -29,7 +29,8 @@ export const AUTHORITY_FIELDS: AuthorityField[] = [
   { label: '查看會員管理', value: 'canCheckMembers' },
   { label: '新增／編輯／刪除會員', value: 'canManageMembers', dependsOn: 'canCheckMembers' },
   { label: '查看桌況管理', value: 'canManageTables' },
-  { label: '管理裝置憑證', value: 'canManageDevices', dependsOn: 'canCheckAuthority' }
+  { label: '管理裝置憑證', value: 'canManageDevices', dependsOn: 'canCheckAuthority' },
+  { label: '查看操作紀錄', value: 'canCheckAuditLog' }
 ]
 
 const PARENT_KEYS = [

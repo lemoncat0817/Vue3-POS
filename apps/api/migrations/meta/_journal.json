@@ -302,6 +302,20 @@
       "when": 1789295799362,
       "tag": "0042_add_table_guest_info_and_auto_occupy_setting",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1789300565158,
+      "tag": "0043_flaky_toro",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1789300589145,
+      "tag": "0044_backfill_audit_log_capability",
+      "breakpoints": true
     }
   ]
 }

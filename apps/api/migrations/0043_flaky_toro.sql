@@ -1,0 +1,1 @@
+CREATE INDEX `audit_logs_tenant_created_at_idx` ON `audit_logs` (`tenant_id`,`created_at`);

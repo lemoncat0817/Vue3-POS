@@ -549,14 +549,20 @@ export const rateLimitCounters = sqliteTable('rate_limit_counters', {
 })
 
 // 稽核紀錄，取代原本只印在瀏覽器主控台的做法（分頁關閉紀錄就消失）。
-export const auditLogs = sqliteTable('audit_logs', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  tenantId: text('tenant_id').references(() => users.id),
-  action: text('action').$type<AuditLogAction>().notNull(),
-  operator: text('operator').notNull(),
-  detail: text('detail').notNull(),
-  createdAt: text('created_at').notNull()
-})
+export const auditLogs = sqliteTable(
+  'audit_logs',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => users.id),
+    action: text('action').$type<AuditLogAction>().notNull(),
+    operator: text('operator').notNull(),
+    detail: text('detail').notNull(),
+    createdAt: text('created_at').notNull()
+  },
+  // 操作紀錄頁查詢一定先過濾 tenantId 再依時間倒序分頁，理由同
+  // orders_tenant_order_time_idx。
+  (table) => [index('audit_logs_tenant_created_at_idx').on(table.tenantId, table.createdAt)]
+)
 
 // ---------- 桌況管理 ----------
 
