@@ -263,7 +263,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
-              <tr v-if="!detail || detail.orders.length === 0">
+              <tr v-if="!detail || detail.orders.items.length === 0">
                 <td
                   colspan="5"
                   class="px-3 py-8 text-center text-surface-400 dark:text-surface-500"
@@ -277,7 +277,7 @@
                 </td>
               </tr>
               <tr
-                v-for="order in detail?.orders ?? []"
+                v-for="order in detail?.orders.items ?? []"
                 :key="order.orderId"
                 class="transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-800/40"
               >
@@ -310,6 +310,16 @@
             </tbody>
           </table>
         </div>
+        <TablePagination
+          v-if="detail"
+          class="mb-4"
+          :page="detailOrdersPage"
+          :page-count="detail.orders.pagination.totalPages"
+          :total="detail.orders.pagination.totalCount"
+          :current-count="detail.orders.items.length"
+          unit="筆消費紀錄"
+          @update:page="handleDetailOrdersPageChange"
+        />
 
         <div class="mb-2 text-xs font-black text-surface-700 dark:text-surface-300">點數異動明細</div>
         <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-800">
@@ -610,10 +620,25 @@ async function deleteMemberRow(member: Member) {
 
 const detailDialog = ref(false)
 const detail = ref<MemberDetail | null>(null)
+const detailOrdersPage = ref(1)
+const detailOrdersPageSize = 10
 async function openDetail(member: Member) {
+  detailOrdersPage.value = 1
   try {
-    detail.value = await fetchMemberDetail(member.id)
+    detail.value = await fetchMemberDetail(member.id, { ordersPageSize: detailOrdersPageSize })
     detailDialog.value = true
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
+}
+async function handleDetailOrdersPageChange(page: number) {
+  if (!detail.value) return
+  detailOrdersPage.value = page
+  try {
+    detail.value = await fetchMemberDetail(detail.value.id, {
+      ordersPage: page,
+      ordersPageSize: detailOrdersPageSize
+    })
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }
@@ -651,7 +676,10 @@ async function onSubmitAdjustPoints(values: Record<string, unknown>) {
     })
     // 調整成功後整份重新拉最新的消費紀錄＋異動明細，不手動拼湊——後端才是
     // 唯一可信來源，尤其異動明細的排序、內容都是伺服端組出來的。
-    detail.value = await fetchMemberDetail(updated.id)
+    detail.value = await fetchMemberDetail(updated.id, {
+      ordersPage: detailOrdersPage.value,
+      ordersPageSize: detailOrdersPageSize
+    })
     const target = members.value.find((item) => item.id === updated.id)
     if (target) target.points = updated.points
     adjustPointsDialog.value = false

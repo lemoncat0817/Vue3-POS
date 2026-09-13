@@ -85,9 +85,13 @@ export const manualPointAdjustmentRequestSchema = z.object({
 })
 export type ManualPointAdjustmentRequest = z.infer<typeof manualPointAdjustmentRequestSchema>
 
-/** 會員詳細資料＋消費紀錄＋點數異動明細，GET /api/members/:id 的回應形狀。 */
+/** GET /api/members/:id 的查詢參數：消費紀錄用分頁欄位，避免老會員訂單一多整包吐回來。 */
+export const memberDetailQuerySchema = paginationQuerySchema
+export type MemberDetailQuery = z.infer<typeof memberDetailQuerySchema>
+
+/** 會員詳細資料＋消費紀錄（分頁）＋點數異動明細，GET /api/members/:id 的回應形狀。 */
 export const memberDetailSchema = memberSchema.extend({
-  orders: z.array(memberOrderSummarySchema),
+  orders: createPaginatedResponseSchema(memberOrderSummarySchema),
   pointsLedger: z.array(memberPointLedgerEntrySchema)
 })
 export type MemberDetail = z.infer<typeof memberDetailSchema>

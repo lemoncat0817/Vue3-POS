@@ -357,8 +357,12 @@ describe('POST /api/orders 掛會員（P22）', () => {
 
     const detail = await readJson(await app.request(`/api/members/${member.id}`, { headers }))
     expect(detail.points).toBe(16)
-    expect(detail.orders).toHaveLength(1)
-    expect(detail.orders[0]).toMatchObject({ orderId: orderBody.orderId, orderPaymentPrice: 160 })
+    expect(detail.orders.items).toHaveLength(1)
+    expect(detail.orders.items[0]).toMatchObject({
+      orderId: orderBody.orderId,
+      orderPaymentPrice: 160
+    })
+    expect(detail.orders.pagination).toMatchObject({ totalCount: 1, totalPages: 1 })
   })
 
   it('沒有掛會員的訂單，memberId 是 null，不影響任何會員的點數', async () => {
@@ -396,6 +400,69 @@ describe('POST /api/orders 掛會員（P22）', () => {
     // 見 resolveMemberId 的說明），回應上看到的是 null，不是那個
     // 傳進去但找不到的 id。
     expect((await readJson(res)).memberId).toBeNull()
+  })
+})
+
+describe('GET /api/members/:id 消費紀錄分頁', () => {
+  it('依 page／pageSize 分頁，最新的訂單排最前面', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const member = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0912345678' })
+      })
+    )
+    const validLine = {
+      name: '楊枝甘露2.0',
+      price: 80,
+      count: 1,
+      addList: '無添加配料' as const,
+      addListPrice: 0,
+      freeDiscount: false,
+      quickDiscountId: null
+    }
+    const idempotencyKeys = [
+      '01ARZ3NDEKTSV4RRFFQ69G5FC1',
+      '01ARZ3NDEKTSV4RRFFQ69G5FC2',
+      '01ARZ3NDEKTSV4RRFFQ69G5FC3'
+    ]
+    for (const idempotencyKey of idempotencyKeys) {
+      await app.request('/api/orders', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          idempotencyKey,
+          businessDate: '20240610',
+          staff: '店長 - Lemon',
+          lines: [validLine],
+          bagCount: 0,
+          tenders: [{ method: '現金', amount: 80 }],
+          appliedCoupon: { type: 'none' },
+          orderChannel: '外帶',
+          invoiceCarrier: { type: '無載具' },
+          memberId: member.id
+        })
+      })
+    }
+
+    const page1 = await readJson(
+      await app.request(`/api/members/${member.id}?pageSize=2&page=1`, { headers })
+    )
+    expect(page1.orders.items).toHaveLength(2)
+    expect(page1.orders.pagination).toMatchObject({ page: 1, pageSize: 2, totalCount: 3, totalPages: 2 })
+
+    const page2 = await readJson(
+      await app.request(`/api/members/${member.id}?pageSize=2&page=2`, { headers })
+    )
+    expect(page2.orders.items).toHaveLength(1)
   })
 })
 

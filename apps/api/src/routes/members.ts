@@ -4,6 +4,7 @@ import {
   createMemberRequestSchema,
   listMembersQuerySchema,
   manualPointAdjustmentRequestSchema,
+  memberDetailQuerySchema,
   memberDetailSchema,
   memberListResponseSchema,
   memberSchema,
@@ -74,10 +75,13 @@ const getMemberRoute = createRoute({
   // 詳細資料含完整消費紀錄，只有後台會員管理頁會用到，不像列表的單一手機
   // 號碼查詢有結帳流程要用，直接用靜態權限檢查。
   middleware: [requireDeviceToken, requireCapability('canCheckMembers')] as const,
-  request: { params: z.object({ id: z.string().min(1) }) },
+  request: {
+    params: z.object({ id: z.string().min(1) }),
+    query: memberDetailQuerySchema
+  },
   responses: {
     200: {
-      description: '會員詳細資料＋消費紀錄',
+      description: '會員詳細資料＋分頁消費紀錄＋點數異動明細',
       content: { 'application/json': { schema: memberDetailSchema } }
     },
     401: {
@@ -232,6 +236,7 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
   })
   .openapi(getMemberRoute, async (c) => {
     const { id } = c.req.valid('param')
+    const { page, pageSize } = c.req.valid('query')
     const db = c.get('db')
     const tenantId = c.get('tenantId')
     const member = await db
@@ -242,18 +247,29 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       )
       .get()
     if (!member) return c.json({ error: '找不到這個會員' }, 404)
-    const memberOrders = await db
-      .select({
-        orderId: orders.orderId,
-        orderTime: orders.orderTime,
-        orderStatus: orders.orderStatus,
-        orderPaymentPrice: orders.orderPaymentPrice,
-        pointsEarned: orders.pointsEarned
-      })
-      .from(orders)
-      .where(eq(orders.memberId, id))
-      .orderBy(desc(orders.orderTime))
-      .all()
+
+    // 消費紀錄分頁：老會員訂單一多，整包吐回來畫面會整包渲染，改用跟
+    // GET /api/members 一樣的 count(*) ＋ limit/offset 分頁。
+    const ordersWhere = eq(orders.memberId, id)
+    const [totalOrdersRow, memberOrders] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(orders).where(ordersWhere).get(),
+      db
+        .select({
+          orderId: orders.orderId,
+          orderTime: orders.orderTime,
+          orderStatus: orders.orderStatus,
+          orderPaymentPrice: orders.orderPaymentPrice,
+          pointsEarned: orders.pointsEarned
+        })
+        .from(orders)
+        .where(ordersWhere)
+        .orderBy(desc(orders.orderTime))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
+        .all()
+    ])
+    const totalOrders = totalOrdersRow?.count ?? 0
+
     const pointsLedger = await db
       .select({
         id: memberPointLedger.id,
@@ -268,7 +284,22 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       .where(eq(memberPointLedger.memberId, id))
       .orderBy(desc(memberPointLedger.createdAt))
       .all()
-    return c.json({ ...member, orders: memberOrders, pointsLedger }, 200)
+    return c.json(
+      {
+        ...member,
+        orders: {
+          items: memberOrders,
+          pagination: {
+            page,
+            pageSize,
+            totalCount: totalOrders,
+            totalPages: Math.max(1, Math.ceil(totalOrders / pageSize))
+          }
+        },
+        pointsLedger
+      },
+      200
+    )
   })
   .openapi(updateMemberRoute, async (c) => {
     const { id } = c.req.valid('param')

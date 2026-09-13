@@ -31,8 +31,17 @@ export async function findMemberByPhone(phone: string): Promise<Member | null> {
   return result.items[0] ?? null
 }
 
-export async function fetchMemberDetail(id: string): Promise<MemberDetail> {
-  const body = await fetchJson<unknown>(`/api/members/${encodeURIComponent(id)}`)
+export async function fetchMemberDetail(
+  id: string,
+  options: { ordersPage?: number | undefined; ordersPageSize?: number | undefined } = {}
+): Promise<MemberDetail> {
+  const params = new URLSearchParams()
+  if (options.ordersPage) params.set('page', String(options.ordersPage))
+  if (options.ordersPageSize) params.set('pageSize', String(options.ordersPageSize))
+  const query = params.toString()
+  const body = await fetchJson<unknown>(
+    `/api/members/${encodeURIComponent(id)}${query ? `?${query}` : ''}`
+  )
   return memberDetailSchema.parse(body)
 }
 
