@@ -140,43 +140,48 @@
           </button>
         </form>
 
-        <div class="mt-6 flex flex-col gap-2 border-t border-surface-200 pt-4 dark:border-surface-700">
-          <a
-            :href="googleLoginUrl"
-            class="text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
-          >
-            換一台裝置？重新用 Google 登入
-          </a>
-          <a
-            :href="githubLoginUrl"
-            class="text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
-          >
-            重新用 GitHub 登入
-          </a>
-          <!-- 有 webSessionToken 代表最近登入過、還在 12 小時效期內，直接開重設
-               面板；沒有的話得先重新走一次 OAuth 才拿得到，見 api/oauth.ts。 -->
+        <!-- 換裝置／忘記 PIN 底層都是同一個 OAuth 動作（見 api/oauth.ts：登入
+             一次就同時核發新裝置憑證與 web session），沒必要各自攤開兩條
+             Google／GitHub 連結——收在同一個次要入口底下，預設只留一行，
+             點開才看到完整選項，PIN 登入才是這個畫面該優先看到的內容。 -->
+        <div class="mt-6 border-t border-surface-200 pt-4 dark:border-surface-700">
+          <!-- 有 webSessionToken 代表最近登入過、還在 12 小時效期內，可以直接開
+               重設面板，不必重新走一次 OAuth。 -->
           <button
             v-if="deviceStore.webSessionToken"
             type="button"
-            class="text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
+            class="w-full text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
             @click="openResetPin"
           >
             忘記 PIN？用管理者身分重設
           </button>
-          <template v-else>
-            <a
-              :href="googleLoginUrl"
-              class="text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
-            >
-              忘記 PIN？改用 Google 帳號登入重設
-            </a>
-            <a
-              :href="githubLoginUrl"
-              class="text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
-            >
-              忘記 PIN？改用 GitHub 帳號登入重設
-            </a>
-          </template>
+          <button
+            v-else-if="!showDeviceHelp"
+            type="button"
+            class="w-full text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
+            @click="showDeviceHelp = true"
+          >
+            忘記 PIN 或需要換裝置？
+          </button>
+          <div v-else class="flex flex-col gap-2">
+            <p class="text-center text-xs text-surface-400 dark:text-surface-500">
+              用管理者的 Google／GitHub 帳號重新登入，即可換裝置或重設任一員工的 PIN。
+            </p>
+            <div class="flex gap-2">
+              <a
+                :href="googleLoginUrl"
+                class="flex-1 rounded-lg border border-surface-300 py-2 text-center text-xs font-bold text-surface-600 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
+              >
+                Google 登入
+              </a>
+              <a
+                :href="githubLoginUrl"
+                class="flex-1 rounded-lg border border-surface-300 py-2 text-center text-xs font-bold text-surface-600 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
+              >
+                GitHub 登入
+              </a>
+            </div>
+          </div>
         </div>
       </template>
     </div>
@@ -202,6 +207,7 @@ import type { Staff } from '@pos/contract'
 
 const RESET_PIN_PATTERN = /^\d{4,6}$/
 const showResetPin = ref(false)
+const showDeviceHelp = ref(false)
 const resetPinStaffList = ref<Staff[]>([])
 const resetPinStaffId = ref('')
 const resetPinValue = ref('')
