@@ -32,7 +32,6 @@
 </template>
 
 <script setup lang="ts">
-// 通用彈出視窗；標題列固定、內容區 min-h-0 overflow-y-auto 搭配 max-h-[85vh] 獨立捲動
 import {
   DialogClose,
   DialogContent,

@@ -111,7 +111,6 @@ describe('syncOnce', () => {
     expect(createOrder).not.toHaveBeenCalled()
     const row = await offlineDb.outboxOrders.get('01ARZ3NDEKTSV4RRFFQ69G5FA5')
     expect(row).toMatchObject({ status: 'pending', attempts: 0 })
-    // 離線時新入列項目仍需反映在 pendingCount。
     expect(syncStatus.pendingCount).toBe(1)
 
     onLineSpy.mockRestore()

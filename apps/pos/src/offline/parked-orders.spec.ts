@@ -29,7 +29,6 @@ describe('parked-orders offline storage', () => {
 
     const list = await listParkedOrders()
     expect(list).toHaveLength(2)
-    // 依 createdAt 遞增排序
     expect(list[0]?.id).toBe('order-2')
     expect(list[1]?.id).toBe('order-1')
   })

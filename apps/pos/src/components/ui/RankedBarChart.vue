@@ -6,8 +6,6 @@
 </template>
 
 <script setup lang="ts">
-// 排行榜卡片共用的 ECharts 長條圖：取代原本的純 CSS 進度條，換來 tooltip
-// 與精確數值，四張排行榜（熱銷品項／分類佔比／加購／付款方式）共用同一顆元件。
 import * as echarts from 'echarts/core'
 import { BarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
@@ -34,7 +32,6 @@ const chartRef = ref<HTMLDivElement>()
 let chartInstance: echarts.ECharts | null = null
 let resizeObserver: ResizeObserver | null = null
 
-// 每列固定 34px，項目一多榜單也跟著長高，不會擠成一團。
 const chartHeight = computed(() => `${Math.max(props.items.length, 1) * 34 + 16}px`)
 
 const buildOption = () => {

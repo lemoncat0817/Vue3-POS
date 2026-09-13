@@ -286,10 +286,6 @@ const addOnGroups = computed(() =>
   catalogStore.addOnGroupsOf(fromSelection(catalogStore.selectedProduct))
 )
 
-// 新增／更新品項按下去一定會失敗的三個條件都能在畫面渲染當下算出來，
-// 直接禁用按鈕比讓使用者按了才跳提示更好（見 addNewProduct／saveEditProduct
-// 在 home/index.vue 裡的同一組檢查——那邊的 toast 保留當防呆，正常情況下按鈕
-// 一禁用就摸不到了）。
 const hasSelectedProduct = computed(() => fromSelection(catalogStore.selectedProduct) !== undefined)
 const hasValidCount = computed(() => {
   const count = parseInt(catalogStore.productCount)
@@ -346,7 +342,6 @@ const increaseCount = () => {
   catalogStore.productCount = String(current + 1)
 }
 
-// 選項庫存歸零視為缺貨不可加選（規格與加購共用同一個判斷，只是規格通常不設庫存）。
 const isOptionSoldOut = (option: ModifierOption) => option.stock === 0
 
 const resetAll = async () => {

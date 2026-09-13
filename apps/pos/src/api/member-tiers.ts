@@ -6,7 +6,6 @@ import {
 } from '@pos/contract'
 import { fetchJson } from './http'
 
-/** 會員分級門檻管理 API 用戶端。 */
 export async function fetchMemberTiers(): Promise<MemberTier[]> {
   const body = await fetchJson<unknown>('/api/member-tiers')
   return memberTierSchema.array().parse(body)

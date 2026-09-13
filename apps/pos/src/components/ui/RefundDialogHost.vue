@@ -64,7 +64,6 @@
 </template>
 
 <script setup lang="ts">
-// 全域退款對話框（掛載於 App.vue），透過 click.capture 預先記錄操作結果
 import { computed, ref } from 'vue'
 import {
   DialogClose,

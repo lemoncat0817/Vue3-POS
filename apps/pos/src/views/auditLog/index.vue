@@ -177,7 +177,6 @@ const actionInput = ref<AuditLogAction | ''>('')
 const dateFromInput = ref('')
 const dateToInput = ref('')
 
-// 目前實際套用中的篩選條件，跟輸入框分開，避免打字打到一半就觸發查詢——寫法比照 members/index.vue。
 const activeKeyword = ref('')
 const activeOperator = ref('')
 const activeAction = ref<AuditLogAction | ''>('')

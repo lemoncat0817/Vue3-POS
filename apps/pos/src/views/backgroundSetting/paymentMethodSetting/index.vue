@@ -223,7 +223,6 @@ import {
 } from '@/api/payment-methods'
 
 const canSetPayMethod = computed(() => hasCapability(loginStore.userInfo, 'canSetPayMethod'))
-// 現金是系統保留的付款方式，這個限制跟權限無關，逐列判斷。
 const canRemovePayMethod = (row: PaymentMethod) => canSetPayMethod.value && row.name !== '現金'
 const removePayMethodDisabledReason = (row: PaymentMethod) => {
   if (!canSetPayMethod.value) return '沒有設定付款方式的權限'

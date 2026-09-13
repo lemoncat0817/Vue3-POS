@@ -6,8 +6,6 @@ import { useDeviceStore } from '@/stores/device'
 import { usePageStore } from '@/stores/page'
 import type { AuthorityKey, StaffMember } from '@/types'
 
-// 驗證通用導航守衛（權限檢查與初次載入頁籤還原）。
-
 const ALL_CAPABILITIES: AuthorityKey[] = [
   'canCompItem',
   'canOpenCashier',
@@ -30,7 +28,6 @@ const ALL_CAPABILITIES: AuthorityKey[] = [
   'canManageTables'
 ]
 
-// 建立帶有指定權限清單的測試店員資料。
 function buildStaff(overrides: Partial<Record<AuthorityKey, boolean>> = {}): StaffMember {
   const authorityCheckList = ALL_CAPABILITIES.filter((key) => overrides[key] ?? true)
   return {

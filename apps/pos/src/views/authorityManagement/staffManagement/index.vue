@@ -274,14 +274,11 @@ import {
 
 const PIN_PATTERN = /^\d{4,6}$/
 
-// 人員與權限群組由 App.vue 啟動時同步，CRUD 直接以 API 回應更新本機陣列，避免重複 fetch 覆蓋。
-
 const canManage = computed(() => hasCapability(loginStore.userInfo, 'canManageStaff'))
 function isSelf(row: StaffMember): boolean {
   return row.account === fromSelection(loginStore.userInfo)?.account
 }
-// 不可刪除自己，避免操作中的帳號把自己刪掉；「最後一位權限管理者」則交由後端把關
-// （見 apps/api/src/routes/staff.ts 的 wouldLeaveNoRoleAdmin）。
+// 禁止刪除操作員自身帳號，最後一位權限管理者刪除則由伺服端驗證防護。
 function canDelete(row: StaffMember): boolean {
   return canManage.value && !isSelf(row)
 }
@@ -337,7 +334,6 @@ async function addStaff() {
       roleId: currentInputRoleId.value,
       pin: currentInputStaffPin.value
     })
-    // 陣列重建以觸發 reactive 更新。
     authorityManagementStore.staffList = [
       ...authorityManagementStore.staffList,
       toStaffMember(created)
@@ -375,7 +371,6 @@ const currentEditRoleId = ref('')
 const isEditingSelf = computed(() =>
   currentEditStaff.value ? isSelf(currentEditStaff.value) : false
 )
-// 姓名／帳號／PIN 允許編輯自己；角色群組不行（下面 isEditingSelf 會鎖住該欄位，後端也有對應檢查）。
 function openEditStaffDialog(row: StaffMember) {
   if (!canManage.value) {
     showToast('沒有編輯人員的權限', 'error')

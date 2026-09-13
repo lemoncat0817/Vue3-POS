@@ -7,9 +7,6 @@ import {
 } from '@pos/contract'
 import { ApiError, fetchJson } from './http'
 
-/** 班別結帳 API 用戶端（開帳、現金異動、收班需裝置憑證）。 */
-
-/** 目前開帳中的班別；沒有開帳中的班別時回傳 null（對應伺服端的 404），不是拋例外——「還沒開帳」是點餐頁的正常狀態之一。 */
 export async function fetchCurrentShift(): Promise<Shift | null> {
   try {
     const body = await fetchJson<unknown>('/api/shifts/current')

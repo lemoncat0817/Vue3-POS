@@ -7,17 +7,7 @@ import { fromSelection } from '@/utils/selection'
 export const useCatalogStore = defineStore(
   'catalog',
   () => {
-    // 必須在 setup 函式內呼叫，確保一定在 Pinia 初始化完成之後才執行。
     const discountStore = useDiscountStore()
-
-    // 這裡的陣列是離線種子資料，正常由 apps/api 當唯一來源（見
-    // src/api/catalog.ts）。開機拿得到伺服端資料就整份覆蓋這裡（見下方
-    // hydrateCatalogFromServer）；種子資料只在離線／伺服端連不上時當作
-    // 最後手段的畫面內容，不會跟真正的菜單資料混在一起比對合併。
-
-    // 展示用種子資料：跨主餐/輕食/飲品/甜點的示範菜單，證明這套目錄模型
-    // 不綁定單一產業——熟度、甜度/冰塊/容器大小都是可掛用的規格群組，不是
-    // 寫死在品項欄位裡（見 apps/api/seed/catalog.sql 的伺服端版本）。
     const categories = ref<Category[]>([
       { id: 'cat-1', name: '主餐' },
       { id: 'cat-2', name: '輕食' },
@@ -69,7 +59,6 @@ export const useCatalogStore = defineStore(
           { id: 'mo-size-2', name: '大杯', priceDelta: 10 }
         ]
       },
-      // 加購只是 selectionType='multiple' 的規格群組，一樣只掛在下方 products.modifierGroupIds 有列的品項上。
       {
         id: 'mg-burger-topping',
         name: '漢堡加料',
@@ -191,11 +180,9 @@ export const useCatalogStore = defineStore(
       }
     ])
 
-    // 0：規格客製；非 0：加購選項。
     const productPanel = ref(0)
     const selectedCategoryId = ref('')
     const selectedProduct = ref<Product | []>([])
-    // 已選規格／加購：groupId -> 選中的 optionId 清單，兩者共用同一份狀態。
     const selectedModifiers = ref<Record<string, string[]>>({})
     const productCount = ref('1')
     const cartLines = ref<CartLineItem[]>([])
@@ -207,7 +194,6 @@ export const useCatalogStore = defineStore(
         )
         .filter((group): group is ModifierGroup => group !== undefined)
 
-    // 用 selectionType 分流：單選（規格）併入品名字串，多選（加購）另外列成 addList 徽章。
     const specGroupsOf = (product: Product | undefined) =>
       modifierGroupsOf(product).filter((group) => group.selectionType === 'single')
     const addOnGroupsOf = (product: Product | undefined) =>
@@ -280,10 +266,8 @@ export const useCatalogStore = defineStore(
       productCount.value = String(line.count)
 
       if (line.selectedModifiers) {
-        // 新格式快照已經同時含規格與加購（見 addNewProduct／saveEdit），整份沿用。
         selectedModifiers.value = JSON.parse(JSON.stringify(line.selectedModifiers))
       } else {
-        // 舊格式沒有 selectedModifiers 快照，只能從展示字串（品名逗號後段、addList）回查名稱。
         const mods: Record<string, string[]> = {}
         const modPart = line.name.split(",")[1]
         if (modPart) {
@@ -321,9 +305,7 @@ export const useCatalogStore = defineStore(
       selectedCategoryId.value = ""
       selectedProduct.value = []
       selectedModifiers.value = {}
-      // 重置成 1 而不是 0：畫面上的數量徽章本來就把 0／NaN 顯示成「1份」
-      // 佔位，重置成 0 會讓使用者選好品項後直接按新增就撲空跳「數量不能
-      // 小於一份」，明明畫面看起來一切正常。
+      // 重置為 1 避免未調整數量直接新增時因預設 0 觸發校驗失敗。
       productCount.value = "1"
     }
 
@@ -348,16 +330,9 @@ export const useCatalogStore = defineStore(
       initialized.value = true
       editingLine.value = null
     })
-    // store（狀態層）不直接彈窗，只遞增計數器；UI 提示交給實際顯示畫面的
-    // 元件（home/index.vue）自己 watch 這個計數器。initialized 守衛防的是
-    // pinia-plugin-persistedstate 還原持久化狀態時，cartLines 被重新賦值
-    // 觸發這個 watch，搶在 discountStore 也還原完成前就把它重置成 0。
+    // initialized 防止持久化還原時 cartLines 觸發重置。
     const cartClearedNotice = ref(0)
-    // 掛單、結帳送單、清空／批次清除待付款品項都會讓 cartLines 變空，
-    // 觸發同一個 watch，但這些操作當下都已經另外彈過各自的成功 toast
-    // （見 ParkedOrdersPanel.vue、home/index.vue），不需要再疊加一次語意
-    // 重複的提示——這個旗標只抑制「彈提示」，清空額外費用／重置優惠券兩件
-    // 事仍照做。
+    // 抑制外部已自行提示情境下的重複 toast。
     const suppressClearedNotice = ref(false)
     watch(
       () => cartLines.value,
@@ -375,8 +350,6 @@ export const useCatalogStore = defineStore(
       }
     )
 
-    // 額外費用（包材／服務費等），沿用舊版「加購袋子」的計數 × 1元機制，
-    // 只是不再限定是外帶飲料店的袋子。
     const currentBagCount = ref(0)
     const cartPayPrice = computed(() => {
       const subtotal =
@@ -398,9 +371,6 @@ export const useCatalogStore = defineStore(
       )
     })
 
-    // 開機每次拿到伺服端資料都整份覆蓋——D1 已經是可信賴的持久層，管理端的
-    // 異動也都直接寫進去，不需要再靠「只信任本機」來防止被蓋掉；反而是只信
-    // 任本機會讓多裝置／多分頁各自卡在自己最後一次同步的舊資料出不來。
     const hydrateCatalogFromServer = (catalog: {
       categories: Category[]
       products: Product[]

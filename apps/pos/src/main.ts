@@ -15,9 +15,7 @@ window.addEventListener('error', (event) => {
   }
 })
 
-// 全部其他程式碼（尤其是 App.vue 掛載後 useQuery 立刻送出的那批請求）
-// 之前，同步把 localStorage 裡的裝置憑證讀進 http.ts——見 primeDeviceTokenFromStorage()
-// 的說明，不能賭 Pinia 的 persistedstate hydrate 一定會在那之前跑完。
+// 掛載與初始化前同步讀取本機裝置憑證至 http client。
 import { primeDeviceTokenFromStorage } from './stores/device'
 primeDeviceTokenFromStorage()
 
@@ -30,9 +28,6 @@ const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
 
-// 把 Google／GitHub 登入導回網址上的裝置憑證讀進 deviceStore（跟上面的
-// primeDeviceTokenFromStorage 是兩件事：這裡處理的是「剛登入完成」這次的
-// 新憑證，上面處理的是「之前登入過，這次重新整理頁面」要延續舊憑證）。
 import { useDeviceStore } from './stores/device'
 import { consumeOAuthCallback } from './api/oauth'
 import { showToast } from '@/composables/useToast'
@@ -49,7 +44,6 @@ import { VueQueryPlugin } from '@tanstack/vue-query'
 app.use(VueQueryPlugin)
 app.mount('#app')
 
-// PWA 新版本提示，由使用者確認後再重新整理套用。
 import { registerSW } from 'virtual:pwa-register'
 import { confirm } from '@/composables/useConfirm'
 const updateSW = registerSW({

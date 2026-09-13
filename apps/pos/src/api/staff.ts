@@ -6,7 +6,6 @@ import {
 } from '@pos/contract'
 import { fetchJson } from './http'
 
-/** 員工與權限管理 API 用戶端。 */
 export async function fetchStaffList(): Promise<Staff[]> {
   const body = await fetchJson<unknown>('/api/staff')
   return staffSchema.array().parse(body)

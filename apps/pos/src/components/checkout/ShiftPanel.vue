@@ -262,7 +262,6 @@ watch(open, (isOpen) => {
   actualCash.value = previewExpectedCash.value
 })
 
-// 切換至收班時重新同步最新應有現金預覽
 watch(closing, (isClosing) => {
   if (isClosing) {
     actualCash.value = previewExpectedCash.value

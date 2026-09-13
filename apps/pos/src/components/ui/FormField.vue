@@ -27,7 +27,6 @@
 </template>
 
 <script setup lang="ts">
-// VeeValidate 表單欄位元件，提供即時錯誤提示
 import { useField } from 'vee-validate'
 
 const props = defineProps<{

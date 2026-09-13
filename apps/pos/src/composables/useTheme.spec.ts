@@ -12,7 +12,6 @@ describe('useTheme composable', () => {
     expect(theme.value).toBe(initial === 'dark' ? 'light' : 'dark')
     expect(document.documentElement.classList.contains('dark')).toBe(theme.value === 'dark')
 
-    // 切換回原本主題
     toggleTheme()
     await nextTick()
     expect(theme.value).toBe(initial)

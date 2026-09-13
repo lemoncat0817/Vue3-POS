@@ -119,7 +119,6 @@
 </template>
 
 <script setup lang="ts">
-// 結帳當下查會員或直接建檔，避免打斷結帳流程
 import { computed, ref } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { showToast } from '@/composables/useToast'
@@ -144,8 +143,6 @@ const phoneInput = ref('')
 const newMemberName = ref('')
 const isSearching = ref(false)
 const searchResult = ref<'idle' | 'not-found'>('idle')
-// 建立會員一定要合法手機（伺服端 createMemberRequestSchema 靠它當唯一鍵），這裡先擋一次，
-// 不用等使用者按下去才從伺服端 400 收到「資料格式有誤」這種不知所云的訊息。
 const newMemberPhoneValid = computed(
   () => memberPhoneSchema.safeParse(phoneInput.value.trim()).success
 )

@@ -61,7 +61,6 @@ const open = ref(false)
 const inputEl = ref<HTMLInputElement>()
 const dropdownStyle = ref({ top: '0px', left: '0px' })
 
-// enabled: false——桌況只在真的聚焦輸入框時才抓，不跟著點餐頁一起載入。
 const { data, isLoading, refetch } = useQuery({
   queryKey: ['tables'],
   queryFn: fetchTables,
@@ -69,12 +68,11 @@ const { data, isLoading, refetch } = useQuery({
 })
 const tables = computed<DiningTable[]>(() => data.value ?? [])
 
-const DROPDOWN_WIDTH = 176 // 對應 class 的 w-44
+const DROPDOWN_WIDTH = 176
 
 function handleFocus() {
   const rect = inputEl.value?.getBoundingClientRect()
   if (rect) {
-    // 這顆輸入框常貼在畫面右側的購物車面板裡，夾住 left 避免清單被切到視窗外。
     const left = Math.min(rect.left, window.innerWidth - DROPDOWN_WIDTH - 8)
     dropdownStyle.value = { top: `${rect.bottom + 4}px`, left: `${Math.max(left, 4)}px` }
   }
@@ -82,10 +80,7 @@ function handleFocus() {
   refetch()
 }
 
-// 清單是 fixed 定位、算好座標後不會跟著捲動，捲動時乾脆收起來，不做即時
-// 重新定位（這顆輸入框所在的版面本來就不太會被捲動到）。監聽的掛載／
-// 移除都集中在這裡，不管清單是被 blur、選取、或外部清空值收起，都會
-// 同步清掉監聽，不會殘留。
+// fixed 定位清單於捲動時收合以避免座標偏離。
 watch(open, (isOpen) => {
   if (isOpen) {
     window.addEventListener('scroll', closeOnScroll, true)
@@ -120,7 +115,6 @@ async function selectTable(table: DiningTable) {
   inputEl.value?.blur()
 }
 
-// 外部（送單成功後）把值重置為空字串時，若清單還開著要一併收起。
 watch(text, (value) => {
   if (value === '') open.value = false
 })

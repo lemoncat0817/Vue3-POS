@@ -1,6 +1,5 @@
 import type { AuditLogAction } from '@pos/contract'
 
-/** 操作紀錄動作的中文顯示文字與分組，供篩選下拉選單與列表欄位使用。 */
 export const AUDIT_ACTION_LABELS: Record<AuditLogAction, string> = {
   cashier_open: '開啟收銀機',
   'report.export': '匯出報表',
@@ -54,7 +53,6 @@ export const AUDIT_ACTION_LABELS: Record<AuditLogAction, string> = {
   'shift.cashMovement': '現金存入/提領'
 }
 
-/** 篩選下拉選單用的分組，對應各業務路由所屬模組，順序即畫面顯示順序。 */
 export interface AuditActionGroup {
   title: string
   actions: AuditLogAction[]

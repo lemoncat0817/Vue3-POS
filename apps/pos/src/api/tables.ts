@@ -7,7 +7,6 @@ import {
 } from '@pos/contract'
 import { fetchJson } from './http'
 
-/** 桌況管理 API 用戶端。 */
 export async function fetchTables(): Promise<DiningTable[]> {
   const body = await fetchJson<unknown>('/api/tables')
   return diningTableSchema.array().parse(body)

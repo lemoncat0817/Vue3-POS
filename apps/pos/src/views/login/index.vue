@@ -265,8 +265,7 @@ async function submitResetPin() {
   }
 }
 
-// 帳號欄位可能還殘留上次登入（甚至上一個租戶）記住的舊帳號；新租戶第一次
-// 登入核發 owner 帳號時，一律覆蓋成這組新帳號，不要讓使用者對著錯的帳號送出登入。
+// 新租戶核發 owner 帳號時強制覆蓋，避免殘留舊帳號。
 watch(
   () => deviceStore.pendingOwnerAccount,
   (value) => {
@@ -280,9 +279,7 @@ function acknowledgeOwnerCredentials() {
 }
 
 const login = async () => {
-  // 帳號／PIN 沒填就送出的話，operatorLogin() 內部的 zod 驗證會直接丟出
-  // ZodError（不是 ApiError），落到下面 catch 的 else 分支，顯示「連不上
-  // 伺服端」這種文不對題的錯誤——這裡先擋掉，給出對得上狀況的提示。
+  // 提前攔截未填寫狀態，避免 zod 拋錯導致非預期的錯誤提示。
   if (!loginStore.account.trim() || !loginStore.pin.trim()) {
     showToast('請輸入帳號與 PIN', 'error')
     return
@@ -292,13 +289,7 @@ const login = async () => {
     loginStore.userInfo = toStaffMember(staff)
     loginStore.sessionToken = staff.sessionToken
     loginStore.isLogin = true
-    // App.vue 的 roles／staff 兩個 useQuery 是 staleTime: Infinity、開機只拿一次，
-    // 同一個瀏覽器分頁在這次登入之前可能還停留在舊的權限群組資料（例如另一台
-    // 裝置改過權限、或剛剛才調整完自己的角色又登出重登）——這裡強制在登入當下
-    // 重新整份拉最新的，權限管理頁的勾選框才不會顯示過期的權限內容。至於這個
-    // 操作員「當下能不能做某件事」本來就是看這次登入回應自帶的 capabilities
-    // （見 loginStore.userInfo），不受這兩個 store 是否過期影響，不算安全漏洞，
-    // 只是畫面顯示會跟資料庫實際狀態對不起來。
+    // 登入時強制刷新 roles 與 staff 快取，避免角色權限管理顯示舊設定。
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['roles'] }),
       queryClient.invalidateQueries({ queryKey: ['staff'] })

@@ -68,7 +68,6 @@
 </template>
 
 <script setup lang="ts">
-// 載具格式驗證重用 @pos/contract 的 invoiceCarrierSchema
 import { computed, ref } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { invoiceCarrierSchema, type InvoiceCarrier, type InvoiceCarrierType } from '@pos/contract'
@@ -106,7 +105,6 @@ const draft = computed<InvoiceCarrier>(() =>
 )
 const validation = computed(() => invoiceCarrierSchema.safeParse(draft.value))
 const isValid = computed(() => validation.value.success)
-// 避免輸入前即顯示格式錯誤
 const errorMessage = computed(() => {
   if (validation.value.success || draftType.value === '無載具' || draftValue.value === '')
     return null

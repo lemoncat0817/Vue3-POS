@@ -8,7 +8,6 @@ import {
 } from '@pos/contract'
 import { fetchJson } from './http'
 
-/** 建立稽核紀錄（取代舊版僅在前端 console 印出 log 的做法）。 */
 export async function createAuditLog(input: CreateAuditLogRequest): Promise<AuditLog> {
   const body = await fetchJson<unknown>('/api/audit-logs', {
     method: 'POST',
@@ -17,7 +16,6 @@ export async function createAuditLog(input: CreateAuditLogRequest): Promise<Audi
   return auditLogSchema.parse(body)
 }
 
-/** 操作紀錄頁的分頁查詢，寫法比照 api/members.ts 的 fetchMembers()。 */
 export async function listAuditLogs(
   options: {
     keyword?: string | undefined

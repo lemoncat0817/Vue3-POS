@@ -20,7 +20,6 @@ import { useTheme } from '@/composables/useTheme'
 import { syncStatus } from '@/offline/sync-worker'
 import { fromSelection } from '@/utils/selection'
 
-/** 導覽項目、頁面切換、登出與主題切換共用邏輯。 */
 export const navItems = [
   { path: '/home', label: '點餐', icon: Coffee },
   { path: '/order', label: '查看訂單', icon: Receipt },
@@ -45,7 +44,6 @@ export function useAppShell() {
     return `${user.jobTitle} - ${user.name}`
   })
 
-  // GET /devices/me 還沒回來、或這台裝置還沒被命名時的預設顯示文字。
   const deviceDisplayName = computed(() => deviceStore.deviceName ?? '未命名機台')
 
   const changePage = async (path: string) => {
@@ -76,8 +74,6 @@ export function useAppShell() {
       showToast('操作取消', 'error')
       return
     }
-    // 先撤銷伺服端的 session，讓這組 token 立刻失效，不是只清掉本機狀態
-    // ——撤銷失敗（連不上伺服端）也不擋住登出，見 api/auth.ts 的說明。
     if (loginStore.sessionToken) {
       await revokeSession(loginStore.sessionToken).catch(() => undefined)
     }
@@ -85,7 +81,6 @@ export function useAppShell() {
     loginStore.isLogin = false
     loginStore.userInfo = []
     loginStore.sessionToken = null
-    // 登出時清空記憶體中的 PIN。
     loginStore.pin = ''
     if (loginStore.rememberAccount === false) {
       loginStore.account = ''

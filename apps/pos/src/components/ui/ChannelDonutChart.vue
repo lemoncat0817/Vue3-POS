@@ -6,7 +6,6 @@
 </template>
 
 <script setup lang="ts">
-// 內用／外帶佔比：固定兩個分類，用甜甜圈圖比純長條更直覺看出佔比關係。
 import * as echarts from 'echarts/core'
 import { PieChart } from 'echarts/charts'
 import { LegendComponent, TooltipComponent } from 'echarts/components'

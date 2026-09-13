@@ -38,11 +38,9 @@ describe('useAppShell composable', () => {
     const loginStore = useLoginStore()
     const deviceStore = useDeviceStore()
 
-    // 預設未登入與未命名機台
     expect(shell.cashierDisplayName.value).toBe('未登入')
     expect(shell.deviceDisplayName.value).toBe('未命名機台')
 
-    // 設定登入者
     loginStore.userInfo = {
       id: 'staff-1',
       name: '小明',
@@ -50,7 +48,6 @@ describe('useAppShell composable', () => {
     } as unknown as StaffMember
     expect(shell.cashierDisplayName.value).toBe('櫃檯 - 小明')
 
-    // 設定機台名稱
     deviceStore.deviceName = '二號機'
     expect(shell.deviceDisplayName.value).toBe('二號機')
   })

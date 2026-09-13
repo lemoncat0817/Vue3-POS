@@ -65,8 +65,7 @@ const canSetBusinessHours = computed(() => hasCapability(loginStore.userInfo, 'c
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`
 
-// 先用 order store 目前的值（開機同步的結果）當畫面初始值，避免一進頁面先閃一下
-// 預設 4 點；onMounted 再打一次 API 拿最新資料整份覆蓋，確保跟伺服端一致。
+// 初始使用 store 快取避免畫面閃爍，掛載後再從 API 獲取最新營業日界線。
 const savedHour = ref(orderStore.businessDayStartHour)
 const selectedHour = ref(orderStore.businessDayStartHour)
 const loading = ref(true)

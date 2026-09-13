@@ -523,8 +523,7 @@ import {
   updateQuickDiscount
 } from '@/api/promotions'
 
-// 單頁多表單需使用 <Form> 元件避免 useForm() provide context 相互覆蓋；
-// 欄位綁定 isSubmitting 避免非同步驗證完成前輸入造成中繼狀態提交
+// 單頁多表單使用 <Form> 避免 useForm 注入衝突，並以 isSubmitting 防重複提交。
 const canSetOrderCoupon = computed(() => hasCapability(loginStore.userInfo, 'canSetOrderCoupon'))
 const canSetQuickDiscount = computed(() =>
   hasCapability(loginStore.userInfo, 'canSetQuickDiscount')
@@ -536,7 +535,6 @@ const tabs = [
 ]
 const activeTab = ref<(typeof tabs)[number]['key']>('orderCoupons')
 
-// ---------- 訂單折價券 ----------
 const orderCouponPage = ref(1)
 const orderCouponPageCount = computed(() =>
   Math.max(Math.ceil(discountStore.orderCoupons.length / 10), 1)
@@ -613,7 +611,6 @@ async function removeOrderCoupon(row: OrderCoupon) {
   }
 }
 
-// ---------- 快速折扣 ----------
 const quickDiscountPage = ref(1)
 const quickDiscountPageCount = computed(() =>
   Math.max(Math.ceil(discountStore.quickDiscounts.length / 10), 1)

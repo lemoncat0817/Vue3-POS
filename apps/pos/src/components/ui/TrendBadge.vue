@@ -14,7 +14,6 @@
 </template>
 
 <script setup lang="ts">
-// trend 為 null 時不繪製徽章（無前期資料可比）
 import { ArrowDown, ArrowUp } from 'lucide-vue-next'
 
 defineProps<{ trend: { pct: number; up: boolean } | null }>()

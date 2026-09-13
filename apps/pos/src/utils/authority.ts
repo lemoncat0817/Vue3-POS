@@ -1,15 +1,12 @@
 import { AUTHORITY_KEY_LABELS } from '@pos/contract'
 import type { AuthorityKey } from '@/types'
 
-/** 權限欄位清單、依附關係共用定義。權限的實際分組（角色）改由後端 roles 管理，見 stores/roles.ts。 */
 export interface AuthorityField {
   label: string
   value: AuthorityKey
   dependsOn?: AuthorityKey
 }
 
-// 顯示順序與階層（dependsOn）是這裡的職責；中文文案統一交給 @pos/contract 的
-// AUTHORITY_KEY_LABELS，避免和後端組操作紀錄文字時用的名稱兜不起來。
 const AUTHORITY_FIELD_ORDER: Array<{ value: AuthorityKey; dependsOn?: AuthorityKey }> = [
   { value: 'canCompItem' },
   { value: 'canOpenCashier' },
@@ -48,7 +45,6 @@ const PARENT_KEYS = [
   'canCheckMembers'
 ] as const
 
-/** 母權限被取消勾選時，連帶取消勾選依附在它底下的子權限。 */
 export function cascadeAuthorityCheckList(list: AuthorityKey[]): AuthorityKey[] {
   let next = list
   for (const parent of PARENT_KEYS) {
@@ -62,7 +58,6 @@ export function cascadeAuthorityCheckList(list: AuthorityKey[]): AuthorityKey[] 
   return next
 }
 
-/** 依 dependsOn 分組，供 UI 依階層渲染權限設定。無依附或被依附者歸類為「其他」。 */
 export interface AuthorityGroup {
   title: string
   root?: AuthorityField

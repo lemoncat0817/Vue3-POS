@@ -9,13 +9,10 @@ import {
 import { fetchJson } from './http'
 import type { OrderCoupon, QuickDiscount } from '@/types/discount'
 
-/** 查詢促銷設定（GET /api/promotions）。 */
 export async function fetchPromotions(): Promise<PromotionsResponse> {
   const body = await fetchJson<unknown>('/api/promotions')
   return promotionsResponseSchema.parse(body)
 }
-
-// 後台優惠設定 API（訂單折價券、快速折扣之 CRUD）。
 
 export async function createOrderCoupon(input: {
   name: string

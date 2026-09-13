@@ -10,7 +10,6 @@ export function tableStatusLabel(status: TableStatus): string {
   return tableStatusOptions.find((option) => option.value === status)?.label ?? status
 }
 
-// 桌況管理列表卡片與點餐頁選桌 popover 共用同一套顏色，維持視覺一致。
 export function tableStatusCardClass(status: TableStatus): string {
   if (status === 'occupied')
     return 'border-danger-300 bg-danger-50 text-danger-700 dark:border-danger-800 dark:bg-danger-950 dark:text-danger-300'

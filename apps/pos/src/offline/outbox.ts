@@ -18,7 +18,6 @@ export async function enqueueOrder(
   await offlineDb.outboxOrders.add(entry)
 }
 
-/** 依建立順序（等同送單順序）取出「現在就可以嘗試」的佇列項目。 */
 export async function listDueOrders(now: number = Date.now()): Promise<OutboxOrder[]> {
   const pendingOrFailed = await offlineDb.outboxOrders
     .where('status')
@@ -31,7 +30,6 @@ export async function markSyncing(id: string): Promise<void> {
   await offlineDb.outboxOrders.update(id, { status: 'syncing' })
 }
 
-/** 同步成功：這筆意圖已經送達伺服端，佇列不需要再留著它。 */
 export async function markSynced(id: string): Promise<void> {
   await offlineDb.outboxOrders.delete(id)
 }

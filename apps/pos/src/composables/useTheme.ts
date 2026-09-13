@@ -1,6 +1,5 @@
 import { ref, watchEffect } from 'vue'
 
-/** 深色模式切換與持久化（基於 HTML class 與 localStorage，預設讀取系統偏好）。 */
 const STORAGE_KEY = 'pos-theme'
 type Theme = 'light' | 'dark'
 

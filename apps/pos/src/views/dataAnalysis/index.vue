@@ -474,9 +474,7 @@ function parseSlashDate(s: string): Date {
   return new Date(y ?? 0, (m ?? 1) - 1, d ?? 1)
 }
 
-// 換日時間之前，行事曆上的「今天」其實還算前一個營業日——深夜還在營業時
-// 若拿行事曆日期當「今天」，畫面預設會打開已經跨過午夜、還沒有訂單的
-// 那一天，看起來像沒生意，見 packages/pos-domain 的 getBusinessDate()。
+// 深夜未到換日時間前仍屬前一營業日，依 getBusinessDate 計算避免統計落空。
 function businessToday(): Date {
   const businessDate = getBusinessDate(new Date(), orderStore.businessDayStartHour)
   return new Date(
@@ -497,7 +495,6 @@ const { data: salesReport } = useQuery({
     fetchSalesReport(toBusinessDate(selectTime.value[0]), toBusinessDate(selectTime.value[1]))
 })
 
-// 計算緊鄰前一段等長區間作為比較基準，複用 sales report API。
 const previousPeriod = computed<[string, string]>(() => {
   const start = parseSlashDate(selectTime.value[0])
   const end = parseSlashDate(selectTime.value[1])
@@ -519,15 +516,13 @@ const { data: previousSalesReport } = useQuery({
     )
 })
 
-// 當期與前期共用相同的 KPI 計算邏輯。
 function computeTotals(report: typeof salesReport.value, singleDay: boolean) {
   if (!report) return { totalRevenue: 0, totalUnits: 0, totalOrders: 0, averageOrderValue: 0 }
   const totalRevenue = singleDay
     ? report.hourlyRevenue.reduce((sum, p) => sum + p.revenue, 0)
     : report.dailyRevenue.reduce((sum, p) => sum + p.revenue, 0)
   const totalUnits = report.topProducts.reduce((sum, d) => sum + d.count, 0)
-  // 訂單數用後端算好的 orderCount，不是加總 topPaymentMethods——那份榜單
-  // 只列前五名付款方式，付款方式一多（門市有 9 種）就會少算訂單數與客單價。
+  // 使用後端 orderCount 而非加總 topPaymentMethods，避免因前五名截斷失真。
   const totalOrders = report.orderCount
   const averageOrderValue = totalOrders === 0 ? 0 : Math.round(totalRevenue / totalOrders)
   return { totalRevenue, totalUnits, totalOrders, averageOrderValue }
@@ -543,7 +538,6 @@ const totalUnits = computed(() => current.value.totalUnits)
 const totalOrders = computed(() => current.value.totalOrders)
 const averageOrderValue = computed(() => current.value.averageOrderValue)
 
-// 計算前期變動率，前期為 0 時回傳 null 避免除以零。
 function trendOf(currentValue: number, previousValue: number): { pct: number; up: boolean } | null {
   if (!previousSalesReport.value || previousValue === 0) return null
   const pct = Math.round(((currentValue - previousValue) / previousValue) * 100)
@@ -558,8 +552,6 @@ const aovTrend = computed(() =>
   trendOf(current.value.averageOrderValue, previous.value.averageOrderValue)
 )
 
-// 折扣、作廢、退款：只看當期，不比對前期（跟業界慣例一樣，異常率是拿來看
-// 現況高不高，不是拿來看漲跌）。四捨五入到小數點下一位。
 const roundRate = (numerator: number, denominator: number) =>
   denominator > 0 ? Math.round((numerator / denominator) * 1000) / 10 : 0
 
@@ -591,8 +583,6 @@ const peakHourInfo = computed(() => {
   return `${String(maxPoint.hour).padStart(2, '0')}:00 (NT$ ${maxPoint.revenue.toLocaleString()})`
 })
 
-// 各頁籤對應的日期區間，setDatePreset／isPresetActive 共用同一份定義，
-// 避免兩邊各算一次、改一邊忘了改另一邊。
 function presetRange(preset: 'today' | 'yesterday' | 'week' | 'month'): [string, string] {
   const now = businessToday()
   if (preset === 'today') {
@@ -623,8 +613,7 @@ const isPresetActive = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
   return selectTime.value[0] === start && selectTime.value[1] === end
 }
 
-// 全形字元（中日韓）在 Excel 欄寬單位裡約佔半形字元的 2 倍視覺寬度，抓寬度時要分開算，
-// 否則中文標籤欄一律會被誤判成夠窄、開啟就截字。
+// 全形字元在 Excel 欄寬約佔 2 倍視覺寬度，需加權計算避免截字。
 const columnTextWidth = (text: string) => {
   let width = 0
   for (const ch of text) {
@@ -742,9 +731,7 @@ const exportReport = async () => {
   URL.revokeObjectURL(url)
   showToast('報表已成功匯出為 Excel', 'success')
 
-  // 報表帶出營收/折扣/退款等業務敏感數據，離開系統後就管不到流向，留下
-  // 「誰、何時匯出」的紀錄；寫入失敗不影響已經完成的匯出，不用錯誤提示
-  // 打斷使用者，理由同 audit/record.ts 的 recordAuditLog()。
+  // 匯出敏感數據留存稽核紀錄，寫入失敗靜默處理不阻斷使用者操作。
   try {
     await createAuditLog({
       action: 'report.export',

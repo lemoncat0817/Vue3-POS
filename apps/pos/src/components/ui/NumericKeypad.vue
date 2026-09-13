@@ -15,8 +15,6 @@
 </template>
 
 <script setup lang="ts">
-// 金額一律整數（NTD 無小數），不用出現小數點鍵；面額固定用商用收銀機常見的
-// 7-8-9／4-5-6／1-2-3／清除-0-退格排列，不是網頁表單由上到下 0-9 的順序。
 interface Key {
   label: string
   digit?: string
@@ -39,7 +37,6 @@ const keys: Key[] = [
 
 const props = defineProps<{
   modelValue: number
-  /** 有帶就在超過時擋下這次按鍵（例如分擔金額不能超過剩餘應付）。 */
   max?: number | undefined
   disabled?: boolean
 }>()
@@ -55,8 +52,6 @@ function onKeyPress(key: Key) {
     emit('update:modelValue', next === '' ? 0 : Number(next))
     return
   }
-  // Number() 會自動吃掉字串開頭的 0（例如 "0"+"5" 組成 "05" 會直接變成 5），
-  // 不用額外處理「第一碼是 0」的情況。
   const next = Number(`${props.modelValue}${key.digit}`)
   if (props.max !== undefined && next > props.max) return
   emit('update:modelValue', next)

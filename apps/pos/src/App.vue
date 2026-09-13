@@ -36,7 +36,6 @@ import { useOrderSync } from '@/offline/useOrderSync'
 import { useTheme } from '@/composables/useTheme'
 useTheme()
 
-// 應用啟動時一次性同步菜單目錄（離線或失敗時保留本機資料）。
 const catalogStore = useCatalogStore()
 const { data: catalog } = useQuery({
   queryKey: ['catalog'],
@@ -53,7 +52,6 @@ watch(catalog, (value) => {
   })
 })
 
-// 應用啟動時一次性同步促銷資料。
 const discountStore = useDiscountStore()
 const { data: promotions } = useQuery({
   queryKey: ['promotions'],
@@ -69,7 +67,6 @@ watch(promotions, (value) => {
   })
 })
 
-// 應用啟動時一次性同步付款方式清單。
 const orderStore = useOrderStore()
 const { data: paymentMethods } = useQuery({
   queryKey: ['payment-methods'],
@@ -82,7 +79,6 @@ watch(paymentMethods, (value) => {
   orderStore.hydratePaymentMethodsFromServer(value)
 })
 
-// 應用啟動時一次性同步租戶營業設定（換日時間、點數折抵比例）。
 const { data: tenantSettings } = useQuery({
   queryKey: ['tenant-settings'],
   queryFn: fetchTenantSettings,
@@ -96,8 +92,6 @@ watch(tenantSettings, (value) => {
   orderStore.hydratePointsPerCurrencyUnitFromServer(value.pointsPerCurrencyUnit)
 })
 
-// 應用啟動時一次性同步目前裝置的名稱（頂部列的「機台」顯示，見
-// layout/header/index.vue 與 layout/admin/AdminTopbar.vue）。
 const deviceStore = useDeviceStore()
 const { data: currentDevice } = useQuery({
   queryKey: ['current-device'],
@@ -110,7 +104,6 @@ watch(currentDevice, (value) => {
   deviceStore.hydrateDeviceNameFromServer(value.name)
 })
 
-// 應用啟動時一次性同步人員名單。
 const authorityManagementStore = useAuthorityManagementStore()
 const { data: staffListResponse } = useQuery({
   queryKey: ['staff'],
@@ -123,7 +116,6 @@ watch(staffListResponse, (value) => {
   authorityManagementStore.hydrateStaffFromServer(value.map(toStaffMember))
 })
 
-// 應用啟動時一次性同步權限群組（角色）清單。
 const rolesStore = useRolesStore()
 const { data: roleListResponse } = useQuery({
   queryKey: ['roles'],
@@ -136,7 +128,6 @@ watch(roleListResponse, (value) => {
   rolesStore.hydrateRolesFromServer(value)
 })
 
-// 根元件常駐啟動離線送單背景同步 worker。
 const orderSync = useOrderSync()
 onMounted(() => {
   orderSync.start()

@@ -84,7 +84,6 @@
 </template>
 
 <script setup lang="ts">
-// 掛單僅暫存於本機 Dexie，不佔用伺服端訂單序號
 import { nextTick, ref, watch } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { useCatalogStore } from '@/stores/catalog'
@@ -143,8 +142,7 @@ function formatTime(createdAt: number) {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
-// 透過 nextTick 確保 Pinia watch 在微任務執行前維持 suppressClearedNotice；
-// reactive proxy 無法直接 structuredClone，故用 JSON 序列化複製純資料
+// 序列化為純物件儲存並透過 nextTick 確保清理通知旗標時序正確。
 async function parkCurrent() {
   if (catalogStore.cartLines.length === 0) return
 
@@ -170,7 +168,6 @@ async function parkCurrent() {
   showToast('已掛單', 'success')
 }
 
-// 取單前若待付款清單已有品項需確認覆蓋
 async function resumeOrder(order: ParkedOrder) {
   if (catalogStore.cartLines.length > 0) {
     const result = await confirm({

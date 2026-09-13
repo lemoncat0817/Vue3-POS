@@ -874,15 +874,12 @@ function apiErrorMessage(err: unknown): string {
   return sharedApiErrorMessage(err)
 }
 
-// 會員名單為後台管理專用資料，無需離線可用；改成後端分頁＋搜尋，不再
-// 一次整批撈回來前端切頁——會員一多，整表下載對流量跟畫面都是負擔。
 const members = ref<Member[]>([])
 const memberPage = ref(1)
 const memberPageSize = 10
 const memberPageCount = ref(1)
 const memberTotalCount = ref(0)
 const searchInput = ref('')
-// 目前實際套用中的搜尋字——跟 searchInput 分開，避免打字打到一半就觸發搜尋。
 const activeSearch = ref('')
 
 async function loadMembers() {
@@ -919,10 +916,7 @@ onMounted(loadMembers)
 function memberSchema(excludeId?: string) {
   return z.object({
     name: z.string().trim().min(1, '請輸入姓名'),
-    // @pos/contract 用 zod v4、這裡是 apps/pos 自己的 zod v3（見 api/http.ts
-    // 的 isZodError 說明），兩邊的 schema 物件型別互不相容，沒辦法直接把
-    // memberPhoneSchema 接到這裡的 z.object() 裡；改成只呼叫它的 safeParse()
-    // 判斷格式，規則本身還是單一來源，只是驗證動作留在 v3 這邊組合。
+    // 跨 zod 版本相容：以 safeParse 複用 contract 驗證規則，避免 schema 物件型別衝突。
     phone: z
       .string()
       .trim()
@@ -930,10 +924,7 @@ function memberSchema(excludeId?: string) {
         (phone) => memberPhoneSchema.safeParse(phone).success,
         '請輸入正確的手機號碼格式（09 開頭共 10 碼數字）'
       )
-      // 現在後台名單是分頁的，members.value 只有目前這一頁，沒辦法可靠地
-      // 判斷「這支手機是不是別人已經在用」，改成直接問伺服端（結帳查會員
-      // 用的同一支 API，不需要額外權限）；查詢本身失敗（離線／連線問題）
-      // 不擋住送出，交給送出當下伺服端的 409 做最後把關。
+      // 透過 API 異步預檢電話唯一性，連線異常時不阻擋送出由後端兜底。
       .refine(async (phone) => {
         if (!memberPhoneSchema.safeParse(phone).success) return true
         try {
@@ -943,7 +934,6 @@ function memberSchema(excludeId?: string) {
           return true
         }
       }, '這個手機號碼已經是會員'),
-    // 選填：空字串代表沒有填，送出時轉成 null（見 onSubmitAdd／onSubmitEdit）。
     birthday: z
       .string()
       .trim()
@@ -951,14 +941,11 @@ function memberSchema(excludeId?: string) {
         (value) => value === '' || memberBirthdaySchema.safeParse(value).success,
         '請輸入正確的日期格式'
       ),
-    // 選填：逗號分隔的純文字，送出時拆成陣列（見 parseTagsInput）。
     tags: z.string(),
-    // 選填：空字串代表沒有填，送出時轉成 null。
     notes: z.string()
   })
 }
 
-/** 逗號分隔的標籤輸入，拆成陣列並去除空白／空字串。 */
 function parseTagsInput(value: string): string[] {
   return value
     .split(',')
@@ -1096,8 +1083,7 @@ async function onSubmitAdjustPoints(values: Record<string, unknown>) {
       reason: input.reason,
       operator: operatorName ? `${operatorName.jobTitle} - ${operatorName.name}` : '未知操作員'
     })
-    // 調整成功後整份重新拉最新的消費紀錄＋異動明細，不手動拼湊——後端才是
-    // 唯一可信來源，尤其異動明細的排序、內容都是伺服端組出來的。
+    // 重新獲取會員詳情以確保點數異動明細與後端同步。
     detail.value = await fetchMemberDetail(updated.id, {
       ordersPage: detailOrdersPage.value,
       ordersPageSize: detailOrdersPageSize
@@ -1111,13 +1097,9 @@ async function onSubmitAdjustPoints(values: Record<string, unknown>) {
   }
 }
 
-// 消費多少元累加 1 點、結帳每多少點折抵 1 元，業主可自訂——跟營業設定的
-// 換日時間一樣存在租戶層級，見 apps/api/src/routes/tenant-settings.ts。
 const pointsSettingDialog = ref(false)
 const pointsPerCurrencyUnitInput = ref(10)
 const pointsRedemptionRateInput = ref(10)
-// 到期規則用「啟用開關 + 月數」兩個欄位表達一個 nullable 數字：關閉開關存
-// 的是 null（停用），打開開關卻沒填月數不能送出（見上面儲存按鈕的 disabled 判斷）。
 const pointsExpiryEnabled = ref(false)
 const pointsExpiryMonthsInput = ref<number | null>(null)
 const pointsSettingLoading = ref(false)
@@ -1164,8 +1146,6 @@ async function onSavePointsSetting() {
   }
 }
 
-// 本月壽星名單，供生日行銷（禮遇、簡訊祝賀）用；查看只需要 canCheckMembers
-// （能進這個頁面就有），不像新增/編輯/刪除需要 canManageMembers。
 const birthdaysDialog = ref(false)
 const birthdaysLoading = ref(false)
 const birthdayEntries = ref<MemberBirthdayEntry[]>([])
@@ -1181,9 +1161,6 @@ async function openBirthdaysDialog() {
   }
 }
 
-// 會員分級門檻：業主自訂「累積消費滿多少元升到哪一級」，等級本身不存在
-// 會員身上，由伺服端即時算好附在 member.tierStatus 裡（見 @pos/contract
-// 的 memberTierStatusSchema）。
 const tiersDialog = ref(false)
 const tiers = ref<MemberTier[]>([])
 const sortedTiers = computed(() => [...tiers.value].sort((a, b) => b.minSpend - a.minSpend))
@@ -1245,8 +1222,6 @@ async function removeTier(tier: MemberTier) {
   }
 }
 
-// 會員經營摘要（總會員數／本月新增／會員貢獻營收／分級人數分布），
-// 查看只需要 canCheckMembers（能進這個頁面就有）。
 const analyticsDialog = ref(false)
 const analyticsLoading = ref(false)
 const analytics = ref<MemberAnalytics | null>(null)

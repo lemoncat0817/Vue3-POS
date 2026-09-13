@@ -179,7 +179,6 @@
 </template>
 
 <script setup lang="ts">
-// 支援多筆支付方式分擔付款；元件僅負責蒐集合法 tenders，實際送單由呼叫端處理
 import { computed, ref, watch } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import NumericKeypad from '@/components/ui/NumericKeypad.vue'
@@ -207,7 +206,6 @@ const tenders = ref<TenderDraft[]>([])
 const draftMethod = ref<PaymentMethod>()
 const draftAmount = ref(0)
 const draftReceivedAmount = ref<number | undefined>(undefined)
-// 數字鍵盤跟上面兩個輸入框共用同一個值，靠這個記錄現在是在編輯哪一個。
 const activeField = ref<'amount' | 'received'>('amount')
 const activeAmount = computed(() =>
   activeField.value === 'amount' ? draftAmount.value : (draftReceivedAmount.value ?? 0)
@@ -223,7 +221,6 @@ function selectQuickCashAmount(amount: number) {
 
 const tenderedAmount = computed(() => tenders.value.reduce((sum, tender) => sum + tender.amount, 0))
 const remaining = computed(() => Math.max(0, props.dueAmount - tenderedAmount.value))
-// 找零僅在已付清（remaining 為 0）時顯示，避免未付清前誤讀
 const changeDue = computed(() =>
   tenders.value.reduce(
     (sum, tender) => sum + ((tender.receivedAmount ?? tender.amount) - tender.amount),
@@ -231,9 +228,7 @@ const changeDue = computed(() =>
   )
 )
 
-// 現金快捷金額：「剛好」湊這筆分擔金額，加上常見鈔票面額（湊到大於等於這筆金額
-// 的最小面額，避免列出一堆明顯不夠付的選項）；非整百的金額額外補一個無條件進位
-// 到百位的選項（例如應付 88 元會有 $100，不是只有 $500／$1000 這種太大的面額）。
+// 提供精確金額、百元進位及常見大鈔面額供快捷輸入。
 const CASH_NOTES = [100, 500, 1000, 2000]
 const quickCashAmounts = computed(() => {
   const due = draftAmount.value
@@ -249,8 +244,7 @@ const quickCashAmounts = computed(() => {
 
 const canAddDraftTender = computed(() => {
   if (!draftMethod.value) return false
-  // Number.isFinite 明確擋掉 NaN——NaN 跟任何數字比較都是 false，底下這些
-  // <=／> 判斷式對 NaN 全部會直接放行，不能只靠它們擋壞值。
+  // 顯式排除 NaN 避免後續比較式異常通過。
   if (!Number.isFinite(draftAmount.value)) return false
   if (draftAmount.value <= 0 && remaining.value > 0) return false
   if (draftAmount.value > remaining.value) return false

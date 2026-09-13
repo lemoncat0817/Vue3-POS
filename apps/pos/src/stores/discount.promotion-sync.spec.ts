@@ -2,7 +2,6 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import { useDiscountStore } from './discount'
 
-/** 驗證 hydratePromotionsFromServer() 每次都以伺服端資料整份覆蓋本機。 */
 describe('useDiscountStore — hydratePromotionsFromServer()', () => {
   it('第一次呼叫時，用伺服端資料取代種子資料', () => {
     setActivePinia(createPinia())
@@ -32,7 +31,6 @@ describe('useDiscountStore — hydratePromotionsFromServer()', () => {
       orderCoupons: [{ id: 'money-1', name: '測試折價券', kind: 'amount', value: 99 }],
       quickDiscounts: [...quickDiscounts]
     })
-    // 模擬管理員在背景設定頁新增了一張折價券，但沒有重新整理頁面。
     discountStore.orderCoupons.push({
       id: 'money-2',
       name: '管理員新增的折價券',
@@ -47,7 +45,6 @@ describe('useDiscountStore — hydratePromotionsFromServer()', () => {
       quickDiscounts: [...quickDiscounts]
     })
 
-    // 下一次開機同步一律以伺服端為準——這裡的異動如果沒真的寫進資料庫，本來就不該留著。
     expect(discountStore.orderCoupons).toEqual([
       { id: 'money-1', name: '測試折價券（伺服端又改了名字）', kind: 'amount', value: 99 }
     ])

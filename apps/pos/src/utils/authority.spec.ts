@@ -9,7 +9,6 @@ describe('cascadeAuthorityCheckList', () => {
       'canDeleteOrder',
       'canCompItem'
     ])
-    // 沒取消 canCheckOrder，子權限應該原封不動保留。
     expect(result).toEqual(['canCheckOrder', 'canEditOrderStatus', 'canDeleteOrder', 'canCompItem'])
 
     const cascaded = cascadeAuthorityCheckList([

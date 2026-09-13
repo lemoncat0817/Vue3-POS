@@ -7,7 +7,6 @@ import {
 } from '@pos/contract'
 import { fetchJson } from './http'
 
-/** 電子發票字軌與批次上傳 API 用戶端。 */
 export async function fetchInvoiceTracks(): Promise<InvoiceTrack[]> {
   const body = await fetchJson<unknown>('/api/invoices/tracks')
   return invoiceTrackSchema.array().parse(body)

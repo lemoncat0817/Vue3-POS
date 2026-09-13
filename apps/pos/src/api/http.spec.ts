@@ -80,8 +80,6 @@ describe('fetchJson', () => {
   })
 
   it('裝置憑證錯誤的 401 觸發裝置憑證失效回呼，不會觸發操作員登出回呼（兩者無關）', async () => {
-    // 這次請求真的帶了憑證卻被拒絕，才算「憑證失效」——見 fetchJson 裡
-    // deviceTokenSentThisRequest 的說明，沒帶憑證的 401 不該觸發撤銷。
     setDeviceToken('some-device-token')
     vi.stubGlobal(
       'fetch',
@@ -149,8 +147,6 @@ describe('apiErrorMessage', () => {
     expect(apiErrorMessage(err)).toBe('資料格式有誤，請確認欄位內容後再試一次')
   })
 
-  // @pos/contract 用的是 zod v4，跟 apps/pos 自己的 zod v3 是不同模組實例；
-  // apiErrorMessage() 得認得出兩邊丟出來的 ZodError，見 isZodError() 的說明。
   it('@pos/contract（zod v4）丟出的 ZodError 一樣要能辨識出來，不能誤判成斷線', () => {
     let err: unknown
     try {

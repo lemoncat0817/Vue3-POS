@@ -125,7 +125,6 @@
 </template>
 
 <script setup lang="ts">
-// 全域收據預覽與列印視窗（掛載於 App.vue）
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import { closeReceipt, useReceiptPreviewState } from '@/composables/useReceiptPreview'
 import { formatAddList } from '@/utils/catalog'

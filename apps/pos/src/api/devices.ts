@@ -1,7 +1,6 @@
 import { deviceSchema, type Device, type UpdateDeviceRequest } from '@pos/contract'
 import { fetchJson } from './http'
 
-/** 裝置 API 用戶端。 */
 export async function fetchCurrentDevice(): Promise<Device> {
   const body = await fetchJson<unknown>('/api/devices/me')
   return deviceSchema.parse(body)

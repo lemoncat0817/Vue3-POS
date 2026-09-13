@@ -1,9 +1,5 @@
 import { reactive } from 'vue'
 
-/**
- * 單一文字輸入提示對話框（取代 window.prompt）。
- * 使用者確認且填寫非空白時回傳字串，取消或空白則回傳 null。
- */
 export interface PromptOptions {
   title: string
   description?: string
@@ -52,7 +48,6 @@ export function prompt(options: PromptOptions): Promise<string | null> {
   })
 }
 
-/** PromptDialogHost.vue 專用：使用者確認（回傳目前輸入的文字）或取消／關閉（回傳 null）。 */
 export function settlePrompt(result: string | null) {
   state.open = false
   state.resolve?.(result)

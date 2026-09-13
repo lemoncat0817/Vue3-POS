@@ -1,9 +1,5 @@
 import { reactive } from 'vue'
 
-/**
- * 主管二次授權對話框（退款/作廢操作）。
- * 回傳 `{ account, pin } | null`，由呼叫端負責呼叫伺服端驗證身分與權限。
- */
 export interface ManagerAuthOptions {
   title: string
   description: string
@@ -48,7 +44,6 @@ export function requestManagerAuth(options: ManagerAuthOptions): Promise<Manager
   })
 }
 
-/** ManagerAuthDialogHost.vue 專用：使用者確認（回傳目前輸入的帳號／PIN）或取消／關閉（回傳 null）。 */
 export function settleManagerAuth(result: ManagerAuthResult | null) {
   state.open = false
   state.resolve?.(result)

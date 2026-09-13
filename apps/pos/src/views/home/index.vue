@@ -642,14 +642,10 @@ onMounted(() => {
     time.value = getTime()
   }, 1000)
 })
-// 已知缺陷：未保存 setInterval 回傳的 id，clearInterval(undefined) 實際上不會清除計時器。
 onUnmounted(() => {
   clearInterval(undefined)
 })
 
-// catalogStore 不直接彈窗，只在待付款清單清空時遞增 cartClearedNotice，這裡負責顯示提示。
-// 用會自動消失的 toast 取代原本需要多按一次確認鍵的彈窗——送單後這只是
-// 附帶說明，不是需要使用者決策的事，不該擋住繼續點餐的操作。
 watch(
   () => catalogStore.cartClearedNotice,
   () => {
@@ -657,11 +653,7 @@ watch(
   }
 )
 
-// 判斷兩筆購物車列是否為「同一個品項＋同樣的規格／加購」，用來決定新增時
-// 要合併數量還是另開一列。刻意排除已經套用折扣的列（discount／freeDiscount／
-// quickDiscountId 任一有值）不參與合併：那一列已經是「這次特別處理過」的
-// 品項，一旦被新的、還沒折扣的同款品項悄悄合併，折扣範圍會在使用者沒注意
-// 到的情況下跟著擴大到新加的份數，不是使用者操作當下能預期的結果。
+// 排除已套用折扣品項以避免合併時非預期擴大折扣範圍。
 function isSameCartLine(existing: CartLineItem, incoming: CartLineItem): boolean {
   return (
     existing.productId === incoming.productId &&
@@ -713,9 +705,6 @@ const addNewProduct = () => {
   }
   const existingLine = catalogStore.cartLines.find((line) => isSameCartLine(line, newLine))
   if (existingLine) {
-    // 同一個品項＋同樣的規格再加一次，合併成一列累加數量——分開點兩次
-    // 一樣的「漢堡排」不該在購物車跟出餐單上變成兩列，這是點餐 POS 的
-    // 標準做法（比照 Square、Toast 等：同款品項重複點選只會累加份數）。
     updateLineCount(existingLine, existingLine.count + newLine.count)
   } else {
     catalogStore.cartLines.push(newLine)
@@ -726,8 +715,6 @@ const addNewProduct = () => {
   catalogStore.productCount = '1'
 }
 
-// 按下去一定會失敗的操作，直接在畫面上禁用按鈕比讓使用者按了才跳提示更好——
-// 這幾個條件都能在畫面渲染當下就從現有狀態算出來，不是要等送出才知道結果的驗證。
 const canClearAll = computed(() => catalogStore.cartLines.length > 0)
 const clearNotPay = async () => {
   if (catalogStore.cartLines.length === 0) {
@@ -737,8 +724,6 @@ const clearNotPay = async () => {
   const result = await confirm({ title: '警告', description: '確定要清除所有待付款的品項嗎?' })
   if (result !== 'confirm') return
   catalogStore.cancelEditLine()
-  // 這裡已經有自己的成功 toast，suppressClearedNotice 期間清空購物車，
-  // 避免緊接著又疊一次語意重複的 cartClearedNotice 提示（見 catalog.ts 說明）。
   catalogStore.suppressClearedNotice = true
   catalogStore.cartLines = []
   await nextTick()
@@ -769,7 +754,6 @@ const clearSelectNotPay = async () => {
   }
   const result = await confirm({ title: '警告', description: '確定要清除所有已選的待付款品項嗎?' })
   if (result !== 'confirm') return
-  // 全選後清除可能讓購物車變空，同樣要抑制重複的 cartClearedNotice 提示。
   catalogStore.suppressClearedNotice = true
   catalogStore.cartLines = catalogStore.cartLines.filter(
     (item) => !selectedLines.value.includes(item)
@@ -779,19 +763,10 @@ const clearSelectNotPay = async () => {
   showToast('清除成功', 'success')
 }
 
-// 預設「外帶」：多數訂單本來就是外帶，純粹少按一次，不是業務規則優先順序。
 const orderChannel = ref<OrderChannel>('外帶')
-
-// 這一次交易的個別需求（客人這次要不要用手機條碼），下一位客人多半不會
-// 延續同一個選擇，submitPayment() 送出後會重置；orderChannel 則不重置。
 const invoiceCarrier = ref<InvoiceCarrier>({ type: '無載具' })
-
-// 同 invoiceCarrier，屬於單次交易的個別需求，送單後重置回預設值。
 const currentOrderMember = ref<Member | null>(null)
-// 這筆訂單要用多少點數折抵，換會員或取消計入會員時歸零（見 MemberPanel 的 update:pointsToRedeem）。
 const pointsToRedeem = ref(0)
-// 折抵後的實際應付金額——結帳摘要、收銀面板、送出的訂單都用這個，不是
-// catalogStore.cartPayPrice（那個不知道會員折抵，只算優惠券）。
 const finalPayablePrice = computed(() =>
   Math.max(
     0,
@@ -799,12 +774,8 @@ const finalPayablePrice = computed(() =>
   )
 )
 
-// 純文字輸入，故意不跟桌況資料綁外鍵（見 dining_tables 說明），只在選了「內用」時顯示。
 const tableNumberInput = ref('')
 const guestCountInput = ref<number | null>(null)
-
-// 訂單備註（外送地址、取件時間、客製化需求等），跟 invoiceCarrier 一樣屬於這筆
-// 交易的個別需求，送單後重置；掛單／取單時隨 ParkedOrdersPanel 一併保存與還原。
 const orderNote = ref('')
 
 const dialogBag = ref(false)
@@ -813,7 +784,6 @@ const openBagDialog = () => {
   bagCount.value = 1
   dialogBag.value = true
 }
-// 純取消不算錯誤，不額外顯示提示。
 const closeBagCount = () => {
   dialogBag.value = false
 }
@@ -823,9 +793,7 @@ const changeBagCount = () => {
   showToast('修改包材份數成功', 'success')
 }
 
-// 沒有對應交易的開錢箱動作（例如換零錢、盤點現金）需要記錄理由，否則錢箱
-// 可能被任何人在沒有交易紀錄下隨時打開，是實際的內控缺口；理由寫入伺服端
-// audit_logs（見 api/audit-logs.ts），而不是只印在瀏覽器主控台。
+// 無交易開錢箱需留存稽核原因。
 const openCashier = async () => {
   const reason = await prompt({
     title: '開啟收銀機',
@@ -857,7 +825,6 @@ const quickDiscountsForPricing = (): QuickDiscount[] =>
     value: Number(d.value)
   }))
 
-// 開始重新編輯購物車品項
 const handleStartEditLine = (line: CartLineItem) => {
   const ok = catalogStore.startEditLine(line)
   if (!ok) {
@@ -865,7 +832,6 @@ const handleStartEditLine = (line: CartLineItem) => {
   }
 }
 
-// 儲存重新編輯的品項規格與數量
 const saveEditProduct = () => {
   const line = catalogStore.editingLine
   if (!line) return
@@ -890,7 +856,6 @@ const saveEditProduct = () => {
   const addList = catalogStore.selectedAddOnOptions.map((option) => option.name)
   const addListPrice = catalogStore.selectedAddOnPriceDelta
 
-  // 保留原有折扣旗標重新以 priceLine 計算折扣後小計
   const flags: LineDiscountFlags = {
     freeDiscount: line.freeDiscount,
     quickDiscountId: line.quickDiscountId
@@ -906,7 +871,6 @@ const saveEditProduct = () => {
     quickDiscounts
   )
 
-  // 原地更新購物車品項屬性
   line.name =
     modifierNames.length === 0
       ? selectedProduct.name
@@ -925,7 +889,6 @@ const saveEditProduct = () => {
   showToast(`已更新「${line.name.split(',')[0] ?? line.name}」規格`, 'success')
 }
 
-// 單行快速刪除購物車品項
 const removeLine = async (item: CartLineItem) => {
   const result = await confirm({
     title: '確認刪除',
@@ -940,7 +903,6 @@ const removeLine = async (item: CartLineItem) => {
   showToast(`已移除「${item.name}」`, 'success')
 }
 
-// 修改購物車單一品項數量，並即時以 priceLine() 重算小計與折扣
 const updateLineCount = (item: CartLineItem, newCountStr: string | number) => {
   const parsed = parseInt(String(newCountStr))
   const count = isNaN(parsed) || parsed < 1 ? 1 : parsed
@@ -959,8 +921,6 @@ const updateLineCount = (item: CartLineItem, newCountStr: string | number) => {
   Object.assign(item, priced)
 }
 
-// 對目前已勾選的品項套用同一種旗標切換，並用 priceLine() 重新計算金額，
-// 取代逐一折扣各自手動改欄位的寫法。
 const applyDiscountToggle = (toggle: (flags: LineDiscountFlags) => LineDiscountFlags) => {
   const discounts = quickDiscountsForPricing()
   selectedLines.value.forEach((item) => {
@@ -984,7 +944,6 @@ const stillFreeAlert = () => {
   showToast('選取的品項中有品項尚未取消招待無法再套用折扣', 'error')
 }
 
-// 招待：另外還要有 canCompItem 權限，兩個條件都能直接從現有狀態算出來。
 const canApplyFreeDiscount = computed(
   () => selectedLines.value.length > 0 && hasCapability(loginStore.userInfo, 'canCompItem')
 )
@@ -993,7 +952,7 @@ const freeDiscountDisabledReason = computed(() => {
   if (selectedLines.value.length === 0) return '請先勾選待付款品項'
   return ''
 })
-// 招待
+
 const applyFreeDiscount = () => {
   if (selectedLines.value.length <= 0) {
     noSelectionAlert()
@@ -1001,7 +960,7 @@ const applyFreeDiscount = () => {
   }
   applyDiscountToggle(toggleFree)
 }
-// 快速折扣按鈕共用同一組條件，跟點的是清單裡哪一筆折扣無關。
+
 const canApplyQuickDiscount = computed(
   () => selectedLines.value.length > 0 && !selectedLines.value.every((item) => item.freeDiscount)
 )
@@ -1010,7 +969,7 @@ const quickDiscountDisabledReason = computed(() => {
   if (selectedLines.value.every((item) => item.freeDiscount)) return '選取的品項皆已招待，無法再套用折扣'
   return ''
 })
-// 快速折扣：依後台設定的清單動態套用，同一時間每個品項只能套用一筆。
+
 const applyQuickDiscount = (id: FormNumeric) => {
   if (selectedLines.value.length <= 0) {
     noSelectionAlert()
@@ -1069,8 +1028,7 @@ const useDiscount = () => {
   }
 }
 
-// PaymentPanel 要求「湊到剩餘應付為 0 才能按確認送出」，本身就是不可能
-// 誤觸的確認動作，取代原本兩層各自獨立的通用確認框。
+// 送單確認已由 PaymentPanel 滿額送出驗證涵蓋，此處不另跳二次確認框。
 const dialogPayment = ref(false)
 const canCheckout = computed(
   () => catalogStore.cartLines.length > 0 || catalogStore.currentBagCount > 0
@@ -1098,7 +1056,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     orderBagCount: catalogStore.currentBagCount,
     orderCupCount: catalogStore.currentItemCount,
     orderTotalPrice: catalogStore.cartTotalMoney,
-    // orderPayment 是顯示用摘要（多筆 tender 用頓號連接），需跟伺服端算出的摘要規則一致。
+    // orderPayment 為顯示用摘要，多筆支付方式以頓號連接。
     orderPayment: tenders.map((tender) => tender.method).join('、'),
     orderDiscount: catalogStore.cartTotalMoney + catalogStore.currentBagCount - finalPayablePrice.value,
     orderPaymentPrice: finalPayablePrice.value,
@@ -1118,7 +1076,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     invoiceNumber: '',
     invoiceCarrier: invoiceCarrier.value,
     memberId: currentOrderMember.value?.id ?? null,
-    // 本機樂觀估算，真正算數以伺服端回應為準（見 orderStore.pointsPerCurrencyUnit 的說明）。
+    // 本機樂觀估算點數，實際以伺服端計算回應為準。
     pointsEarned: currentOrderMember.value
       ? Math.floor(finalPayablePrice.value / orderStore.pointsPerCurrencyUnit)
       : 0,
@@ -1127,16 +1085,12 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     note: orderNote.value.trim() || null
   }
 
-  // 訂單層級折價券只送「套用了哪張」，折抵金額由伺服端重算。要在清空
-  // 待付款清單（連帶重置 discountStore 選取狀態）之前先讀出目前套用的是哪一張。
+  // 清空待付款清單前需先擷取套用的折價券 ID，避免重置後丟失。
   const appliedCoupon: AppliedCoupon =
     discountStore.orderCouponId !== 0
       ? { type: 'coupon', couponId: String(discountStore.orderCouponId) }
       : { type: 'none' }
 
-  // 先組出並驗證要送給伺服端的請求——驗證失敗就整個中止，不要讓「訂單送出
-  // 成功」的提示、本機樂觀扣庫存、清空購物車這些動作在驗證失敗後半路發生
-  // （buildCreateOrderRequest 內部會 parse，理論上不該失敗，但錯就該整單擋下）。
   let request: ReturnType<typeof buildCreateOrderRequest>
   try {
     request = buildCreateOrderRequest({
@@ -1162,8 +1116,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
   orderStore.order.push(toPayOrder)
   showToast('訂單送出成功', 'success')
 
-  // 先在本機樂觀扣減庫存：訂單要等背景同步到伺服端才真的扣庫存，若不在
-  // 這裡先扣，點餐頁在同步完成前仍能繼續選到已經賣完的品項。
+  // 本機樂觀扣減庫存，避免送單同步完成前超賣。
   for (const line of toPayOrder.orderData) {
     const item = catalogStore.products.find((product) => product.name === line.name)
     if (item && typeof item.stock === 'number') {
@@ -1171,7 +1124,6 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     }
     const addOnNames = Array.isArray(line.addList) ? line.addList : []
     for (const addOnName of addOnNames) {
-      // 比對方式比照後端 deductStock()：用名稱回查，第一個符合的就當作那筆加購。
       for (const group of catalogStore.modifierGroups) {
         const option = group.options.find((opt) => opt.name === addOnName)
         if (option && typeof option.stock === 'number') {
@@ -1182,9 +1134,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
     }
   }
 
-  // 訂單先入本機離線佇列，不管有沒有網路都會成功；SyncWorker 背景送到
-  // 伺服端。這裡額外呼叫 syncNow() 只是「有網路時不用乾等下一次輪詢」，
-  // 不是同步成敗的必要步驟。用 toPayOrder.orderData 而非稍後會被清空的 catalogStore.cartLines。
+  // 佇列成功後主動觸發同步以縮短連線時的等待延遲。
   void enqueueOrder(request, toPayOrder.orderId).then(() => orderSync.syncNow())
   invoiceCarrier.value = { type: '無載具' }
   currentOrderMember.value = null
@@ -1193,8 +1143,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
   guestCountInput.value = null
   orderNote.value = ''
 
-  // 上面已經彈過「訂單送出成功」，抑制期間清空購物車，避免緊接著又疊一次
-  // cartClearedNotice 的提示把剛顯示的成功訊息立刻蓋掉（見 catalog.ts 說明）。
+  // 抑制清空提示避免覆蓋剛剛顯示的訂單成功 toast。
   catalogStore.suppressClearedNotice = true
   catalogStore.cartLines = []
   await nextTick()

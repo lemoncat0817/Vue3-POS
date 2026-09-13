@@ -1,7 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router'
 import type { AuthorityKey } from '@/types/staff'
 
-/** 路由元資訊擴充：`capability` 宣告造訪該路由所需具備的權限。未設定代表登入即可造訪。 */
 declare module 'vue-router' {
   interface RouteMeta {
     capability?: AuthorityKey
@@ -18,7 +17,6 @@ export const constantRoutes: RouteRecordRaw[] = [
     }
   },
   {
-    // 點餐首頁使用全寬頂部列版型。
     path: '/',
     component: () => import('@/layout/index.vue'),
     redirect: '/home',
@@ -34,7 +32,6 @@ export const constantRoutes: RouteRecordRaw[] = [
     ]
   },
   {
-    // 後台功能頁共用側邊欄後台版型。
     path: '/',
     component: () => import('@/layout/admin/index.vue'),
     children: [
@@ -104,7 +101,6 @@ export const constantRoutes: RouteRecordRaw[] = [
     ]
   },
   {
-    // 無效網址一律導回點餐首頁，避免 RouterView 無內容可渲染而黑屏。
     path: '/:pathMatch(.*)*',
     redirect: '/home'
   }

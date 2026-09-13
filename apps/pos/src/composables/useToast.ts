@@ -1,6 +1,5 @@
 import { reactive } from 'vue'
 
-/** 輕量 Toast 提示訊息（單一全域實例，基於 Reka UI Toast）。 */
 export type ToastType = 'success' | 'error'
 
 interface ToastState {
@@ -15,7 +14,6 @@ const state = reactive<ToastState>({
   type: 'success'
 })
 
-/** 給 ToastHost.vue 讀取目前要顯示的內容，不對外匯出。 */
 export function useToastState() {
   return state
 }
@@ -30,7 +28,6 @@ export function showToast(message: string, type: ToastType = 'success') {
   })
 }
 
-/** ToastHost.vue 專用：使用者手動關閉、或計時到期時呼叫。 */
 export function setToastOpen(open: boolean) {
   state.open = open
 }

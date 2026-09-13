@@ -18,7 +18,6 @@ import type {
   Product as LocalProduct
 } from '@/types/catalog'
 
-/** 查詢菜單目錄（GET /api/catalog）。 */
 export async function fetchCatalog(): Promise<CatalogResponse> {
   const body = await fetchJson<unknown>('/api/catalog')
   return catalogResponseSchema.parse(body)
@@ -53,8 +52,6 @@ export function toLocalModifierGroups(catalog: CatalogResponse): LocalModifierGr
     }))
   }))
 }
-
-// 後台商品管理 API（分類、品項、規格群組——加購用途併在規格群組內管理）。
 
 export async function createCategory(input: CreateCategoryRequest): Promise<Category> {
   const body = await fetchJson<unknown>('/api/catalog/categories', {

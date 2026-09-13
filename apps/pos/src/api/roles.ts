@@ -6,7 +6,6 @@ import {
 } from '@pos/contract'
 import { fetchJson } from './http'
 
-/** 權限群組（角色）管理 API 用戶端。 */
 export async function fetchRoleList(): Promise<Role[]> {
   const body = await fetchJson<unknown>('/api/roles')
   return roleSchema.array().parse(body)

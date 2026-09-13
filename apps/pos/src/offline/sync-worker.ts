@@ -8,7 +8,7 @@ import type { OutboxOrder } from './db'
 const BASE_DELAY_MS = 2_000
 const MAX_DELAY_MS = 60_000
 
-/** 指數退避＋20% 隨機抖動，避免斷線恢復瞬間所有終端機同時重試造成尖峰。 */
+// 指數退避＋20% 隨機抖動，避免斷線恢復瞬間重試尖峰。
 export function backoffDelay(attempts: number): number {
   const capped = Math.min(MAX_DELAY_MS, BASE_DELAY_MS * 2 ** attempts)
   return capped + Math.random() * capped * 0.2
@@ -24,7 +24,6 @@ export async function refreshPendingCount(): Promise<void> {
   syncStatus.pendingCount = await countPending()
 }
 
-/** 依佇列順序逐筆同步訂單至伺服端；任一筆失敗即中斷當前批次以待重試。 */
 export async function syncOnce(
   onSynced: (localOrderId: string, order: Order) => void
 ): Promise<void> {
@@ -66,7 +65,6 @@ async function syncOne(
 let intervalId: ReturnType<typeof setInterval> | undefined
 let onlineListener: (() => void) | undefined
 
-/** 啟動背景同步：監聽 online 事件並搭配定時輪詢。 */
 export function startSyncWorker(onSynced: (localOrderId: string, order: Order) => void): void {
   if (intervalId !== undefined) return
   void refreshPendingCount()

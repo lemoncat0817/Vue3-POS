@@ -22,14 +22,11 @@ describe('useCatalogStore cart and pricing operations', () => {
     store.selectedProduct = product
     store.productCount = '2'
 
-    // 底價 180 * 2 = 360
     expect(store.productCurrentTotal).toBe(360)
 
-    // 選取漢堡加料：加起司 (+20)
     store.selectedModifiers = {
       'mg-burger-topping': ['mo-burger-topping-1']
     }
-    // (180 + 20) * 2 = 400
     expect(store.productCurrentTotal).toBe(400)
   })
 
@@ -66,7 +63,7 @@ describe('useCatalogStore cart and pricing operations', () => {
     store.currentBagCount = 2
 
     expect(store.currentItemCount).toBe(3)
-    expect(store.cartTotalMoney).toBe(412) // 360 + 50 + 2
+    expect(store.cartTotalMoney).toBe(412)
   })
 
   it('cartPayPrice 與 useDiscountPrice 在套用整單折價券時計算正確', () => {
@@ -90,12 +87,10 @@ describe('useCatalogStore cart and pricing operations', () => {
     ]
     store.currentBagCount = 0
 
-    // 套用 $50 折價券 (id: 1, value: 50)
     discountStore.orderCouponId = 1
     expect(store.cartPayPrice).toBe(450)
     expect(store.useDiscountPrice).toBe(50)
 
-    // 套用整單95折 (id: 5, value: 0.95)
     discountStore.orderCouponId = 5
     expect(store.cartPayPrice).toBe(475)
     expect(store.useDiscountPrice).toBe(25)

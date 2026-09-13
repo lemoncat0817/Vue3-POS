@@ -9,7 +9,6 @@ describe('NumericKeypad.vue', () => {
     })
 
     const buttons = wrapper.findAll('button')
-    // 點擊數字 5
     const btn5 = buttons.find((b) => b.text() === '5')!
     await btn5.trigger('click')
 
@@ -43,7 +42,6 @@ describe('NumericKeypad.vue', () => {
       props: { modelValue: 50, max: 100 }
     })
 
-    // 50 加上 5 = 505 > 100
     const btn5 = wrapper.findAll('button').find((b) => b.text() === '5')!
     await btn5.trigger('click')
 

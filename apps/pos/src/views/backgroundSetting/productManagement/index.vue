@@ -675,7 +675,6 @@ const tabs = [
 ] as const
 const activeTab = ref<(typeof tabs)[number]['key']>('categories')
 
-// ---------- 分類 ----------
 const categoryPage = ref(1)
 const categoryPageCount = computed(() =>
   Math.max(Math.ceil(catalogStore.categories.length / 10), 1)
@@ -747,7 +746,6 @@ async function removeCategory(row: Category) {
   }
 }
 
-// ---------- 品項 ----------
 const productPage = ref(1)
 const productPageCount = computed(() => Math.max(Math.ceil(catalogStore.products.length / 10), 1))
 const sliceProducts = computed(() =>
@@ -862,7 +860,6 @@ async function removeProduct(row: Product) {
   }
 }
 
-// ---------- 規格群組 ----------
 const modifierGroupPage = ref(1)
 const modifierGroupPageCount = computed(() =>
   Math.max(Math.ceil(catalogStore.modifierGroups.length / 10), 1)
@@ -874,7 +871,6 @@ const sliceModifierGroups = computed(() =>
   )
 )
 
-// 加購只是 selectionType='multiple' 的規格群組，這裡統一換算成使用者看得懂的用途標籤。
 function groupKind(group: { selectionType: ModifierSelectionType }): '規格' | '加購' {
   return group.selectionType === 'multiple' ? '加購' : '規格'
 }

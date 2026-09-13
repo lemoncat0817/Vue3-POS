@@ -302,7 +302,6 @@ import { reservationPhoneSchema, type DiningTable, type TableStatus } from '@pos
 const loginStore = useLoginStore()
 const canManage = computed(() => hasCapability(loginStore.userInfo, 'canManageTables'))
 
-// 桌況為後台管理專用資料，無需離線可用，掛載時直接向伺服端獲取最新清單。
 const tables = ref<DiningTable[]>([])
 onMounted(async () => {
   try {
@@ -332,7 +331,6 @@ async function toggleAutoOccupy(value: boolean) {
   }
 }
 
-// 用來算「已入座多久」，每分鐘 tick 一次即可，不需要秒級精度。
 const now = ref(Date.now())
 let nowTimer: ReturnType<typeof setInterval> | undefined
 onMounted(() => {
@@ -384,14 +382,12 @@ const pendingNote = ref('')
 const pendingGuestCount = ref<number | null>(null)
 const pendingReservationPhone = ref('')
 const pendingReservationTimeLocal = ref('')
-// 電話選填，只有真的填了、且狀態是「已預約」才需要擋格式；空白留給伺服端存成 null。
 const reservationPhoneValid = computed(() => {
   if (pendingStatus.value !== 'reserved') return true
   const trimmed = pendingReservationPhone.value.trim()
   if (trimmed === '') return true
   return reservationPhoneSchema.safeParse(trimmed).success
 })
-// 只提醒不擋下：座位數是店內配置參考，加椅/併桌會讓實際人數合理地超過。
 const guestCountExceedsSeats = computed(() => {
   if (pendingGuestCount.value === null || !currentTable.value) return false
   return pendingGuestCount.value > currentTable.value.seats

@@ -25,7 +25,6 @@
 </template>
 
 <script setup lang="ts">
-// 通用分頁元件；total 為 0 時頁碼顯示第 0 頁
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 defineProps<{ page: number; pageCount: number; total: number }>()

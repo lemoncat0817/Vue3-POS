@@ -702,9 +702,7 @@ import { ulid } from '@pos/domain'
 import type { Order, OrderSummary } from '@pos/contract'
 import type { OrderRecord } from '@/types'
 
-// P6：訂單還在離線佇列裡等待第一次同步時，伺服端根本沒有這筆訂單，
-// 編輯狀態／刪除都會收到 404——用同一句話提示，不用另外做「排入佇列
-// 稍後重試」（見 api/orders.ts 的說明）。
+// 訂單等待背景同步時伺服端尚未建檔，以專屬提示回應 404 狀態。
 function orderApiErrorMessage(err: unknown): string {
   if (err instanceof ApiError && err.status === 404) {
     return '這筆訂單可能還在等待同步到伺服端，請稍後再試一次'
@@ -712,9 +710,6 @@ function orderApiErrorMessage(err: unknown): string {
   return apiErrorMessage(err)
 }
 
-// 訂單 KPI 摘要現在來自 GET /api/orders/summary（見 @pos/contract 的
-// orderSummarySchema）：數字是對全部訂單算的聚合值，不受目前分頁／篩選
-// 影響。連不上伺服端時退回本機快取算出的近似值（見下方 loadSummary）。
 const summary = ref<OrderSummary | null>(null)
 const orderStats = computed(() => {
   const totalCount = summary.value?.totalCount ?? 0
@@ -730,8 +725,7 @@ const orderStats = computed(() => {
 })
 const staffOptions = computed(() => summary.value?.staffNames ?? [])
 
-// 連不上伺服端時的本機近似統計，算法對齊伺服端 orderSummarySchema 的定義；
-// 只是本機快取只有這台裝置自己建立過的訂單，不是全店數字。
+// 離線時以本機快取訂單計算近似統計。
 function localSummaryFallback(): OrderSummary {
   const all = orderStore.order
   const completed = all.filter((o) => o.orderStatus === '已完成')
@@ -812,15 +806,10 @@ const hasActiveFilter = computed(() => {
   )
 })
 
-// 訂單清單現在來自 GET /api/orders（後端分頁＋篩選），orders 永遠只是
-// 「目前這一頁」的資料，不是全部訂單——跟過去本機全量資料再用 vue-table
-// 前端分頁是不同的模型，見下方 useVueTable 的 manualPagination。
 const orders = ref<OrderRecord[]>([])
 const totalCount = ref(0)
 const totalPages = ref(1)
 const loading = ref(false)
-// 連不上伺服端時退回本機快取（見 loadOrders 的 catch 分支）：只有這台
-// 裝置自己建立過的訂單，且可能不是最新狀態，畫面上需要明確提示。
 const isOffline = ref(false)
 
 function normalizedDatePrefix(orderTime: string): string {
@@ -828,8 +817,7 @@ function normalizedDatePrefix(orderTime: string): string {
   return toNativeDate(formatDateOnly(orderTime))
 }
 
-// 本機快取沒有後端的篩選／分頁能力，用跟伺服端一致的邏輯在本機做一次
-// 近似篩選＋分頁；排序只能近似（本機陣列依建立順序 push，反轉約等於新到舊）。
+// 離線時於前端執行本機近似篩選與分頁。
 function applyLocalFallback() {
   const filtered = orderStore.order.filter((item) => {
     const orderDate = normalizedDatePrefix(item.orderTime)
@@ -908,14 +896,9 @@ const quickFilterStatus = (status: string) => {
   }
 }
 
-// 關鍵字是文字輸入，每打一個字都查後端太浪費，debounce 300ms；其他篩選
-// 欄位是下拉選單／日期選擇器，離散變動，不需要 debounce。
 let keywordDebounceTimer: ReturnType<typeof setTimeout> | undefined
 
-// 篩選條件變動時換回第 1 頁再重新查詢；如果已經在第 1 頁，page 不會變，
-// watch(page, ...) 不會觸發，這裡要補一次 loadOrders() 才不會漏掉。
-// 先清掉關鍵字的 debounce timer，避免「重置篩選」等同時改掉關鍵字的
-// 操作，立即查詢一次之後 300ms 後又因為過期的 timer 多查一次。
+// 篩選條件變更重置第 1 頁並清除 debounce 定時器避免重複請求。
 function resetPageAndReload() {
   clearTimeout(keywordDebounceTimer)
   if (page.value !== 1) {
@@ -970,9 +953,7 @@ function toggleSelectAllVisible(checked: boolean) {
     else selectedOrderIds.value.delete(id)
   }
 }
-// 換頁或篩選變動時同步移除已不在這一頁的選取項目，避免選取狀態與畫面
-// 不一致——批次操作（匯出）的範圍因此只能是「目前這一頁已勾選的」，
-// 不支援跨頁全選所有符合篩選條件的訂單。
+// 換頁或篩選時清理不在當前頁的選取 ID，維持跨頁選取一致性。
 watch(orders, (visible) => {
   const stillVisible = new Set(visible.map((o) => o.orderId))
   for (const id of selectedOrderIds.value) {
@@ -1096,9 +1077,6 @@ const columns = [
         hasCapability(loginStore.userInfo, 'canRefundOrVoid') &&
         order.orderStatus === '已完成' &&
         remainingRefundableOf(order) > 0
-      // 作廢／恢復是方向相反、輕重也不同的兩個動作（作廢要主管授權＋原因，
-      // 恢復不用），依目前狀態各自顯示對應的單一按鈕，不要用一顆「編輯狀態」
-      // 按鈕接一個要使用者從通用對話框裡「猜」語意的選單。
       const canVoid =
         hasCapability(loginStore.userInfo, 'canRefundOrVoid') && order.orderStatus === '已完成'
       const canRestore =
@@ -1167,8 +1145,6 @@ const columns = [
   })
 ]
 
-// manualPagination：orders 已經是伺服端分頁後的「這一頁」資料，不需要
-// （也不該再）讓 vue-table 自己在這份資料上再分一次頁。
 const table = useVueTable({
   data: orders,
   columns,
@@ -1176,16 +1152,13 @@ const table = useVueTable({
   manualPagination: true
 })
 
-// 表頭只有一層（沒有分組欄位），直接取第一個 header group 的 leaf headers。
 const leafHeaders = computed(() => table.getHeaderGroups()[0]?.headers ?? [])
 
 const currentOperator = () =>
   `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`
 
 interface RefundOrVoidApprover {
-  /** 顯示用文字，記錄在訂單的經手人欄位。 */
   label: string
-  /** 送給伺服端的 X-Operator-Session，讓 canRefundOrVoid 的驗證認的是核可主管、不是目前登入中的操作員。用完即撤銷，見呼叫端。 */
   sessionToken: string
 }
 
@@ -1214,9 +1187,7 @@ async function requestRefundOrVoidApproval(
   }
 }
 
-// 本機快取若也有這筆（離線時的 fallback 來源），同步更新，否則離線時看到
-// 的會是狀態變更前的舊資料。畫面本身一律重新向伺服端要這一頁＋KPI 摘要，
-// 這裡只是避免離線 fallback 顯示過期狀態。
+// 同步更新本機快取，避免離線備援時顯示未更新的舊狀態。
 function applyLocalStatusUpdate(orderId: string, updated: Order) {
   const local = orderStore.order.find((item) => item.orderId === orderId)
   if (local) {
@@ -1267,8 +1238,7 @@ const voidOrder = async (order: OrderRecord) => {
   }
 }
 
-// 恢復不是作廢的逆操作重跑一次審核，後端本來就只要求「改回已完成」
-// 清空作廢欄位、不需要理由或主管授權（見 apps/api/src/routes/orders.ts）。
+// 恢復訂單不需主管審核與作廢理由，直接更新為已完成。
 const restoreOrder = async (order: OrderRecord) => {
   if (order.orderStatus !== '已取消') return
   const result = await confirm({

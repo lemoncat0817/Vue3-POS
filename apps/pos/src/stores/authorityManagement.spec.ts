@@ -16,7 +16,6 @@ function staff(overrides: Partial<StaffMember> = {}): StaffMember {
   }
 }
 
-/** 驗證 hydrateStaffFromServer() 每次都以伺服端資料整份覆蓋本機。 */
 describe('useAuthorityManagementStore — hydrateStaffFromServer()', () => {
   it('第一次呼叫時，用伺服端資料取代種子資料', () => {
     setActivePinia(createPinia())
@@ -32,12 +31,10 @@ describe('useAuthorityManagementStore — hydrateStaffFromServer()', () => {
     const store = useAuthorityManagementStore()
 
     store.hydrateStaffFromServer([staff()])
-    // 模擬管理員在人員管理頁新增了一位人員，但沒有重新整理頁面。
     store.staffList.push(staff({ id: 's2', name: '管理員新增的人員', account: 'new-hire' }))
 
     store.hydrateStaffFromServer([staff({ roleName: '伺服端又改了角色名字' })])
 
-    // 下一次開機同步一律以伺服端為準——這裡的異動如果沒真的寫進資料庫，本來就不該留著。
     expect(store.staffList).toEqual([staff({ roleName: '伺服端又改了角色名字' })])
   })
 })

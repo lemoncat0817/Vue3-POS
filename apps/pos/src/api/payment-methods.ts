@@ -6,7 +6,6 @@ import {
 } from '@pos/contract'
 import { fetchJson } from './http'
 
-/** 付款方式管理 API 用戶端。 */
 export async function fetchPaymentMethods(): Promise<PaymentMethodRecord[]> {
   const body = await fetchJson<unknown>('/api/payment-methods')
   return paymentMethodSchema.array().parse(body)
