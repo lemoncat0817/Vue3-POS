@@ -203,6 +203,7 @@ import { apiErrorMessage } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { createTable, deleteTable, fetchTables, updateTableStatus } from '@/api/tables'
+import { tableStatusCardClass, tableStatusLabel, tableStatusOptions } from '@/utils/tableStatus'
 import type { DiningTable, TableStatus } from '@pos/contract'
 
 const loginStore = useLoginStore()
@@ -218,21 +219,9 @@ onMounted(async () => {
   }
 })
 
-const statusOptions: { value: TableStatus; label: string }[] = [
-  { value: 'empty', label: '空桌' },
-  { value: 'occupied', label: '使用中' },
-  { value: 'reserved', label: '已預約' }
-]
-function statusLabel(status: TableStatus): string {
-  return statusOptions.find((option) => option.value === status)?.label ?? status
-}
-function statusCardClass(status: TableStatus): string {
-  if (status === 'occupied')
-    return 'border-danger-300 bg-danger-50 text-danger-700 dark:border-danger-800 dark:bg-danger-950 dark:text-danger-300'
-  if (status === 'reserved')
-    return 'border-warning-300 bg-warning-50 text-warning-700 dark:border-warning-800 dark:bg-warning-950 dark:text-warning-300'
-  return 'border-success-300 bg-success-50 text-success-700 dark:border-success-800 dark:bg-success-950 dark:text-success-300'
-}
+const statusOptions = tableStatusOptions
+const statusLabel = tableStatusLabel
+const statusCardClass = tableStatusCardClass
 function statusButtonClass(status: TableStatus): string {
   const active = status === pendingStatus.value
   const base = statusCardClass(status)
