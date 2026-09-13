@@ -206,6 +206,9 @@
                 placeholder="例如：0912345678"
                 class="rounded-lg border border-surface-300 bg-white p-2 text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
               />
+              <span v-if="!reservationPhoneValid" class="text-xs font-bold text-danger-600 dark:text-danger-400">
+                請輸入正確的電話號碼格式（例如：0912345678 或 02-12345678）
+              </span>
             </label>
             <label class="flex flex-col gap-1 text-sm text-surface-600 dark:text-surface-400">
               預約時間
@@ -246,7 +249,7 @@
               </button>
               <button
                 type="button"
-                :disabled="!canManage"
+                :disabled="!canManage || !reservationPhoneValid"
                 class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50"
                 @click="saveStatus"
               >
@@ -278,7 +281,7 @@ import { createTable, deleteTable, fetchTables, updateTableStatus } from '@/api/
 import { fetchTenantSettings, updateTenantSettings } from '@/api/tenant-settings'
 import { tableStatusCardClass, tableStatusLabel, tableStatusOptions } from '@/utils/tableStatus'
 import { formatDateTime, formatElapsedMinutes } from '@/utils/time'
-import type { DiningTable, TableStatus } from '@pos/contract'
+import { reservationPhoneSchema, type DiningTable, type TableStatus } from '@pos/contract'
 
 const loginStore = useLoginStore()
 const canManage = computed(() => hasCapability(loginStore.userInfo, 'canManageTables'))
@@ -365,6 +368,13 @@ const pendingNote = ref('')
 const pendingGuestCount = ref<number | null>(null)
 const pendingReservationPhone = ref('')
 const pendingReservationTimeLocal = ref('')
+// 電話選填，只有真的填了、且狀態是「已預約」才需要擋格式；空白留給伺服端存成 null。
+const reservationPhoneValid = computed(() => {
+  if (pendingStatus.value !== 'reserved') return true
+  const trimmed = pendingReservationPhone.value.trim()
+  if (trimmed === '') return true
+  return reservationPhoneSchema.safeParse(trimmed).success
+})
 
 // <input type="datetime-local"> 用的是不帶時區的本地時間字串，跟伺服端存的 ISO UTC 互轉。
 function isoToDatetimeLocal(iso: string | null): string {

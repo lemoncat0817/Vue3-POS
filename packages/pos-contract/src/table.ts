@@ -9,6 +9,15 @@ import { z } from 'zod'
 export const tableStatusSchema = z.enum(['empty', 'occupied', 'reserved'])
 export type TableStatus = z.infer<typeof tableStatusSchema>
 
+/**
+ * 預約聯絡電話格式：手機（09 開頭共 10 碼）或市話（區碼＋6~8碼、可加一個連字號）。
+ * 訂位常見用市話回電，不能比照 memberPhoneSchema 只收手機號碼。
+ */
+export const reservationPhoneSchema = z
+  .string()
+  .trim()
+  .regex(/^09\d{8}$|^0\d{1,2}-?\d{6,8}$/, '請輸入正確的電話號碼格式（例如：0912345678 或 02-12345678）')
+
 export const diningTableSchema = z.object({
   id: z.string().min(1),
   tableNumber: z.string().min(1),
@@ -40,7 +49,7 @@ export const updateTableStatusRequestSchema = z.object({
   note: z.string().optional(),
   /** 手動編輯用餐人數（例如中途加人）；只在轉成／維持 occupied 時有意義。 */
   guestCount: z.number().int().positive().nullable().optional(),
-  reservationPhone: z.string().nullable().optional(),
+  reservationPhone: reservationPhoneSchema.nullable().optional(),
   reservationTime: z.string().nullable().optional()
 })
 export type UpdateTableStatusRequest = z.infer<typeof updateTableStatusRequestSchema>

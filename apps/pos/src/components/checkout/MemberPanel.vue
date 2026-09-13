@@ -96,10 +96,13 @@
             class="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
           />
         </label>
+        <p v-if="!newMemberPhoneValid" class="mt-1 text-xs font-bold text-danger-600 dark:text-danger-400">
+          請輸入正確的手機號碼格式（09 開頭共 10 碼數字）才能建立會員
+        </p>
         <div class="mt-2 flex justify-end">
           <button
             type="button"
-            :disabled="newMemberName.trim() === ''"
+            :disabled="newMemberName.trim() === '' || !newMemberPhoneValid"
             data-testid="create-member"
             class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
             @click="createNewMember"
@@ -120,7 +123,7 @@ import { showToast } from '@/composables/useToast'
 import { apiErrorMessage } from '@/api/http'
 import { createMember, findMemberByPhone } from '@/api/members'
 import { redemptionValueForPoints } from '@pos/domain'
-import type { Member } from '@pos/contract'
+import { memberPhoneSchema, type Member } from '@pos/contract'
 
 const props = defineProps<{
   modelValue: Member | null
@@ -137,6 +140,11 @@ const phoneInput = ref('')
 const newMemberName = ref('')
 const isSearching = ref(false)
 const searchResult = ref<'idle' | 'not-found'>('idle')
+// 建立會員一定要合法手機（伺服端 createMemberRequestSchema 靠它當唯一鍵），這裡先擋一次，
+// 不用等使用者按下去才從伺服端 400 收到「資料格式有誤」這種不知所云的訊息。
+const newMemberPhoneValid = computed(
+  () => memberPhoneSchema.safeParse(phoneInput.value.trim()).success
+)
 
 const redemptionValue = computed(() =>
   redemptionValueForPoints(props.pointsToRedeem, props.redemptionRate)
