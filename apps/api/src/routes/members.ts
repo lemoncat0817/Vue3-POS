@@ -16,6 +16,7 @@ import {
   type MemberTier,
   type MemberTierStatus
 } from '@pos/contract'
+import { recordAuditLog } from '../audit/record'
 import { members, memberPointLedger, memberTiers, orders } from '../db/schema'
 import { checkCapability, requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -351,6 +352,7 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       deletedAt: null
     }
     await db.insert(members).values(newMember)
+    await recordAuditLog(c, 'member.create', `新增會員「${input.name}」（${input.phone}）`)
     return c.json(newMember, 201)
   })
   .openapi(listMemberBirthdaysRoute, async (c) => {
@@ -544,6 +546,7 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       notes: input.notes ?? null
     }
     await db.update(members).set(patch).where(eq(members.id, id))
+    await recordAuditLog(c, 'member.update', `更新會員「${existing.name}」→「${input.name}」`)
     return c.json({ ...existing, ...patch }, 200)
   })
   .openapi(deleteMemberRoute, async (c) => {
@@ -564,6 +567,7 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       .update(members)
       .set({ deletedAt: new Date().toISOString() })
       .where(eq(members.id, id))
+    await recordAuditLog(c, 'member.delete', `刪除會員「${existing.name}」（${existing.phone}）`)
     return c.body(null, 204)
   })
   .openapi(createPointsAdjustmentRoute, async (c) => {
@@ -601,5 +605,10 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       note: input.reason,
       createdAt: new Date().toISOString()
     })
+    await recordAuditLog(
+      c,
+      'member.pointsAdjust',
+      `調整會員「${existing.name}」點數 ${input.delta > 0 ? '+' : ''}${input.delta}（原因：${input.reason}）`
+    )
     return c.json({ ...existing, points: nextPoints }, 200)
   })

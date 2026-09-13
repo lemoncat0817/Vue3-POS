@@ -5,6 +5,7 @@ import {
   memberTierSchema,
   updateMemberTierRequestSchema
 } from '@pos/contract'
+import { recordAuditLog } from '../audit/record'
 import { memberTiers } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -99,6 +100,11 @@ export const memberTierRoutes = new OpenAPIHono<AppEnv>()
     const tenantId = c.get('tenantId')
     const newTier = { id: crypto.randomUUID(), tenantId, ...input }
     await db.insert(memberTiers).values(newTier)
+    await recordAuditLog(
+      c,
+      'memberTier.create',
+      `新增會員分級「${input.name}」（累積消費滿 ${input.minSpend} 元）`
+    )
     return c.json(newTier, 201)
   })
   .openapi(updateMemberTierRoute, async (c) => {
@@ -113,6 +119,11 @@ export const memberTierRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這個分級門檻' }, 404)
     await db.update(memberTiers).set(input).where(eq(memberTiers.id, id))
+    await recordAuditLog(
+      c,
+      'memberTier.update',
+      `更新會員分級「${existing.name}」→「${input.name}」（累積消費滿 ${input.minSpend} 元）`
+    )
     return c.json({ id, ...input }, 200)
   })
   .openapi(deleteMemberTierRoute, async (c) => {
@@ -126,5 +137,6 @@ export const memberTierRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這個分級門檻' }, 404)
     await db.delete(memberTiers).where(eq(memberTiers.id, id))
+    await recordAuditLog(c, 'memberTier.delete', `刪除會員分級「${existing.name}」`)
     return c.body(null, 204)
   })

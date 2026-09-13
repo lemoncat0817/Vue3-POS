@@ -6,6 +6,7 @@ import {
   updateTableRequestSchema,
   updateTableStatusRequestSchema
 } from '@pos/contract'
+import { recordAuditLog } from '../audit/record'
 import { diningTables } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -132,6 +133,7 @@ export const tableRoutes = new OpenAPIHono<AppEnv>()
       reservationTime: null
     }
     await db.insert(diningTables).values(newTable)
+    await recordAuditLog(c, 'table.create', `新增桌位「${input.tableNumber}」（${input.seats} 人座）`)
     return c.json(newTable, 201)
   })
   .openapi(updateTableRoute, async (c) => {
@@ -146,6 +148,11 @@ export const tableRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這個桌位' }, 404)
     await db.update(diningTables).set(input).where(eq(diningTables.id, id))
+    await recordAuditLog(
+      c,
+      'table.update',
+      `更新桌位「${existing.tableNumber}」→「${input.tableNumber}」（${input.seats} 人座）`
+    )
     return c.json({ ...existing, ...input }, 200)
   })
   .openapi(updateTableStatusRoute, async (c) => {
@@ -193,5 +200,6 @@ export const tableRoutes = new OpenAPIHono<AppEnv>()
       .get()
     if (!existing) return c.json({ error: '找不到這個桌位' }, 404)
     await db.delete(diningTables).where(eq(diningTables.id, id))
+    await recordAuditLog(c, 'table.delete', `刪除桌位「${existing.tableNumber}」`)
     return c.body(null, 204)
   })
