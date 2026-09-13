@@ -1,4 +1,5 @@
 import {
+  memberAnalyticsSchema,
   memberBirthdayEntrySchema,
   memberDetailSchema,
   memberListResponseSchema,
@@ -6,6 +7,7 @@ import {
   type CreateMemberRequest,
   type ManualPointAdjustmentRequest,
   type Member,
+  type MemberAnalytics,
   type MemberBirthdayEntry,
   type MemberDetail,
   type MemberListResponse,
@@ -73,6 +75,12 @@ export async function fetchMemberBirthdays(
 ): Promise<MemberBirthdayEntry[]> {
   const body = await fetchJson<unknown>(`/api/members/birthdays${month ? `?month=${month}` : ''}`)
   return memberBirthdayEntrySchema.array().parse(body)
+}
+
+/** 會員經營摘要（總會員數、本月新增、會員貢獻營收、分級人數分布）。 */
+export async function fetchMemberAnalytics(): Promise<MemberAnalytics> {
+  const body = await fetchJson<unknown>('/api/members/analytics')
+  return memberAnalyticsSchema.parse(body)
 }
 
 /** 手動調整點數（客訴補償、活動加點）。 */

@@ -4,6 +4,7 @@ import {
   createMemberRequestSchema,
   listMembersQuerySchema,
   manualPointAdjustmentRequestSchema,
+  memberAnalyticsSchema,
   memberBirthdayEntrySchema,
   memberBirthdaysQuerySchema,
   memberDetailQuerySchema,
@@ -148,6 +149,28 @@ const listMemberBirthdaysRoute = createRoute({
     200: {
       description: '指定月份壽星名單，依日期排序',
       content: { 'application/json': { schema: memberBirthdayEntrySchema.array() } }
+    },
+    401: {
+      description: '裝置憑證無效或缺漏',
+      content: { 'application/json': { schema: errorSchema } }
+    },
+    403: {
+      description: '沒有 canCheckMembers',
+      content: { 'application/json': { schema: errorSchema } }
+    }
+  }
+})
+
+// 會員經營摘要（總會員數、本月新增、會員貢獻營收、分級人數分布），同樣是
+// 靜態路徑，要排在 /{id} 前面宣告。
+const getMemberAnalyticsRoute = createRoute({
+  method: 'get',
+  path: '/analytics',
+  middleware: [requireDeviceToken, requireCapability('canCheckMembers')] as const,
+  responses: {
+    200: {
+      description: '會員經營摘要',
+      content: { 'application/json': { schema: memberAnalyticsSchema } }
     },
     401: {
       description: '裝置憑證無效或缺漏',
@@ -353,6 +376,73 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       .filter((row): row is typeof row & { birthday: string } => row.birthday !== null)
       .sort((a, b) => a.birthday.slice(8, 10).localeCompare(b.birthday.slice(8, 10)))
     return c.json(sorted, 200)
+  })
+  .openapi(getMemberAnalyticsRoute, async (c) => {
+    const db = c.get('db')
+    const tenantId = c.get('tenantId')
+    const activeCond = and(tenantFilter(members.tenantId, tenantId), isNull(members.deletedAt))
+
+    // 本月的定義用日曆月份（跟本月壽星一致），不是營業日換日時間——「這個月
+    // 新增了幾個會員」是行銷用的粗略統計，不需要精確到營業日邊界。
+    const now = new Date()
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+
+    const [totalMembersRow, newMembersRow, memberRevenueRow, totalRevenueRow, activeMembers, tiers] =
+      await Promise.all([
+        db.select({ count: sql<number>`count(*)` }).from(members).where(activeCond).get(),
+        db
+          .select({ count: sql<number>`count(*)` })
+          .from(members)
+          .where(and(activeCond, sql`${members.createdAt} >= ${monthStart}`))
+          .get(),
+        db
+          .select({ total: sql<number>`sum(${orders.orderPaymentPrice})` })
+          .from(orders)
+          .where(and(tenantFilter(orders.tenantId, tenantId), sql`${orders.memberId} is not null`, ne(orders.orderStatus, '已取消')))
+          .get(),
+        db
+          .select({ total: sql<number>`sum(${orders.orderPaymentPrice})` })
+          .from(orders)
+          .where(and(tenantFilter(orders.tenantId, tenantId), ne(orders.orderStatus, '已取消')))
+          .get(),
+        db.select({ id: members.id }).from(members).where(activeCond).all(),
+        db.select().from(memberTiers).where(tenantFilter(memberTiers.tenantId, tenantId)).all()
+      ])
+
+    // 分級人數分布：跟 attachTierStatus() 同一套邏輯，但這裡是為了統計全店
+    // 分布、不是要把 tierStatus 掛回每一列會員身上，所以不透過 attachTierStatus()。
+    const spendByMember = await resolveLifetimeSpends(
+      db,
+      activeMembers.map((row) => row.id)
+    )
+    const countByTierId = new Map<string | null, number>()
+    for (const member of activeMembers) {
+      const tier = pickTier(tiers, spendByMember.get(member.id) ?? 0)
+      const key = tier?.id ?? null
+      countByTierId.set(key, (countByTierId.get(key) ?? 0) + 1)
+    }
+    const tierDistribution = [
+      ...tiers
+        .slice()
+        .sort((a, b) => b.minSpend - a.minSpend)
+        .map((tier) => ({
+          tierId: tier.id,
+          tierName: tier.name,
+          memberCount: countByTierId.get(tier.id) ?? 0
+        })),
+      { tierId: null, tierName: '一般會員', memberCount: countByTierId.get(null) ?? 0 }
+    ]
+
+    return c.json(
+      {
+        totalMembers: totalMembersRow?.count ?? 0,
+        newMembersThisMonth: newMembersRow?.count ?? 0,
+        memberRevenue: memberRevenueRow?.total ?? 0,
+        totalRevenue: totalRevenueRow?.total ?? 0,
+        tierDistribution
+      },
+      200
+    )
   })
   .openapi(getMemberRoute, async (c) => {
     const { id } = c.req.valid('param')

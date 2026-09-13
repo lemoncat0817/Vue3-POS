@@ -1295,3 +1295,114 @@ describe('會員標籤與備註', () => {
     expect(updated.notes).toBe('常客訴，需特別注意服務態度')
   })
 })
+
+/** 會員經營摘要，見 routes/members.ts 的 getMemberAnalyticsRoute。 */
+describe('GET /api/members/analytics（會員經營摘要）', () => {
+  it('沒有 canCheckMembers 時拒絕，回傳 403', async () => {
+    const db: TestDb = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db)
+    const roleId = await seedRole(db, { capabilities: ['canCheckOrder'] })
+    const staffId = crypto.randomUUID()
+    await db.insert(staff).values({
+      id: staffId,
+      name: '測試員工',
+      jobTitle: '測試',
+      account: `staff-${staffId}`,
+      roleId,
+      pinHash: 'x',
+      pinSalt: 'x'
+    })
+    const sessionToken = await issueTestSession(db, staffId)
+    const res = await app.request('/api/members/analytics', {
+      headers: { 'X-Device-Token': deviceToken, 'X-Operator-Session': sessionToken }
+    })
+    expect(res.status).toBe(403)
+  })
+
+  it('統計總會員數、本月新增、會員貢獻營收、分級人數分布', async () => {
+    const db = createTestDb()
+    await seedPromotions(db)
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(db)
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    await app.request('/api/member-tiers', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ name: '金卡會員', minSpend: 100 })
+    })
+
+    const memberA = await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '王小明', phone: '0911111111' })
+      })
+    )
+    // 林小華沒有任何消費，用來驗證「一般會員」也會被算進分級人數分布。
+    await readJson(
+      await app.request('/api/members', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: '林小華', phone: '0922222222' })
+      })
+    )
+
+    const validLine = {
+      name: '楊枝甘露2.0',
+      price: 200,
+      count: 1,
+      addList: '無添加配料' as const,
+      addListPrice: 0,
+      freeDiscount: false,
+      quickDiscountId: null
+    }
+    // A 消費 200 元（達到金卡門檻），B 沒有任何消費（一般會員）；
+    // 另外一筆沒有掛會員的訂單，不計入 memberRevenue，但要計入 totalRevenue。
+    await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FG1',
+        businessDate: '20240610',
+        staff: '店長 - Lemon',
+        lines: [validLine],
+        bagCount: 0,
+        tenders: [{ method: '現金', amount: 200 }],
+        appliedCoupon: { type: 'none' },
+        orderChannel: '外帶',
+        invoiceCarrier: { type: '無載具' },
+        memberId: memberA.id
+      })
+    })
+    await app.request('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FG2',
+        businessDate: '20240610',
+        staff: '店長 - Lemon',
+        lines: [{ ...validLine, price: 80 }],
+        bagCount: 0,
+        tenders: [{ method: '現金', amount: 80 }],
+        appliedCoupon: { type: 'none' },
+        orderChannel: '外帶',
+        invoiceCarrier: { type: '無載具' }
+      })
+    })
+
+    const res = await app.request('/api/members/analytics', { headers })
+    expect(res.status).toBe(200)
+    const body = await readJson(res)
+    expect(body.totalMembers).toBe(2)
+    expect(body.newMembersThisMonth).toBe(2)
+    expect(body.memberRevenue).toBe(200)
+    expect(body.totalRevenue).toBe(280)
+    expect(body.tierDistribution).toEqual([
+      { tierId: expect.any(String), tierName: '金卡會員', memberCount: 1 },
+      { tierId: null, tierName: '一般會員', memberCount: 1 }
+    ])
+  })
+})

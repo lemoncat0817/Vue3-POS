@@ -136,3 +136,24 @@ export const memberDetailSchema = memberSchema.extend({
   pointsLedger: z.array(memberPointLedgerEntrySchema)
 })
 export type MemberDetail = z.infer<typeof memberDetailSchema>
+
+/** 分級人數分布的其中一格；tierId 為 null 代表「一般會員」（沒有任何門檻達標）。 */
+export const memberTierDistributionEntrySchema = z.object({
+  tierId: z.string().nullable(),
+  tierName: z.string(),
+  memberCount: z.number().int().nonnegative()
+})
+export type MemberTierDistributionEntry = z.infer<typeof memberTierDistributionEntrySchema>
+
+/**
+ * 會員經營摘要，GET /api/members/analytics 的回應形狀。memberRevenue／
+ * totalRevenue 都排除已取消訂單，跟 reports.ts 的營收計算同一套規則。
+ */
+export const memberAnalyticsSchema = z.object({
+  totalMembers: z.number().int().nonnegative(),
+  newMembersThisMonth: z.number().int().nonnegative(),
+  memberRevenue: z.number().int().nonnegative(),
+  totalRevenue: z.number().int().nonnegative(),
+  tierDistribution: z.array(memberTierDistributionEntrySchema)
+})
+export type MemberAnalytics = z.infer<typeof memberAnalyticsSchema>

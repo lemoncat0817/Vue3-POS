@@ -19,6 +19,14 @@
           <button
             type="button"
             class="flex items-center gap-1.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-2 text-xs lg:text-sm font-bold text-surface-600 dark:text-surface-300 transition-all hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 select-none"
+            @click="openAnalyticsDialog"
+          >
+            <BarChart3 class="h-4 w-4" />
+            <span>會員分析</span>
+          </button>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-2 text-xs lg:text-sm font-bold text-surface-600 dark:text-surface-300 transition-all hover:bg-surface-100 dark:hover:bg-surface-700 active:scale-95 select-none"
             @click="openBirthdaysDialog"
           >
             <Cake class="h-4 w-4" />
@@ -696,12 +704,68 @@
           </Form>
         </div>
       </ModalDialog>
+
+      <ModalDialog v-model:open="analyticsDialog" title="會員分析">
+        <div v-if="analyticsLoading" class="py-8 text-center text-xs text-surface-400">載入中…</div>
+        <div v-else-if="analytics" class="flex flex-col gap-4">
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="rounded-xl border border-surface-200 dark:border-surface-800 p-3">
+              <div class="text-[11px] font-bold text-surface-400">總會員數</div>
+              <div class="mt-1 font-mono text-xl font-black text-surface-900 dark:text-surface-100">
+                {{ analytics.totalMembers }}
+              </div>
+            </div>
+            <div class="rounded-xl border border-surface-200 dark:border-surface-800 p-3">
+              <div class="text-[11px] font-bold text-surface-400">本月新增會員</div>
+              <div class="mt-1 font-mono text-xl font-black text-surface-900 dark:text-surface-100">
+                {{ analytics.newMembersThisMonth }}
+              </div>
+            </div>
+            <div class="rounded-xl border border-surface-200 dark:border-surface-800 p-3">
+              <div class="text-[11px] font-bold text-surface-400">會員貢獻營收</div>
+              <div class="mt-1 font-mono text-xl font-black text-primary-600 dark:text-primary-400">
+                $ {{ analytics.memberRevenue }}
+              </div>
+            </div>
+            <div class="rounded-xl border border-surface-200 dark:border-surface-800 p-3">
+              <div class="text-[11px] font-bold text-surface-400">會員營收佔比</div>
+              <div class="mt-1 font-mono text-xl font-black text-surface-900 dark:text-surface-100">
+                {{ memberRevenueSharePercent }}%
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="mb-2 text-xs font-black text-surface-700 dark:text-surface-300">分級人數分布</div>
+            <div class="flex flex-col gap-2">
+              <div
+                v-for="entry in analytics.tierDistribution"
+                :key="entry.tierId ?? '一般會員'"
+                class="flex items-center gap-2.5"
+              >
+                <span class="w-20 shrink-0 truncate text-xs font-bold text-surface-600 dark:text-surface-400">
+                  {{ entry.tierName }}
+                </span>
+                <div class="h-4 flex-1 overflow-hidden rounded-full bg-surface-100 dark:bg-surface-800">
+                  <div
+                    class="h-full rounded-full bg-accent-500"
+                    :style="{ width: `${tierBarWidth(entry.memberCount)}%` }"
+                  />
+                </div>
+                <span class="w-8 shrink-0 text-right font-mono text-xs font-bold text-surface-500">
+                  {{ entry.memberCount }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ModalDialog>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Cake, Coins, Gem, Receipt, Search, UserPlus, Users } from 'lucide-vue-next'
+import { BarChart3, Cake, Coins, Gem, Receipt, Search, UserPlus, Users } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -719,6 +783,7 @@ import {
   adjustMemberPoints,
   createMember,
   deleteMember,
+  fetchMemberAnalytics,
   fetchMemberBirthdays,
   fetchMemberDetail,
   fetchMembers,
@@ -736,6 +801,7 @@ import {
   memberBirthdaySchema,
   memberPhoneSchema,
   type Member,
+  type MemberAnalytics,
   type MemberBirthdayEntry,
   type MemberDetail,
   type MemberPointLedgerReason,
@@ -1100,6 +1166,32 @@ async function removeTier(tier: MemberTier) {
     await loadMembers()
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
+  }
+}
+
+// 會員經營摘要（總會員數／本月新增／會員貢獻營收／分級人數分布），
+// 查看只需要 canCheckMembers（能進這個頁面就有）。
+const analyticsDialog = ref(false)
+const analyticsLoading = ref(false)
+const analytics = ref<MemberAnalytics | null>(null)
+const memberRevenueSharePercent = computed(() => {
+  if (!analytics.value || analytics.value.totalRevenue === 0) return 0
+  return Math.round((analytics.value.memberRevenue / analytics.value.totalRevenue) * 100)
+})
+function tierBarWidth(count: number): number {
+  if (!analytics.value) return 0
+  const max = Math.max(1, ...analytics.value.tierDistribution.map((entry) => entry.memberCount))
+  return Math.round((count / max) * 100)
+}
+async function openAnalyticsDialog() {
+  analyticsDialog.value = true
+  analyticsLoading.value = true
+  try {
+    analytics.value = await fetchMemberAnalytics()
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  } finally {
+    analyticsLoading.value = false
   }
 }
 </script>
