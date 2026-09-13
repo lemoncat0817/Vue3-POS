@@ -7,6 +7,7 @@ import {
   shiftSchema
 } from '@pos/contract'
 import { summarizeShiftCash } from '@pos/domain'
+import { recordAuditLog } from '../audit/record'
 import { cashMovements, orderRefunds, orderTenders, orders, shifts } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -244,6 +245,7 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
       variance: null
     }
     await db.insert(shifts).values(newShift)
+    await recordAuditLog(c, 'shift.open', `開班別「${newShift.id}」（開帳零用金 ${input.openingFloat} 元）`)
     return c.json(toShiftResponse(newShift, []), 201)
   })
   .openapi(getCurrentShiftRoute, async (c) => {
@@ -287,6 +289,11 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
       operator: input.operator,
       at: new Date().toISOString()
     })
+    await recordAuditLog(
+      c,
+      'shift.cashMovement',
+      `班別「${id}」現金${input.type === 'in' ? '存入' : '提領'} ${input.amount} 元（原因：${input.reason}）`
+    )
 
     const movements = await db
       .select()
@@ -351,6 +358,11 @@ export const shiftRoutes = new OpenAPIHono<AppEnv>()
         variance
       })
       .where(eq(shifts.id, id))
+    await recordAuditLog(
+      c,
+      'shift.close',
+      `收班「${id}」（實收現金 ${input.actualCash} 元，${variance === 0 ? '無差異' : `差異 ${variance} 元`}）`
+    )
 
     return c.json(toShiftResponse(closedShift, existing.movements), 200)
   })

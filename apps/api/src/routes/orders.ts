@@ -16,6 +16,7 @@ import {
   type OrderLineInput,
   type TenderInput
 } from '@pos/contract'
+import { recordAuditLog } from '../audit/record'
 import {
   DEFAULT_POINTS_PER_CURRENCY_UNIT,
   DEFAULT_POINTS_REDEMPTION_RATE,
@@ -1040,6 +1041,13 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       .update(orders)
       .set({ orderStatus, ...voidFields, ...invoiceStatusField })
       .where(eq(orders.orderId, orderId))
+    if (orderStatus === '已取消') {
+      await recordAuditLog(
+        c,
+        'order.void',
+        `作廢訂單「${orderId}」（原因：${reason ?? '未填寫'}）`
+      )
+    }
     const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).all()
     const tenders = await db
       .select()
@@ -1153,6 +1161,11 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
       at: new Date().toISOString()
     }
     await db.insert(orderRefunds).values(newRefund)
+    await recordAuditLog(
+      c,
+      'order.refund',
+      `訂單「${orderId}」退款 ${input.amount} 元（原因：${input.reason}）`
+    )
 
     // 這筆退款讓「已退款收回的點數」往上多了多少，扣掉這個差額——不是整筆
     // 訂單的點數，多次部分退款各自只收回自己那一段，見
@@ -1203,5 +1216,6 @@ export const orderRoutes = new OpenAPIHono<AppEnv>()
     await db.delete(orderTenders).where(eq(orderTenders.orderId, orderId))
     await db.delete(orderRefunds).where(eq(orderRefunds.orderId, orderId))
     await db.delete(orders).where(eq(orders.orderId, orderId))
+    await recordAuditLog(c, 'order.delete', `刪除訂單「${orderId}」`)
     return c.body(null, 204)
   })
