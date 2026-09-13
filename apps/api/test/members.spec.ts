@@ -680,6 +680,237 @@ describe('會員點數比例可由租戶自訂（PUT /api/tenant-settings）', (
   })
 })
 
+/**
+ * 點數到期規則：會員連續幾個月沒有任何點數異動就整包歸零（見
+ * db/member-points.ts 的 maybeExpireMemberPoints）。惰性判斷，只在真的
+ * 讀到會員（GET /api/members/:id、建立訂單時解析掛單會員）才會觸發。
+ */
+describe('會員點數到期規則', () => {
+  it('沒有設定到期規則時（預設 null），點數永遠不會被歸零', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2020-01-01T00:00:00.000Z'))
+      const db = createTestDb()
+      const { app, deviceToken, staffId, sessionToken } = await createTestAppWithDevice(db)
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      }
+      const member = await readJson(
+        await app.request('/api/members', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ name: '王小明', phone: '0921000001' })
+        })
+      )
+      await app.request(`/api/members/${member.id}/points-adjustments`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ delta: 100, reason: '活動加點', operator: '店長 - Lemon' })
+      })
+
+      vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z')) // 過了 6 年
+      // session 核發時有 12 小時的效期（見 auth/operator-session.ts），時間跳這麼
+      // 遠之後舊 session 早就過期，重新核發一份「當下」有效的 session 才能繼續呼叫。
+      const freshHeaders = { ...headers, 'X-Operator-Session': await issueTestSession(db, staffId) }
+      const detail = await readJson(
+        await app.request(`/api/members/${member.id}`, { headers: freshHeaders })
+      )
+      expect(detail.points).toBe(100)
+      expect(detail.pointsLedger).toHaveLength(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('設定到期規則後，超過期限沒有異動的點數會被歸零，並寫入 expiration 異動明細', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2024-01-01T00:00:00.000Z'))
+      const db = createTestDb()
+      const { app, deviceToken, staffId, sessionToken } = await createTestAppWithDevice(
+        db,
+        'test-device',
+        { tenantId: 'tenant-1' }
+      )
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      }
+      await app.request('/api/tenant-settings', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ pointsExpiryMonths: 6 })
+      })
+      const member = await readJson(
+        await app.request('/api/members', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ name: '王小明', phone: '0921000002' })
+        })
+      )
+      await app.request(`/api/members/${member.id}/points-adjustments`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ delta: 100, reason: '活動加點', operator: '店長 - Lemon' })
+      })
+
+      vi.setSystemTime(new Date('2024-08-01T00:00:00.000Z')) // 過了 7 個月
+      const freshHeaders = { ...headers, 'X-Operator-Session': await issueTestSession(db, staffId) }
+      const detail = await readJson(
+        await app.request(`/api/members/${member.id}`, { headers: freshHeaders })
+      )
+      expect(detail.points).toBe(0)
+      expect(detail.pointsLedger).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ delta: -100, reason: 'expiration', orderId: null }),
+          expect.objectContaining({ delta: 100, reason: 'manual_adjustment' })
+        ])
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('還沒超過期限時，點數維持原狀，不寫入 expiration 明細', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2024-01-01T00:00:00.000Z'))
+      const db = createTestDb()
+      const { app, deviceToken, staffId, sessionToken } = await createTestAppWithDevice(
+        db,
+        'test-device',
+        { tenantId: 'tenant-1' }
+      )
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      }
+      await app.request('/api/tenant-settings', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ pointsExpiryMonths: 6 })
+      })
+      const member = await readJson(
+        await app.request('/api/members', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ name: '王小明', phone: '0921000003' })
+        })
+      )
+      await app.request(`/api/members/${member.id}/points-adjustments`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ delta: 100, reason: '活動加點', operator: '店長 - Lemon' })
+      })
+
+      vi.setSystemTime(new Date('2024-03-01T00:00:00.000Z')) // 才過 2 個月
+      const freshHeaders = { ...headers, 'X-Operator-Session': await issueTestSession(db, staffId) }
+      const detail = await readJson(
+        await app.request(`/api/members/${member.id}`, { headers: freshHeaders })
+      )
+      expect(detail.points).toBe(100)
+      expect(detail.pointsLedger).toHaveLength(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('建立訂單解析掛單會員時也會先清空到期的舊點數，新訂單照當下（歸零後的）餘額重新起算', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2024-01-01T00:00:00.000Z'))
+      const db = createTestDb()
+      const { app, deviceToken, staffId, sessionToken } = await createTestAppWithDevice(
+        db,
+        'test-device',
+        { tenantId: 'tenant-1' }
+      )
+      await db.insert(invoiceTracks).values({
+        id: 'track-tenant-1',
+        tenantId: 'tenant-1',
+        trackCode: 'AA',
+        periodLabel: '測試期別',
+        rangeStart: 1,
+        rangeEnd: 50000000,
+        currentNumber: 0,
+        isActive: true
+      })
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      }
+      await app.request('/api/tenant-settings', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ pointsExpiryMonths: 6 })
+      })
+      const member = await readJson(
+        await app.request('/api/members', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ name: '王小明', phone: '0921000004' })
+        })
+      )
+      await app.request(`/api/members/${member.id}/points-adjustments`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ delta: 100, reason: '活動加點', operator: '店長 - Lemon' })
+      })
+
+      vi.setSystemTime(new Date('2024-08-01T00:00:00.000Z')) // 過了 7 個月
+      const freshHeaders = { ...headers, 'X-Operator-Session': await issueTestSession(db, staffId) }
+      const orderRes = await app.request('/api/orders', {
+        method: 'POST',
+        headers: freshHeaders,
+        body: JSON.stringify({
+          idempotencyKey: '01ARZ3NDEKTSV4RRFFQ69G5FB4',
+          businessDate: '20240801',
+          staff: '店長 - Lemon',
+          lines: [
+            {
+              name: '楊枝甘露2.0',
+              price: 100,
+              count: 1,
+              addList: '無添加配料',
+              addListPrice: 0,
+              freeDiscount: false,
+              quickDiscountId: null
+            }
+          ],
+          bagCount: 0,
+          tenders: [{ method: '現金', amount: 100 }],
+          appliedCoupon: { type: 'none' },
+          orderChannel: '外帶',
+          invoiceCarrier: { type: '無載具' },
+          memberId: member.id
+        })
+      })
+      expect(orderRes.status).toBe(201)
+
+      const detail = await readJson(
+        await app.request(`/api/members/${member.id}`, { headers: freshHeaders })
+      )
+      // 舊的 100 點先被到期歸零，這筆訂單應付 100 元、每 10 元 1 點 = 10 點，
+      // 不是「100（舊點數）+ 10（新賺）＝ 110」。
+      expect(detail.points).toBe(10)
+      expect(detail.pointsLedger).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ delta: 10, reason: 'order_accrual' }),
+          expect.objectContaining({ delta: -100, reason: 'expiration' }),
+          expect.objectContaining({ delta: 100, reason: 'manual_adjustment' })
+        ])
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
 /** 手動調整點數：客訴補償、活動加點等沒有對應訂單的異動。 */
 describe('POST /api/members/:id/points-adjustments（手動調整點數）', () => {
   it('沒有裝置憑證時拒絕，回傳 401', async () => {

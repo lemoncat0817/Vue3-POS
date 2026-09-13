@@ -73,7 +73,8 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
       tenantSettingsSchema.parse({
         businessDayStartHour: tenant?.businessDayStartHour ?? DEFAULT_BUSINESS_DAY_START_HOUR,
         pointsPerCurrencyUnit: tenant?.pointsPerCurrencyUnit ?? DEFAULT_POINTS_PER_CURRENCY_UNIT,
-        pointsRedemptionRate: tenant?.pointsRedemptionRate ?? DEFAULT_POINTS_REDEMPTION_RATE
+        pointsRedemptionRate: tenant?.pointsRedemptionRate ?? DEFAULT_POINTS_REDEMPTION_RATE,
+        pointsExpiryMonths: tenant?.pointsExpiryMonths ?? null
       }),
       200
     )
@@ -87,13 +88,22 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
       const check = await checkCapability(c, 'canSetBusinessHours')
       if (!check.ok) return c.json({ error: check.message }, check.status)
     }
-    if (input.pointsPerCurrencyUnit !== undefined || input.pointsRedemptionRate !== undefined) {
+    if (
+      input.pointsPerCurrencyUnit !== undefined ||
+      input.pointsRedemptionRate !== undefined ||
+      input.pointsExpiryMonths !== undefined
+    ) {
       const check = await checkCapability(c, 'canManageMembers')
       if (!check.ok) return c.json({ error: check.message }, check.status)
     }
 
     const tenant = await db.select().from(users).where(tenantFilter(users.id, tenantId)).get()
     if (!tenant) return c.json({ error: '找不到這個租戶（裝置尚未分配租戶）' }, 404)
+    // pointsExpiryMonths 是 nullable 欄位（null＝停用到期規則），不能用 `input.x ?? tenant.x`
+    // 這種寫法——沒送這個欄位是 undefined，明確想停用是 null，兩者意義不同，
+    // `??` 會把「明確傳 null」誤判成「沒送」而沿用舊值。
+    const nextPointsExpiryMonths =
+      input.pointsExpiryMonths !== undefined ? input.pointsExpiryMonths : tenant.pointsExpiryMonths
     await db
       .update(users)
       .set({
@@ -105,6 +115,9 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
         }),
         ...(input.pointsRedemptionRate !== undefined && {
           pointsRedemptionRate: input.pointsRedemptionRate
+        }),
+        ...(input.pointsExpiryMonths !== undefined && {
+          pointsExpiryMonths: input.pointsExpiryMonths
         })
       })
       .where(eq(users.id, tenant.id))
@@ -112,7 +125,8 @@ export const tenantSettingsRoutes = new OpenAPIHono<AppEnv>()
       tenantSettingsSchema.parse({
         businessDayStartHour: input.businessDayStartHour ?? tenant.businessDayStartHour,
         pointsPerCurrencyUnit: input.pointsPerCurrencyUnit ?? tenant.pointsPerCurrencyUnit,
-        pointsRedemptionRate: input.pointsRedemptionRate ?? tenant.pointsRedemptionRate
+        pointsRedemptionRate: input.pointsRedemptionRate ?? tenant.pointsRedemptionRate,
+        pointsExpiryMonths: nextPointsExpiryMonths
       }),
       200
     )

@@ -48,6 +48,10 @@ export const users = sqliteTable(
     pointsPerCurrencyUnit: integer('points_per_currency_unit').notNull().default(10),
     // 結帳折抵時，每多少點折抵 1 元，見 @pos/domain 的 DEFAULT_POINTS_REDEMPTION_RATE。
     pointsRedemptionRate: integer('points_redemption_rate').notNull().default(10),
+    // 點數到期規則：會員連續幾個月沒有任何點數異動（消費、折抵、手動調整）
+    // 就整包歸零。null 代表沒有啟用，點數永久有效（預設行為，向下相容既有
+    // 租戶）。惰性判斷、不用排程掃全表，見 db/member-points.ts 的說明。
+    pointsExpiryMonths: integer('points_expiry_months'),
     createdAt: text('created_at')
       .notNull()
       .default(sql`(current_timestamp)`)

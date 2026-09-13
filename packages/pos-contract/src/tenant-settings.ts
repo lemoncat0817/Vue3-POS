@@ -7,7 +7,9 @@ export const tenantSettingsSchema = z.object({
   /** 每消費多少元累加 1 點（正整數）。 */
   pointsPerCurrencyUnit: z.number().int().positive(),
   /** 結帳折抵時，每多少點折抵 1 元（正整數）。跟 pointsPerCurrencyUnit 是相反方向的兩個比例，各自設定。 */
-  pointsRedemptionRate: z.number().int().positive()
+  pointsRedemptionRate: z.number().int().positive(),
+  /** 會員連續幾個月沒有點數異動就整包歸零；null 代表沒有啟用，點數永久有效。 */
+  pointsExpiryMonths: z.number().int().positive().nullable()
 })
 export type TenantSettings = z.infer<typeof tenantSettingsSchema>
 

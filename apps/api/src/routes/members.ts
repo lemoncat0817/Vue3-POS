@@ -19,6 +19,7 @@ import {
 import { members, memberPointLedger, memberTiers, orders } from '../db/schema'
 import { checkCapability, requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { maybeExpireMemberPoints } from '../db/member-points'
 import type { AnyDb } from '../db/types'
 import { tenantFilter } from '../db/tenant-scope'
 import type { AppEnv } from '../types'
@@ -457,6 +458,10 @@ export const memberRoutes = new OpenAPIHono<AppEnv>()
       )
       .get()
     if (!member) return c.json({ error: '找不到這個會員' }, 404)
+
+    // 順便檢查點數到期（見 db/member-points.ts）；只在單筆詳細資料頁做，
+    // 不對上面的清單頁做，避免整批會員各自多查一次異動明細（N+1）。
+    member.points = await maybeExpireMemberPoints(db, tenantId, member)
 
     // 消費紀錄分頁：老會員訂單一多，整包吐回來畫面會整包渲染，改用跟
     // GET /api/members 一樣的 count(*) ＋ limit/offset 分頁。

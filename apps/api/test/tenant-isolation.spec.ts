@@ -346,7 +346,8 @@ describe('跨租戶隔離', () => {
     expect(settingsB).toEqual({
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 10,
-      pointsRedemptionRate: 10
+      pointsRedemptionRate: 10,
+      pointsExpiryMonths: null
     })
   })
 

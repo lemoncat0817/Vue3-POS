@@ -50,11 +50,12 @@ describe('GET /api/tenant-settings', () => {
     expect(await res.json()).toEqual({
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 10,
-      pointsRedemptionRate: 10
+      pointsRedemptionRate: 10,
+      pointsExpiryMonths: null
     })
   })
 
-  it('已分配租戶但尚未調整過時，回傳欄位預設值（換日時間 4 點、每 10 元 1 點）', async () => {
+  it('已分配租戶但尚未調整過時，回傳欄位預設值（換日時間 4 點、每 10 元 1 點、點數永久有效）', async () => {
     const { app, deviceToken } = await createTestAppWithDevice(createTestDb(), 'test-device', {
       tenantId: 'tenant-1'
     })
@@ -65,7 +66,8 @@ describe('GET /api/tenant-settings', () => {
     expect(await res.json()).toEqual({
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 10,
-      pointsRedemptionRate: 10
+      pointsRedemptionRate: 10,
+      pointsExpiryMonths: null
     })
   })
 })
@@ -100,7 +102,8 @@ describe('PUT /api/tenant-settings', () => {
     expect(await readJson(updateRes)).toEqual({
       businessDayStartHour: 18,
       pointsPerCurrencyUnit: 10,
-      pointsRedemptionRate: 10
+      pointsRedemptionRate: 10,
+      pointsExpiryMonths: null
     })
 
     const getRes = await app.request('/api/tenant-settings', {
@@ -109,7 +112,8 @@ describe('PUT /api/tenant-settings', () => {
     expect(await readJson(getRes)).toEqual({
       businessDayStartHour: 18,
       pointsPerCurrencyUnit: 10,
-      pointsRedemptionRate: 10
+      pointsRedemptionRate: 10,
+      pointsExpiryMonths: null
     })
   })
 
@@ -132,7 +136,8 @@ describe('PUT /api/tenant-settings', () => {
     expect(await readJson(res)).toEqual({
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 5,
-      pointsRedemptionRate: 10
+      pointsRedemptionRate: 10,
+      pointsExpiryMonths: null
     })
   })
 
@@ -155,8 +160,66 @@ describe('PUT /api/tenant-settings', () => {
     expect(await readJson(res)).toEqual({
       businessDayStartHour: 4,
       pointsPerCurrencyUnit: 10,
-      pointsRedemptionRate: 20
+      pointsRedemptionRate: 20,
+      pointsExpiryMonths: null
     })
+  })
+
+  it('可以設定點數到期規則（幾個月沒有異動整包歸零），也可以再設回 null 停用', async () => {
+    const { app, deviceToken, sessionToken } = await createTestAppWithDevice(
+      createTestDb(),
+      'test-device',
+      { tenantId: 'tenant-1' }
+    )
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Device-Token': deviceToken,
+      'X-Operator-Session': sessionToken
+    }
+    const enableRes = await app.request('/api/tenant-settings', {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ pointsExpiryMonths: 6 })
+    })
+    expect(enableRes.status).toBe(200)
+    expect(await readJson(enableRes)).toEqual({
+      businessDayStartHour: 4,
+      pointsPerCurrencyUnit: 10,
+      pointsRedemptionRate: 10,
+      pointsExpiryMonths: 6
+    })
+
+    // 明確傳 null 是「停用」，跟沒送這個欄位（維持原值）意義不同，兩者都要能正常運作。
+    const disableRes = await app.request('/api/tenant-settings', {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ pointsExpiryMonths: null })
+    })
+    expect(disableRes.status).toBe(200)
+    expect(await readJson(disableRes)).toEqual({
+      businessDayStartHour: 4,
+      pointsPerCurrencyUnit: 10,
+      pointsRedemptionRate: 10,
+      pointsExpiryMonths: null
+    })
+  })
+
+  it('沒有 canManageMembers 時，改點數到期規則會被擋下，回傳 403', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      tenantId: 'tenant-1'
+    })
+    const { sessionToken } = await seedStaffWithCapabilities(db, ['canSetBusinessHours'])
+    const res = await app.request('/api/tenant-settings', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ pointsExpiryMonths: 12 })
+    })
+    expect(res.status).toBe(403)
   })
 
   it('換日時間超出 0～23 範圍時拒絕，回傳 400', async () => {

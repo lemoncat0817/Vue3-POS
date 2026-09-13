@@ -544,6 +544,31 @@
               class="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-surface-100 disabled:text-surface-400 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:disabled:bg-surface-900 dark:disabled:text-surface-600"
             />
           </label>
+          <div class="border-t border-surface-200 pt-3 dark:border-surface-800">
+            <label class="flex items-center gap-2 text-sm font-bold text-surface-700 dark:text-surface-300">
+              <input
+                type="checkbox"
+                :checked="pointsExpiryEnabled"
+                :disabled="pointsSettingSaving || pointsSettingLoading"
+                class="h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500 dark:border-surface-700"
+                @change="onTogglePointsExpiry(($event.target as HTMLInputElement).checked)"
+              />
+              啟用點數到期規則
+            </label>
+            <p class="mt-1 text-xs text-surface-500 dark:text-surface-400">
+              會員連續幾個月完全沒有點數異動（消費累點、折抵、手動調整）就整包歸零，不是逐筆到期。
+            </p>
+            <input
+              v-if="pointsExpiryEnabled"
+              v-model.number="pointsExpiryMonthsInput"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="幾個月沒有異動就歸零"
+              :disabled="pointsSettingSaving || pointsSettingLoading"
+              class="mt-2 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-surface-100 disabled:text-surface-400 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:disabled:bg-surface-900 dark:disabled:text-surface-600"
+            />
+          </div>
           <div class="mt-2 flex justify-end gap-2">
             <button
               type="button"
@@ -560,7 +585,9 @@
                 !Number.isInteger(pointsPerCurrencyUnitInput) ||
                 pointsPerCurrencyUnitInput < 1 ||
                 !Number.isInteger(pointsRedemptionRateInput) ||
-                pointsRedemptionRateInput < 1
+                pointsRedemptionRateInput < 1 ||
+                (pointsExpiryEnabled &&
+                  (!Number.isInteger(pointsExpiryMonthsInput) || (pointsExpiryMonthsInput ?? 0) < 1))
               "
               class="pos-btn pos-btn-primary px-4 py-2 text-sm font-bold"
               @click="onSavePointsSetting"
@@ -1009,7 +1036,8 @@ const POINTS_LEDGER_REASON_LABELS: Record<MemberPointLedgerReason, string> = {
   restore_award: '撤銷作廢退還',
   redemption: '結帳折抵',
   redemption_refund: '作廢退還折抵',
-  manual_adjustment: '手動調整'
+  manual_adjustment: '手動調整',
+  expiration: '點數到期歸零'
 }
 function pointsLedgerReasonLabel(reason: MemberPointLedgerReason): string {
   return POINTS_LEDGER_REASON_LABELS[reason]
@@ -1054,8 +1082,17 @@ async function onSubmitAdjustPoints(values: Record<string, unknown>) {
 const pointsSettingDialog = ref(false)
 const pointsPerCurrencyUnitInput = ref(10)
 const pointsRedemptionRateInput = ref(10)
+// 到期規則用「啟用開關 + 月數」兩個欄位表達一個 nullable 數字：關閉開關存
+// 的是 null（停用），打開開關卻沒填月數不能送出（見上面儲存按鈕的 disabled 判斷）。
+const pointsExpiryEnabled = ref(false)
+const pointsExpiryMonthsInput = ref<number | null>(null)
 const pointsSettingLoading = ref(false)
 const pointsSettingSaving = ref(false)
+function onTogglePointsExpiry(checked: boolean) {
+  pointsExpiryEnabled.value = checked
+  if (!checked) pointsExpiryMonthsInput.value = null
+  else if (pointsExpiryMonthsInput.value === null) pointsExpiryMonthsInput.value = 6
+}
 async function openPointsSettingDialog() {
   if (!canManage()) return
   pointsSettingDialog.value = true
@@ -1064,6 +1101,8 @@ async function openPointsSettingDialog() {
     const settings = await fetchTenantSettings()
     pointsPerCurrencyUnitInput.value = settings.pointsPerCurrencyUnit
     pointsRedemptionRateInput.value = settings.pointsRedemptionRate
+    pointsExpiryEnabled.value = settings.pointsExpiryMonths !== null
+    pointsExpiryMonthsInput.value = settings.pointsExpiryMonths
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   } finally {
@@ -1075,10 +1114,13 @@ async function onSavePointsSetting() {
   try {
     const settings = await updateTenantSettings({
       pointsPerCurrencyUnit: pointsPerCurrencyUnitInput.value,
-      pointsRedemptionRate: pointsRedemptionRateInput.value
+      pointsRedemptionRate: pointsRedemptionRateInput.value,
+      pointsExpiryMonths: pointsExpiryEnabled.value ? pointsExpiryMonthsInput.value : null
     })
     pointsPerCurrencyUnitInput.value = settings.pointsPerCurrencyUnit
     pointsRedemptionRateInput.value = settings.pointsRedemptionRate
+    pointsExpiryEnabled.value = settings.pointsExpiryMonths !== null
+    pointsExpiryMonthsInput.value = settings.pointsExpiryMonths
     pointsSettingDialog.value = false
     showToast('已更新點數設定', 'success')
   } catch (err) {

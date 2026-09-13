@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `points_expiry_months` integer;

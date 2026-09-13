@@ -42,6 +42,7 @@ import {
 } from '../db/schema'
 import { checkCapability, requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
+import { maybeExpireMemberPoints } from '../db/member-points'
 import { tenantFilter } from '../db/tenant-scope'
 import type { AnyDb } from '../db/types'
 import type { AppEnv } from '../types'
@@ -444,7 +445,12 @@ async function resolveMemberId(
     .from(members)
     .where(and(eq(members.id, memberId), tenantFilter(members.tenantId, tenantId)))
     .get()
-  return member ? member.id : null
+  if (!member) return null
+  // 順便檢查點數到期——這個查詢反正已經把會員整列讀出來了，不用再多一次
+  // 查詢；沒有啟用到期規則或點數本來就是 0 會在 maybeExpireMemberPoints
+  // 內部提早 return，不會多付查詢代價。
+  await maybeExpireMemberPoints(db, tenantId, member)
+  return member.id
 }
 
 /** 租戶自訂的點數比例（消費多少元累加 1 點），業主可在會員管理頁調整，見 routes/tenant-settings.ts。 */

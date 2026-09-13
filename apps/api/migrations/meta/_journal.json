@@ -288,6 +288,13 @@
       "when": 1789277699117,
       "tag": "0040_add_member_tags_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1789278602573,
+      "tag": "0041_add_points_expiry_months",
+      "breakpoints": true
     }
   ]
 }
