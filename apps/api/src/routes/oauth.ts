@@ -85,7 +85,11 @@ export function createOAuthRoutes(config: OAuthConfig) {
     googleAuth({
       client_id: config.googleClientId,
       client_secret: config.googleClientSecret,
-      scope: ['openid', 'email', 'profile']
+      scope: ['openid', 'email', 'profile'],
+      // 沒有這個參數的話，瀏覽器已有 Google session 時會直接沿用同一個帳號、
+      // 不會出現選擇帳號畫面——這台裝置想換成別的 Google 帳號（例如換租戶）
+      // 就永遠點不到，強制每次都跳帳號選擇畫面。
+      prompt: 'select_account'
     }),
     async (c) => {
       const profile = c.get('user-google')

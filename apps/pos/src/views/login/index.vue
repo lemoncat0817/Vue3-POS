@@ -140,47 +140,57 @@
           </button>
         </form>
 
-        <!-- 換裝置／忘記 PIN 底層都是同一個 OAuth 動作（見 api/oauth.ts：登入
-             一次就同時核發新裝置憑證與 web session），沒必要各自攤開兩條
-             Google／GitHub 連結——收在同一個次要入口底下，預設只留一行，
-             點開才看到完整選項，PIN 登入才是這個畫面該優先看到的內容。 -->
+        <!-- 次要入口收在這裡、預設收合，PIN 登入才是這個畫面該優先看到的
+             內容。重點是收合狀態只能拿掉「說明文字」，不能拿掉任何一個
+             出口──webSessionToken 存在只代表多一條「直接重設」的捷徑，
+             換裝置／換帳號的 OAuth 連結永遠要在展開後留著，不然像這次
+             一樣，登過一次後 12 小時內想換成別的 Google 帳號就沒路可走。 -->
         <div class="mt-6 border-t border-surface-200 pt-4 dark:border-surface-700">
-          <!-- 有 webSessionToken 代表最近登入過、還在 12 小時效期內，可以直接開
-               重設面板，不必重新走一次 OAuth。 -->
           <button
-            v-if="deviceStore.webSessionToken"
-            type="button"
-            class="w-full text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
-            @click="openResetPin"
-          >
-            忘記 PIN？用管理者身分重設
-          </button>
-          <button
-            v-else-if="!showDeviceHelp"
+            v-if="!showDeviceHelp"
             type="button"
             class="w-full text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
             @click="showDeviceHelp = true"
           >
-            忘記 PIN 或需要換裝置？
+            忘記 PIN 或需要換裝置／換帳號？
           </button>
-          <div v-else class="flex flex-col gap-2">
-            <p class="text-center text-xs text-surface-400 dark:text-surface-500">
-              用管理者的 Google／GitHub 帳號重新登入，即可換裝置或重設任一員工的 PIN。
-            </p>
-            <div class="flex gap-2">
-              <a
-                :href="googleLoginUrl"
-                class="flex-1 rounded-lg border border-surface-300 py-2 text-center text-xs font-bold text-surface-600 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
-              >
-                Google 登入
-              </a>
-              <a
-                :href="githubLoginUrl"
-                class="flex-1 rounded-lg border border-surface-300 py-2 text-center text-xs font-bold text-surface-600 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
-              >
-                GitHub 登入
-              </a>
+          <div v-else class="flex flex-col gap-3">
+            <!-- 有 webSessionToken 代表最近登入過、還在 12 小時效期內，多一條
+                 不必重新走 OAuth 的捷徑；沒有的話就只有下面的 OAuth 連結。 -->
+            <button
+              v-if="deviceStore.webSessionToken"
+              type="button"
+              class="w-full rounded-lg border border-surface-300 py-2 text-center text-xs font-bold text-surface-600 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
+              @click="openResetPin"
+            >
+              忘記 PIN？直接重設（沿用目前的管理者登入）
+            </button>
+            <div class="flex flex-col gap-1">
+              <p class="text-center text-xs text-surface-400 dark:text-surface-500">
+                換一台裝置，或改用別的 Google／GitHub 帳號：
+              </p>
+              <div class="flex gap-2">
+                <a
+                  :href="googleLoginUrl"
+                  class="flex-1 rounded-lg border border-surface-300 py-2 text-center text-xs font-bold text-surface-600 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
+                >
+                  Google 登入
+                </a>
+                <a
+                  :href="githubLoginUrl"
+                  class="flex-1 rounded-lg border border-surface-300 py-2 text-center text-xs font-bold text-surface-600 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800"
+                >
+                  GitHub 登入
+                </a>
+              </div>
             </div>
+            <button
+              type="button"
+              class="text-center text-xs font-bold text-surface-400 hover:text-surface-600 hover:underline dark:hover:text-surface-200"
+              @click="showDeviceHelp = false"
+            >
+              收合
+            </button>
           </div>
         </div>
       </template>
