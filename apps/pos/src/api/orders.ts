@@ -139,8 +139,10 @@ export function buildCreateOrderRequest(params: {
   memberId?: string | null
   /** 這筆訂單要用多少點數折抵，沒有掛會員或不折抵就不帶。 */
   pointsToRedeem?: number
-  /** 內用桌號，純紀錄用途。 */
+  /** 內用桌號；租戶開啟自動連動桌況時，伺服端會拿這個字串去比對桌況管理的桌位。 */
   tableNumber?: string | null
+  /** 內用目前的用餐人數，選填，有對應桌位時會一併寫回桌況管理。 */
+  guestCount?: number | null
   /** 訂單備註，純紀錄用途。 */
   note?: string | null
 }): CreateOrderRequest {
@@ -165,6 +167,7 @@ export function buildCreateOrderRequest(params: {
     ...(params.memberId ? { memberId: params.memberId } : {}),
     ...(params.memberId && params.pointsToRedeem ? { pointsToRedeem: params.pointsToRedeem } : {}),
     ...(params.tableNumber ? { tableNumber: params.tableNumber } : {}),
+    ...(params.guestCount ? { guestCount: params.guestCount } : {}),
     ...(params.note ? { note: params.note } : {})
   })
 }

@@ -63,3 +63,15 @@ export const formatTimeOnly = (value: string): string => {
   const format = (num: number) => (num < 10 ? `0${num}` : num)
   return `${format(date.getHours())}:${format(date.getMinutes())}`
 }
+
+// nowMs 由呼叫端傳入（而非內部呼叫 Date.now()），方便用同一個 tick 計算多張桌卡，也方便測試。
+export const formatElapsedMinutes = (occupiedAtIso: string, nowMs: number): string => {
+  const from = new Date(occupiedAtIso).getTime()
+  if (Number.isNaN(from)) return ''
+  const minutes = Math.max(0, Math.floor((nowMs - from) / 60_000))
+  if (minutes < 1) return '剛入座'
+  if (minutes < 60) return `已入座 ${minutes} 分鐘`
+  const hours = Math.floor(minutes / 60)
+  const remainder = minutes % 60
+  return remainder === 0 ? `已入座 ${hours} 小時` : `已入座 ${hours} 小時 ${remainder} 分`
+}

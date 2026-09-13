@@ -15,7 +15,30 @@
           </p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-4">
+          <div
+            class="flex items-center gap-2 rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-800/40 px-3 py-2"
+          >
+            <div>
+              <label class="block text-xs font-bold text-surface-900 dark:text-surface-100"
+                >結帳自動標記使用中</label
+              >
+              <span class="text-[11px] text-surface-400"
+                >內用結帳時，找到對應桌號就自動改為使用中</span
+              >
+            </div>
+            <SwitchRoot
+              :model-value="autoOccupyOnCheckout"
+              :disabled="!canManage"
+              class="relative h-6 w-11 shrink-0 rounded-full bg-surface-300 dark:bg-surface-700 data-[state=checked]:bg-primary-500 disabled:opacity-40"
+              @update:model-value="toggleAutoOccupy"
+            >
+              <SwitchThumb
+                class="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]"
+              />
+            </SwitchRoot>
+          </div>
+
           <button
             type="button"
             class="flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2 text-xs lg:text-sm font-bold text-white transition-all hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/25 select-none"
@@ -84,6 +107,19 @@
               >
             </div>
             <span class="text-xs opacity-80">{{ table.seats }} 人座</span>
+            <span v-if="table.status === 'occupied' && table.occupiedAt" class="text-xs opacity-80">
+              {{ table.guestCount ? `${table.guestCount} 位客人・` : '' }}{{
+                formatElapsedMinutes(table.occupiedAt, now)
+              }}
+            </span>
+            <span
+              v-if="table.status === 'reserved' && (table.reservationTime || table.reservationPhone)"
+              class="text-xs opacity-80"
+            >
+              {{ table.reservationTime ? formatDateTime(table.reservationTime) : '' }}{{
+                table.reservationTime && table.reservationPhone ? '・' : ''
+              }}{{ table.reservationPhone ?? '' }}
+            </span>
             <span v-if="table.note" class="mt-1 line-clamp-2 text-xs opacity-80">{{
               table.note
             }}</span>
@@ -146,6 +182,41 @@
               {{ option.label }}
             </button>
           </div>
+          <label
+            v-if="pendingStatus === 'occupied'"
+            class="flex flex-col gap-1 text-sm text-surface-600 dark:text-surface-400"
+          >
+            用餐人數
+            <input
+              v-model.number="pendingGuestCount"
+              type="number"
+              min="1"
+              :disabled="!canManage"
+              placeholder="選填"
+              class="rounded-lg border border-surface-300 bg-white p-2 text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
+            />
+          </label>
+          <template v-if="pendingStatus === 'reserved'">
+            <label class="flex flex-col gap-1 text-sm text-surface-600 dark:text-surface-400">
+              聯絡電話
+              <input
+                v-model="pendingReservationPhone"
+                type="tel"
+                :disabled="!canManage"
+                placeholder="例如：0912345678"
+                class="rounded-lg border border-surface-300 bg-white p-2 text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
+              />
+            </label>
+            <label class="flex flex-col gap-1 text-sm text-surface-600 dark:text-surface-400">
+              預約時間
+              <input
+                v-model="pendingReservationTimeLocal"
+                type="datetime-local"
+                :disabled="!canManage"
+                class="rounded-lg border border-surface-300 bg-white p-2 text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
+              />
+            </label>
+          </template>
           <label class="flex flex-col gap-1 text-sm text-surface-600 dark:text-surface-400">
             備註
             <textarea
@@ -191,10 +262,11 @@
 
 <script setup lang="ts">
 import { Plus } from 'lucide-vue-next'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { z } from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form } from 'vee-validate'
+import { SwitchRoot, SwitchThumb } from 'reka-ui'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import FormField from '@/components/ui/FormField.vue'
 import { useLoginStore } from '@/stores/login'
@@ -203,7 +275,9 @@ import { apiErrorMessage } from '@/api/http'
 import { confirm } from '@/composables/useConfirm'
 import { showToast } from '@/composables/useToast'
 import { createTable, deleteTable, fetchTables, updateTableStatus } from '@/api/tables'
+import { fetchTenantSettings, updateTenantSettings } from '@/api/tenant-settings'
 import { tableStatusCardClass, tableStatusLabel, tableStatusOptions } from '@/utils/tableStatus'
+import { formatDateTime, formatElapsedMinutes } from '@/utils/time'
 import type { DiningTable, TableStatus } from '@pos/contract'
 
 const loginStore = useLoginStore()
@@ -217,6 +291,38 @@ onMounted(async () => {
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
   }
+})
+
+const autoOccupyOnCheckout = ref(true)
+onMounted(async () => {
+  try {
+    autoOccupyOnCheckout.value = (await fetchTenantSettings()).autoOccupyTableOnCheckout
+  } catch (err) {
+    showToast(apiErrorMessage(err), 'error')
+  }
+})
+async function toggleAutoOccupy(value: boolean) {
+  if (!canManage.value) return
+  const previous = autoOccupyOnCheckout.value
+  autoOccupyOnCheckout.value = value
+  try {
+    await updateTenantSettings({ autoOccupyTableOnCheckout: value })
+  } catch (err) {
+    autoOccupyOnCheckout.value = previous
+    showToast(apiErrorMessage(err), 'error')
+  }
+}
+
+// 用來算「已入座多久」，每分鐘 tick 一次即可，不需要秒級精度。
+const now = ref(Date.now())
+let nowTimer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  nowTimer = setInterval(() => {
+    now.value = Date.now()
+  }, 60_000)
+})
+onUnmounted(() => {
+  clearInterval(nowTimer)
 })
 
 const statusOptions = tableStatusOptions
@@ -256,10 +362,31 @@ const statusDialog = ref(false)
 const currentTable = ref<DiningTable | null>(null)
 const pendingStatus = ref<TableStatus>('empty')
 const pendingNote = ref('')
+const pendingGuestCount = ref<number | null>(null)
+const pendingReservationPhone = ref('')
+const pendingReservationTimeLocal = ref('')
+
+// <input type="datetime-local"> 用的是不帶時區的本地時間字串，跟伺服端存的 ISO UTC 互轉。
+function isoToDatetimeLocal(iso: string | null): string {
+  if (!iso) return ''
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+function datetimeLocalToIso(value: string): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date.toISOString()
+}
+
 function openStatusDialog(table: DiningTable) {
   currentTable.value = table
   pendingStatus.value = table.status
   pendingNote.value = table.note
+  pendingGuestCount.value = table.guestCount
+  pendingReservationPhone.value = table.reservationPhone ?? ''
+  pendingReservationTimeLocal.value = isoToDatetimeLocal(table.reservationTime)
   statusDialog.value = true
 }
 async function saveStatus() {
@@ -267,13 +394,13 @@ async function saveStatus() {
   try {
     const updated = await updateTableStatus(currentTable.value.id, {
       status: pendingStatus.value,
-      note: pendingNote.value
+      note: pendingNote.value,
+      guestCount: pendingGuestCount.value,
+      reservationPhone: pendingReservationPhone.value.trim() || null,
+      reservationTime: datetimeLocalToIso(pendingReservationTimeLocal.value)
     })
     const target = tables.value.find((item) => item.id === updated.id)
-    if (target) {
-      target.status = updated.status
-      target.note = updated.note
-    }
+    if (target) Object.assign(target, updated)
     statusDialog.value = false
     showToast('保存成功', 'success')
   } catch (err) {

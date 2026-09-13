@@ -123,6 +123,15 @@
               內用
             </button>
             <TableNumberCombobox v-if="orderChannel === '內用'" v-model="tableNumberInput" />
+            <input
+              v-if="orderChannel === '內用'"
+              v-model.number="guestCountInput"
+              type="number"
+              min="1"
+              placeholder="人數"
+              title="用餐人數（選填）"
+              class="w-14 rounded-md border border-surface-300 bg-white px-1.5 py-0.5 text-xs font-bold text-surface-700 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 ml-1"
+            />
           </div>
         </div>
 
@@ -785,6 +794,7 @@ const finalPayablePrice = computed(() =>
 
 // 純文字輸入，故意不跟桌況資料綁外鍵（見 dining_tables 說明），只在選了「內用」時顯示。
 const tableNumberInput = ref('')
+const guestCountInput = ref<number | null>(null)
 
 // 訂單備註（外送地址、取件時間、客製化需求等），跟 invoiceCarrier 一樣屬於這筆
 // 交易的個別需求，送單後重置；掛單／取單時隨 ParkedOrdersPanel 一併保存與還原。
@@ -1134,6 +1144,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
       memberId: toPayOrder.memberId ?? null,
       pointsToRedeem: toPayOrder.pointsRedeemed,
       tableNumber: toPayOrder.tableNumber ?? null,
+      guestCount: orderChannel.value === '內用' ? guestCountInput.value : null,
       note: toPayOrder.note ?? null
     })
   } catch (err) {
@@ -1172,6 +1183,7 @@ const submitPayment = async (tenders: TenderDraft[]) => {
   currentOrderMember.value = null
   pointsToRedeem.value = 0
   tableNumberInput.value = ''
+  guestCountInput.value = null
   orderNote.value = ''
 
   // 上面已經彈過「訂單送出成功」，抑制期間清空購物車，避免緊接著又疊一次
