@@ -304,7 +304,11 @@
         </Form>
       </ModalDialog>
 
-      <ModalDialog v-model:open="detailDialog" :title="`${detail?.name ?? ''} 的消費紀錄`">
+      <ModalDialog
+        v-model:open="detailDialog"
+        :title="`${detail?.name ?? ''} 的消費紀錄`"
+        size="xl"
+      >
         <div
           class="mb-3 flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-800/60 px-3.5 py-2.5"
         >
