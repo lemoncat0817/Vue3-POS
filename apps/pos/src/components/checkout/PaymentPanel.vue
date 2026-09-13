@@ -88,10 +88,12 @@
             分擔金額
             <input
               v-model.number="draftAmount"
-              type="number"
+              type="text"
+              inputmode="numeric"
               min="0"
               :max="remaining"
               class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              @focus="activeField = 'amount'"
             />
           </label>
           <label
@@ -101,9 +103,11 @@
             實收金額（選填，用來算找零）
             <input
               v-model.number="draftReceivedAmount"
-              type="number"
+              type="text"
+              inputmode="numeric"
               min="0"
               class="mt-1 w-full rounded-lg border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-1.5 text-sm text-surface-900 dark:text-surface-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              @focus="activeField = 'received'"
             />
           </label>
           <button
@@ -131,10 +135,23 @@
                 ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-400'
                 : 'border-surface-300 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800'
             "
-            @click="draftReceivedAmount = amount"
+            @click="selectQuickCashAmount(amount)"
           >
             {{ amount === draftAmount ? `剛好 $${amount}` : `$${amount}` }}
           </button>
+        </div>
+
+        <!-- 客製數字鍵盤：現場結帳多半靠觸控，大按鈕比叫出系統鍵盤更快、也不會被
+             系統鍵盤擠壓版面；點哪個欄位就編輯哪個欄位，跟上面的輸入框共用同一個值。 -->
+        <div class="pt-1">
+          <p class="mb-1 text-xs font-bold text-surface-400 dark:text-surface-500">
+            正在輸入：{{ activeField === 'amount' ? '分擔金額' : '實收金額' }}
+          </p>
+          <NumericKeypad
+            :model-value="activeAmount"
+            :max="activeField === 'amount' ? remaining : undefined"
+            @update:model-value="onKeypadInput"
+          />
         </div>
       </div>
 
@@ -163,6 +180,7 @@
 // 支援多筆支付方式分擔付款；元件僅負責蒐集合法 tenders，實際送單由呼叫端處理
 import { computed, ref, watch } from 'vue'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
+import NumericKeypad from '@/components/ui/NumericKeypad.vue'
 import type { PaymentMethod } from '@/types'
 
 export interface TenderDraft {
@@ -186,6 +204,19 @@ const tenders = ref<TenderDraft[]>([])
 const draftMethod = ref<PaymentMethod>()
 const draftAmount = ref(0)
 const draftReceivedAmount = ref<number | undefined>(undefined)
+// 數字鍵盤跟上面兩個輸入框共用同一個值，靠這個記錄現在是在編輯哪一個。
+const activeField = ref<'amount' | 'received'>('amount')
+const activeAmount = computed(() =>
+  activeField.value === 'amount' ? draftAmount.value : (draftReceivedAmount.value ?? 0)
+)
+function onKeypadInput(value: number) {
+  if (activeField.value === 'amount') draftAmount.value = value
+  else draftReceivedAmount.value = value
+}
+function selectQuickCashAmount(amount: number) {
+  draftReceivedAmount.value = amount
+  activeField.value = 'received'
+}
 
 const tenderedAmount = computed(() => tenders.value.reduce((sum, tender) => sum + tender.amount, 0))
 const remaining = computed(() => Math.max(0, props.dueAmount - tenderedAmount.value))
@@ -226,6 +257,7 @@ function selectDraftMethod(method: PaymentMethod) {
   draftMethod.value = method
   draftAmount.value = remaining.value
   draftReceivedAmount.value = undefined
+  activeField.value = 'amount'
 }
 
 function addDraftTender() {
@@ -238,6 +270,7 @@ function addDraftTender() {
   draftMethod.value = undefined
   draftAmount.value = 0
   draftReceivedAmount.value = undefined
+  activeField.value = 'amount'
 }
 
 function removeTender(index: number) {
@@ -257,6 +290,7 @@ watch(
     draftMethod.value = undefined
     draftAmount.value = props.dueAmount
     draftReceivedAmount.value = undefined
+    activeField.value = 'amount'
   }
 )
 </script>
