@@ -465,12 +465,12 @@ describe('跨租戶隔離', () => {
     await tenantA.app.request('/api/audit-logs', {
       method: 'POST',
       headers: authHeaders(tenantA),
-      body: JSON.stringify({ action: 'open_cash_drawer', operator: 'A 的人', detail: '開錢箱' })
+      body: JSON.stringify({ action: 'cashier_open', operator: 'A 的人', detail: '開錢箱' })
     })
 
     const listB = await readJson((
-      await tenantB.app.request('/api/audit-logs', { headers: { 'X-Device-Token': tenantB.deviceToken } })
+      await tenantB.app.request('/api/audit-logs', { headers: authHeaders(tenantB) })
     ))
-    expect(listB).toEqual([])
+    expect(listB.items).toEqual([])
   })
 })
