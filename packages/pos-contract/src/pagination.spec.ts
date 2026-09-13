@@ -24,6 +24,16 @@ describe('pagination contracts', () => {
     expect(paginationQuerySchema.safeParse({ pageSize: 100 }).success).toBe(true)
   })
 
+  it('paginationMetaSchema 驗證分頁中繼資訊', () => {
+    const meta = {
+      page: 1,
+      pageSize: 20,
+      totalCount: 100,
+      totalPages: 5
+    }
+    expect(paginationMetaSchema.safeParse(meta).success).toBe(true)
+  })
+
   it('createPaginatedResponseSchema 組出符合結構的分頁回應', () => {
     const itemSchema = z.object({ id: z.number(), title: z.string() })
     const responseSchema = createPaginatedResponseSchema(itemSchema)

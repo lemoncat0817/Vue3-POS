@@ -25,9 +25,16 @@ describe('member tier contracts', () => {
     ).toBe(false)
   })
 
-  it('createMemberTierRequestSchema 拒絕空白名稱或負數門檻', () => {
+  it('createMemberTierRequestSchema 與 updateMemberTierRequestSchema 拒絕空白名稱或負數門檻', () => {
     expect(
       createMemberTierRequestSchema.safeParse({
+        name: '白金會員',
+        minSpend: 10000
+      }).success
+    ).toBe(true)
+
+    expect(
+      updateMemberTierRequestSchema.safeParse({
         name: '白金會員',
         minSpend: 10000
       }).success
