@@ -89,6 +89,74 @@ describe('POST /api/audit-logs', () => {
   })
 })
 
+describe('POST /api/audit-logs（report.export）', () => {
+  it('有 canCheckDataAnalysis 時允許，回傳 201', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false
+    })
+    const roleId = await seedRole(db, { capabilities: ['canCheckDataAnalysis'] })
+    const staffId = crypto.randomUUID()
+    await db.insert(staff).values({
+      id: staffId,
+      tenantId: null,
+      name: '店長',
+      jobTitle: '店長',
+      account: `report-export-${staffId}`,
+      roleId,
+      pinHash: 'test-hash',
+      pinSalt: 'test-salt'
+    })
+    const sessionToken = await issueTestSession(db, staffId)
+
+    const res = await app.request('/api/audit-logs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({
+        action: 'report.export',
+        operator: '店長 - Lemon',
+        detail: '匯出營運數據分析報表（統計期間：2026-01-01 ~ 2026-01-31）'
+      })
+    })
+    expect(res.status).toBe(201)
+  })
+
+  it('沒有 canCheckDataAnalysis 時拒絕，回傳 403（跟 cashier_open 各自檢查各自所需的權限）', async () => {
+    const db = createTestDb()
+    const { app, deviceToken } = await createTestAppWithDevice(db, 'test-device', {
+      seedStaff: false
+    })
+    const roleId = await seedRole(db, { capabilities: ['canOpenCashier'] })
+    const staffId = crypto.randomUUID()
+    await db.insert(staff).values({
+      id: staffId,
+      tenantId: null,
+      name: '工讀生',
+      jobTitle: '工讀生',
+      account: `no-analytics-${staffId}`,
+      roleId,
+      pinHash: 'test-hash',
+      pinSalt: 'test-salt'
+    })
+    const sessionToken = await issueTestSession(db, staffId)
+
+    const res = await app.request('/api/audit-logs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Token': deviceToken,
+        'X-Operator-Session': sessionToken
+      },
+      body: JSON.stringify({ action: 'report.export', operator: '工讀生', detail: '匯出報表' })
+    })
+    expect(res.status).toBe(403)
+  })
+})
+
 describe('GET /api/audit-logs', () => {
   it('沒有裝置憑證時拒絕，回傳 401', async () => {
     const app = createTestApp(createTestDb())

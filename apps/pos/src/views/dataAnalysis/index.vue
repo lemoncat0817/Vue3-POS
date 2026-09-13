@@ -447,16 +447,20 @@ import {
   fromNativeDate
 } from '@/utils/time'
 import { fetchSalesReport } from '@/api/reports'
+import { createAuditLog } from '@/api/audit-logs'
 import { useOrderStore } from '@/stores/order'
+import { useLoginStore } from '@/stores/login'
 import ModalDialog from '@/components/ui/ModalDialog.vue'
 import TrendBadge from '@/components/ui/TrendBadge.vue'
 import RankedBarChart from '@/components/ui/RankedBarChart.vue'
 import ChannelDonutChart from '@/components/ui/ChannelDonutChart.vue'
 import { showToast } from '@/composables/useToast'
 import { useTheme } from '@/composables/useTheme'
+import { fromSelection } from '@/utils/selection'
 
 const { theme } = useTheme()
 const orderStore = useOrderStore()
+const loginStore = useLoginStore()
 const dialogSettlement = ref(false)
 
 function formatSlashDate(d: Date): string {
@@ -737,6 +741,19 @@ const exportReport = async () => {
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
   showToast('報表已成功匯出為 Excel', 'success')
+
+  // 報表帶出營收/折扣/退款等業務敏感數據，離開系統後就管不到流向，留下
+  // 「誰、何時匯出」的紀錄；寫入失敗不影響已經完成的匯出，不用錯誤提示
+  // 打斷使用者，理由同 audit/record.ts 的 recordAuditLog()。
+  try {
+    await createAuditLog({
+      action: 'report.export',
+      operator: `${fromSelection(loginStore.userInfo)?.jobTitle} - ${fromSelection(loginStore.userInfo)?.name}`,
+      detail: `匯出營運數據分析報表（統計期間：${selectTime.value[0]} ~ ${selectTime.value[1]}）`
+    })
+  } catch (err) {
+    console.error('寫入操作紀錄失敗（action: report.export）', err)
+  }
 }
 
 const handlePrintSettlement = () => {
