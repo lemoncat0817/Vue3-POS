@@ -6,10 +6,16 @@ export interface BuildInfo {
   shortText: string
 }
 
+function normalizeEnv(raw: string): string {
+  if (raw === 'development') return 'dev'
+  if (raw === 'production') return 'prod'
+  return raw
+}
+
 export const APP_BUILD_INFO: BuildInfo = {
   commitHash: typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev',
   buildTime: typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : '',
-  env: typeof __APP_ENV__ !== 'undefined' ? __APP_ENV__ : 'dev',
+  env: typeof __APP_ENV__ !== 'undefined' ? normalizeEnv(__APP_ENV__) : 'dev',
   get displayText() {
     return `[${this.env}] #${this.commitHash} · ${this.buildTime}`
   },

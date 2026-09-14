@@ -33,7 +33,8 @@ function getBuildTime(): string {
 
 const commitHash = getGitCommitHash()
 const buildTime = getBuildTime()
-const appEnv = process.env.NODE_ENV === 'production' ? 'prod' : (process.env.NODE_ENV || 'dev')
+const rawEnv = process.env.NODE_ENV || 'dev'
+const appEnv = rawEnv === 'production' ? 'prod' : rawEnv === 'development' ? 'dev' : rawEnv
 
 export default defineConfig({
   define: {

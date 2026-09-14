@@ -55,15 +55,23 @@
       </button>
 
       <div
-        class="select-none text-center font-mono text-[10px] text-surface-400 dark:text-surface-500"
+        class="flex flex-col items-center select-none text-center font-mono text-[10px] leading-tight text-surface-400 dark:text-surface-500 py-0.5"
         :title="APP_BUILD_INFO.displayText"
       >
-        <span v-if="!collapsed" class="block truncate px-1">
-          {{ APP_BUILD_INFO.displayText }}
-        </span>
-        <span v-else class="block truncate">
-          #{{ APP_BUILD_INFO.commitHash }}
-        </span>
+        <template v-if="!collapsed">
+          <div class="flex items-center gap-1">
+            <span>[{{ APP_BUILD_INFO.env }}]</span>
+            <span>#{{ APP_BUILD_INFO.commitHash }}</span>
+          </div>
+          <span class="text-[9px] text-surface-400 dark:text-surface-500">
+            {{ APP_BUILD_INFO.buildTime }}
+          </span>
+        </template>
+        <template v-else>
+          <span class="block truncate text-[9px]">
+            #{{ APP_BUILD_INFO.commitHash }}
+          </span>
+        </template>
       </div>
     </div>
   </aside>
