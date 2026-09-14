@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { generateSecureToken, hashSecret, verifySecret } from '../../src/auth/hash'
+import {
+  generateSecureToken,
+  hashSecret,
+  sha256Hex,
+  timingSafeEqual,
+  verifySecret
+} from '../../src/auth/hash'
 
 describe('hashSecret / verifySecret', () => {
   it('用正確的密鑰驗證會成功', async () => {
@@ -35,5 +41,29 @@ describe('generateSecureToken', () => {
     const b = generateSecureToken()
     expect(a).toMatch(/^[0-9a-f]{64}$/)
     expect(a).not.toBe(b)
+  })
+})
+
+describe('timingSafeEqual', () => {
+  it('相同字串回傳 true', () => {
+    expect(timingSafeEqual('secret-value', 'secret-value')).toBe(true)
+  })
+
+  it('不同字串（含長度不同）回傳 false', () => {
+    expect(timingSafeEqual('secret-value', 'secret-valuf')).toBe(false)
+    expect(timingSafeEqual('short', 'much-longer-value')).toBe(false)
+  })
+})
+
+describe('sha256Hex', () => {
+  it('同輸入永遠得到同一組 64 碼 hex 雜湊（可用來做索引查找）', async () => {
+    const a = await sha256Hex('token-abc')
+    const b = await sha256Hex('token-abc')
+    expect(a).toBe(b)
+    expect(a).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('不同輸入得到不同雜湊', async () => {
+    expect(await sha256Hex('token-abc')).not.toBe(await sha256Hex('token-xyz'))
   })
 })
