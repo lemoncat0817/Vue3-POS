@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import { constantRoutes } from './routes'
 import { useLoginStore } from '@/stores/login'
 import { useDeviceStore } from '@/stores/device'
@@ -9,7 +9,8 @@ import { setDeviceTokenInvalidHandler, setOperatorSessionInvalidHandler } from '
 
 export function createAppRouter() {
   const router = createRouter({
-    history: createWebHistory(import.meta.env.BASE_URL),
+    // GitHub Pages 沒有 SPA fallback（子路徑下重新整理會回 404，已實測）；hash 模式不需要 404.html 這類技巧。
+    history: createWebHashHistory(),
     routes: constantRoutes
   })
 
