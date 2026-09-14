@@ -27,9 +27,8 @@ vitest ^4，會跟本專案其他套件用的 vitest 3.x 衝突。改用
 `drizzle-orm/better-sqlite3` 在記憶體內套用同一份 migration SQL 測試路由
 邏輯——D1 底層就是 SQLite，行為高度一致，足以驗證查詢與路由邏輯。
 
-這不是 100% 等價（交易語意、少數限制不同），部署前建議照下面「本機驗證」
-的步驟用真正的 `wrangler dev` + 本機 D1 手動跑一次，作為最後的一致性
-確認。
+這不是 100% 等價（交易語意、少數限制不同），部署前建議額外用上面的
+`wrangler dev` + 本機 D1 手動跑一次，作為最後的一致性確認。
 
 ## 本機開發
 
@@ -41,10 +40,9 @@ pnpm --filter @pos/api run dev              # wrangler dev，本機跑一個真�
 pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
 ```
 
-## 部署前需要的手動步驟（無法由 AI 代為執行）
+## 部署前置作業
 
-以下步驟需要你自己的 Cloudflare 帳號，AI 助理沒有帳號存取權限，只能把
-專案準備到「你登入後幾個指令就能部署」的狀態：
+以下步驟需要你自己的 Cloudflare 帳號：
 
 1. **登入**：`pnpm exec wrangler login`（會開瀏覽器走 OAuth）。
 2. **D1 資料庫**：`wrangler.jsonc` 已綁定正式環境的 `pos-db`（binding 名稱
@@ -56,7 +54,7 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
    ```sh
    pnpm --filter @pos/api run db:migrate:remote
    ```
-4. **設定核發密鑰**（見下方「裝置憑證」說明）：
+4. **設定核發密鑰**（見下方「身分系統」說明）：
 
    ```sh
    pnpm exec wrangler secret put PROVISIONING_SECRET
@@ -119,8 +117,7 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
 見 `POST /api/auth/operator-login`（`src/routes/auth.ts`）：帳號＋4～6碼
 PIN，一樣要先有有效的裝置憑證才能嘗試（PIN 遠比裝置憑證短，這一層先
 擋掉沒有終端機憑證的用戶端整條暴力猜測路徑），連續錯誤 5 次鎖定 5
-分鐘。`seed/staff.sql` 有三個示範帳號（跟 apps/pos 舊版
-`stores/authorityManagement.ts` 的三個 demo 帳號權限對應）：
+分鐘。`seed/staff.sql` 有三個示範帳號：
 `lemon`／PIN `1234`（店長，全權限）、`james`／PIN `2345`（值班經理）、
 `emily`／PIN `3456`（工讀生）——PIN 明碼只出現在這裡跟 seed 檔案的
 註解裡，資料庫本身只有雜湊值。
