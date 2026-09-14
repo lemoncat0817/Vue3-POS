@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { authorityKeySchema } from '@pos/contract'
-import { generateSecureToken, hashSecret } from './hash'
+import { generateSecureToken, hashSecret, hashToken, sha256Hex } from './hash'
 import {
   categories,
   devices,
@@ -170,13 +170,14 @@ export async function provisionDeviceForLogin(
   deviceName: string
 ): Promise<string> {
   const token = generateSecureToken()
-  const { hash, salt } = await hashSecret(token)
+  const { hash, salt } = await hashToken(token)
   await db.insert(devices).values({
     id: crypto.randomUUID(),
     tenantId,
     name: deviceName,
     tokenHash: hash,
     tokenSalt: salt,
+    lookupHash: await sha256Hex(token),
     createdAt: new Date().toISOString(),
     revokedAt: null
   })

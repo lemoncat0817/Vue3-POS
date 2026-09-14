@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { verifySecret } from '../../src/auth/hash'
+import { sha256Hex, verifySecret, verifyToken } from '../../src/auth/hash'
 import { ensureTenantOnboarded, provisionDeviceForLogin } from '../../src/auth/onboarding'
 import {
   categories,
@@ -108,7 +108,8 @@ describe('provisionDeviceForLogin', () => {
     expect(device).toBeDefined()
     expect(device!.tenantId).toBe('tenant-1')
     expect(device!.name).toBe('測試瀏覽器')
-    expect(await verifySecret(token, device!.tokenHash, device!.tokenSalt)).toBe(true)
+    expect(await verifyToken(token, device!.tokenHash, device!.tokenSalt)).toBe(true)
+    expect(device!.lookupHash).toBe(await sha256Hex(token))
   })
 
   it('每次呼叫都核發一組新的裝置，不是重用同一台（一台瀏覽器＝一台裝置）', async () => {
