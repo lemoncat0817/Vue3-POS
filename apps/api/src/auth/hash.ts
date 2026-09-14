@@ -64,3 +64,17 @@ export async function verifySecret(secret: string, hash: string, salt: string): 
 export function generateSecureToken(): string {
   return toHex(crypto.getRandomValues(new Uint8Array(32)))
 }
+
+// device/session token 是伺服器產生的高熵亂數，不像 PIN 需要 PBKDF2 防暴力猜測；
+// 用 PBKDF2 驗證這類 token 在 Workers CPU 時間限制下容易觸發 503，改用加鹽 SHA-256 即可
+export async function hashToken(secret: string): Promise<{ hash: string; salt: string }> {
+  const saltBytes = crypto.getRandomValues(new Uint8Array(SALT_BYTE_LENGTH))
+  const salt = toHex(saltBytes)
+  const hash = await sha256Hex(salt + secret)
+  return { hash, salt }
+}
+
+export async function verifyToken(secret: string, hash: string, salt: string): Promise<boolean> {
+  const computed = await sha256Hex(salt + secret)
+  return timingSafeEqual(computed, hash)
+}

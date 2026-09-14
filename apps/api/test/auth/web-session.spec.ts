@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
-import { hashSecret } from '../../src/auth/hash'
+import { hashToken } from '../../src/auth/hash'
 import { findActiveWebSession, issueWebSession, revokeWebSession } from '../../src/auth/web-session'
 import { users, webSessions } from '../../src/db/schema'
 import { createTestDb } from '../helpers/db'
@@ -56,11 +56,11 @@ describe('issueWebSession / findActiveWebSession / revokeWebSession', () => {
     expect((await findActiveWebSession(db, tokenB))?.userId).toBe(userId)
   })
 
-  it('沒有 lookupHash 的舊資料（欄位新增前核發）仍能透過後備掃描驗證成功', async () => {
+  it('沒有 lookupHash 的舊資料（雜湊演算法變更前核發）視為失效，不會被掃描出來', async () => {
     const db = createTestDb()
     const userId = await seedUser(db)
     const token = 'legacy-token-without-lookup-hash'
-    const { hash, salt } = await hashSecret(token)
+    const { hash, salt } = await hashToken(token)
     await db.insert(webSessions).values({
       id: 'legacy-session',
       userId,
@@ -72,8 +72,7 @@ describe('issueWebSession / findActiveWebSession / revokeWebSession', () => {
       revokedAt: null
     })
 
-    const session = await findActiveWebSession(db, token)
-    expect(session?.userId).toBe(userId)
+    expect(await findActiveWebSession(db, token)).toBeNull()
   })
 
   it('核發新 session 時會順手清掉已過期（未撤銷）的舊 session', async () => {

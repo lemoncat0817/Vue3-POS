@@ -129,17 +129,22 @@ export const quickDiscounts = sqliteTable('quick_discounts', {
   value: real('value').notNull()
 })
 
-export const devices = sqliteTable('devices', {
-  id: text('id').primaryKey(),
-  tenantId: text('tenant_id').references(() => users.id),
-  name: text('name').notNull(),
-  tokenHash: text('token_hash').notNull(),
-  tokenSalt: text('token_salt').notNull(),
-  createdAt: text('created_at')
-    .notNull()
-    .default(sql`(current_timestamp)`),
-  revokedAt: text('revoked_at')
-})
+export const devices = sqliteTable(
+  'devices',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id').references(() => users.id),
+    name: text('name').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    tokenSalt: text('token_salt').notNull(),
+    lookupHash: text('lookup_hash'),
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    revokedAt: text('revoked_at')
+  },
+  (table) => [index('devices_lookup_hash_idx').on(table.lookupHash)]
+)
 
 export const roles = sqliteTable(
   'roles',

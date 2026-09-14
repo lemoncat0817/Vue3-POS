@@ -1,5 +1,5 @@
 import { and, eq, isNull, lte } from 'drizzle-orm'
-import { generateSecureToken, hashSecret, sha256Hex, verifySecret } from './hash'
+import { generateSecureToken, hashToken, sha256Hex, verifyToken } from './hash'
 import { users, webSessions } from '../db/schema'
 import type { AnyDb } from '../db/types'
 
@@ -14,7 +14,7 @@ async function pruneExpiredSessions(db: AnyDb, nowIso: string): Promise<void> {
 
 export async function issueWebSession(db: AnyDb, userId: string): Promise<string> {
   const token = generateSecureToken()
-  const { hash, salt } = await hashSecret(token)
+  const { hash, salt } = await hashToken(token)
   const lookupHash = await sha256Hex(token)
   const now = new Date()
   await pruneExpiredSessions(db, now.toISOString())
@@ -37,31 +37,15 @@ export async function findActiveWebSession(db: AnyDb, token: string): Promise<We
   const now = new Date().toISOString()
   const lookupHash = await sha256Hex(token)
 
-  // 用索引命中取代逐筆 PBKDF2 掃描，避免 session 一多每個請求都變慢
   const candidate = await db
     .select()
     .from(webSessions)
     .where(and(eq(webSessions.lookupHash, lookupHash), isNull(webSessions.revokedAt)))
     .get()
-  if (candidate) {
-    if (candidate.expiresAt <= now) return null
-    if (!(await verifySecret(token, candidate.tokenHash, candidate.tokenSalt))) return null
-    return candidate
-  }
-
-  // 後備路徑：lookupHash 為 NULL 的舊 session，會隨 TTL 到期被上面的 prune 清空
-  const legacyCandidates = await db
-    .select()
-    .from(webSessions)
-    .where(and(isNull(webSessions.lookupHash), isNull(webSessions.revokedAt)))
-    .all()
-  for (const session of legacyCandidates) {
-    if (session.expiresAt <= now) continue
-    if (await verifySecret(token, session.tokenHash, session.tokenSalt)) {
-      return session
-    }
-  }
-  return null
+  if (!candidate) return null
+  if (candidate.expiresAt <= now) return null
+  if (!(await verifyToken(token, candidate.tokenHash, candidate.tokenSalt))) return null
+  return candidate
 }
 
 export async function resolveWebSessionUser(

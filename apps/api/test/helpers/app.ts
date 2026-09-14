@@ -1,6 +1,6 @@
 import { authorityKeySchema } from '@pos/contract'
 import { createApp } from '../../src/app'
-import { generateSecureToken, hashSecret } from '../../src/auth/hash'
+import { generateSecureToken, hashToken, sha256Hex } from '../../src/auth/hash'
 import { issueOperatorSession } from '../../src/auth/operator-session'
 import { devices, staff, users } from '../../src/db/schema'
 import type { AnyDb } from '../../src/db/types'
@@ -84,13 +84,14 @@ export async function createTestAppWithDevice(
 
     // 指定租戶之測試裝置直接寫入資料庫
     deviceToken = generateSecureToken()
-    const { hash, salt } = await hashSecret(deviceToken)
+    const { hash, salt } = await hashToken(deviceToken)
     await db.insert(devices).values({
       id: crypto.randomUUID(),
       tenantId,
       name: deviceName,
       tokenHash: hash,
       tokenSalt: salt,
+      lookupHash: await sha256Hex(deviceToken),
       createdAt: new Date().toISOString(),
       revokedAt: null
     })

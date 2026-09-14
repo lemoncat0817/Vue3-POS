@@ -7,7 +7,7 @@ import {
   updateDeviceRequestSchema
 } from '@pos/contract'
 import { recordAuditLog } from '../audit/record'
-import { generateSecureToken, hashSecret } from '../auth/hash'
+import { generateSecureToken, hashToken, sha256Hex } from '../auth/hash'
 import { devices } from '../db/schema'
 import { requireCapability } from '../middleware/require-capability'
 import { requireDeviceToken } from '../middleware/require-device-token'
@@ -135,13 +135,15 @@ export const deviceRoutes = new OpenAPIHono<AppEnv>()
     const db = c.get('db')
 
     const token = generateSecureToken()
-    const { hash, salt } = await hashSecret(token)
+    const { hash, salt } = await hashToken(token)
+    const lookupHash = await sha256Hex(token)
     const newDevice: DeviceRow = {
       id: crypto.randomUUID(),
       tenantId: null,
       name: input.name,
       tokenHash: hash,
       tokenSalt: salt,
+      lookupHash,
       createdAt: new Date().toISOString(),
       revokedAt: null
     }
