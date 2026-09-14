@@ -180,7 +180,8 @@
         </button>
         <button
           type="button"
-          class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold"
+          :disabled="isSubmitting"
+          class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40"
           @click="submit"
         >
           {{ dialog.editingId ? '保存' : '新增' }}
@@ -273,7 +274,11 @@ function openEditDialog(row: PaymentMethod) {
   dialog.enabled = !row.disabled
   dialog.open = true
 }
+
+const isSubmitting = ref(false)
+
 async function submit() {
+  if (isSubmitting.value) return
   if (dialog.name.trim() === '' || dialog.useMethod === '') {
     showToast('請輸入完整資訊', 'error')
     return
@@ -303,6 +308,8 @@ async function submit() {
     dialog.open = false
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
+  } finally {
+    isSubmitting.value = false
   }
 }
 async function removePayMethod(row: PaymentMethod) {

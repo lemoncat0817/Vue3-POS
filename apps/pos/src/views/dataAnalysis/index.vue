@@ -103,11 +103,12 @@
 
           <button
             type="button"
-            class="flex items-center gap-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-50 shadow-sm transition-colors"
+            :disabled="exporting"
+            class="flex items-center gap-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-1.5 text-xs font-bold text-surface-700 dark:text-surface-200 hover:bg-surface-50 shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             @click="exportReport"
           >
             <Download class="h-3.5 w-3.5" />
-            <span>匯出 Excel</span>
+            <span>{{ exporting ? '匯出中...' : '匯出 Excel' }}</span>
           </button>
           <button
             type="button"
@@ -628,8 +629,11 @@ const SECTION_HEADER_FILL: ExcelJS.Fill = {
   fgColor: { argb: 'FFF1F5F9' }
 }
 
+const exporting = ref(false)
 const exportReport = async () => {
-  if (!salesReport.value) return
+  if (exporting.value || !salesReport.value) return
+  exporting.value = true
+  try {
 
   const workbook = new ExcelJS.Workbook()
   const sheet = workbook.addWorksheet('營運數據分析')
@@ -740,6 +744,9 @@ const exportReport = async () => {
     })
   } catch (err) {
     console.error('寫入操作紀錄失敗（action: report.export）', err)
+  }
+  } finally {
+    exporting.value = false
   }
 }
 

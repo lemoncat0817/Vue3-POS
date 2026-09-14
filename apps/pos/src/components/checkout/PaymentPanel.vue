@@ -167,7 +167,7 @@
         </button>
         <button
           type="button"
-          :disabled="remaining > 0 || tenders.length === 0"
+          :disabled="isSubmitting || remaining > 0 || tenders.length === 0"
           class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
           @click="submit"
         >
@@ -279,14 +279,18 @@ function removeTender(index: number) {
   tenders.value.splice(index, 1)
 }
 
+const isSubmitting = ref(false)
+
 function submit() {
-  if (remaining.value > 0 || tenders.value.length === 0) return
+  if (isSubmitting.value || remaining.value > 0 || tenders.value.length === 0) return
+  isSubmitting.value = true
   emit('submit', tenders.value)
 }
 
 watch(
   () => props.open,
   (isOpen) => {
+    isSubmitting.value = false
     if (!isOpen) return
     tenders.value = []
     draftMethod.value = undefined

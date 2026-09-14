@@ -167,7 +167,8 @@
         </button>
         <button
           type="button"
-          class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold"
+          :disabled="isSubmitting"
+          class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40"
           @click="addStaff"
         >
           新增
@@ -240,7 +241,8 @@
         </button>
         <button
           type="button"
-          class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold"
+          :disabled="isSubmitting"
+          class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40"
           @click="editStaff"
         >
           保存
@@ -303,7 +305,11 @@ function closeAddStaffDialog() {
   addStaffDialog.value = false
   showToast('操作取消', 'error')
 }
+
+const isSubmitting = ref(false)
+
 async function addStaff() {
+  if (isSubmitting.value) return
   if (
     currentInputStaffName.value === '' ||
     currentInputStaffJobTitle.value === '' ||
@@ -342,6 +348,8 @@ async function addStaff() {
     addStaffDialog.value = false
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -389,6 +397,7 @@ function closeEditStaffDialog() {
   showToast('操作取消', 'error')
 }
 async function editStaff() {
+  if (isSubmitting.value) return
   const target = currentEditStaff.value
   if (!target) return
   if (
@@ -436,6 +445,8 @@ async function editStaff() {
     showToast('保存成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
+  } finally {
+    isSubmitting.value = false
   }
 }
 

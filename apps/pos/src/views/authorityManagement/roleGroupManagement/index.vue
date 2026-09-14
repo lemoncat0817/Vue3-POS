@@ -148,7 +148,8 @@
         </button>
         <button
           type="button"
-          class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold"
+          :disabled="isSubmitting"
+          class="pos-btn pos-btn-primary px-5 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40"
           @click="submit"
         >
           {{ dialog.editingId ? '保存' : '新增' }}
@@ -223,7 +224,11 @@ function openEditDialog(row: Role) {
   dialog.capabilities = [...row.capabilities]
   dialog.open = true
 }
+
+const isSubmitting = ref(false)
+
 async function submit() {
+  if (isSubmitting.value) return
   if (dialog.name.trim() === '') {
     showToast('請輸入權限群組名稱', 'error')
     return
@@ -255,6 +260,8 @@ async function submit() {
     dialog.open = false
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
+  } finally {
+    isSubmitting.value = false
   }
 }
 async function removeRole(row: Role) {

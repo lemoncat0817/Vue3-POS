@@ -391,7 +391,8 @@
         </button>
         <button
           type="button"
-          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700"
+          :disabled="isSubmittingCategory"
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
           @click="submitCategory"
         >
           {{ categoryDialog.editingId ? '保存' : '新增' }}
@@ -495,7 +496,8 @@
         </button>
         <button
           type="button"
-          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700"
+          :disabled="isSubmittingProduct"
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
           @click="submitProduct"
         >
           {{ productDialog.editingId ? '保存' : '新增' }}
@@ -601,7 +603,8 @@
         </button>
         <button
           type="button"
-          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700"
+          :disabled="isSubmittingModifierGroup"
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
           @click="submitModifierGroup"
         >
           {{ modifierGroupDialog.editingId ? '保存' : '新增' }}
@@ -700,7 +703,9 @@ function openEditCategoryDialog(row: Category) {
   categoryDialog.name = row.name
   categoryDialog.open = true
 }
+const isSubmittingCategory = ref(false)
 async function submitCategory() {
+  if (isSubmittingCategory.value) return
   if (categoryDialog.name.trim() === '') {
     showToast('請輸入分類名稱', 'error')
     return
@@ -713,6 +718,7 @@ async function submitCategory() {
     showToast('此分類已存在,請重新輸入', 'error')
     return
   }
+  isSubmittingCategory.value = true
   try {
     if (categoryDialog.editingId === null) {
       const created = await createCategory({ name: categoryDialog.name })
@@ -728,6 +734,8 @@ async function submitCategory() {
     showToast(categoryDialog.editingId === null ? '新增成功' : '保存成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
+  } finally {
+    isSubmittingCategory.value = false
   }
 }
 async function removeCategory(row: Category) {
@@ -801,7 +809,9 @@ function toggleProductModifierGroup(groupId: ModifierGroup['id']) {
     ? productDialog.modifierGroupIds.filter((item) => item !== id)
     : [...productDialog.modifierGroupIds, id]
 }
+const isSubmittingProduct = ref(false)
 async function submitProduct() {
+  if (isSubmittingProduct.value) return
   if (
     productDialog.name.trim() === '' ||
     productDialog.categoryId === '' ||
@@ -829,6 +839,7 @@ async function submitProduct() {
     stock: toApiStock(productDialog.stock),
     modifierGroupIds: productDialog.modifierGroupIds
   }
+  isSubmittingProduct.value = true
   try {
     if (productDialog.editingId === null) {
       const created = await createProduct(payload)
@@ -842,6 +853,8 @@ async function submitProduct() {
     showToast(productDialog.editingId === null ? '新增成功' : '保存成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
+  } finally {
+    isSubmittingProduct.value = false
   }
 }
 async function removeProduct(row: Product) {
@@ -924,7 +937,9 @@ function openEditModifierGroupDialog(row: ModifierGroup) {
   }))
   modifierGroupDialog.open = true
 }
+const isSubmittingModifierGroup = ref(false)
 async function submitModifierGroup() {
+  if (isSubmittingModifierGroup.value) return
   if (modifierGroupDialog.name.trim() === '') {
     showToast('請輸入群組名稱', 'error')
     return
@@ -944,6 +959,7 @@ async function submitModifierGroup() {
       stock: toApiStock(o.stock)
     }))
   }
+  isSubmittingModifierGroup.value = true
   try {
     if (modifierGroupDialog.editingId === null) {
       const created = await createModifierGroup(payload)
@@ -959,6 +975,8 @@ async function submitModifierGroup() {
     showToast(modifierGroupDialog.editingId === null ? '新增成功' : '保存成功', 'success')
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
+  } finally {
+    isSubmittingModifierGroup.value = false
   }
 }
 async function removeModifierGroup(row: ModifierGroup) {

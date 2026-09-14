@@ -134,9 +134,10 @@
           </label>
           <button
             type="submit"
-            class="rounded-lg bg-primary-600 py-2.5 text-base font-bold text-white transition-colors hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
+            :disabled="loginLoading"
+            class="rounded-lg bg-primary-600 py-2.5 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
           >
-            登入
+            {{ loginLoading ? '登入中...' : '登入' }}
           </button>
         </form>
 
@@ -255,6 +256,8 @@ async function submitResetPin() {
       pin: resetPinValue.value
     })
     showToast(`已重設「${target.name}」的 PIN，請改用新 PIN 登入`, 'success')
+    loginStore.account = target.account
+    loginStore.pin = ''
     // 用過即丟：這組 web session 的用途就是救援 PIN，重設完沒有理由繼續留著。
     deviceStore.webSessionToken = null
     resetPinStaffId.value = ''
@@ -280,12 +283,15 @@ function acknowledgeOwnerCredentials() {
   deviceStore.clearPendingOwnerCredentials()
 }
 
+const loginLoading = ref(false)
 const login = async () => {
+  if (loginLoading.value) return
   // 提前攔截未填寫狀態，避免 zod 拋錯導致非預期的錯誤提示。
   if (!loginStore.account.trim() || !loginStore.pin.trim()) {
     showToast('請輸入帳號與 PIN', 'error')
     return
   }
+  loginLoading.value = true
   try {
     const staff = await operatorLogin(loginStore.account, loginStore.pin)
     loginStore.userInfo = toStaffMember(staff)
@@ -307,6 +313,8 @@ const login = async () => {
     } else {
       showToast(apiErrorMessage(err), 'error')
     }
+  } finally {
+    loginLoading.value = false
   }
 }
 </script>

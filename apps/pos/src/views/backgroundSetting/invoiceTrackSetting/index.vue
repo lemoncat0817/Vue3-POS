@@ -15,10 +15,11 @@
         <div class="flex items-center gap-1.5">
           <button
             type="button"
-            class="pos-btn pos-btn-secondary px-3 py-1.5 text-xs font-bold"
+            :disabled="isSubmittingBatch"
+            class="pos-btn pos-btn-secondary px-3 py-1.5 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50"
             @click="submitBatch"
           >
-            模擬上傳未上傳的發票
+            {{ isSubmittingBatch ? '上傳中...' : '模擬上傳未上傳的發票' }}
           </button>
           <button
             type="button"
@@ -238,7 +239,10 @@ async function onSubmit(values: Record<string, unknown>) {
   }
 }
 
+const isSubmittingBatch = ref(false)
 async function submitBatch() {
+  if (isSubmittingBatch.value) return
+  isSubmittingBatch.value = true
   try {
     const result = await submitInvoices()
     showToast(
@@ -249,6 +253,8 @@ async function submitBatch() {
     )
   } catch (err) {
     showToast(apiErrorMessage(err), 'error')
+  } finally {
+    isSubmittingBatch.value = false
   }
 }
 </script>
