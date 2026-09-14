@@ -17,6 +17,24 @@ function fromHex(hex: string): Uint8Array {
   return bytes
 }
 
+// 固定時間比較，避免逐位元比對時的執行時間差被拿來反推正確值
+export function timingSafeEqual(a: string, b: string): boolean {
+  const aBytes = new TextEncoder().encode(a)
+  const bBytes = new TextEncoder().encode(b)
+  let diff = aBytes.length ^ bBytes.length
+  const length = Math.max(aBytes.length, bBytes.length)
+  for (let i = 0; i < length; i++) {
+    diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0)
+  }
+  return diff === 0
+}
+
+// 未加鹽的快速雜湊，僅供資料庫索引查找用；不能取代下面的加鹽 PBKDF2 驗證
+export async function sha256Hex(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input))
+  return toHex(digest)
+}
+
 async function deriveBits(secret: string, salt: Uint8Array): Promise<ArrayBuffer> {
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -40,7 +58,7 @@ export async function hashSecret(secret: string): Promise<{ hash: string; salt: 
 
 export async function verifySecret(secret: string, hash: string, salt: string): Promise<boolean> {
   const derived = await deriveBits(secret, fromHex(salt))
-  return toHex(derived) === hash
+  return timingSafeEqual(toHex(derived), hash)
 }
 
 export function generateSecureToken(): string {
