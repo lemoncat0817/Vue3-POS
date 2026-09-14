@@ -15,7 +15,7 @@
 #   VITE_BASE_PATH          — /pos-system/
 #
 # Repo Settings → Pages → Source must be "GitHub Actions" (not the legacy gh-pages branch).
-# D1 migrate/seed is an ops step and is intentionally not run here.
+# D1 migrations 隨 deploy-api 自動套用到 remote；seed 仍是一次性 ops 步驟，不在這裡跑。
 
 name: CI
 
@@ -140,7 +140,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Worker only — do not run `d1 migrations apply` / seed on every deploy.
+      # migration 先套用再部署 Worker，避免新程式碼在交錯期打到舊 schema；
+      # seed 仍是一次性 ops 步驟，不在這裡跑。
+      - name: Apply D1 migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/api
+          packageManager: pnpm
+          command: d1 migrations apply pos-db --remote
+
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
         with:
