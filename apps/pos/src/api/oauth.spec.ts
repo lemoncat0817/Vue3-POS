@@ -14,6 +14,7 @@ describe('consumeOAuthCallback', () => {
   })
   afterEach(() => {
     setHash('')
+    delete window.__oauthCallbackHash
   })
 
   it('網址上沒有 fragment 時回傳 none，不動 deviceStore', () => {
@@ -64,5 +65,17 @@ describe('consumeOAuthCallback', () => {
     setHash('#session=s-1&device=d-1&provider=google')
     consumeOAuthCallback(useDeviceStore())
     expect(window.location.pathname).toBe('/login')
+  })
+
+  it('優先讀 __oauthCallbackHash：即使 location.hash 已被 hash 模式路由正規化弄壞，也能正確解析 session', () => {
+    window.__oauthCallbackHash = '#session=s-1&device=d-1&provider=google'
+    setHash('#/session=s-1&device=d-1&provider=google')
+    const deviceStore = useDeviceStore()
+
+    const result = consumeOAuthCallback(deviceStore)
+
+    expect(result).toEqual({ status: 'success', provider: 'google', isNewTenant: false })
+    expect(deviceStore.webSessionToken).toBe('s-1')
+    expect(window.__oauthCallbackHash).toBeUndefined()
   })
 })
