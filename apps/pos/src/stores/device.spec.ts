@@ -28,6 +28,7 @@ describe('useDeviceStore & primeDeviceTokenFromStorage', () => {
     expect(store.pendingOwnerAccount).toBeNull()
     expect(store.pendingOwnerPin).toBeNull()
     expect(store.webSessionToken).toBeNull()
+    expect(store.justAuthenticatedViaOAuth).toBe(false)
   })
 
   it('deviceToken 與 webSessionToken 變更時同步至 http.ts', async () => {

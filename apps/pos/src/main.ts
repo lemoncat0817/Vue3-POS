@@ -35,7 +35,9 @@ const oauthResult = consumeOAuthCallback(useDeviceStore())
 if (oauthResult.status === 'error') {
   showToast('登入失敗，請重新嘗試 Google／GitHub 登入', 'error')
 } else if (oauthResult.status === 'success' && !oauthResult.isNewTenant) {
-  showToast('裝置配對成功，請用員工帳號 PIN 登入', 'success')
+  // 既有租戶重新走一次 OAuth，最常見的原因就是忘記 PIN 想救援，所以順便展開登入頁的「直接重設」入口。
+  useDeviceStore().justAuthenticatedViaOAuth = true
+  showToast('裝置配對成功，請用員工帳號 PIN 登入；忘記 PIN 可以點下方「直接重設」', 'success')
 }
 
 import router from './router'

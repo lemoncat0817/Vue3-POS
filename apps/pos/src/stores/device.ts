@@ -24,6 +24,9 @@ export const useDeviceStore = defineStore(
     const pendingOwnerAccount = ref<string | null>(null)
     const pendingOwnerPin = ref<string | null>(null)
     const webSessionToken = ref<string | null>(null)
+    // OAuth 回呼剛核發 webSessionToken 那一次為 true，讓登入頁自動展開「忘記 PIN」面板，
+    // 不用使用者為了看到「直接重設」按鈕而再點一次「忘記 PIN 或需要換裝置／換帳號？」。
+    const justAuthenticatedViaOAuth = ref(false)
 
     // 不設 immediate 以免 ref 初始 null 覆蓋 primeDeviceTokenFromStorage 設定的憑證。
     watch(deviceToken, (value) => setDeviceToken(value))
@@ -44,13 +47,14 @@ export const useDeviceStore = defineStore(
       pendingOwnerAccount,
       pendingOwnerPin,
       webSessionToken,
+      justAuthenticatedViaOAuth,
       clearPendingOwnerCredentials,
       hydrateDeviceNameFromServer
     }
   },
   {
     persist: {
-      omit: ['pendingOwnerAccount', 'pendingOwnerPin']
+      omit: ['pendingOwnerAccount', 'pendingOwnerPin', 'justAuthenticatedViaOAuth']
     }
   }
 )
