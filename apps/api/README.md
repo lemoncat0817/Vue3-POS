@@ -117,10 +117,15 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
 見 `POST /api/auth/operator-login`（`src/routes/auth.ts`）：帳號＋4～6碼
 PIN，一樣要先有有效的裝置憑證才能嘗試（PIN 遠比裝置憑證短，這一層先
 擋掉沒有終端機憑證的用戶端整條暴力猜測路徑），連續錯誤 5 次鎖定 5
-分鐘。`seed/staff.sql` 有三個示範帳號：
-`lemon`／PIN `1234`（店長，全權限）、`james`／PIN `2345`（值班經理）、
-`emily`／PIN `3456`（工讀生）——PIN 明碼只出現在這裡跟 seed 檔案的
-註解裡，資料庫本身只有雜湊值。
+分鐘。正式流程下帳號是 OAuth 登入時自動核發的 owner 帳密（見上面
+「部署前置作業」第 6 步），不是靠帳號密碼手動申請。
+
+`seed/staff.sql` 另外有 `lemon`／`james`／`emily` 三個示範帳號
+（PIN 依序 `1234`／`2345`／`3456`），只給本機開發與 e2e 測試用：它們
+掛在跟裝置一樣的「未分配租戶」（`tenantId` 為 null），要先用
+`X-Provisioning-Secret` 核發一台同樣未分配租戶的裝置憑證才能登入
+（見 `e2e/global.setup.ts`），登入頁面上沒有對應的入口。PIN 明碼只
+出現在這裡跟 seed 檔案的註解裡，資料庫本身只有雜湊值。
 
 PIN 登入成功會額外核發一組操作員 session（`operator_sessions` 表，做法
 比照裝置憑證：明碼只在核發當下回傳一次，之後只存雜湊值＋鹽，見

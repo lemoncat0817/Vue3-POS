@@ -1,6 +1,6 @@
--- 示範帳號（P4：規劃書 §9 的身分系統），跟 apps/pos 舊版
--- stores/authorityManagement.ts 裡三個demo帳號的權限設定一一對應，方便
--- 既有的「快速登入」按鈕（見 views/login/index.vue）跟 e2e 測試接得上。
+-- 示範帳號，掛在跟裝置一樣的「未分配租戶」（tenant_id 為 null），供
+-- 本機開發與 e2e 測試用（見 e2e/global.setup.ts）。正式使用者是透過
+-- OAuth 登入自動核發 owner 帳密，登入頁面沒有對應這幾個帳號的入口。
 --
 -- 三個系統內建權限群組（見 migrations/0020_backfill_staff_role_id.sql 的
 -- role-owner／role-duty-manager／role-part-timer），全新環境直接種好，
