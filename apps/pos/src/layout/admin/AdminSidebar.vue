@@ -41,7 +41,7 @@
       </button>
     </nav>
 
-    <div class="shrink-0 border-t border-surface-200 p-2 dark:border-surface-800">
+    <div class="flex shrink-0 flex-col gap-1.5 border-t border-surface-200 p-2 dark:border-surface-800">
       <button
         type="button"
         class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-surface-500 transition-colors hover:bg-surface-100 hover:text-surface-900 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-100"
@@ -53,6 +53,18 @@
         <PanelLeftOpen v-else class="h-4 w-4 shrink-0" />
         <span v-if="!collapsed">收合</span>
       </button>
+
+      <div
+        class="select-none text-center font-mono text-[10px] text-surface-400 dark:text-surface-500"
+        :title="APP_BUILD_INFO.displayText"
+      >
+        <span v-if="!collapsed" class="block truncate px-1">
+          {{ APP_BUILD_INFO.displayText }}
+        </span>
+        <span v-else class="block truncate">
+          #{{ APP_BUILD_INFO.commitHash }}
+        </span>
+      </div>
     </div>
   </aside>
 </template>
@@ -61,6 +73,7 @@
 import { ref, watch } from 'vue'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
 import { navItems, useAppShell } from '@/composables/useAppShell'
+import { APP_BUILD_INFO } from '@/utils/version'
 
 const { router, changePage } = useAppShell()
 

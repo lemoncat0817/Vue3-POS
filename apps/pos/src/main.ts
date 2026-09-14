@@ -1,6 +1,9 @@
 import './styles/reset.scss'
 import './styles/style.scss'
 
+import { logVersionBadge } from '@/utils/version'
+logVersionBadge()
+
 // 攔截 Chromium DevTools 即時指標 (Core Web Vitals) 或擴充套件在 SPA 軟導航時注入的已知例外，避免干擾控制台
 window.addEventListener('error', (event) => {
   const message = typeof event.message === 'string' ? event.message : ''

@@ -2,7 +2,8 @@
   <div
     class="flex min-h-screen w-screen items-center justify-center bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 p-4 dark:from-surface-950 dark:via-surface-900 dark:to-surface-950"
   >
-    <div class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-overlay dark:bg-surface-900">
+    <div class="flex w-full max-w-sm flex-col items-center gap-3">
+      <div class="w-full rounded-2xl bg-white p-8 shadow-overlay dark:bg-surface-900">
       <div class="mb-8 flex flex-col items-center gap-3">
         <h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-50">
           POS 系統
@@ -196,7 +197,12 @@
         </div>
       </template>
     </div>
+
+    <p class="text-center font-mono text-xs text-white/70 select-none dark:text-surface-400">
+      {{ APP_BUILD_INFO.displayText }}
+    </p>
   </div>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -206,6 +212,7 @@ const router = useRouter()
 import { useQueryClient } from '@tanstack/vue-query'
 import { useLoginStore } from '@/stores/login'
 import { useDeviceStore } from '@/stores/device'
+import { APP_BUILD_INFO } from '@/utils/version'
 const loginStore = useLoginStore()
 const deviceStore = useDeviceStore()
 const queryClient = useQueryClient()
