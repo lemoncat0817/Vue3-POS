@@ -45,17 +45,23 @@ export const users = sqliteTable(
   (table) => [uniqueIndex('users_provider_account_idx').on(table.provider, table.providerAccountId)]
 )
 
-export const webSessions = sqliteTable('web_sessions', {
-  id: text('id').primaryKey(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id),
-  tokenHash: text('token_hash').notNull(),
-  tokenSalt: text('token_salt').notNull(),
-  createdAt: text('created_at').notNull(),
-  expiresAt: text('expires_at').notNull(),
-  revokedAt: text('revoked_at')
-})
+export const webSessions = sqliteTable(
+  'web_sessions',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    tokenHash: text('token_hash').notNull(),
+    tokenSalt: text('token_salt').notNull(),
+    // 允許 NULL：既有 session 只有 PBKDF2 雜湊、沒有明文可回補這欄
+    lookupHash: text('lookup_hash'),
+    createdAt: text('created_at').notNull(),
+    expiresAt: text('expires_at').notNull(),
+    revokedAt: text('revoked_at')
+  },
+  (table) => [index('web_sessions_lookup_hash_idx').on(table.lookupHash)]
+)
 
 export const categories = sqliteTable('categories', {
   id: text('id').primaryKey(),
@@ -168,18 +174,24 @@ export const staff = sqliteTable(
   (table) => [uniqueIndex('staff_tenant_account_idx').on(table.tenantId, table.account)]
 )
 
-export const operatorSessions = sqliteTable('operator_sessions', {
-  id: text('id').primaryKey(),
-  tenantId: text('tenant_id').references(() => users.id),
-  staffId: text('staff_id')
-    .notNull()
-    .references(() => staff.id),
-  tokenHash: text('token_hash').notNull(),
-  tokenSalt: text('token_salt').notNull(),
-  createdAt: text('created_at').notNull(),
-  expiresAt: text('expires_at').notNull(),
-  revokedAt: text('revoked_at')
-})
+export const operatorSessions = sqliteTable(
+  'operator_sessions',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id').references(() => users.id),
+    staffId: text('staff_id')
+      .notNull()
+      .references(() => staff.id),
+    tokenHash: text('token_hash').notNull(),
+    tokenSalt: text('token_salt').notNull(),
+    // 允許 NULL：既有 session 只有 PBKDF2 雜湊、沒有明文可回補這欄
+    lookupHash: text('lookup_hash'),
+    createdAt: text('created_at').notNull(),
+    expiresAt: text('expires_at').notNull(),
+    revokedAt: text('revoked_at')
+  },
+  (table) => [index('operator_sessions_lookup_hash_idx').on(table.lookupHash)]
+)
 
 export const paymentMethods = sqliteTable('payment_methods', {
   id: text('id').primaryKey(),

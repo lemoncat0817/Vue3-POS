@@ -1,6 +1,8 @@
+import { eq } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
+import { hashSecret } from '../../src/auth/hash'
 import { findActiveWebSession, issueWebSession, revokeWebSession } from '../../src/auth/web-session'
-import { users } from '../../src/db/schema'
+import { users, webSessions } from '../../src/db/schema'
 import { createTestDb } from '../helpers/db'
 
 async function seedUser(db: ReturnType<typeof createTestDb>, id = 'user-1') {
@@ -52,5 +54,45 @@ describe('issueWebSession / findActiveWebSession / revokeWebSession', () => {
     await revokeWebSession(db, tokenA)
     expect(await findActiveWebSession(db, tokenA)).toBeNull()
     expect((await findActiveWebSession(db, tokenB))?.userId).toBe(userId)
+  })
+
+  it('沒有 lookupHash 的舊資料（欄位新增前核發）仍能透過後備掃描驗證成功', async () => {
+    const db = createTestDb()
+    const userId = await seedUser(db)
+    const token = 'legacy-token-without-lookup-hash'
+    const { hash, salt } = await hashSecret(token)
+    await db.insert(webSessions).values({
+      id: 'legacy-session',
+      userId,
+      tokenHash: hash,
+      tokenSalt: salt,
+      lookupHash: null,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      revokedAt: null
+    })
+
+    const session = await findActiveWebSession(db, token)
+    expect(session?.userId).toBe(userId)
+  })
+
+  it('核發新 session 時會順手清掉已過期（未撤銷）的舊 session', async () => {
+    const db = createTestDb()
+    const userId = await seedUser(db)
+    await db.insert(webSessions).values({
+      id: 'expired-session',
+      userId,
+      tokenHash: 'irrelevant',
+      tokenSalt: 'irrelevant',
+      lookupHash: 'irrelevant',
+      createdAt: new Date(Date.now() - 120_000).toISOString(),
+      expiresAt: new Date(Date.now() - 60_000).toISOString(),
+      revokedAt: null
+    })
+
+    await issueWebSession(db, userId)
+
+    const remaining = await db.select().from(webSessions).where(eq(webSessions.id, 'expired-session')).get()
+    expect(remaining).toBeUndefined()
   })
 })
