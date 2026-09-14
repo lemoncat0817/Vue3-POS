@@ -17,6 +17,16 @@
   </head>
   <body>
     <div id="app"></div>
+    <!-- 搶在 hash 模式路由把 #session=... 誤判成路徑並正規化（弄壞第一個參數）之前，先存下原始 OAuth 回呼 hash -->
+    <script>
+      (function () {
+        var hash = window.location.hash
+        if (hash.length > 1 && hash[1] !== '/') {
+          window.__oauthCallbackHash = hash
+          history.replaceState(null, '', window.location.pathname + window.location.search)
+        }
+      })()
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
