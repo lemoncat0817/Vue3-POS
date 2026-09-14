@@ -8,7 +8,7 @@
 # 與 apps/pos/src/api/oauth.ts。
 #
 # Optional secret or variable:
-#   CLOUDFLARE_ACCOUNT_ID   — cc1bea6538e772965248fa1fdef2844c (set if wrangler cannot infer the account)
+#   CLOUDFLARE_ACCOUNT_ID   — set if wrangler cannot infer the account
 #
 # Required GitHub Actions variables (already configured):
 #   VITE_API_BASE_URL       — https://pos-api.jimdeng0817.workers.dev
