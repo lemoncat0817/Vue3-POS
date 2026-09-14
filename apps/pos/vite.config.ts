@@ -49,19 +49,19 @@ export default defineConfig({
     // PWA 外殼快取靜態產物並支援離線導覽。採 prompt 避免操作中途自動重新整理。
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.ico'],
+      includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'POS 點餐系統',
         short_name: 'POS',
         description: '單店單機使用的手搖飲點餐收銀系統',
-        theme_color: '#ef4444',
+        theme_color: '#dc2626',
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '.',
         icons: [
           { src: 'pwa-icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'pwa-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          { src: 'pwa-icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       workbox: {
