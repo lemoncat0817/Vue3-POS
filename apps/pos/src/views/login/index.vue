@@ -217,7 +217,9 @@ import type { Staff } from '@pos/contract'
 
 const RESET_PIN_PATTERN = /^\d{4,6}$/
 const showResetPin = ref(false)
-const showDeviceHelp = ref(false)
+// 剛完成 OAuth 回呼就直接展開，讓「直接重設」按鈕不用使用者多點一次才看得到
+const showDeviceHelp = ref(deviceStore.justAuthenticatedViaOAuth)
+deviceStore.justAuthenticatedViaOAuth = false
 const resetPinStaffList = ref<Staff[]>([])
 const resetPinStaffId = ref('')
 const resetPinValue = ref('')
