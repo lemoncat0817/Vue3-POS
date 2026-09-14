@@ -1,7 +1,6 @@
 # @pos/api
 
-Cloudflare Workers 伺服端（Hono + Drizzle ORM + D1）。對應重構規劃書
-P2（伺服端）階段。
+Cloudflare Workers 伺服端（Hono + Drizzle ORM + D1）。
 
 ## 架構
 
@@ -51,7 +50,9 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
 2. **D1 資料庫**：`wrangler.jsonc` 已綁定正式環境的 `pos-db`（binding 名稱
    `DB`）。若要在自己的帳號另建一個，再執行 `pnpm exec wrangler d1 create pos-db`
    並把印出的 `database_id` 貼回 `d1_databases[0].database_id`。
-3. **套用 migration 到正式環境**（刻意不放進 CI；每次部署 Worker 不會自動 migrate）：
+3. **套用 migration 到正式環境**：merge 到 `master` 時 CI 會在部署 Worker 前
+   自動跑，不需要手動執行；要在部署之外單獨套用（例如先驗證一支新
+   migration）才需要手動下這行：
    ```sh
    pnpm --filter @pos/api run db:migrate:remote
    ```
@@ -80,8 +81,8 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
    ```sh
    pnpm --filter @pos/api run deploy
    ```
-   merge 到 `master` 後 GitHub Actions 也會跑同一個指令（見根目錄 README 的 CI/CD；
-   CI **不會**自動 migrate／seed）。
+   merge 到 `master` 後 GitHub Actions 也會跑同一個指令（見根目錄 README 的
+   CI/CD；migration 會自動套用，seed 仍需手動）。
 6. **首次使用**：部署完成後，前端用 Google／GitHub 登入即可——第一次登入
    會自動建立這個帳號的租戶、核發這台瀏覽器的裝置憑證、灌好示範菜單與
    一個 owner 員工帳密（見 `src/auth/onboarding.ts`），不需要手動呼叫
@@ -101,9 +102,9 @@ pnpm --filter @pos/api run test             # 單元測試（better-sqlite3）
    一般情境用 OAuth 登入即可，不需要這條路。弄丟了沒關係，用
    `POST /api/devices/:id/revoke` 撤銷這台、重新核發一台新的即可。
 
-## 身分系統（P4：規劃書 §9）
+## 身分系統
 
-裝置憑證取代了 P2 的單一固定字串：`devices` 資料表存每台終端機的憑證
+`devices` 資料表存每台終端機的憑證
 雜湊值＋鹽（`src/auth/hash.ts` 的 PBKDF2-SHA256），核發／清單／撤銷見
 `src/routes/devices.ts`。異動性的端點（`POST /api/orders`、
 `POST /api/staff`）都要求 `X-Device-Token` 標頭能對應到一台「還沒被
@@ -135,27 +136,23 @@ PIN 登入成功會額外核發一組操作員 session（`operator_sessions` 表
 授權（`views/order/index.vue`）也是透過同一套機制，核可主管的登入會
 核發一組獨立 session，只用這一次就撤銷。
 
-## 多終端情境（P6：規劃書 §3）
+## 多終端情境
 
-訂單序號（`orderId` = 營業日 + 序號）改用 `order_sequences` 表的原子
+訂單序號（`orderId` = 營業日 + 序號）用 `order_sequences` 表的原子
 計數器核發（`INSERT ... ON CONFLICT DO UPDATE ... RETURNING`，見
-`src/routes/orders.ts` 的 `nextOrderSequence()`），取代 P2～P5「查同一
-營業日已有幾筆訂單、+1」的作法——後者在兩台終端幾乎同時送單時可能算出
-同一個序號，其中一筆會直接因為 `orderId` 撞到 primary key 失敗。已經用
-`wrangler dev` 對本機 D1 真的同時送出多筆並發請求驗證過，全部核發到不同
-序號、沒有任何一筆失敗。
+`src/routes/orders.ts` 的 `nextOrderSequence()`），避免「查同一營業日
+已有幾筆訂單、+1」的作法在兩台終端幾乎同時送單時算出同一個序號、其中
+一筆因 `orderId` 撞到 primary key 而失敗。
 
-`order_sequences` 表是這個階段才新增的：如果套用這個 migration 時
-`orders` 表已經有資料（用舊版算法累積的），第一次核發某個營業日的序號
-不會從 1 開始，而是接續現有資料的最大序號（見 `nextOrderSequence()`
-的說明）——這是實際套用到本機 D1（累積了先前所有階段測試留下的訂單）
-時親自撞到、修正過的情境，不是憑空想像的邊界案例。
+若套用這支 migration 時 `orders` 表已有資料，第一次核發某個營業日的
+序號不會從 1 開始，而是接續現有資料的最大序號（見 `nextOrderSequence()`
+的說明）。
 
-## 免費額度是否夠用（§12 效能預算）
+## 免費額度是否夠用
 
-規劃書把「免費額度換算成每日可支撐幾筆結帳」列為退出條件之一，但這需要
-你實際帳號當下的方案數字（Cloudflare 的免費額度門檻會調整），無法在
-沒有帳號的情況下確認。部署後建議查看
+免費額度換算成每日可支撐幾筆結帳，需要實際帳號當下的方案數字
+（Cloudflare 的免費額度門檻會調整），無法在沒有帳號的情況下確認。
+部署後建議查看
 [Cloudflare Dashboard 的用量頁面](https://dash.cloudflare.com)，對照
 `wrangler.jsonc` 目前的設定換算：
 
